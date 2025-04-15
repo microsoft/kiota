@@ -61,8 +61,11 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-
-
+    
+    public required Option<bool> NoWorkspaceOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -76,6 +79,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         string? pluginAuthRefId0 = context.ParseResult.GetValueForOption(PluginAuthRefIdOption);
         string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
+        bool noWorkspace = context.ParseResult.GetValueForOption(NoWorkspaceOption);
         string? className0 = context.ParseResult.GetValueForOption(ClassOption);
         List<string>? includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
@@ -102,11 +106,12 @@ internal class EditHandler : BaseKiotaCommandHandler
         var className = className0.OrEmpty();
         var pluginAuthRefId = pluginAuthRefId0.OrEmpty();
         Configuration.Generation.SkipGeneration = skipGeneration;
+        Configuration.Generation.NoWorkspace = noWorkspace;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId0))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -115,19 +120,22 @@ internal class EditHandler : BaseKiotaCommandHandler
 
             try
             {
-                var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
-                var (config, _) = await workspaceStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
-                if (config == null)
+                if (!noWorkspace)
                 {
-                    DisplayError("The workspace configuration is missing, please run the init command first.");
-                    return 1;
+                    var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
+                    var (config, _) = await workspaceStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+                    if (config == null)
+                    {
+                        DisplayError("The workspace configuration is missing, please run the init command first.");
+                        return 1;
+                    }
+                    if (!config.Plugins.TryGetValue(className, out var pluginConfiguration))
+                    {
+                        DisplayError($"No plugin found with the provided name {className}");
+                        return 1;
+                    }
+                    pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(Configuration.Generation, className);
                 }
-                if (!config.Plugins.TryGetValue(className, out var pluginConfiguration))
-                {
-                    DisplayError($"No plugin found with the provided name {className}");
-                    return 1;
-                }
-                pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(Configuration.Generation, className);
                 AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
                 AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
                 AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
