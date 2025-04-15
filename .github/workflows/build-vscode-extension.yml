@@ -24,6 +24,7 @@ jobs:
   test_and_generate_binaries:
     needs: [checksecret]
     strategy:
+      fail-fast: false
       matrix:
         binaries:
           - architecture: win-x86
