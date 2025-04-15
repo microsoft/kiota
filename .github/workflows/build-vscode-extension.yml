@@ -26,12 +26,18 @@ jobs:
     strategy:
       matrix:
         binaries:
+          - architecture: win-x86
+            os: windows-latest
           - architecture: win-x64
             os: windows-latest
+          - architecture: win-arm64
+            os: windows-11-arm #preview image
           - architecture: linux-x64
             os: ubuntu-latest
+          - architecture: linux-arm64
+            os: ubuntu-24.04-arm #preview image
           - architecture: osx-arm64
-            os: macOS-latest    
+            os: macOS-latest
     runs-on: ${{ matrix.binaries.os }}
     steps:
       - uses: actions/checkout@v4
