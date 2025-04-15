@@ -61,7 +61,7 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    
+
     public required Option<bool> NoWorkspaceOption
     {
         get; init;

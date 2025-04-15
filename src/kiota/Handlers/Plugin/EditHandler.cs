@@ -61,7 +61,7 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    
+
     public required Option<bool> NoWorkspaceOption
     {
         get; init;
