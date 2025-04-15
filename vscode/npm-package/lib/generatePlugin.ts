@@ -18,7 +18,7 @@ export interface PluginGenerationOptions {
   clearCache?: boolean;
   cleanOutput?: boolean;
   disabledValidationRules?: string[];
-  skipWorkspace?: boolean;
+  noWorkspace?: boolean;
   pluginAuthType?: PluginAuthType | null;
   pluginAuthRefid?: string;
 }
@@ -67,7 +67,7 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
         disabledValidationRules: pluginGenerationOptions.disabledValidationRules ?? [],
         excludePatterns: pluginGenerationOptions.excludePatterns ?? [],
         includePatterns: pluginGenerationOptions.includePatterns ?? [],
-        skipWorkspace: pluginGenerationOptions.skipWorkspace ?? null,
+        noWorkspace: pluginGenerationOptions.noWorkspace ?? null,
         pluginAuthType: pluginGenerationOptions.pluginAuthType ?? null,
         pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid ?? '',
       } as GenerationConfiguration,

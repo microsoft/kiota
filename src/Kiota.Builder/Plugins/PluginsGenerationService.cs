@@ -80,7 +80,7 @@ public partial class PluginsGenerationService
             var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
 
             // Check directly the output when workspace is not used
-            if (Configuration.Operation == ConsumerOperation.Add && Configuration.SkipWorkspace && File.Exists(manifestOutputPath))
+            if (Configuration.Operation == ConsumerOperation.Add && Configuration.NoWorkspace && File.Exists(manifestOutputPath))
             {
                 throw new InvalidOperationException($"The client {Configuration.ClientClassName} already exists at {manifestOutputPath}");
             }

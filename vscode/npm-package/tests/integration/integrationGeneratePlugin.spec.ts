@@ -22,7 +22,7 @@ describe("GeneratePlugin", () => {
       pluginName: pluginName,
       operation: ConsumerOperation.Generate,
       workingDirectory: '',
-      skipWorkspace: true,
+      noWorkspace: true,
     });
     expect(actual).toBeDefined();
     expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
@@ -37,7 +37,7 @@ describe("GeneratePlugin", () => {
       pluginName: pluginName,
       operation: ConsumerOperation.Add,
       workingDirectory: '',
-      skipWorkspace: true,
+      noWorkspace: true,
     });
     expect(actual2).toBeDefined();
     expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.error)).toBeTruthy();
@@ -73,7 +73,7 @@ describe("GeneratePlugin", () => {
       pluginName: pluginName,
       operation: ConsumerOperation.Generate,
       workingDirectory: '',
-      skipWorkspace: false,
+      noWorkspace: false,
     });
     expect(actual).toBeDefined();
     expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
@@ -88,7 +88,7 @@ describe("GeneratePlugin", () => {
       pluginName: pluginName,
       operation: ConsumerOperation.Add,
       workingDirectory: '',
-      skipWorkspace: false,
+      noWorkspace: false,
     });
     expect(actual2).toBeDefined();
     expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.error)).toBeTruthy();
@@ -123,7 +123,7 @@ describe("GeneratePlugin", () => {
       pluginName: 'test3',
       operation: ConsumerOperation.Generate,
       workingDirectory: '',
-      skipWorkspace: true,
+      noWorkspace: true,
     });
     expect(actual).toBeDefined();
     expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();

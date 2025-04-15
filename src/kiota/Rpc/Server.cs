@@ -198,11 +198,11 @@ internal partial class Server : IServer
     }
     public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns,
         string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules,
-        bool? skipWorkspace, PluginAuthType? pluginAuthType, string? pluginAuthRefid, ConsumerOperation operation, CancellationToken cancellationToken)
+        bool? noWorkspace, PluginAuthType? pluginAuthType, string? pluginAuthRefid, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var globalLogger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
-        configuration.SkipWorkspace = skipWorkspace ?? false;
+        configuration.NoWorkspace = noWorkspace ?? false;
         configuration.PluginTypes = pluginTypes.ToHashSet();
         configuration.OpenAPIFilePath = GetAbsolutePath(openAPIFilePath);
         configuration.OutputPath = GetAbsolutePath(outputPath);

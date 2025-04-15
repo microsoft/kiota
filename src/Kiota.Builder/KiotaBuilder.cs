@@ -84,7 +84,7 @@ public partial class KiotaBuilder
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
-            if (!config.SkipWorkspace)
+            if (!config.NoWorkspace)
             {
                 await workspaceManagementService.BackupStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             }
@@ -198,7 +198,7 @@ public partial class KiotaBuilder
 
             // Should Generate
             sw.Start();
-            if (!config.SkipWorkspace)
+            if (!config.NoWorkspace)
             {
                 var hashCode = await openApiDocument.GetHashCodeAsync(cancellationToken).ConfigureAwait(false);
                 shouldGenerate &= await workspaceManagementService.ShouldGenerateAsync(config, hashCode, cancellationToken).ConfigureAwait(false);
@@ -317,7 +317,7 @@ public partial class KiotaBuilder
         // Read input stream
         var inputPath = config.OpenAPIFilePath;
 
-        if (!config.SkipWorkspace && config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresentAsync(config.ClientClassName, cancellationToken).ConfigureAwait(false))
+        if (!config.NoWorkspace && config.Operation is ConsumerOperation.Add && await workspaceManagementService.IsConsumerPresentAsync(config.ClientClassName, cancellationToken).ConfigureAwait(false))
             throw new InvalidOperationException($"The client {config.ClientClassName} already exists in the workspace");
 
         try
@@ -352,7 +352,7 @@ public partial class KiotaBuilder
         }
         catch
         {
-            if (!config.SkipWorkspace)
+            if (!config.NoWorkspace)
             {
                 await workspaceManagementService.RestoreStateAsync(config.OutputPath, cancellationToken).ConfigureAwait(false);
             }
@@ -370,7 +370,7 @@ public partial class KiotaBuilder
             null => string.Empty,
             _ => await openApiDocument.GetHashCodeAsync(cancellationToken).ConfigureAwait(false),
         };
-        if (!config.SkipWorkspace)
+        if (!config.NoWorkspace)
             await workspaceManagementService.UpdateStateFromConfigurationAsync(config, hashCode, openApiTree?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], descriptionStream, cancellationToken).ConfigureAwait(false);
         StopLogAndReset(sw, $"step {++stepId} - writing lock file - took");
     }
