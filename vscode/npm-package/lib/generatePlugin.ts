@@ -38,6 +38,7 @@ export interface PluginGenerationOptions {
  * @param {boolean} [pluginGenerationOptions.clearCache] - Whether to clear the cache before generation.
  * @param {boolean} [pluginGenerationOptions.cleanOutput] - Whether to clean the output directory before generation.
  * @param {string[]} [pluginGenerationOptions.disabledValidationRules] - The validation rules to disable during generation.
+ * @param {boolean} [pluginGenerationOptions.noWorkspace] - Whether to generate without a workspace.
  * @param {PluginAuthType | null} [pluginGenerationOptions.pluginAuthType] - The authentication type for the plugin, if any.
  * @param {string} [pluginGenerationOptions.pluginAuthRefid] - The reference ID for the plugin authentication, if any.
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
