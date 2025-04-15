@@ -142,6 +142,8 @@ public class GenerationConfiguration : ICloneable
         get; set;
     }
 
+    public bool SkipWorkspace { get; set; }
+
     public int MaxDegreeOfParallelism { get; set; } = -1;
     public object Clone()
     {

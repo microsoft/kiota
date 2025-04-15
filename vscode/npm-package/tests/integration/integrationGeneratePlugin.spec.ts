@@ -2,10 +2,114 @@ import path from 'path';
 import { generatePlugin } from '../../lib/generatePlugin';
 import { getKiotaTree } from '../../lib/getKiotaTree';
 import { getPluginManifest } from '../../lib/getPluginManifest';
-import { KiotaPluginType, ConsumerOperation } from '../../types';
+import { KiotaPluginType, ConsumerOperation, LogLevel } from '../../types';
 import { PluginAuthType } from '../../types';
+import { existsEqualOrGreaterThanLevelLogs } from '../assertUtils';
 
 describe("GeneratePlugin", () => {
+
+  test('generatePlugin_withoutWorkspaceAddOperationForExisting', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const outputPath = './.tests_output';
+    const pluginName = 'withoutWorkspaceAddOperationForExisting';
+
+    const pluginType = KiotaPluginType.ApiPlugin;
+    const actual = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Generate,
+      workingDirectory: '',
+      skipWorkspace: true,
+    });
+    expect(actual).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+
+    // Second call to generatePlugin with the same parameters should raise an error
+    const actual2 = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Add,
+      workingDirectory: '',
+      skipWorkspace: true,
+    });
+    expect(actual2).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.error)).toBeTruthy();
+
+    if (!actual?.aiPlugin) {
+      throw new Error('aiPlugin should be defined');
+    }
+    const actualPluginManifest = await getPluginManifest({
+      descriptionPath: actual?.aiPlugin
+    });
+    expect(actualPluginManifest).toBeDefined();
+
+    if (!actual?.openAPISpec) {
+      throw new Error('descriptionPath should be defined');
+    }
+    const actualApiManifest = await getKiotaTree({
+      descriptionPath: actual?.openAPISpec,
+    });
+    expect(actualApiManifest).toBeDefined();
+  });
+
+  test('generatePlugin_withWorkspaceAddOperationForExisting', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const outputPath = './.tests_output';
+    const pluginName = 'withWorkspaceAddOperationForExisting';
+
+    const pluginType = KiotaPluginType.ApiPlugin;
+    const actual = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Generate,
+      workingDirectory: '',
+      skipWorkspace: false,
+    });
+    expect(actual).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+
+    // Second call to generatePlugin with the same parameters should raise an error
+    const actual2 = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Add,
+      workingDirectory: '',
+      skipWorkspace: false,
+    });
+    expect(actual2).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.error)).toBeTruthy();
+
+    if (!actual?.aiPlugin) {
+      throw new Error('aiPlugin should be defined');
+    }
+    const actualPluginManifest = await getPluginManifest({
+      descriptionPath: actual?.aiPlugin
+    });
+    expect(actualPluginManifest).toBeDefined();
+
+    if (!actual?.openAPISpec) {
+      throw new Error('descriptionPath should be defined');
+    }
+    const actualApiManifest = await getKiotaTree({
+      descriptionPath: actual?.openAPISpec,
+    });
+    expect(actualApiManifest).toBeDefined();
+  });
+
   test('generatePlugin_Simple', async () => {
     const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const outputPath = './.tests_output';
@@ -18,9 +122,12 @@ describe("GeneratePlugin", () => {
       pluginType: pluginType,
       pluginName: 'test3',
       operation: ConsumerOperation.Generate,
-      workingDirectory: ''
+      workingDirectory: '',
+      skipWorkspace: true,
     });
     expect(actual).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     if (!actual?.aiPlugin) {
       throw new Error('aiPlugin should be defined');
