@@ -174,6 +174,7 @@ public class GenerationConfiguration : ICloneable
             IncludePluginExtensions = IncludePluginExtensions,
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
             SkipGeneration = SkipGeneration,
+            NoWorkspace = NoWorkspace,
             Operation = Operation,
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
