@@ -247,6 +247,7 @@ export interface GenerationConfiguration {
   usesBackingStore: boolean;
   pluginTypes: KiotaPluginType[];
   operation: ConsumerOperation;
+  noWorkspace?: boolean,
   pluginAuthRefid?: string;
   pluginAuthType?: PluginAuthType | null;
 }
