@@ -660,15 +660,15 @@ public partial class PluginsGenerationService
             return capabilities;
         }
 
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
-        if (responseSemantics != null)
+
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name) ??
+            GetResponseSemanticsFromTemplate(openApiOperation);
+
+        return new FunctionCapabilities
         {
-            return new FunctionCapabilities
-            {
-                ResponseSemantics = responseSemantics
-            };
-        }
-        return null;
+            ResponseSemantics = responseSemantics
+        };
+
     }
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
@@ -751,5 +751,45 @@ public partial class PluginsGenerationService
         }
 
         return null;
+    }
+
+    private static ResponseSemantics? GetResponseSemanticsFromTemplate(OpenApiOperation openApiOperation)
+    {
+
+        if (openApiOperation.Responses is null || openApiOperation.Responses.Count == 0)
+        {
+            return null;
+        }
+
+        if (!openApiOperation.Responses.TryGetValue("200", out var response) || response is null)
+        {
+            return null;
+        }
+
+        if (response.Content is null || response.Content.Count == 0)
+        {
+            return null;
+        }
+
+        var schema = response.Content["application/json"]?.Schema;
+        if (schema is null)
+        {
+            return null;
+        }
+
+        var staticTemplateNode = new JsonObject
+        {
+            ["file"] = "./adaptive-card.json"
+        };
+
+        using JsonDocument doc = JsonDocument.Parse(staticTemplateNode.ToJsonString());
+        JsonElement staticTemplate = doc.RootElement.Clone();
+        var responseSemantics = new ResponseSemantics()
+        {
+            DataPath = "$",
+            StaticTemplate = staticTemplate
+        };
+
+        return responseSemantics;
     }
 }

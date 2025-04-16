@@ -412,7 +412,7 @@ components:
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
         Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
-        Assert.Null(resultingManifest.Document.Functions[1].Capabilities);// no function capabilities is added if no adaptive card
+        Assert.Null(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics);// no response semantics is added if no adaptive card
     }
 
 
@@ -869,8 +869,8 @@ paths:
         Assert.Contains("sensitiveData", resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling);
         Assert.Contains("personalData", resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling);
 
-        // Second function has no capabilities
-        Assert.Null(resultingManifest.Document.Functions[1].Capabilities);
+        // Second function has no response semantics
+        Assert.Null(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics);
     }
 
     [Fact]
