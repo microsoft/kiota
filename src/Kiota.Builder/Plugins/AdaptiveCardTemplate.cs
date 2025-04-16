@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Plugins
 {
+
     internal class AdaptiveCardTemplate
     {
+        private readonly ILogger<KiotaBuilder> Logger;
         private string AdaptiveCard => @"
             {
                 ""$schema"": ""http://adaptivecards.io/schemas/adaptive-card.json"",
@@ -97,6 +100,10 @@ namespace Kiota.Builder.Plugins
                 ]
             }";
 
+        public AdaptiveCardTemplate(ILogger<KiotaBuilder> logger)
+        {
+            Logger = logger;
+        }
 
         public void Write(string filePath)
         {
@@ -104,9 +111,9 @@ namespace Kiota.Builder.Plugins
             {
                 File.WriteAllText(filePath, AdaptiveCard);
             }
-            catch (JsonException ex)
+            catch (JsonException e)
             {
-                Console.WriteLine($"Invalid JSON: {ex.Message}");
+                Logger.LogCritical("Failed to add adaptive-card.json {Message}", e.Message);
             }
         }
     }

@@ -93,7 +93,7 @@ public partial class PluginsGenerationService
                     if (shouldGenerateTemplate)
                     {
                         var adaptiveCardOutputPath = Path.Combine(Configuration.OutputPath, "adaptive-card.json");
-                        new AdaptiveCardTemplate().Write(adaptiveCardOutputPath);
+                        new AdaptiveCardTemplate(Logger).Write(adaptiveCardOutputPath);
                     }
 
                     break;
