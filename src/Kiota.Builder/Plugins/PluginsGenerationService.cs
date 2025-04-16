@@ -88,6 +88,14 @@ public partial class PluginsGenerationService
                 case PluginType.APIPlugin:
                     var pluginDocument = GetManifestDocument(descriptionRelativePath);
                     pluginDocument.Write(writer);
+
+                    var shouldGenerateTemplate = pluginDocument.Functions.Any(static x => x.Capabilities?.ResponseSemantics?.StaticTemplate is JsonElement template && template.TryGetProperty("file", out _));
+                    if (shouldGenerateTemplate)
+                    {
+                        var adaptiveCardOutputPath = Path.Combine(Configuration.OutputPath, "adaptive-card.json");
+                        new AdaptiveCardTemplate().Write(adaptiveCardOutputPath);
+                    }
+
                     break;
                 case PluginType.APIManifest:
                     var apiManifest = new ApiManifestDocument("application"); //TODO add application name
