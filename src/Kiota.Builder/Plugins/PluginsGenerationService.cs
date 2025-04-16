@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -545,7 +545,6 @@ public partial class PluginsGenerationService
                     States = GetStatesFromOperation(operation),
                     Capabilities = GetFunctionCapabilitiesFromOperation(operation, shouldGenerateAdaptiveCards),
                 };
-
            
 
                 functions.Add(function);
@@ -657,7 +656,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation, bool? shouldGenerateAdaptiveCards = false)
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation, bool shouldGenerateAdaptiveCards = false)
     {
         var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
         if (capabilities != null)
@@ -677,7 +676,7 @@ public partial class PluginsGenerationService
         if (shouldGenerateAdaptiveCards)
         {
             var generator = new AdaptiveCardGenerator();
-            var card = generator.GenerateAdaptiveCard(operation);
+            var card = generator.GenerateAdaptiveCard(openApiOperation);
             return new FunctionCapabilities
             {
                 ResponseSemantics = new ResponseSemantics
