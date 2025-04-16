@@ -40,14 +40,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 9.x
       - name: Compile the CLI in debug mode
         run: |
           dotnet restore ./src/kiota
           dotnet build ./src/kiota
       - name: Run the CLI
         run: |
-          curl -o petstore.yaml https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml
+          curl -o petstore.yaml https://raw.githubusercontent.com/OAI/OpenAPI-Specification/refs/heads/main/_archive_/schemas/v3.0/pass/petstore.yaml
           curl -o twitter.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/twitter.com/current/2.61/openapi.json
           curl -o notion.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/notion.com/1.0.0/openapi.json
           curl -o stripe.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/stripe.com/2022-11-15/openapi.json
@@ -59,13 +59,13 @@ jobs:
           nohup sh -c "for i in 1 2 3 4 5 6 7 8 9 10; do while : ; do : ; done & done" > /dev/null 2> /dev/null &
           for ((n=0;n<100;n++))
           do
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net8.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java --dvr all
           done

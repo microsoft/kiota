@@ -4,7 +4,7 @@
 
 Context: you're a developer working on the extension, and you want to debug/step through the extension code.
 
-1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -c Release -r <rid> -o ./vscode/microsoft-kiota/.kiotabin/<kiotaVersionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and kiotaVersionInPackage is the kiotaVersion field in `vscode/microsoft-kiota/package.json`.
+1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Release -r <rid> -o ./vscode/microsoft-kiota/.kiotabin/<kiotaVersionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and kiotaVersionInPackage is the kiotaVersion field in `vscode/microsoft-kiota/package.json`.
 1. in `vscode/microsoft-kiota` run `code . && npm i`
 1. in the code instance that was opened at step 2, just press f5
 
@@ -15,7 +15,7 @@ Context: you're most likely a program manager eager to demo the latest bits from
 ### Pre-requisites
 
 - GitHub CLI `winget install GitHub.CLI`
-- dotnet 8 `winget install Microsoft.DotNet.SDK.8`
+- dotnet 9 `winget install Microsoft.DotNet.SDK.9`
 - node 20 `winget install CoreyButler.NVMforWindows && nvm install lts && nvm use lts`
 - vsce & TypeScript `npm i -g typescript @vscode/vsce`
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Java;
@@ -86,7 +87,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
             "sbyte" => "Short",
             "decimal" or "Decimal" => "BigDecimal",
             "void" or "boolean" when !type.IsNullable => type.Name, //little casing hack
-            "binary" or "base64" or "base64url" or "Base64url" => "byte[]",
+            "binary" or "Binary" or "base64" or "Base64" or "base64url" or "Base64url" => "byte[]",
             "Guid" => "UUID",
             _ when type.Name.Contains('.', StringComparison.OrdinalIgnoreCase) => type.Name, // casing
             _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
@@ -148,7 +149,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ?
             originalDescription :
-            nonAsciiReplaceRegex().Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase), string.Empty);
+            nonAsciiReplaceRegex().Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase), string.Empty).CleanupXMLString();
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {

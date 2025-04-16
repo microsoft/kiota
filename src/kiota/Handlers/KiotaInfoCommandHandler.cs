@@ -1,16 +1,27 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.CommandLine.Rendering;
 using System.CommandLine.Rendering.Views;
+using System.Diagnostics;
+using kiota.Extension;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Writers;
 
 namespace kiota.Handlers;
-internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
+internal class
+    KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
 {
+    private readonly KeyValuePair<string, object?>[] _commonTags =
+    [
+        new(TelemetryLabels.TagCommandName, "info"),
+        new(TelemetryLabels.TagCommandRevision, 1)
+    ];
     public required Option<string> DescriptionOption
     {
         get; init;
@@ -46,15 +57,42 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
-        string manifest = context.ParseResult.GetValueForOption(ManifestOption) ?? string.Empty;
+        // Span start time
+        Stopwatch? stopwatch = Stopwatch.StartNew();
+        var startTime = DateTimeOffset.UtcNow;
+        // Get options
+        string? openapi0 = context.ParseResult.GetValueForOption(DescriptionOption);
+        string manifest = context.ParseResult.GetValueForOption(ManifestOption).OrEmpty();
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
-        string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
+        string? searchTerm0 = context.ParseResult.GetValueForOption(SearchTermOption);
+        string? version0 = context.ParseResult.GetValueForOption(VersionOption);
         bool json = context.ParseResult.GetValueForOption(JsonOption);
-        DependencyType[] dependencyTypes = context.ParseResult.GetValueForOption(DependencyTypesOption) ?? [];
+        DependencyType[]? dependencyTypes0 = context.ParseResult.GetValueForOption(DependencyTypesOption);
         GenerationLanguage? language = context.ParseResult.GetValueForOption(GenerationLanguage);
+        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
+
+        var host = context.GetHost();
+        var instrumentation = host.Services.GetService<Instrumentation>();
+        var activitySource = instrumentation?.ActivitySource;
+
+        CreateTelemetryTags(activitySource, searchTerm0, openapi0, version0, language, clearCache,
+            logLevel, out var tags);
+        // Start span
+        using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanInfoCommand,
+            startTime: startTime,
+            tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
+        // Command duration meter
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
+        if (meterRuntime is null) stopwatch = null;
+        // Add this run to the command execution counter
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
+
+        string openapi = openapi0.OrEmpty();
+        string searchTerm = searchTerm0.OrEmpty();
+        string version = version0.OrEmpty();
+        DependencyType[] dependencyTypes = dependencyTypes0.OrEmpty();
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
@@ -83,6 +121,7 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
 
             var instructions = Configuration.Languages;
             if (!string.IsNullOrEmpty(openapi))
+            {
                 try
                 {
                     var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
@@ -92,14 +131,22 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
                 }
                 catch (Exception ex)
                 {
+                    invokeActivity?.SetStatus(ActivityStatusCode.Error);
+                    invokeActivity?.AddException(ex);
 #if DEBUG
-                    logger.LogCritical(ex, "error getting information from the description: {exceptionMessage}", ex.Message);
+                    logger.LogCritical(ex, "error getting information from the description: {exceptionMessage}",
+                        ex.Message);
                     throw; // so debug tools go straight to the source of the exception when attached
 #else
                     logger.LogCritical("error getting information from the description: {exceptionMessage}", ex.Message);
                     return 1;
 #endif
                 }
+                finally
+                {
+                    if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
+                }
+            }
             ShowLanguageInformation(language.Value, instructions, json, dependencyTypes);
             return 0;
         }
@@ -165,5 +212,23 @@ internal class KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
         {
             DisplayInfo($"No information for {language}.");
         }
+    }
+
+    private static void CreateTelemetryTags(ActivitySource? activitySource, string? searchTerm, string? openapi,
+        string? version, GenerationLanguage? language, bool clearCache, LogLevel? logLevel,
+        out List<KeyValuePair<string, object?>>? tags)
+    {
+        // set up telemetry tags
+        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(7)
+        {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
+            new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
+        } : null;
+        if (searchTerm is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.search_term", redacted));
+        if (openapi is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.openapi", redacted));
+        if (version is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.version", redacted));
+        if (language is { } lang) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.language", lang.ToString("G")));
+        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

@@ -10,8 +10,8 @@ public static class IListExtensions
     /// <typeparam name="T">The contained item type.</typeparam>
     /// <param name="items">The items.</param>
     /// <returns>The only element or null.</returns>
-    internal static T? OnlyOneOrDefault<T>(this IList<T> items) =>
-        items.Count == 1 ? items[0] : default;
+    internal static T? OnlyOneOrDefault<T>(this IList<T>? items) =>
+        items is { Count: 1 } ? items[0] : default;
 
     /// <summary>
     /// Adds the provided <paramref name="values"/> to this list.

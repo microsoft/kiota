@@ -8,8 +8,11 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 using Moq;
 using Xunit;
+using NetHttpMethod = System.Net.Http.HttpMethod;
 
 namespace Kiota.Builder.Tests;
 
@@ -81,23 +84,6 @@ public sealed class ContentTypeMappingTests : IDisposable
     [Theory]
     public void GeneratesTheRightReturnTypeBasedOnContentAndStatus(string contentType, string statusCode, bool addModel, string acceptedContentType, string returnType)
     {
-        var myObjectSchema = new OpenApiSchema
-        {
-            Type = "object",
-            Properties = new Dictionary<string, OpenApiSchema> {
-                {
-                    "id", new OpenApiSchema {
-                        Type = "string",
-                    }
-                }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
-            UnresolvedReference = false
-        };
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -105,14 +91,14 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 [statusCode] = new OpenApiResponse {
                                     Content = {
                                         [contentType] = new OpenApiMediaType {
-                                            Schema = addModel ? myObjectSchema : null
+                                            Schema = addModel ? new OpenApiSchemaReference("myobject") : null
                                         }
                                     }
                                 },
@@ -123,13 +109,25 @@ public sealed class ContentTypeMappingTests : IDisposable
             },
             Components = new()
             {
-                Schemas = new Dictionary<string, OpenApiSchema> {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
                     {
-                        "myobject", myObjectSchema
+                        "myobject", new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.Object,
+                            Properties = new Dictionary<string, IOpenApiSchema> {
+                                {
+                                    "id", new OpenApiSchema {
+                                        Type = JsonSchemaType.String,
+                                    }
+                                }
+                            },
+                        }
                     }
                 }
             }
         };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
@@ -175,23 +173,6 @@ public sealed class ContentTypeMappingTests : IDisposable
     [Theory]
     public void GeneratesTheRightParameterTypeBasedOnContentAndStatus(string contentType, bool addModel, string acceptedContentType, string parameterType)
     {
-        var myObjectSchema = new OpenApiSchema
-        {
-            Type = "object",
-            Properties = new Dictionary<string, OpenApiSchema> {
-                {
-                    "id", new OpenApiSchema {
-                        Type = "string",
-                    }
-                }
-            },
-            Reference = new OpenApiReference
-            {
-                Id = "myobject",
-                Type = ReferenceType.Schema
-            },
-            UnresolvedReference = false
-        };
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -199,12 +180,12 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody {
                                 Content = {
                                     [contentType] = new OpenApiMediaType {
-                                        Schema = addModel ? myObjectSchema : null
+                                        Schema = addModel ? new OpenApiSchemaReference("myobject") : null
                                     }
                                 }
                             },
@@ -218,13 +199,25 @@ public sealed class ContentTypeMappingTests : IDisposable
             },
             Components = new()
             {
-                Schemas = new Dictionary<string, OpenApiSchema> {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
                     {
-                        "myobject", myObjectSchema
+                        "myobject", new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.Object,
+                            Properties = new Dictionary<string, IOpenApiSchema> {
+                                {
+                                    "id", new OpenApiSchema {
+                                        Type = JsonSchemaType.String,
+                                    }
+                                }
+                            },
+                        }
                     }
                 }
             }
         };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
@@ -262,28 +255,13 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Get] = new OpenApiOperation
+                        [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse {
                                     Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
-                                                Type = "object",
-                                                Properties = new Dictionary<string, OpenApiSchema> {
-                                                    {
-                                                        "id", new OpenApiSchema {
-                                                            Type = "string",
-                                                        }
-                                                    }
-                                                },
-                                                Reference = new OpenApiReference
-                                                {
-                                                    Id = "myobject",
-                                                    Type = ReferenceType.Schema
-                                                },
-                                                UnresolvedReference = false
-                                            }
+                                            Schema = new OpenApiSchemaReference("myobject"),
                                         }
                                     }).ToDictionary(x => x.Key, x => x.value)
                                 },
@@ -294,28 +272,24 @@ public sealed class ContentTypeMappingTests : IDisposable
             },
             Components = new()
             {
-                Schemas = new Dictionary<string, OpenApiSchema> {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
                     {
                         "myobject", new OpenApiSchema {
-                            Type = "object",
-                            Properties = new Dictionary<string, OpenApiSchema> {
+                            Type = JsonSchemaType.Object,
+                            Properties = new Dictionary<string, IOpenApiSchema> {
                                 {
                                     "id", new OpenApiSchema {
-                                        Type = "string",
+                                        Type = JsonSchemaType.String,
                                     }
                                 }
                             },
-                            Reference = new OpenApiReference
-                            {
-                                Id = "myobject",
-                                Type = ReferenceType.Schema
-                            },
-                            UnresolvedReference = false
                         }
                     }
                 }
             }
         };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,
@@ -354,27 +328,12 @@ public sealed class ContentTypeMappingTests : IDisposable
                 ["answer"] = new OpenApiPathItem
                 {
                     Operations = {
-                        [OperationType.Post] = new OpenApiOperation
+                        [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody
                             {
                                 Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
-                                        Schema = new OpenApiSchema {
-                                            Type = "object",
-                                            Properties = new Dictionary<string, OpenApiSchema> {
-                                                {
-                                                    "id", new OpenApiSchema {
-                                                        Type = "string",
-                                                    }
-                                                }
-                                            },
-                                            Reference = new OpenApiReference
-                                            {
-                                                Id = "myobject",
-                                                Type = ReferenceType.Schema
-                                            },
-                                            UnresolvedReference = false
-                                        }
+                                        Schema = new OpenApiSchemaReference("myobject"),
                                     }
                                 }).ToDictionary(x => x.Key, x => x.value)
                             },
@@ -384,28 +343,24 @@ public sealed class ContentTypeMappingTests : IDisposable
             },
             Components = new()
             {
-                Schemas = new Dictionary<string, OpenApiSchema> {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
                     {
                         "myobject", new OpenApiSchema {
-                            Type = "object",
-                            Properties = new Dictionary<string, OpenApiSchema> {
+                            Type = JsonSchemaType.Object,
+                            Properties = new Dictionary<string, IOpenApiSchema> {
                                 {
                                     "id", new OpenApiSchema {
-                                        Type = "string",
+                                        Type = JsonSchemaType.String,
                                     }
                                 }
                             },
-                            Reference = new OpenApiReference
-                            {
-                                Id = "myobject",
-                                Type = ReferenceType.Schema
-                            },
-                            UnresolvedReference = false
                         }
                     }
                 }
             }
         };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(
             mockLogger.Object,

@@ -579,8 +579,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
+            var secondArgument = "";
+            if (otherProp.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType)
+            {
+                secondArgument = ", (e) => e?.value";
+            }
             writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name} != null) {{");
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {booleanValue}{otherProp.Name});");
+            writer.WriteLine($"writer.{serializationMethodName}(null, {booleanValue}{otherProp.Name}{secondArgument});");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;
@@ -597,9 +602,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .ThenBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
+            var secondArgument = "";
+            if (otherProp.Type is CodeType currentType && currentType.TypeDefinition is CodeEnum enumType)
+            {
+                secondArgument = ", (e) => e?.value";
+            }
             var booleanValue = serializationMethodName == "writeBoolValue" ? "value:" : "";
             writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name} != null) {{");
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {booleanValue}{otherProp.Name});");
+            writer.WriteLine($"writer.{serializationMethodName}(null, {booleanValue}{otherProp.Name}{secondArgument});");
             writer.CloseBlock();
             if (!includeElse)
                 includeElse = true;

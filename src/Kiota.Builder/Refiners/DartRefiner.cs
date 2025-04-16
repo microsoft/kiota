@@ -289,6 +289,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
         {
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
+            currentProperty.SerializationName = currentProperty.Name;
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
@@ -314,6 +315,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else
         {
+            currentProperty.SerializationName = currentProperty.Name;
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();

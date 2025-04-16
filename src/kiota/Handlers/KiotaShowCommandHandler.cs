@@ -1,14 +1,24 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
+using System.Diagnostics;
 using System.Text;
+using kiota.Extension;
+using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Services;
 
 namespace kiota.Handlers;
 internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 {
+    private readonly KeyValuePair<string, object?>[] _commonTags =
+    [
+        new(TelemetryLabels.TagCommandName, "show"),
+        new(TelemetryLabels.TagCommandRevision, 1)
+    ];
     public required Option<string> DescriptionOption
     {
         get; init;
@@ -48,17 +58,44 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
-        string openapi = context.ParseResult.GetValueForOption(DescriptionOption) ?? string.Empty;
-        string manifest = context.ParseResult.GetValueForOption(ManifestOption) ?? string.Empty;
-        string searchTerm = context.ParseResult.GetValueForOption(SearchTermOption) ?? string.Empty;
-        string version = context.ParseResult.GetValueForOption(VersionOption) ?? string.Empty;
+        // Span start time
+        Stopwatch? stopwatch = Stopwatch.StartNew();
+        var startTime = DateTimeOffset.UtcNow;
+        // Get options
+        string? openapi0 = context.ParseResult.GetValueForOption(DescriptionOption);
+        string? manifest0 = context.ParseResult.GetValueForOption(ManifestOption);
+        string? searchTerm0 = context.ParseResult.GetValueForOption(SearchTermOption);
+        string? version0 = context.ParseResult.GetValueForOption(VersionOption);
         uint maxDepth = context.ParseResult.GetValueForOption(MaxDepthOption);
-        List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? new List<string>();
-        List<string> excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption) ?? new List<string>();
+        List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
+        List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
         bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
+        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
+        var host = context.GetHost();
+        var instrumentation = host.Services.GetService<Instrumentation>();
+        var activitySource = instrumentation?.ActivitySource;
+
+        CreateTelemetryTags(activitySource, searchTerm0, version0, clearCache, includePatterns0, excludePatterns0, logLevel, out var tags);
+        // Start span
+        using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanShowCommand,
+            startTime: startTime,
+            tags: _commonTags.ConcatNullable(tags)?.Concat(Telemetry.Telemetry.GetThreadTags()));
+        // Command duration meter
+        var meterRuntime = instrumentation?.CreateCommandDurationHistogram();
+        if (meterRuntime is null) stopwatch = null;
+        // Add this run to the command execution counter
+        var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
+        instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
+
+        string openapi = openapi0.OrEmpty();
+        string manifest = manifest0.OrEmpty();
+        string searchTerm = searchTerm0.OrEmpty();
+        string version = version0.OrEmpty();
+        var includePatterns = includePatterns0.OrEmpty();
+        var excludePatterns = excludePatterns0.OrEmpty();
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
 
         Configuration.Search.ClearCache = clearCache;
@@ -103,6 +140,8 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             }
             catch (Exception ex)
             {
+                invokeActivity?.SetStatus(ActivityStatusCode.Error);
+                invokeActivity?.AddException(ex);
 #if DEBUG
                 logger.LogCritical(ex, "error showing the description: {exceptionMessage}", ex.Message);
                 throw; // so debug tools go straight to the source of the exception when attached
@@ -111,8 +150,13 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
                 return 1;
 #endif
             }
+            finally
+            {
+                if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
+            }
 
         }
+        invokeActivity?.SetStatus(ActivityStatusCode.Ok);
         return 0;
     }
     private const string Cross = " ├─";
@@ -151,5 +195,26 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         }
 
         RenderNode(node, maxDepth, builder, indent, nodeDepth + 1);
+    }
+
+    private static void CreateTelemetryTags(ActivitySource? activitySource, string? searchTerm, string? version,
+        bool clearCache, List<string>? includePatterns, List<string>? excludePatterns, LogLevel? logLevel,
+        out List<KeyValuePair<string, object?>>? tags)
+    {
+        // set up telemetry tags
+        const string redacted = TelemetryLabels.RedactedValuePlaceholder;
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(9)
+        {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
+            new($"{TelemetryLabels.TagCommandParams}.openapi", redacted),
+            new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
+            new($"{TelemetryLabels.TagCommandParams}.max_depth", redacted),
+        } : null;
+
+        if (searchTerm is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.search_key", redacted));
+        if (version is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.version", redacted));
+        if (includePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.include_path", redacted));
+        if (excludePatterns is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.exclude_path", redacted));
+        if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

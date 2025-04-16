@@ -6,7 +6,8 @@ import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
 import { WorkspaceGenerationContext } from "../../types/WorkspaceGenerationContext";
 import { isClientType, isPluginType } from "../../util";
-import { confirmOverride } from "../../utilities/regeneration";
+import { confirmDeletionOnCleanOutput } from "../../utilities/generation";
+import { confirmOverwriteOnRegenerate } from "../../utilities/regeneration";
 import { Command } from "../Command";
 import { RegenerateService } from "./regenerate.service";
 
@@ -21,12 +22,17 @@ export class RegenerateCommand extends Command {
   }
 
   public async execute({ generationType, clientOrPluginKey, clientOrPluginObject }: WorkspaceGenerationContext): Promise<void> {
-    const regenerate = await confirmOverride();
-    if (!regenerate) {
+    const settings = getExtensionSettings(extensionId);
+    if (settings.cleanOutput) {
+      const accept = await confirmDeletionOnCleanOutput();
+      if (!accept) {
+        // cancel generation and open settings
+        return vscode.commands.executeCommand('workbench.action.openSettings', 'kiota.cleanOutput.enabled');
+      }
+    } else if (!(await confirmOverwriteOnRegenerate())) {
       return;
     }
 
-    const settings = getExtensionSettings(extensionId);
     const workspaceJson = vscode.workspace.textDocuments.find(doc => doc.fileName.endsWith(KIOTA_WORKSPACE_FILE));
     if (workspaceJson && workspaceJson.isDirty) {
       await vscode.window.showInformationMessage(
@@ -46,6 +52,6 @@ export class RegenerateCommand extends Command {
         await regenerateService.regenerateTeamsApp(workspaceJson, clientOrPluginKey);
       }
     }
-    await vscode.commands.executeCommand('kiota.workspace.refresh'); 
+    await vscode.commands.executeCommand('kiota.workspace.refresh');
   }
 }

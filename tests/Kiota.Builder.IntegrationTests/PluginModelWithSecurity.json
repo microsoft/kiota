@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
+  "schema_version": "v2.1",
+  "name_for_human": "Repair Service",
+  "description_for_human": "Description for Repair Service",
+  "description_for_model": "Description for Repair Service",
+  "contact_email": "publisher-email@example.com",
+  "namespace": "withsecurity",
+  "capabilities": {
+    "conversation_starters": [
+      {
+        "text": "List all repairs with oauth"
+      }
+    ]
+  },
+  "functions": [
+    {
+      "name": "listRepairs",
+      "description": "Returns a list of repairs with their details and images"
+    }
+  ],
+  "runtimes": [
+    {
+      "type": "OpenApi",
+      "auth": {
+        "type": "OAuthPluginVault",
+        "reference_id": "{oAuth2AuthCode_REGISTRATION_ID}"
+      },
+      "spec": {
+        "url": "withsecurity-openapi.yml"
+      },
+      "run_for_functions": [
+        "listRepairs"
+      ]
+    }
+  ]
+}

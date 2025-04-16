@@ -1,8 +1,8 @@
-import * as path from 'path';
+import { KiotaGenerationLanguage, KiotaPluginType } from '@microsoft/kiota';
 import { promises as fs } from 'fs';
+import * as path from 'path';
 
 import { GenerateState } from "../modules/steps/generateSteps";
-import { KiotaGenerationLanguage, KiotaPluginType } from "../types/enums";
 import { allGenerationLanguagesToString, getSanitizedString, parseGenerationLanguage, parsePluginType } from "../util";
 import { createTemporaryFolder } from "./temporary-folder";
 

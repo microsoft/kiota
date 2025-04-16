@@ -195,32 +195,83 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private static void WriteApiConstructorBody(CodeFile parentFile, CodeMethod method, LanguageWriter writer)
     {
-        WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
-        WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        if (method.Parameters.OfKind(CodeParameterKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase() is not string requestAdapterArgumentName) return;
+        if (method.Parameters.OfKind(CodeParameterKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase() is not string
+            requestAdapterArgumentName) return;
+        writer.StartBlock($"if ({requestAdapterArgumentName} === undefined) {{");
+        writer.WriteLine($"throw new Error(\"{requestAdapterArgumentName} cannot be undefined\");");
+        writer.CloseBlock();
+
+        writer.WriteLine("let serializationWriterFactory : SerializationWriterFactoryRegistry");
+        writer.WriteLine("let parseNodeFactoryRegistry : ParseNodeFactoryRegistry");
+        writer.WriteLine("");
+
+        writer.StartBlock(
+            $"if ({requestAdapterArgumentName}.getParseNodeFactory() instanceof ParseNodeFactoryRegistry) {{");
+        writer.WriteLine(
+            $"parseNodeFactoryRegistry = {requestAdapterArgumentName}.getParseNodeFactory() as ParseNodeFactoryRegistry");
+        writer.DecreaseIndent();
+        writer.StartBlock("} else {");
+        writer.WriteLine(
+            $"throw new Error(\"{requestAdapterArgumentName}.getParseNodeFactory() is not a ParseNodeFactoryRegistry\")");
+        writer.CloseBlock();
+        writer.WriteLine("");
+
+        writer.StartBlock(
+            "if (requestAdapter.getSerializationWriterFactory() instanceof SerializationWriterFactoryRegistry) {");
+        writer.WriteLine(
+            $"serializationWriterFactory = {requestAdapterArgumentName}.getSerializationWriterFactory() as SerializationWriterFactoryRegistry");
+        writer.DecreaseIndent();
+        writer.StartBlock("} else {");
+        writer.WriteLine(
+            $"throw new Error(\"{requestAdapterArgumentName}.getSerializationWriterFactory() is not a SerializationWriterFactoryRegistry\")");
+        writer.CloseBlock();
+        writer.WriteLine("");
+
+        WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
+            "registerDefaultSerializer");
+        writer.WriteLine("");
+        writer.WriteLine($"const backingStoreFactory = {requestAdapterArgumentName}.getBackingStoreFactory();");
+        WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
+            "registerDefaultDeserializer", "backingStoreFactory");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            writer.StartBlock($"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === null || {requestAdapterArgumentName}.baseUrl === \"\") {{");
+            writer.StartBlock(
+                $"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === null || {requestAdapterArgumentName}.baseUrl === \"\") {{");
             writer.WriteLine($"{requestAdapterArgumentName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
         }
+
         writer.StartBlock($"const pathParameters: Record<string, unknown> = {{");
         writer.WriteLine($"\"baseurl\": {requestAdapterArgumentName}.baseUrl,");
         writer.CloseBlock("};");
         if (method.Parameters.OfKind(CodeParameterKind.BackingStore)?.Name is string backingStoreParameterName)
-            writer.WriteLine($"{requestAdapterArgumentName}.enableBackingStore({backingStoreParameterName.ToFirstCharacterLowerCase()});");
-        if (parentFile.Interfaces.FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface codeInterface)
+            writer.WriteLine(
+                $"{requestAdapterArgumentName}.enableBackingStore({backingStoreParameterName.ToFirstCharacterLowerCase()});");
+        if (parentFile.Interfaces.FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is
+            CodeInterface codeInterface)
         {
-            var navigationMetadataConstantName = parentFile.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.NavigationMetadataSuffix}", false) is { } navConstant ? navConstant.Name.ToFirstCharacterUpperCase() : "undefined";
-            var requestsMetadataConstantName = parentFile.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.RequestsMetadataSuffix}", false) is { } reqConstant ? reqConstant.Name.ToFirstCharacterUpperCase() : "undefined";
-            writer.WriteLine($"return apiClientProxifier<{codeInterface.Name.ToFirstCharacterUpperCase()}>({requestAdapterArgumentName}, pathParameters, {navigationMetadataConstantName}, {requestsMetadataConstantName});");
+            var navigationMetadataConstantName =
+                parentFile.FindChildByName<CodeConstant>(
+                    $"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.NavigationMetadataSuffix}",
+                    false) is { } navConstant
+                    ? navConstant.Name.ToFirstCharacterUpperCase()
+                    : "undefined";
+            var requestsMetadataConstantName =
+                parentFile.FindChildByName<CodeConstant>(
+                        $"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.RequestsMetadataSuffix}",
+                        false) is
+                { } reqConstant
+                    ? reqConstant.Name.ToFirstCharacterUpperCase()
+                    : "undefined";
+            writer.WriteLine(
+                $"return apiClientProxifier<{codeInterface.Name.ToFirstCharacterUpperCase()}>({requestAdapterArgumentName}, pathParameters, {navigationMetadataConstantName}, {requestsMetadataConstantName});");
         }
     }
-    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
+    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string objectName, string methodName, params string[] additionalParam)
     {
         if (serializationModules != null)
             foreach (var module in serializationModules)
-                writer.WriteLine($"{methodName}({module});");
+                writer.WriteLine($"{objectName}.{methodName}({module}{(additionalParam != null && additionalParam.Length > 0 ? ", " + string.Join(", ", additionalParam) : string.Empty)});");
     }
 
     private void WriteFactoryMethod(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)
@@ -330,9 +381,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private string FindFunctionInNameSpace(string functionName, CodeElement codeElement, CodeType returnType)
     {
-        var myNamespace = returnType.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>();
+        var myNamespace = returnType.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>() ?? throw new InvalidOperationException("Namespace not found for return type");
 
-        CodeFunction[] codeFunctions = myNamespace.FindChildrenByName<CodeFunction>(functionName).ToArray();
+        CodeFunction[] codeFunctions = [.. myNamespace.FindChildrenByName<CodeFunction>(functionName)];
 
         var codeFunction = Array.Find(codeFunctions,
             func => func.GetImmediateParentOfType<CodeNamespace>().Name == myNamespace.Name) ??
@@ -391,7 +442,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var serializationName = GetSerializationMethodName(codeProperty.Type, codeFunction.OriginalLocalMethod);
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
 
-
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
             var serializeName = GetSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
@@ -409,16 +459,15 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WritePropertySerializationStatement(CodeProperty codeProperty, string modelParamName, string? serializationName, string? defaultValueSuffix, CodeFunction codeFunction, LanguageWriter writer)
     {
         var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var composedType = GetOriginalComposedType(codeProperty.Type);
 
-        if (!string.IsNullOrWhiteSpace(spreadOperator))
+        if (isCollectionOfEnum)
             writer.WriteLine($"if({modelParamName}.{codePropertyName})");
         if (composedType is not null && (composedType.IsComposedOfPrimitives(IsPrimitiveType) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
             WriteSerializationStatementForComposedTypeProperty(composedType, modelParamName, codeFunction, writer, codeProperty, string.Empty);
         else
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
 
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
@@ -431,8 +480,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix)
     {
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var isCollectionOfEnum = IsCollectionOfEnum(codeProperty);
-        var spreadOperator = isCollectionOfEnum ? "..." : string.Empty;
 
         bool isFirst = true;
         foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType)))
@@ -446,7 +493,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 ? $"{isElse}if (Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}')) {{"
                 : $"{isElse}if ( typeof {modelParamName}.{codePropertyName} === \"{nodeType}\") {{");
 
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {spreadOperator}{modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
             writer.CloseBlock();
             isFirst = false;
         }
@@ -518,7 +565,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         return propType switch
         {
-            _ when propType.TypeDefinition is CodeEnum currentEnum => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags && !propType.IsCollection ? "[]" : string.Empty)}>",
+            _ when propType.TypeDefinition is CodeEnum currentEnum && !propType.IsCollection => $"writeEnumValue<{currentEnum.Name.ToFirstCharacterUpperCase()}{(currentEnum.Flags ? "[]" : string.Empty)}>",
+            _ when propType.TypeDefinition is CodeEnum currentEnum && propType.IsCollection => $"writeCollectionOfEnumValues<{currentEnum.Name.ToFirstCharacterUpperCase()}>",
             _ when conventions.StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "writeByteArrayValue",
             _ when propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None => propType.TypeDefinition == null ? $"writeCollectionOfPrimitiveValues<{propertyType}>" : "writeCollectionOfObjectValues",
             _ => null
@@ -617,7 +665,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var codeEnumOption = enumDefinition.Options.First(x =>
                 x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
                     StringComparison.OrdinalIgnoreCase));
-            return $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+            var enumDefault = $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+            if (!string.IsNullOrEmpty(enumDefault) && !enumDefault.EqualsIgnoreCase("\"null\"") && IsCollectionOfEnum(codeProperty))
+            {
+                enumDefault = "[" + enumDefault + "]";
+            }
+            return enumDefault;
         }
 
         // only string primitive should keep quotes

@@ -13,8 +13,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where Dart properties casing would change for serialization.
+- Fixed a bug where default response definitions were being considered for Media Type selection [#6413](https://github.com/microsoft/kiota/issues/6413)
+
+## [1.25.1] - 2025-04-03
+
+### Changed
+- Fixed a bug with http client generation where query parameters were being processed incorrectly. [#6268](https://github.com/microsoft/kiota/issues/6268)
+
+### Added
+- Extracted and created an npm package from the VS Code - Kiota interop module. [#6172](https://github.com/microsoft/kiota/pull/6172)
+
+- Added support for generating function capabilities in plugin manifest from x-ai-capabilities OpenApi extension. [#6369](https://github.com/microsoft/kiota/issues/6369)   
+
+- Added a comment on top of every golang file to indicate the file is machine generated so it can be excluded from various tools. [#6363](https://github.com/microsoft/kiota/issues/6363)
+
+### Changed
+
+- Fixed a bug with creating the correct runtime with auth using http bearer security scheme or when root auth is set. [#6357](https://github.com/microsoft/kiota/issues/6357)
+
+## [1.24.3] - 2025-03-26
+
+### Changed
+
+- Fixed a bug with reading adaptive card OpenAPI extension and writing to plugin manifest. [#6351](https://github.com/microsoft/kiota/issues/6351)
+- Fixed a critical bug with the vscode integration and the JSON RPC server.
+
+## [1.24.2] - 2025-03-25
+
+### Added
+
+### Changed
+
+- Fixed a bug following OpenAPI 3.1 support that lead to false warnings about unknown type/format pairs. [#6270](https://github.com/microsoft/kiota/issues/6270)
+- Fixed a bug where security scheme would be missing from plugins OpenAPI descriptions. [#6279](https://github.com/microsoft/kiota/issues/6279)
+- Fixed pet store description source.
+
+## [1.24.1] - 2025-03-13
+
+### Changed
+
+- Fixed docker images publishing
+
+## [1.24.0] - 2025-03-12
+
+### Added
+
+- Added support for OpenAPI 3.1. [#3914](https://github.com/microsoft/kiota/issues/3914)
+
+### Changed
+
+- Fixed mapping of Binary Types to array buffer in TypeScript. [#6124](https://github.com/microsoft/kiota/issues/6124)
+- Updated kiota generate classname flag validator to prevent invalid class names. [#6187](https://github.com/microsoft/kiota/issues/6187)
+- Fixed enum serialization for union and intersection types in Dart. [#6201](https://github.com/microsoft/kiota/pull/6201)
+- Added mapping for Bundle package in PHP to show up in Kiota commands. [#4636](https://github.com/microsoft/kiota/issues/4636)
+- Fixes javadoc warning present in generated Java code comments due to the presence of special XML character.
+
+## [1.23.0] - 2025-02-06
+
+### Added
+
+- Added support for net9 only installations of the dotnet tool. [#5887](https://github.com/microsoft/kiota/issues/5887)
+
+### Changed
+
+- Fixes serialization of collection of enums. [microsoft/kiota-typescript#1276](https://github.com/microsoft/kiota-typescript/issues/1276)
+
+## [1.22.3]
+
+### Added
+
+- Added dart generation to Visual Studio Code extension.
+
+### Changed
+
+- Fixed a bug in the VS Code extension deeplink with the API Center extension [#6004](https://github.com/microsoft/kiota/issues/6004)
 - Drops Python 3.8 support by removing deprecated type aliases from generated code. [microsoft/kiota-python#349](https://github.com/microsoft/kiota-python/issues/349)
-- Removes superfluous inline imports in serializer methods in Python Generation. 
+- Removes superfluous inline imports in serializer methods in Python Generation.
 
 ## [1.22.2]
 
@@ -1549,4 +1624,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 

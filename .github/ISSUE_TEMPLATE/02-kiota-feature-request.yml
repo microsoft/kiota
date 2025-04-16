@@ -31,6 +31,7 @@ body:
         - Ruby
         - TypeScript
         - Swift
+        - Dart
     validations:
       required: false
   - type: textarea

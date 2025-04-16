@@ -1,6 +1,6 @@
+import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 import { LogOutputChannel } from 'vscode';
-import { getLogEntriesForLevel, KiotaLogEntry, LogLevel } from '../kiotaInterop';
 
 export async function exportLogsAndShowErrors(result: KiotaLogEntry[], kiotaOutputChannel: LogOutputChannel): Promise<void> {
   const errorMessages = result
@@ -36,17 +36,6 @@ export function logFromLogLevel(entry: KiotaLogEntry, kiotaOutputChannel: LogOut
       kiotaOutputChannel.info(entry.message);
       break;
   }
-}
-
-export async function checkForSuccess(results: KiotaLogEntry[]) {
-  for (const result of results) {
-    if (result && result.message) {
-      if (result.message.includes("Generation completed successfully")) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 export function showLogs(kiotaOutputChannel: LogOutputChannel): void {

@@ -1,17 +1,17 @@
 ﻿using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Readers;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Reader;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
 public class MissingDiscriminatorTests
 {
     [Fact]
-    public void DoesntAddAWarningWhenBodyIsSimple()
+    public async Task DoesntAddAWarningWhenBodyIsSimple()
     {
-        var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -22,23 +22,18 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
                 type: string
                 format: int32";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
     }
     [Fact]
-    public void AddsWarningOnInlineSchemas()
+    public async Task AddsWarningOnInlineSchemas()
     {
-        var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -49,6 +44,7 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
@@ -62,18 +58,12 @@ paths:
                     properties:
                       type2:
                         type: string";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Single(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
     }
     [Fact]
-    public void AddsWarningOnComponentSchemas()
+    public async Task AddsWarningOnComponentSchemas()
     {
-        var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -101,22 +91,17 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/type3'";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Single(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddsWarningOnComponentSchemasWithDiscriminatorInformation()
+    public async Task DoesntAddsWarningOnComponentSchemasWithDiscriminatorInformation()
     {
-        var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -146,22 +131,17 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/type3'";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddsWarningOnComponentSchemasScalars()
+    public async Task DoesntAddsWarningOnComponentSchemasScalars()
     {
-        var rule = new MissingDiscriminator(new());
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -181,16 +161,22 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/type1'";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+    {
+        var rule = new MissingDiscriminator(new());
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+        var settings = new OpenApiReaderSettings();
+        settings.RuleSet.Add(typeof(OpenApiDocument), [rule]);
+        settings.AddYamlReader();
+        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+        return result.Diagnostic;
     }
 }

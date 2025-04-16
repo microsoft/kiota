@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-export async function confirmOverride(): Promise<boolean> {
+export async function confirmOverwriteOnRegenerate(): Promise<boolean> {
   const yesAnswer = vscode.l10n.t("Yes, override it");
   const confirmation = await vscode.window
     .showWarningMessage(

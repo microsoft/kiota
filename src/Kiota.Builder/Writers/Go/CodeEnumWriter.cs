@@ -14,7 +14,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         ArgumentNullException.ThrowIfNull(writer);
         if (!codeElement.Options.Any()) return;
         if (codeElement.Parent is CodeNamespace ns)
+        {
+            // always add a comment to the top of the file to indicate it's generated
+            conventions.WriteGeneratorComment(writer);
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
+        }
 
         var usings = codeElement.Usings.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         if (usings.Length > 0)

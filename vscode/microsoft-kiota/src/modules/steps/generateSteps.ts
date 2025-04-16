@@ -1,9 +1,9 @@
+import { allGenerationLanguages, generationLanguageToString, LanguagesInformation, maturityLevelToString } from '@microsoft/kiota';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { l10n, QuickPickItem, workspace } from 'vscode';
 
 import { BaseStepsState, MultiStepInput } from '.';
-import { allGenerationLanguages, generationLanguageToString, LanguagesInformation, maturityLevelToString } from '../../kiotaInterop';
 import { findAppPackageDirectory, getWorkspaceJsonDirectory } from '../../util';
 import { IntegrationParams, isDeeplinkEnabled } from '../../utilities/deep-linking';
 import { isTemporaryDirectory } from '../../utilities/temporary-folder';
@@ -52,18 +52,18 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
 
   let step = 1;
   const folderSelectionOption = l10n.t('Browse your output directory');
-  let inputOptions = [
-    { label: l10n.t('Default folder'), description: workspaceFolder },
-    { label: folderSelectionOption }
-  ];
+
+  function getOutputPath(workspaceFolder: string, clientName: string) {
+    const outputPath = path.join(workspaceFolder, clientName);
+    return [
+      { label: l10n.t('Default folder'), description: outputPath },
+      { label: folderSelectionOption }
+    ];
+  }
 
   function updateWorkspaceFolder(name: string | undefined) {
     if (name && (!workspaceOpen)) {
       workspaceFolder = getWorkspaceJsonDirectory(name);
-      inputOptions = [
-        { label: l10n.t('Default folder'), description: workspaceFolder },
-        { label: folderSelectionOption }
-      ];
     }
   }
   function getNextStepForGenerationType(generationType: string | QuickPickItem) {
@@ -143,7 +143,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         step: step++,
         totalSteps: 5,
         placeholder: l10n.t('Enter an output path relative to the root of the project'),
-        items: inputOptions,
+        items: getOutputPath(workspaceFolder, state.clientClassName!),
         shouldResume: shouldResume
       });
       if (selectedOption) {
@@ -241,7 +241,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         step: step++,
         totalSteps: 4,
         placeholder: l10n.t('Enter an output path relative to the root of the project'),
-        items: inputOptions,
+        items: getOutputPath(workspaceFolder, state.clientClassName!),
         shouldResume: shouldResume
       });
       if (selectedOption) {
@@ -297,7 +297,7 @@ export async function generateSteps(existingConfiguration: Partial<GenerateState
         step: step++,
         totalSteps: 4,
         placeholder: l10n.t('Enter an output path relative to the root of the project'),
-        items: inputOptions,
+        items: getOutputPath(workspaceFolder, state.clientClassName!),
         shouldResume: shouldResume
       });
       if (selectedOption) {

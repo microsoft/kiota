@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
 using Kiota.Builder.Writers.Cli;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Dart;
 using Kiota.Builder.Writers.Go;
+using Kiota.Builder.Writers.Http;
 using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
@@ -194,6 +194,7 @@ public abstract class LanguageWriter
             GenerationLanguage.CLI => new CliWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Dart => new DartWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.HTTP => new HttpWriter(outputPath, clientNamespaceName),
             _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
         };
     }

@@ -1,6 +1,6 @@
 ﻿using System;
 using Kiota.Builder.Plugins;
-using Microsoft.Plugins.Manifest;
+using Microsoft.DeclarativeAgents.Manifest;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Plugins;

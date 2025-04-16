@@ -12,9 +12,6 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
       "preLaunchTask": "${defaultBuildTask}"
     },
     {
@@ -26,10 +23,6 @@
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js",
-        "${workspaceFolder}/dist/**/*.js"
       ],
       "preLaunchTask": "tasks: watch-tests"
     }

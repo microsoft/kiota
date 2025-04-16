@@ -1,8 +1,9 @@
 ﻿using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Readers;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Reader;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
@@ -10,9 +11,8 @@ namespace Kiota.Builder.Tests.Validation;
 public class MultipleServerEntriesTests
 {
     [Fact]
-    public void AddsAWarningWhenMultipleServersPresent()
+    public async Task AddsAWarningWhenMultipleServersPresent()
     {
-        var rule = new MultipleServerEntries();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -26,20 +26,15 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Single(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
     }
     [Fact]
-    public void DoesntAddAWarningWhenSingleServerPresent()
+    public async Task DoesntAddAWarningWhenSingleServerPresent()
     {
-        var rule = new MultipleServerEntries();
         var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -52,14 +47,20 @@ paths:
     get:
       responses:
         '200':
+          description: some description
           content:
             application/json:";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(documentTxt));
-        var reader = new OpenApiStreamReader(new OpenApiReaderSettings
-        {
-            RuleSet = new(new ValidationRule[] { rule }),
-        });
-        var doc = reader.Read(stream, out var diag);
-        Assert.Empty(diag.Warnings);
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+    {
+        var rule = new MultipleServerEntries();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+        var settings = new OpenApiReaderSettings();
+        settings.RuleSet.Add(typeof(OpenApiDocument), [rule]);
+        settings.AddYamlReader();
+        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+        return result.Diagnostic;
     }
 }
