@@ -73,7 +73,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string) {
           }
         } catch (error) {
           fs.rmdirSync(installPath, { recursive: true });
-          throw error; //TODO revert
+          throw new Error("Kiota download failed. Check the logs for more information.");
         }
       });
     }
