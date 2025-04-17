@@ -58,7 +58,8 @@ parameters:
         jobPrefix: "win_arm64"
         os: "windows"
         image: "windows-latest"
-        pool: Azure-Pipelines-1ESPT-ExDShared
+        pool: windows-2022-arm64
+        # arm64 is not currently available in the shared pool
         hostArchitecture: "arm64"
       - architecture: "linux-x64"
         jobPrefix: "linux_x64"
