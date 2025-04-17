@@ -551,6 +551,18 @@ components:
                     Assert.Equal("{oauth2_0_REGISTRATION_ID}", ((OAuthPluginVault)auth0!).ReferenceId);
                 }
             },
+            // OAuth2 with implicit flow should return (None)
+            {
+                "{securitySchemes: {oauth2_implicit: {type: oauth2, flows: {implicit: {authorizationUrl: 'https://example.com/auth'}}}}}",
+                string.Empty, "security: [oauth2_implicit: []]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<AnonymousAuth>(auth); 
+                }
+            },
             // should be anonymous
             {
                 "{}", string.Empty, "security: [invalid: []]", null, resultingManifest =>

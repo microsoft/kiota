@@ -611,6 +611,7 @@ public partial class PluginsGenerationService
             {
                 ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
             },
+            SecuritySchemeType.OAuth2 when securityScheme.Flows?.Implicit != null => new AnonymousAuth(), 
             SecuritySchemeType.OAuth2 => new OAuthPluginVault
             {
                 ReferenceId = string.IsNullOrEmpty(authenticationReferenceId) ? $"{{{name}_REGISTRATION_ID}}" : authenticationReferenceId
