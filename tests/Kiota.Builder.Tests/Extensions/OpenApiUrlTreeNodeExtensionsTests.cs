@@ -793,13 +793,16 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             }
                         },
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("microsoft.graph.user")
@@ -822,13 +825,16 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             }
                         },
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("microsoft.graph.user")
@@ -841,7 +847,8 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 },
                 ["users/{user-id}/manager"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = {
@@ -854,10 +861,12 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                                     }
                                 },
                             },
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("microsoft.graph.user")
@@ -935,13 +944,16 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             {
                 ["/repos/{owner}/{repo}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("repo")
@@ -954,13 +966,16 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 },
                 ["/repos/{template_owner}/{template_repo}/generate"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("repo")
@@ -1002,16 +1017,20 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             {
                 ["/path/{thingId}/abc/{second}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.String
                                             }
                                         }
@@ -1023,16 +1042,20 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 },
                 ["/path/{differentThingId}/def/{second}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [HttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.String
                                             }
                                         }

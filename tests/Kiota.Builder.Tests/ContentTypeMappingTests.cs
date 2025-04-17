@@ -90,14 +90,18 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                [statusCode] = new OpenApiResponse {
-                                    Content = {
-                                        [contentType] = new OpenApiMediaType {
+                                [statusCode] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        [contentType] = new OpenApiMediaType
+                                        {
                                             Schema = addModel ? new OpenApiSchemaReference("myobject") : null
                                         }
                                     }
@@ -179,12 +183,16 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    [contentType] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    [contentType] = new OpenApiMediaType
+                                    {
                                         Schema = addModel ? new OpenApiSchemaReference("myobject") : null
                                     }
                                 }
@@ -254,13 +262,19 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = contentMediaTypes.Split(',').Select(x => new
+                                    {
+                                        Key = x.Trim(),
+                                        value = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject"),
                                         }
                                     }).ToDictionary(x => x.Key, x => x.value)
@@ -327,12 +341,17 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody
                             {
-                                Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                Content = contentMediaTypes.Split(',').Select(x => new
+                                {
+                                    Key = x.Trim(),
+                                    value = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject"),
                                     }
                                 }).ToDictionary(x => x.Key, x => x.value)
