@@ -1,4 +1,5 @@
 import AdmZip from 'adm-zip';
+import { createHash } from 'crypto';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -65,6 +66,9 @@ export async function ensureKiotaIsPresentInPath(installPath: string) {
           } else {
             const downloadUrl = getDownloadUrl(currentPlatform);
             await downloadFileFromUrl(downloadUrl, zipFilePath);
+            if (!await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
+              throw new Error("Hash validation of the downloaded file mismatch");
+            }
           }
           unzipFile(zipFilePath, installPath);
           const kiotaPath = getKiotaPathInternal();
@@ -123,6 +127,17 @@ function getKiotaPathInternal(withFileName = true): string | undefined {
 function unzipFile(zipFilePath: string, destinationPath: string) {
   const zip = new AdmZip(zipFilePath);
   zip.extractAllTo(destinationPath, true);
+}
+
+async function doesFileHashMatch(destinationPath: string, hashValue: string): Promise<boolean> {
+    const hash = createHash('sha256');
+    return new Promise((resolve, reject) => {
+        fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
+            const computedValue = hash.digest('hex');
+            hash.destroy();
+            resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
+        });
+    });
 }
 
 function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
