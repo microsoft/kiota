@@ -85,7 +85,7 @@ describe("GeneratePlugin", () => {
     }
     const actualSecurityScheme = actualSecuritySchemes['oAuth2AuthCode'];
     expect(actualSecurityScheme).toBeDefined();
-    expect(actualSecurityScheme.referenceId).toEqual('{oAuth2AuthCode_REGISTRATION_ID}');
+    expect(actualSecurityScheme.referenceId).toEqual('');
   });
 
   
