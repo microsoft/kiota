@@ -211,7 +211,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel) && includeQueryParameters)
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
-            var operationQueryParameters = (operationType, pathItem.Operations is not null && pathItem.Operations.Count != 0) switch
+            var operationQueryParameters = (operationType, pathItem.Operations is { Count: > 0 }) switch
             {
                 (HttpMethod ot, _) when pathItem.Operations!.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
                 (null, true) => pathItem.Operations!.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
