@@ -417,7 +417,7 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath, Logger);
+        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration, TreeNode, openApiDocumentPath, Logger);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
@@ -499,13 +499,13 @@ public partial class PluginsGenerationService
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
 
-    private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
+    private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, GenerationConfiguration configuration, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath, ILogger<KiotaBuilder> logger)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
         var conversationStarters = new List<ConversationStarter>();
-        var configAuth = authInformation?.ToPluginManifestAuth();
+        var configAuth = configuration.PluginAuthInformation?.ToPluginManifestAuth();
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) && pathItem.Operations is not null)
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
@@ -542,7 +542,7 @@ public partial class PluginsGenerationService
                     Name = operation.OperationId!,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
-                    Capabilities = GetFunctionCapabilitiesFromOperation(operation),
+                    Capabilities = GetFunctionCapabilitiesFromOperation(operation, configuration, logger),
 
                 });
                 conversationStarters.Add(new ConversationStarter
@@ -555,7 +555,7 @@ public partial class PluginsGenerationService
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, authInformation, node.Value, openApiDocumentPath, logger);
+            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, configuration, node.Value, openApiDocumentPath, logger);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
             conversationStarters.AddRange(childConversationStarters);
@@ -653,7 +653,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation, GenerationConfiguration configuration, ILogger<KiotaBuilder> logger)
     {
         var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
         if (capabilities != null)
@@ -661,15 +661,15 @@ public partial class PluginsGenerationService
             return capabilities;
         }
 
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
-        if (responseSemantics != null)
+
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name) ??
+            GetResponseSemanticsFromTemplate(openApiOperation, configuration, logger);
+
+        return new FunctionCapabilities
         {
-            return new FunctionCapabilities
-            {
-                ResponseSemantics = responseSemantics
-            };
-        }
-        return null;
+            ResponseSemantics = responseSemantics
+        };
+
     }
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
@@ -752,5 +752,46 @@ public partial class PluginsGenerationService
         }
 
         return null;
+    }
+
+    private static ResponseSemantics? GetResponseSemanticsFromTemplate(OpenApiOperation openApiOperation, GenerationConfiguration configuration, ILogger<KiotaBuilder> logger)
+    {
+        if (openApiOperation.Responses is null
+            || openApiOperation.Responses.Count == 0
+            || openApiOperation.OperationId is null
+            || !openApiOperation.Responses.TryGetValue("200", out var response)
+            || response is null
+            || response.Content is null
+            || response.Content.Count == 0
+            || response.Content["application/json"]?.Schema is null)
+        {
+            return null;
+        }
+
+        string functionName = openApiOperation.OperationId;
+        string fileName = $"{functionName}.json";
+        string staticTemplateJson = $"{{\"file\": \"./adaptiveCards/{fileName}\"}}";
+        try
+        {
+            WriteAdaptiveCardTemplate(configuration, fileName, logger);
+            using JsonDocument doc = JsonDocument.Parse(staticTemplateJson);
+            JsonElement staticTemplate = doc.RootElement.Clone();
+            return new ResponseSemantics()
+            {
+                DataPath = "$",
+                StaticTemplate = staticTemplate
+            };
+        }
+        catch (IOException)
+        {
+
+            return null;
+        }
+    }
+
+    private static void WriteAdaptiveCardTemplate(GenerationConfiguration configuration, string fileName, ILogger<KiotaBuilder> logger)
+    {
+        var adaptiveCardOutputPath = Path.Combine(configuration.OutputPath, "adaptiveCards", fileName);
+        new AdaptiveCardTemplate(logger).Write(adaptiveCardOutputPath);
     }
 }
