@@ -415,7 +415,7 @@ extends:
 
                   - script: dotnet tool install --global PowerShell
                     displayName: "Install PowerShell"
-                    condition: eq(distribution.hostArchitecture, 'arm64')
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
                     # powershell is not installed by default on arm64 images
 
                   - pwsh: |
