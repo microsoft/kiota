@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using AdaptiveCards;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
 using Microsoft.DeclarativeAgents.Manifest;
@@ -1138,6 +1140,229 @@ paths:
                 // ignored
             }
         }
+    }
+
+    #endregion
+
+
+    #region Adaptive Cards
+    [Fact]
+    public async Task GeneratesManifestWithAdaptiveCardAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+  /me/get:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+components:
+  schemas:
+    microsoft.graph.user:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        otherNames:
+          type: array
+          items:
+            type: string
+            nullable: true
+        importance:
+          $ref: '#/components/schemas/microsoft.graph.importance'
+    microsoft.graph.importance:
+      title: importance
+      enum:
+        - low
+        - normal
+        - high
+      type: string";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        var inputPluginName = "client";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
+            ClientClassName = inputPluginName,
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+            ShouldGenerateAdaptiveCards = true,
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apimanifest.json")));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal($"{inputPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.NotNull(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate);
+
+        var expectedCard = new AdaptiveCard(new AdaptiveSchemaVersion(1, 5));
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${id, id, 'N/A'}"
+        });
+
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${displayName, displayName, 'N/A'}"
+        });
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${otherNames.join(', ')}"
+        });
+        expectedCard.Body.Add(new AdaptiveTextBlock
+        {
+            Text = "${importance, importance, 'N/A'}"
+        });
+        var expectedJson = JsonDocument.Parse(expectedCard.ToJson()).RootElement;
+
+
+        var actualJson = resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate;
+        if (actualJson.HasValue)
+        {
+            // Properties to compare
+            List<string> propertiesToCompare = new List<string> { "type", "version", "body" };
+
+            // Compare properties
+            foreach (string prop in propertiesToCompare)
+            {
+                Assert.Equal(expectedJson.GetProperty(prop).ToString(), actualJson.Value.GetProperty(prop).ToString());
+            }
+
+            // Compare the body array separately
+            var expectedBody = expectedJson.GetProperty("body").ToString();
+            var actualBody = actualJson.Value.GetProperty("body").ToString();
+            Assert.Equal(expectedBody, actualBody);
+        }
+        else
+        {
+            Assert.Fail("actualJson is null");
+        }
+
+        Assert.Equal(inputPluginName, resultingManifest.Document.Namespace);
+    }
+
+    [Fact]
+    public async Task GeneratesManifestWithoutAdaptiveCardAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: Microsoft Graph get user API
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0/
+paths:
+  /me:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+  /me/get:
+    get:
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.user'
+components:
+  schemas:
+    microsoft.graph.user:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        otherNames:
+          type: array
+          items:
+            type: string
+            nullable: true
+        importance:
+          $ref: '#/components/schemas/microsoft.graph.importance'
+    microsoft.graph.importance:
+      title: importance
+      enum:
+        - low
+        - normal
+        - high
+      type: string";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        var inputPluginName = "client";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var mockLogger = new Mock<ILogger<PluginsGenerationService>>();
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = "openapiPath",
+            PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
+            ClientClassName = inputPluginName,
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json")));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apimanifest.json")));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{inputPluginName.ToLower()}-apiplugin.json"));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Null(resultingManifest.Document.Functions[1].Capabilities);
     }
 
     #endregion

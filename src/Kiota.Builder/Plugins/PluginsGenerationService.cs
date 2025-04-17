@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -417,7 +418,7 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration.PluginAuthInformation, TreeNode, openApiDocumentPath, Logger);
+        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration, TreeNode, openApiDocumentPath, Logger);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
@@ -499,13 +500,14 @@ public partial class PluginsGenerationService
         string? PrivacyUrl = null,
         string ContactEmail = DefaultContactEmail);
 
-    private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, PluginAuthConfiguration? authInformation, OpenApiUrlTreeNode currentNode,
+    private static (OpenApiRuntime[], Function[], ConversationStarter[]) GetRuntimesFunctionsAndConversationStartersFromTree(OpenApiDocument document, GenerationConfiguration configuration, OpenApiUrlTreeNode currentNode,
         string openApiDocumentPath, ILogger<KiotaBuilder> logger)
     {
         var runtimes = new List<OpenApiRuntime>();
         var functions = new List<Function>();
         var conversationStarters = new List<ConversationStarter>();
-        var configAuth = authInformation?.ToPluginManifestAuth();
+        var configAuth = configuration.PluginAuthInformation?.ToPluginManifestAuth();
+        bool shouldGenerateAdaptiveCards = configuration.ShouldGenerateAdaptiveCards ?? false;
         if (currentNode.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) && pathItem.Operations is not null)
         {
             foreach (var operation in pathItem.Operations.Values.Where(static x => !string.IsNullOrEmpty(x.OperationId)))
@@ -536,15 +538,17 @@ public partial class PluginsGenerationService
 
                 var summary = operation.Summary.CleanupXMLString();
                 var description = operation.Description.CleanupXMLString();
-
-                functions.Add(new Function
+                var function = new Function
                 {
                     Name = operation.OperationId!,
                     Description = !string.IsNullOrEmpty(description) ? description : summary,
                     States = GetStatesFromOperation(operation),
-                    Capabilities = GetFunctionCapabilitiesFromOperation(operation),
+                    Capabilities = GetFunctionCapabilitiesFromOperation(operation, shouldGenerateAdaptiveCards),
+                };
+           
 
-                });
+                functions.Add(function);
+
                 conversationStarters.Add(new ConversationStarter
                 {
                     Text = !string.IsNullOrEmpty(summary) ? summary : description
@@ -555,7 +559,7 @@ public partial class PluginsGenerationService
 
         foreach (var node in currentNode.Children)
         {
-            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, authInformation, node.Value, openApiDocumentPath, logger);
+            var (childRuntimes, childFunctions, childConversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(document, configuration, node.Value, openApiDocumentPath, logger);
             runtimes.AddRange(childRuntimes);
             functions.AddRange(childFunctions);
             conversationStarters.AddRange(childConversationStarters);
@@ -653,7 +657,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation)
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation, bool shouldGenerateAdaptiveCards = false)
     {
         var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
         if (capabilities != null)
@@ -667,6 +671,19 @@ public partial class PluginsGenerationService
             return new FunctionCapabilities
             {
                 ResponseSemantics = responseSemantics
+            };
+        }
+
+        if (shouldGenerateAdaptiveCards)
+        {
+            var generator = new AdaptiveCardGenerator();
+            var card = generator.GenerateAdaptiveCard(openApiOperation);
+            return new FunctionCapabilities
+            {
+                ResponseSemantics = new ResponseSemantics
+                {
+                    StaticTemplate = JsonDocument.Parse(card.ToJson()).RootElement
+                }
             };
         }
         return null;

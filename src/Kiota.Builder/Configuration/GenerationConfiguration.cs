@@ -239,6 +239,14 @@ public class GenerationConfiguration : ICloneable
     {
         get; set;
     }
+
+    /// <summary>
+    /// When true, should allow generation of adaptive cards
+    /// </summary>
+    public bool? ShouldGenerateAdaptiveCards
+    {
+        get; set;
+    }
 }
 #pragma warning restore CA1056
 #pragma warning restore CA2227
