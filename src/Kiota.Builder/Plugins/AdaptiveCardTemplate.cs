@@ -7,7 +7,7 @@ namespace Kiota.Builder.Plugins
     internal class AdaptiveCardTemplate
     {
         private readonly ILogger<KiotaBuilder> Logger;
-        private readonly string AdaptiveCard;
+        private readonly string? AdaptiveCard;
 
         public AdaptiveCardTemplate(ILogger<KiotaBuilder> logger)
         {
@@ -15,23 +15,28 @@ namespace Kiota.Builder.Plugins
             AdaptiveCard = LoadEmbeddedResource("Kiota.Builder.Resources.AdaptiveCardTemplate.json");
         }
 
-        private string LoadEmbeddedResource(string resourceName)
+        private string? LoadEmbeddedResource(string resourceName)
         {
             var assembly = typeof(AdaptiveCardTemplate).Assembly;
             using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null)
+            if (stream != null)
             {
-                Logger.LogCritical("Failed to load embedded resource: {ResourceName}", resourceName);
-                throw new FileNotFoundException($"Resource {resourceName} not found.");
+                using var reader = new StreamReader(stream);
+                return reader.ReadToEnd();
             }
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
+            Logger.LogCritical("Failed to load embedded resource: {ResourceName}", resourceName);
+            return null;
         }
 
         public void Write(string filePath)
         {
             try
             {
+                if (AdaptiveCard is null)
+                {
+                    throw new IOException("Failed to load the adaptive card from the embedded resource");
+                }
+
                 string? directoryPath = Path.GetDirectoryName(filePath);
                 if (!string.IsNullOrEmpty(directoryPath))
                 {
@@ -41,7 +46,7 @@ namespace Kiota.Builder.Plugins
             }
             catch (IOException e)
             {
-                Logger.LogCritical("Failed to add adaptive-card.json due to an IO error: {Message}", e.Message);
+                throw new IOException($"Failed to write to file {filePath}", e);
             }
         }
     }

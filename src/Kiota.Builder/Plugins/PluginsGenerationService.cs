@@ -757,6 +757,7 @@ public partial class PluginsGenerationService
     {
         if (openApiOperation.Responses is null
             || openApiOperation.Responses.Count == 0
+            || openApiOperation.OperationId is null
             || !openApiOperation.Responses.TryGetValue("200", out var response)
             || response is null
             || response.Content is null
@@ -766,17 +767,25 @@ public partial class PluginsGenerationService
             return null;
         }
 
-        string functionName = openApiOperation.OperationId!;
+        string functionName = openApiOperation.OperationId;
         string fileName = $"{functionName}.json";
         string staticTemplateJson = $"{{\"file\": \"./adaptiveCards/{fileName}\"}}";
-        WriteAdaptiveCardTemplate(configuration, fileName, logger);
-        using JsonDocument doc = JsonDocument.Parse(staticTemplateJson);
-        JsonElement staticTemplate = doc.RootElement.Clone();
-        return new ResponseSemantics()
+        try
         {
-            DataPath = "$",
-            StaticTemplate = staticTemplate
-        };
+            WriteAdaptiveCardTemplate(configuration, fileName, logger);
+            using JsonDocument doc = JsonDocument.Parse(staticTemplateJson);
+            JsonElement staticTemplate = doc.RootElement.Clone();
+            return new ResponseSemantics()
+            {
+                DataPath = "$",
+                StaticTemplate = staticTemplate
+            };
+        }
+        catch (IOException)
+        {
+
+            return null;
+        }
     }
 
     private static void WriteAdaptiveCardTemplate(GenerationConfiguration configuration, string fileName, ILogger<KiotaBuilder> logger)
