@@ -777,7 +777,6 @@ public partial class PluginsGenerationService
         string staticTemplateJson = "{\"file\": \"./adaptive-card.json\"}";
         using JsonDocument doc = JsonDocument.Parse(staticTemplateJson);
         JsonElement staticTemplate = doc.RootElement.Clone();
-        
         return new ResponseSemantics()
         {
             DataPath = "$",
