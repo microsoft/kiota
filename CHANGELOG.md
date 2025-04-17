@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug where Dart properties casing would change for serialization.
 - Fixed a bug where default response definitions were being considered for Media Type selection [#6413](https://github.com/microsoft/kiota/issues/6413)
+- Fixed a bug where escaped line breaks and/or double quotes defined in the schema object properties would break the generation of CSharp client [#6472](https://github.com/microsoft/kiota/issues/6472)
 
 ## [1.25.1] - 2025-04-03
 
