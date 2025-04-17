@@ -35,7 +35,7 @@ namespace Kiota.Builder.Plugins
                                         ""items"": [
                                             {
                                                 ""type"": ""Image"",
-                                                ""url"": ""https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/logo.png"",
+                                                ""url"": ""https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/logo.png?raw=true"",
                                                 ""altText"": ""Kiota logo"",
                                                 ""size"": ""medium"",
                                                 ""style"": ""person""
@@ -111,9 +111,9 @@ namespace Kiota.Builder.Plugins
             {
                 File.WriteAllText(filePath, AdaptiveCard);
             }
-            catch (JsonException e)
+            catch (IOException e)
             {
-                Logger.LogCritical("Failed to add adaptive-card.json {Message}", e.Message);
+                Logger.LogCritical("Failed to add adaptive-card.json due to an IO error: {Message}", e.Message);
             }
         }
     }

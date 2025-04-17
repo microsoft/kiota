@@ -763,41 +763,25 @@ public partial class PluginsGenerationService
 
     private static ResponseSemantics? GetResponseSemanticsFromTemplate(OpenApiOperation openApiOperation)
     {
-
-        if (openApiOperation.Responses is null || openApiOperation.Responses.Count == 0)
+        if (openApiOperation.Responses is null
+            || openApiOperation.Responses.Count == 0
+            || !openApiOperation.Responses.TryGetValue("200", out var response)
+            || response is null
+            || response.Content is null
+            || response.Content.Count == 0
+            || response.Content["application/json"]?.Schema is null)
         {
             return null;
         }
 
-        if (!openApiOperation.Responses.TryGetValue("200", out var response) || response is null)
-        {
-            return null;
-        }
-
-        if (response.Content is null || response.Content.Count == 0)
-        {
-            return null;
-        }
-
-        var schema = response.Content["application/json"]?.Schema;
-        if (schema is null)
-        {
-            return null;
-        }
-
-        var staticTemplateNode = new JsonObject
-        {
-            ["file"] = "./adaptive-card.json"
-        };
-
-        using JsonDocument doc = JsonDocument.Parse(staticTemplateNode.ToJsonString());
+        string staticTemplateJson = "{\"file\": \"./adaptive-card.json\"}";
+        using JsonDocument doc = JsonDocument.Parse(staticTemplateJson);
         JsonElement staticTemplate = doc.RootElement.Clone();
-        var responseSemantics = new ResponseSemantics()
+        
+        return new ResponseSemantics()
         {
             DataPath = "$",
             StaticTemplate = staticTemplate
         };
-
-        return responseSemantics;
     }
 }
