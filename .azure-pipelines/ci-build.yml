@@ -413,6 +413,11 @@ extends:
                     inputs:
                       version: 9.x
 
+                  - script: dotnet tool install --global PowerShell
+                    displayName: "Install PowerShell"
+                    condition: eq(distribution.hostArchitecture, 'arm64')
+                    # powershell is not installed by default on arm64 images
+
                   - pwsh: |
                       Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
                     displayName: Copy the appsettings.json
@@ -1068,18 +1073,18 @@ extends:
                   versionSpec: "20.x"
               - task: EsrpRelease@7
                 inputs:
-                  connectedservicename: 'Federated DevX ESRP Managed Identity Connection'
-                  keyvaultname: 'akv-prod-eastus'
-                  authcertname: 'ReferenceLibraryPrivateCert'
-                  signcertname: 'ReferencePackagePublisherCertificate'
-                  clientid: '65035b7f-7357-4f29-bf25-c5ee5c3949f8'
-                  intent: 'PackageDistribution'
-                  contenttype: 'npm'
-                  contentsource: 'Folder'
-                  folderlocation: '$(Pipeline.Workspace)/npm-package/'
+                  connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                  keyvaultname: "akv-prod-eastus"
+                  authcertname: "ReferenceLibraryPrivateCert"
+                  signcertname: "ReferencePackagePublisherCertificate"
+                  clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  intent: "PackageDistribution"
+                  contenttype: "npm"
+                  contentsource: "Folder"
+                  folderlocation: "$(Pipeline.Workspace)/npm-package/"
                   waitforreleasecompletion: true
                   owners: $(NPM_OWNERS_LIST)
                   approvers: $(NPM_APPROVERS_LIST)
-                  serviceendpointurl: 'https://api.esrp.microsoft.com'
-                  mainpublisher: 'ESRPRELPACMAN'
-                  domaintenantid: 'cdc5aeea-15c5-4db6-b079-fcadd2505dc2'
+                  serviceendpointurl: "https://api.esrp.microsoft.com"
+                  mainpublisher: "ESRPRELPACMAN"
+                  domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
