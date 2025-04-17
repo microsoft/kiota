@@ -1412,14 +1412,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -1457,14 +1458,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -1509,14 +1511,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -1561,14 +1564,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -1633,13 +1637,16 @@ paths:
             {
                 ["foos/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("bar.foo")
@@ -1689,16 +1696,20 @@ paths:
             {
                 ["users/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, IOpenApiSchema> {
                                                     {
@@ -1751,16 +1762,20 @@ paths:
             {
                 ["users/$count"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["text/plain"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Number,
                                                 Format = "int32",
                                             }
@@ -1844,18 +1859,23 @@ paths:
                             }
                         }
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Array,
-                                                Items = new OpenApiSchema {
+                                                Items = new OpenApiSchema
+                                                {
                                                     AnyOf = new List<IOpenApiSchema> {
                                                         new OpenApiSchemaReference("microsoft.graph.rolePermission"),
                                                     }
@@ -1980,18 +2000,23 @@ paths:
                             },
                         }
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Array,
-                                                Items = new OpenApiSchema {
+                                                Items = new OpenApiSchema
+                                                {
                                                     AnyOf = new List<IOpenApiSchema> {
                                                         new OpenApiSchemaReference("microsoft.graph.rolePermission"),
                                                     }
@@ -2075,16 +2100,20 @@ paths:
                             },
                         },
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, IOpenApiSchema>() {
                                                     { "foo", new OpenApiSchema() {
@@ -2142,16 +2171,20 @@ paths:
             {
                 ["resource/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Object,
                                                 Properties = new Dictionary<string, IOpenApiSchema> {
                                                     {
@@ -2231,16 +2264,20 @@ paths:
             {
                 ["resource/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
-                                            Schema = new OpenApiSchema {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 AllOf = new List<IOpenApiSchema>()
                                                 {
                                                     new OpenApiSchemaReference("resource"),
@@ -2276,14 +2313,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2318,14 +2356,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2360,14 +2399,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2402,14 +2442,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2429,7 +2470,7 @@ paths:
                         },
                         ["4XX"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2457,7 +2498,7 @@ paths:
                         },
                         ["5XX"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2485,7 +2526,7 @@ paths:
                         },
                         ["402"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2498,7 +2539,7 @@ paths:
                         },
                         ["401"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2572,14 +2613,15 @@ paths:
         var node = OpenApiUrlTreeNode.Create();
         node.Attach("tasks", new OpenApiPathItem
         {
-            Operations = {
+            Operations = new()
+            {
                 [NetHttpMethod.Get] = new OpenApiOperation
                 {
                     Responses = new OpenApiResponses
                     {
                         ["200"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType
                                 {
@@ -2599,21 +2641,21 @@ paths:
                         },
                         ["4XX"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType()
                             }
                         },
                         ["5XX"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType()
                             }
                         },
                         ["401"] = new OpenApiResponse
                         {
-                            Content =
+                            Content = new()
                             {
                                 ["application/json"] = new OpenApiMediaType()
                             }
@@ -2645,7 +2687,7 @@ paths:
         };
         var errorResponse = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -2659,14 +2701,15 @@ paths:
             {
                 ["tasks"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content =
+                                    Content = new()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -2733,7 +2776,7 @@ paths:
         };
         var errorResponse = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -2747,14 +2790,15 @@ paths:
             {
                 ["tasks"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content =
+                                    Content = new()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -2828,7 +2872,7 @@ paths:
         };
         var weatherForecastResponse = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -2842,7 +2886,8 @@ paths:
             {
                 ["weatherforecast"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -2895,14 +2940,16 @@ paths:
             {
                 ["createUploadSession"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema
@@ -2966,14 +3013,16 @@ paths:
             {
                 ["createUploadSession"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchema
@@ -3042,14 +3091,16 @@ paths:
             {
                 ["createUploadSession"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("anyOfNullable")
@@ -3111,14 +3162,16 @@ paths:
             {
                 ["createUploadSession"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType> {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("anyOfNullable")
@@ -3205,7 +3258,7 @@ paths:
         };
         var directoryObjects = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -3219,7 +3272,8 @@ paths:
             {
                 ["objects"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -3329,7 +3383,7 @@ paths:
         };
         var directoryObjects = new OpenApiResponse()
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType()
                 {
@@ -3343,8 +3397,10 @@ paths:
             {
                 ["objects"] = new OpenApiPathItem()
                 {
-                    Operations = {
-                        [NetHttpMethod.Get] = new OpenApiOperation() {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation()
+                        {
                             Responses = new OpenApiResponses
                             {
                                 ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
@@ -3427,7 +3483,7 @@ paths:
         };
         var directoryObjects = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -3441,7 +3497,8 @@ paths:
             {
                 ["objects"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -3553,7 +3610,7 @@ paths:
         };
         var directoryObjects = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -3567,7 +3624,8 @@ paths:
             {
                 ["objects"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -3705,7 +3763,7 @@ paths:
         };
         var directoryObjects = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -3719,7 +3777,8 @@ paths:
             {
                 ["objects"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -3780,15 +3839,20 @@ paths:
             {
                 ["unionType"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 OneOf = new List<IOpenApiSchema> {
                                                     new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
@@ -3886,15 +3950,20 @@ components:
             {
                 ["unionType"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 OneOf = new List<IOpenApiSchema> {
                                                     new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
@@ -3957,15 +4026,20 @@ components:
             {
                 ["unionType"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 AnyOf = new List<IOpenApiSchema> {
                                                     new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
@@ -4021,15 +4095,20 @@ components:
             {
                 ["unionType"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 AnyOf = new List<IOpenApiSchema> {
                                                     new OpenApiSchemaReference("subNS.simpleObject"),
                                                     new OpenApiSchema {
@@ -4151,14 +4230,18 @@ components:
             {
                 ["derivedType"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("subNS.derivedObject")
                                         }
                                     }
@@ -4260,15 +4343,20 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = type,
                                                 Format = format
                                             }
@@ -4353,7 +4441,8 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -4395,15 +4484,20 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Type = JsonSchemaType.Number | JsonSchemaType.String,
                                             }
                                         }
@@ -4437,7 +4531,8 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -4485,7 +4580,8 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -4617,7 +4713,8 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -4657,7 +4754,8 @@ components:
             {
                 ["primitive"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -4706,14 +4804,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -4757,14 +4859,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("subns.myobject")
                                         }
                                     }
@@ -4808,14 +4914,18 @@ components:
             {
                 ["answers/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -4889,14 +4999,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -4963,14 +5077,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5023,14 +5141,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5077,16 +5199,20 @@ components:
                 {
                     Description = "some path item description",
                     Summary = "some path item summary",
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Description = "some operation description",
                             Summary = "some operation summary",
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5131,14 +5257,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5185,14 +5315,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        [contentType] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        [contentType] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5230,17 +5364,22 @@ components:
                 {
                     Description = "some path item description",
                     Summary = "some path item summary",
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Description = "some operation description",
                             Summary = "some operation summary",
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchema {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
                                                 Description = "some description",
                                                 Properties = new Dictionary<string, IOpenApiSchema> {
                                                     {
@@ -5324,21 +5463,28 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["2XX"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["2XX"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myotherobject")
                                         }
                                     }
                                 },
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5392,14 +5538,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["2XX"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["2XX"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5442,7 +5592,8 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -5501,14 +5652,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5561,14 +5716,18 @@ components:
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                [statusCode.ToString()] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                [statusCode.ToString()] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5616,21 +5775,25 @@ components:
             };
             document.Paths.Add($"answer{componentName}", new OpenApiPathItem
             {
-                Operations = {
-                        [NetHttpMethod.Get] = new OpenApiOperation
+                Operations = new()
+                {
+                    [NetHttpMethod.Get] = new OpenApiOperation
+                    {
+                        Responses = new OpenApiResponses
                         {
-                            Responses = new OpenApiResponses
+                            ["200"] = new OpenApiResponse
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
-                                            Schema = new OpenApiSchemaReference(componentName)
-                                        }
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchemaReference(componentName)
                                     }
-                                },
-                            }
+                                }
+                            },
                         }
                     }
+                }
             });
             document.AddComponent(componentName, myObjectSchema);
         }
@@ -5659,7 +5822,8 @@ components:
             {
                 ["answer(ids={ids}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -5683,9 +5847,12 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5734,7 +5901,8 @@ components:
             {
                 ["users"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Extensions = new Dictionary<string, IOpenApiExtension> {
@@ -5742,9 +5910,12 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5792,14 +5963,18 @@ components:
             {
                 ["users"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5843,14 +6018,18 @@ components:
             {
                 ["/"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5896,14 +6075,18 @@ components:
             {
                 ["users"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5914,14 +6097,18 @@ components:
                 },
                 ["groups"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5969,14 +6156,18 @@ components:
             {
                 ["users"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -5987,14 +6178,18 @@ components:
                 },
                 ["groups"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6042,14 +6237,18 @@ components:
             {
                 ["users/{id}/messages"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6058,18 +6257,24 @@ components:
                         },
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6078,18 +6283,24 @@ components:
                         },
                         [NetHttpMethod.Put] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6100,14 +6311,18 @@ components:
                 },
                 ["groups"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6118,14 +6333,18 @@ components:
                 },
                 ["students"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6185,7 +6404,8 @@ components:
             {
                 ["users({userId})/manager"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = new List<IOpenApiParameter> {
@@ -6200,9 +6420,12 @@ components:
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -6664,13 +6887,16 @@ paths:
                             }
                         }
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("microsoft.graph.user")
@@ -6735,13 +6961,16 @@ paths:
                             }
                         }
                     },
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
-                            Responses = new OpenApiResponses {
+                            Responses = new OpenApiResponses
+                            {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = {
+                                    Content = new()
+                                    {
                                         ["application/json"] = new OpenApiMediaType
                                         {
                                             Schema = new OpenApiSchemaReference("microsoft.graph.user")
@@ -9363,14 +9592,18 @@ components:
             {
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9379,18 +9612,24 @@ components:
                         },
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["201"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["201"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9401,14 +9640,18 @@ components:
                 },
                 ["directory/administrativeUnits/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9417,9 +9660,12 @@ components:
                         },
                         [NetHttpMethod.Patch] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
@@ -9496,14 +9742,18 @@ components:
             {
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9512,18 +9762,24 @@ components:
                         },
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["201"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["201"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9534,14 +9790,18 @@ components:
                 },
                 ["directory/administrativeUnits/{id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9550,9 +9810,12 @@ components:
                         },
                         [NetHttpMethod.Patch] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
@@ -9629,14 +9892,18 @@ components:
             {
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9645,18 +9912,24 @@ components:
                         },
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["201"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["201"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9719,14 +9992,18 @@ components:
             {
                 ["directory/administrativeUnits"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9736,18 +10013,24 @@ components:
                         },
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    ["application/json"] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new()
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject")
                                     }
                                 }
                             },
                             Responses = new OpenApiResponses
                             {
-                                ["201"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["201"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
@@ -9759,14 +10042,18 @@ components:
                 },
                 ["directory/adminstativeUnits/{unit-id}"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = {
-                                        ["application/json"] = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject")
                                         }
                                     }
