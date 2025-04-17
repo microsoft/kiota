@@ -504,9 +504,6 @@ components:
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
-        // validate presence of adaptive card
-        Assert.True(File.Exists(Path.Combine(outputDirectory, "adaptive-card.json")));
-
         // Validate the v2 plugin
         var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
         using var jsonDocument = JsonDocument.Parse(manifestContent);
@@ -516,10 +513,15 @@ components:
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
         Assert.Null(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics); // no response semantics is added if no schema
         Assert.NotNull(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics); // response semantics is added if response has schema
-        string jsonString = "{\"file\":\"./adaptive-card.json\"}";
+        string jsonString = $"{{\"file\": \"./adaptiveCards/{resultingManifest.Document.Functions[1].Name}.json\"}}";
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
         Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate.ToString()); // adaptive card present
+
+        // validate presence of adaptive card
+        var path = Path.Combine(outputDirectory, "adaptiveCards", $"{resultingManifest.Document.Functions[1].Name}.json");
+        Assert.True(File.Exists(path));
+
     }
 
 

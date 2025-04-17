@@ -109,6 +109,11 @@ namespace Kiota.Builder.Plugins
         {
             try
             {
+                string? directoryPath = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
                 File.WriteAllText(filePath, AdaptiveCard);
             }
             catch (IOException e)
