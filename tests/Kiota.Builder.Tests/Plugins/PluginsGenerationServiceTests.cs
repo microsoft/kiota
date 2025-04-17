@@ -560,7 +560,7 @@ components:
                     Assert.Empty(resultingManifest.Problems);
                     Assert.NotEmpty(resultingManifest.Document.Runtimes);
                     var auth = resultingManifest.Document.Runtimes[0].Auth;
-                    Assert.IsType<AnonymousAuth>(auth); 
+                    Assert.IsType<AnonymousAuth>(auth);
                 }
             },
             // should be anonymous
