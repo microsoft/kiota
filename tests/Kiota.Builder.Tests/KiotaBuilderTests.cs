@@ -1848,7 +1848,7 @@ paths:
             {
                 ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem
                 {
-                    Parameters = {
+                    Parameters = [
                         new OpenApiParameter
                         {
                             Name = "scope",
@@ -1858,7 +1858,7 @@ paths:
                                 Type = JsonSchemaType.String
                             }
                         }
-                    },
+                    ],
                     Operations = new()
                     {
                         [NetHttpMethod.Get] = new OpenApiOperation
@@ -1960,7 +1960,7 @@ paths:
             {
                 ["/deviceManagement/microsoft.graph.getEffectivePermissions(scope='{scope}')"] = new OpenApiPathItem
                 {
-                    Parameters = {
+                    Parameters = [
                         new OpenApiParameter
                         {
                             Name = "scope",
@@ -1999,7 +1999,7 @@ paths:
                                 Type = JsonSchemaType.String
                             },
                         }
-                    },
+                    ],
                     Operations = new()
                     {
                         [NetHttpMethod.Get] = new OpenApiOperation
@@ -2071,7 +2071,7 @@ paths:
             {
                 ["/test/{id}/results"] = new OpenApiPathItem
                 {
-                    Parameters = {
+                    Parameters = [
                         new OpenApiParameter
                         {
                             Name = "id",
@@ -2099,7 +2099,7 @@ paths:
                                 Type = JsonSchemaType.String
                             },
                         },
-                    },
+                    ],
                     Operations = new()
                     {
                         [NetHttpMethod.Get] = new OpenApiOperation
@@ -6872,7 +6872,7 @@ paths:
             {
                 ["users/{id}/manager"] = new OpenApiPathItem
                 {
-                    Parameters = new List<IOpenApiParameter> {
+                    Parameters = [
                         new OpenApiParameter {
                             Name = "id",
                             In = ParameterLocation.Path,
@@ -6880,13 +6880,13 @@ paths:
                             Schema = new OpenApiSchema {
                                 Type = JsonSchemaType.String
                             },
-                            Extensions = {
+                            Extensions = new (){
                                 ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
                                     IsReserved = true
                                 }
                             }
                         }
-                    },
+                    ],
                     Operations = new()
                     {
                         [NetHttpMethod.Get] = new OpenApiOperation
@@ -6946,7 +6946,7 @@ paths:
             {
                 ["users/{id}/manager"] = new OpenApiPathItem
                 {
-                    Parameters = new List<IOpenApiParameter> {
+                    Parameters = [
                         new OpenApiParameter {
                             Name = "id",
                             In = ParameterLocation.Path,
@@ -6954,13 +6954,13 @@ paths:
                             Schema = new OpenApiSchema {
                                 Type = JsonSchemaType.String
                             },
-                            Extensions = {
+                            Extensions = new() {
                                 ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
                                     IsReserved = false
                                 }
                             }
                         }
-                    },
+                    ],
                     Operations = new()
                     {
                         [NetHttpMethod.Get] = new OpenApiOperation
