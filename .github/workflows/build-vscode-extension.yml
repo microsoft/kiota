@@ -27,8 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         binaries:
-          - architecture: win-x86
-            os: windows-latest
           - architecture: win-x64
             os: windows-latest
           - architecture: win-arm64
