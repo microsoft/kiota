@@ -476,7 +476,7 @@ public partial class KiotaBuilder
                 .ToList()
                 .ForEach(x => path.Value.Operations.Remove(x));
             }
-            foreach (var path in doc.Paths.Where(static x => x.Value.Operations is null || !x.Value.Operations.Any()).ToList())
+            foreach (var path in doc.Paths.Where(static x => x.Value.Operations is null || x.Value.Operations.Count == 0).ToList())
                 doc.Paths.Remove(path.Key);
         }
 
@@ -521,7 +521,7 @@ public partial class KiotaBuilder
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {
-        if (!(document?.Components?.Schemas?.Any() ?? false)) return string.Empty;
+        if (!(document?.Components?.Schemas is { Count: > 0 })) return string.Empty;
         var distinctKeys = document.Components
                                 .Schemas
                                 .Keys
@@ -609,7 +609,7 @@ public partial class KiotaBuilder
             return;
         }
 
-        if (operation.Security == null || !operation.Security.Any() || openApiDocument.Components?.SecuritySchemes is null)
+        if (operation.Security == null || operation.Security.Count == 0 || openApiDocument.Components?.SecuritySchemes is null)
             return;
 
         var securitySchemes = openApiDocument.Components.SecuritySchemes;
@@ -1129,12 +1129,12 @@ public partial class KiotaBuilder
     }
     private static IDictionary<string, IOpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode, bool validateIsParameterNode = true)
     {
-        if ((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Any())
+        if ((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Count != 0)
         {
             return currentNode.PathItems;
         }
 
-        if (currentNode.Children.Any())
+        if (currentNode.Children.Count != 0)
         {
             return currentNode.Children
                 .SelectMany(static x => GetPathItems(x.Value, false))
@@ -1225,9 +1225,9 @@ public partial class KiotaBuilder
         if (typeSchema?.Items?.IsEnum() ?? false)
             return null;
         var typeNames = new List<JsonSchemaType?> { typeSchema?.Items?.Type, typeSchema?.Type };
-        if (typeSchema?.AnyOf?.Any() ?? false)
+        if (typeSchema?.AnyOf is { Count: > 0 })
             typeNames.AddRange(typeSchema.AnyOf.Select(x => x.Type)); // double is sometimes an anyof string, number and enum
-        if (typeSchema?.OneOf?.Any() ?? false)
+        if (typeSchema?.OneOf is { Count: > 0 })
             typeNames.AddRange(typeSchema.OneOf.Select(x => x.Type)); // double is sometimes an oneof string, number and enum
                                                                       // first value that's not null, and not "object" for primitive collections, the items type matters
         var typeName = typeNames.Find(static x => x is not null && !typeNamesToSkip.Contains(x.Value));
@@ -1607,7 +1607,7 @@ public partial class KiotaBuilder
                     && requestBodySchema.Properties is not null)
                 {
                     var mediaType = operation.RequestBody.Content.First(x => x.Value.Schema == requestBodySchema).Value;
-                    if (mediaType.Encoding is not null && mediaType.Encoding.Any())
+                    if (mediaType.Encoding is not null && mediaType.Encoding.Count != 0)
                     {
                         requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
                         foreach (var encodingEntry in mediaType.Encoding
@@ -1662,7 +1662,7 @@ public partial class KiotaBuilder
                 });
                 method.RequestBodyContentType = config.StructuredMimeTypes.GetContentTypes(operation.RequestBody.Content?.Where(x => schemaReferenceComparer.Equals(x.Value.Schema, requestBodySchema)).Select(static x => x.Key) ?? []).First();
             }
-            else if (operation.RequestBody.Content?.Any() ?? false)
+            else if (operation.RequestBody.Content is { Count: > 0 })
             {
                 var nParam = new CodeParameter
                 {

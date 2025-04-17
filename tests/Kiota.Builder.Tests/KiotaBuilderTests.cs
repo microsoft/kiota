@@ -3272,9 +3272,9 @@ paths:
             Discriminator = new()
             {
                 PropertyName = "@odata.type",
-                Mapping = new Dictionary<string, string> {
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
                     {
-                        "#microsoft.graph.directoryObject", "#/components/schemas/microsoft.graph.directoryObject"
+                        "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject")
                     }
                 }
             },
@@ -3377,12 +3377,12 @@ paths:
             Discriminator = new()
             {
                 PropertyName = "@odata.type",
-                Mapping = new Dictionary<string, string> {
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
                     {
-                        "#microsoft.graph.directoryObject", "#/components/schemas/microsoft.graph.directoryObject"
+                        "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject")
                     },
                     {
-                        "#microsoft.graph.file", "#/components/schemas/microsoft.graph.file"
+                        "#microsoft.graph.file", new OpenApiSchemaReference("microsoft.graph.file")
                     }
                 }
             },
@@ -3737,13 +3737,13 @@ paths:
             Discriminator = new()
             {
                 PropertyName = "@odata.type",
-                Mapping = new Dictionary<string, string>
+                Mapping = new Dictionary<string, OpenApiSchemaReference>
                 {
                     {
-                        "microsoft.graph.directoryObject", "#/components/schemas/microsoft.graph.directoryObject"
+                        "microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject")
                     },
                     {
-                        "microsoft.graph.user", "#/components/schemas/microsoft.graph.user"
+                        "microsoft.graph.user", new OpenApiSchemaReference("microsoft.graph.user")
                     }
                 }
             },
@@ -4188,9 +4188,9 @@ components:
             Discriminator = new OpenApiDiscriminator
             {
                 PropertyName = "kind",
-                Mapping = new Dictionary<string, string> {
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
                     {
-                        "derivedObject", "#/components/schemas/subNS.derivedObject"
+                        "derivedObject", new OpenApiSchemaReference("subNS.derivedObject")
                     }
                 }
             },
@@ -4213,9 +4213,9 @@ components:
                     Discriminator = new OpenApiDiscriminator
                     {
                         PropertyName = "kind",
-                        Mapping = new Dictionary<string, string> {
+                        Mapping = new Dictionary<string, OpenApiSchemaReference> {
                             {
-                                "secondLevelDerivedObject", "#/components/schemas/subNS.secondLevelDerivedObject"
+                                "secondLevelDerivedObject", new OpenApiSchemaReference("subNS.secondLevelDerivedObject")
                             }
                         }
                     },
