@@ -2847,7 +2847,7 @@ paths:
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponseReference("weatherForecast")
+                                ["200"] = new OpenApiResponseReference("weatherForecastResponse")
                             }
                         }
                     }
@@ -2855,7 +2855,7 @@ paths:
             },
         };
         document.AddComponent("weatherForecast", weatherForecastSchema);
-        document.AddComponent("weatherForecast", weatherForecastResponse);
+        document.AddComponent("weatherForecastResponse", weatherForecastResponse);
         document.SetReferenceHostDocument();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
@@ -2866,6 +2866,72 @@ paths:
         Assert.NotNull(weatherType);
         Assert.DoesNotContain(weatherType.StartBlock.Implements, x => x.Name.Equals("IAdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(weatherType.Properties, x => x.IsOfKind(CodePropertyKind.AdditionalData));
+    }
+    [Fact]
+    public void AddPropertyHolderOnAdditionalPropertiesSchema()
+    {
+        var weatherForecastSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalProperties = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Object,
+            },
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        Type = JsonSchemaType.String,
+                        Format = "date-time"
+                    }
+                },
+                {
+                    "temperature", new OpenApiSchema {
+                        Type = JsonSchemaType.Integer,
+                        Format = "int32"
+                    }
+                }
+            },
+        };
+        var weatherForecastResponse = new OpenApiResponse
+        {
+            Content =
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("weatherForecast")
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["weatherforecast"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("weatherForecastResponse")
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("weatherForecast", weatherForecastSchema);
+        document.AddComponent("weatherForecastResponse", weatherForecastResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var weatherType = codeModel.FindChildByName<CodeClass>("WeatherForecast");
+        Assert.NotNull(weatherType);
+        Assert.Contains(weatherType.StartBlock.Implements, x => x.Name.Equals("IAdditionalDataHolder", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(weatherType.Properties, x => x.IsOfKind(CodePropertyKind.AdditionalData));
     }
     [Fact]
     public void SquishesLonelyNullables()
