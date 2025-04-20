@@ -16,6 +16,7 @@ using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
 using Kiota.Builder.Writers.Swift;
 using Kiota.Builder.Writers.TypeScript;
+using Kiota.Builder.Writers.AL;
 
 namespace Kiota.Builder.Writers;
 
@@ -195,6 +196,7 @@ public abstract class LanguageWriter
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Dart => new DartWriter(outputPath, clientNamespaceName),
             GenerationLanguage.HTTP => new HttpWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.AL => new ALWriter(outputPath, clientNamespaceName),
             _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
         };
     }
