@@ -137,8 +137,6 @@ public static class ALVariableProvider
         {
             GetSystemRestClientHttpResponseMessageGetResponseMethod(codeClass),
             GetSystemRestClientHttpResponseMessageSetResponseMethod(codeClass),
-            GetHttpResponseMessageGetResponseMethod(codeClass),
-            GetHttpResponseMessageSetResponseMethod(codeClass),
         };
         return defaults;
     }
@@ -167,33 +165,6 @@ public static class ALVariableProvider
         };
         method.AddParameter(GetParameterP("var response", new CodeType { Name = "codeunit System.RestClient.\"Http Response Message\"", IsExternal = true }, "1"));
         method.AddCustomProperty("sorting-value", "97");
-        return method;
-    }
-    public static CodeMethod GetHttpResponseMessageGetResponseMethod(CodeClass codeClass)
-    {
-        var method = new CodeMethod
-        {
-            Name = "HttpResponse",
-            SimpleName = "HttpResponse",
-            Access = AccessModifier.Public,
-            ReturnType = new CodeType { Name = "HttpResponseMessage" },
-            Kind = CodeMethodKind.Custom
-        };
-        method.AddCustomProperty("sorting-value", "98");
-        return method;
-    }
-    public static CodeMethod GetHttpResponseMessageSetResponseMethod(CodeClass codeClass)
-    {
-        var method = new CodeMethod
-        {
-            Name = "HttpResponse-overload",
-            SimpleName = "HttpResponse",
-            Access = AccessModifier.Public,
-            ReturnType = new CodeType { Name = "void" },
-            Kind = CodeMethodKind.Custom
-        };
-        method.AddCustomProperty("sorting-value", "99");
-        method.AddParameter(GetParameterP("var response", new CodeType { Name = "HttpResponseMessage" }, "1"));
         return method;
     }
     public static IEnumerable<CodeMethod> GetDefaultModelCodeunitMethods(CodeClass codeClass)

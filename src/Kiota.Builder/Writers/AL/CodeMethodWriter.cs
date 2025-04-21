@@ -191,6 +191,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, ALConventionServic
             throw new InvalidOperationException("DefaultConfiguration method should have a return type");
         writer.WriteLine($"ReqConfig.BaseURL(BaseUrlLbl);");
         writer.WriteLine($"ReqConfig.Client(this);");
+        writer.WriteLine($"ReqConfig.Authorization(APIAuthorization);");
         writer.WriteLine($"exit(ReqConfig);");
     }
     private void WriteFromRequestBuilderSourceMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
