@@ -1,4 +1,4 @@
-import { KiotaLogEntry, KiotaTreeResult, KiotaOpenApiNode, LogLevel, SecurityRequirementObject, OAuth2SecurityScheme, HttpSecurityScheme, ApiKeySecurityScheme, OpenIdSecurityScheme } from "../../types";
+import { KiotaLogEntry, KiotaTreeResult, KiotaOpenApiNode, LogLevel, SecurityRequirementObject, OAuth2SecurityScheme, HttpSecurityScheme, ApiKeySecurityScheme, OpenIdSecurityScheme, OpenApiSpecVersion } from "../../types";
 import { getKiotaTree } from "../../lib/getKiotaTree";
 
 function existsGreaterThanLevelLogs(logs: KiotaLogEntry[] | undefined, level: LogLevel): boolean {
@@ -364,4 +364,36 @@ describe("getKiotaTree", () => {
     const actualLogNoServerEntry = actual?.logs?.find((log) => log.message.startsWith('OpenAPI warning: #/ - A servers entry (v3) or host + basePath + schemes properties (v2) was not present in the OpenAPI description.'));
     expect(actualLogNoServerEntry).toBeUndefined();
   });
+
+  test('testGetKiotaTree_fromV2_0', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/SwaggerPetStore.json';
+
+    const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
+
+    expect(actual).toBeDefined();
+    const actualSpecVersion = actual?.specVersion;
+    expect(actualSpecVersion).toEqual(OpenApiSpecVersion.V2_0);
+  });
+
+  test('testGetKiotaTree_fromV3_0', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+
+    const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
+
+    expect(actual).toBeDefined();
+    const actualSpecVersion = actual?.specVersion;
+    expect(actualSpecVersion).toEqual(OpenApiSpecVersion.V3_0);
+  });
+
+  test('testGetKiotaTree_fromV3_1', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/SimpleModelOpenApi3_1.yaml';
+
+    const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
+
+    expect(actual).toBeDefined();
+    const actualSpecVersion = actual?.specVersion;
+    expect(actualSpecVersion).toEqual(OpenApiSpecVersion.V3_1);
+  });
+
+
 });

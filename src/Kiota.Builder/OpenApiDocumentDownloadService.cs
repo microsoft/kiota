@@ -96,7 +96,7 @@ internal class OpenApiDocumentDownloadService
         return (input, isDescriptionFromWorkspaceCopy);
     }
 
-    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -155,6 +155,17 @@ internal class OpenApiDocumentDownloadService
             Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
         }
 
-        return readResult.Document;
+        return readResult;
+    }
+
+    internal Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    {
+        var documentWithResult = GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken);
+        return documentWithResult.ContinueWith(
+            static x => x.Result?.Document,
+            cancellationToken,
+            TaskContinuationOptions.None,
+            TaskScheduler.Default
+        );
     }
 }

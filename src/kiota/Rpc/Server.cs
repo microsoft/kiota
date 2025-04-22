@@ -119,10 +119,10 @@ internal partial class Server : IServer
         configuration.IncludeKiotaValidationRules = includeKiotaValidationRules;
 
         var builder = new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value);
-        var fullUrlTreeNode = await builder.GetUrlTreeNodeAsync(cancellationToken);
+        var (fullUrlTreeNode, openApiDiagnostic) = await builder.GetUrlTreeNodeAsync(cancellationToken);
         configuration.IncludePatterns = includeFilters.ToHashSet(StringComparer.Ordinal);
         configuration.ExcludePatterns = excludeFilters.ToHashSet(StringComparer.Ordinal);
-        var filteredTreeNode = configuration.IncludePatterns.Count != 0 || configuration.ExcludePatterns.Count != 0 ?
+        var (filteredTreeNode, _) = configuration.IncludePatterns.Count != 0 || configuration.ExcludePatterns.Count != 0 ?
                             await new KiotaBuilder(new NoopLogger<KiotaBuilder>(), configuration, httpClient, IsConfigPreviewEnabled.Value).GetUrlTreeNodeAsync(cancellationToken) : // openapi.net seems to have side effects between tree node and the document, we need to drop all references
                             default;
         var filteredPaths = filteredTreeNode is null ? new HashSet<string>() : GetOperationsFromTreeNode(filteredTreeNode).ToHashSet(StringComparer.Ordinal);
@@ -131,8 +131,9 @@ internal partial class Server : IServer
         var servers = ServersMapper.FromServerList(document?.Servers);
         var securitySchemes = SecuritySchemeMapper.FromComponents(document?.Components);
         var securityRequirements = SecurityRequirementMapper.FromSecurityRequirementList(document?.Security);
+        var openApiVersion = OpenApiSpecVersionMapper.FromOpenApiSpecVersion(openApiDiagnostic?.SpecificationVersion);
 
-        return new ShowResult(logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title, servers, security: securityRequirements, securitySchemes: securitySchemes);
+        return new ShowResult(openApiVersion, logger.LogEntries, rootNode, builder.OpenApiDocument?.Info?.Title, servers, security: securityRequirements, securitySchemes: securitySchemes);
     }
     private static IEnumerable<string> GetOperationsFromTreeNode(OpenApiUrlTreeNode node)
     {
