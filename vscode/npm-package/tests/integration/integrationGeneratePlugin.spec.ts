@@ -173,8 +173,7 @@ describe("GeneratePlugin", () => {
       descriptionPath: actual?.aiPlugin
     });
     expect(actualPluginManifest).toBeDefined();
-    expect(actualPluginManifest?.runtime[0].auth.type).toEqual('OAuthPluginVault');
-    expect(actualPluginManifest?.runtime[0].auth.reference_id).toEqual('{oAuth2AuthCode_REGISTRATION_ID}');
+    expect(actualPluginManifest?.runtime[0].auth.type).toEqual('None');
     expect(actualPluginManifest?.runtime[0].run_for_functions[0]).toEqual('listRepairs');
     expect(actualPluginManifest?.runtime[0].run_for_functions[1]).toEqual('repairs_post');
     expect(actualPluginManifest?.functions[0].name).toEqual('listRepairs');
@@ -194,7 +193,7 @@ describe("GeneratePlugin", () => {
     }
     const actualSecurityScheme = actualSecuritySchemes['oAuth2AuthCode'];
     expect(actualSecurityScheme).toBeDefined();
-    expect(actualSecurityScheme.referenceId).toEqual('{oAuth2AuthCode_REGISTRATION_ID}');
+    expect(actualSecurityScheme.referenceId).toEqual('');
   });
 
   
