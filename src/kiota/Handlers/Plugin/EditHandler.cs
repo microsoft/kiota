@@ -62,11 +62,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
 
-    public required Option<bool> NoWorkspaceOption
-    {
-        get; init;
-    }
-
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -79,7 +74,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         string? pluginAuthRefId0 = context.ParseResult.GetValueForOption(PluginAuthRefIdOption);
         string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
-        bool noWorkspace = context.ParseResult.GetValueForOption(NoWorkspaceOption);
         string? className0 = context.ParseResult.GetValueForOption(ClassOption);
         List<string>? includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
@@ -106,7 +100,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         var className = className0.OrEmpty();
         var pluginAuthRefId = pluginAuthRefId0.OrEmpty();
         Configuration.Generation.SkipGeneration = skipGeneration;
-        Configuration.Generation.NoWorkspace = noWorkspace;
         Configuration.Generation.Operation = ConsumerOperation.Edit;
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId0))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
@@ -120,22 +113,19 @@ internal class EditHandler : BaseKiotaCommandHandler
 
             try
             {
-                if (!noWorkspace)
+                var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
+                var (config, _) = await workspaceStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
+                if (config == null)
                 {
-                    var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
-                    var (config, _) = await workspaceStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
-                    if (config == null)
-                    {
-                        DisplayError("The workspace configuration is missing, please run the init command first.");
-                        return 1;
-                    }
-                    if (!config.Plugins.TryGetValue(className, out var pluginConfiguration))
-                    {
-                        DisplayError($"No plugin found with the provided name {className}");
-                        return 1;
-                    }
-                    pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(Configuration.Generation, className);
+                    DisplayError("The workspace configuration is missing, please run the init command first.");
+                    return 1;
                 }
+                if (!config.Plugins.TryGetValue(className, out var pluginConfiguration))
+                {
+                    DisplayError($"No plugin found with the provided name {className}");
+                    return 1;
+                }
+                pluginConfiguration.UpdateGenerationConfigurationFromApiPluginConfiguration(Configuration.Generation, className);
                 AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
                 AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
                 AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);

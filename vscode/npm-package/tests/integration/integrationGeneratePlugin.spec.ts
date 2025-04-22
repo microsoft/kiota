@@ -40,7 +40,8 @@ describe("GeneratePlugin", () => {
       noWorkspace: true,
     });
     expect(actual2).toBeDefined();
-    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.error)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.information)).toBeTruthy();
 
     if (!actual?.aiPlugin) {
       throw new Error('aiPlugin should be defined');

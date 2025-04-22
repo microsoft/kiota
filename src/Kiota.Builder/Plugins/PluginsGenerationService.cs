@@ -79,12 +79,6 @@ public partial class PluginsGenerationService
             var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
             var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
 
-            // Check directly the output when workspace is not used
-            if (Configuration.Operation == ConsumerOperation.Add && Configuration.NoWorkspace && File.Exists(manifestOutputPath))
-            {
-                throw new InvalidOperationException($"The client {Configuration.ClientClassName} already exists at {manifestOutputPath}");
-            }
-
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
             await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
             await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
