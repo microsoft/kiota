@@ -19,11 +19,12 @@ describe("integration install", () => {
   }, 30000);
 
   test('should install specific version', async () => {
-    const binaryVersion = '1.22.2';
+    const binaryVersion = '1.25.1';
     setKiotaConfig({
       binaryVersion
     })
-    const kiotaPath = getKiotaPath();
+    const kiotaPath = getKiotaPath().replace('kiota.exe', ''); // remove the executable name from the path
+
     await ensureKiotaIsPresentInPath(kiotaPath);
     // check that the folder exists
     expect(fs.existsSync(kiotaPath)).toBe(true);
@@ -37,7 +38,7 @@ describe("integration install", () => {
 
 describe("sideloading install", () => {
   beforeAll(async () => {
-    const binaryVersion = '1.22.2';
+    const binaryVersion = '1.25.1';
     setKiotaConfig({
       binaryVersion
     })
