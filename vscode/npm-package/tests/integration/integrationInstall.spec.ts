@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 import { setKiotaConfig } from '../../config';
-import { ensureKiotaIsPresentInPath, getKiotaPath } from '../../install';
+import { ensureKiotaIsPresentInPath, getCurrentPlatform, getKiotaPath } from '../../install';
 
 // Bigger timeout for the test to download the kiota binary
 describe("integration install", () => {
@@ -23,7 +23,8 @@ describe("integration install", () => {
     setKiotaConfig({
       binaryVersion
     })
-    const kiotaPath = getKiotaPath().replace('kiota.exe', ''); // remove the executable name from the path
+    const currentPlatform = getCurrentPlatform();
+    const kiotaPath = getKiotaPath().split(currentPlatform)[0] + currentPlatform; 
 
     await ensureKiotaIsPresentInPath(kiotaPath);
     // check that the folder exists
