@@ -42,13 +42,13 @@ async function runIfNotLocked(action: () => Promise<void>) {
 export async function ensureKiotaIsPresent() {
   const installPath = getKiotaPathInternal(false);
   if (installPath) {
-    await ensureKiotaIsPresentInPath(installPath);
+    const runtimeDependencies = getRuntimeDependenciesPackages();
+    const currentPlatform = getCurrentPlatform();
+    await ensureKiotaIsPresentInPath(installPath, runtimeDependencies, currentPlatform);
   }
 }
 
-export async function ensureKiotaIsPresentInPath(installPath: string) {
-  const runtimeDependencies = getRuntimeDependenciesPackages();
-  const currentPlatform = getCurrentPlatform();
+export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDependencies: Package[], currentPlatform: string) {
   if (installPath) {
     if (!fs.existsSync(installPath) || fs.readdirSync(installPath).length === 0) {
       await runIfNotLocked(async () => {
@@ -77,7 +77,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string) {
           }
         } catch (error) {
           fs.rmdirSync(installPath, { recursive: true });
-          throw new Error("Kiota download failed. Check the logs for more information.");
+          throw new Error("Kiota download failed. Check the logs for more information.", { cause: error });
         }
       });
     }
@@ -130,14 +130,14 @@ function unzipFile(zipFilePath: string, destinationPath: string) {
 }
 
 async function doesFileHashMatch(destinationPath: string, hashValue: string): Promise<boolean> {
-    const hash = createHash('sha256');
-    return new Promise((resolve, reject) => {
-        fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
-            const computedValue = hash.digest('hex');
-            hash.destroy();
-            resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
-        });
+  const hash = createHash('sha256');
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
+      const computedValue = hash.digest('hex');
+      hash.destroy();
+      resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
     });
+  });
 }
 
 function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
@@ -161,7 +161,7 @@ function getDownloadUrl(platform: string): string {
   return `${baseDownloadUrl}/v${getRuntimeVersion()}/${platform}.zip`;
 }
 
-function getRuntimeDependenciesPackages(): Package[] {
+export function getRuntimeDependenciesPackages(): Package[] {
   if (runtimeJson.runtimeDependencies) {
     return JSON.parse(JSON.stringify(<Package[]>runtimeJson.runtimeDependencies));
   }
