@@ -18,6 +18,7 @@ export interface PluginGenerationOptions {
   clearCache?: boolean;
   cleanOutput?: boolean;
   disabledValidationRules?: string[];
+  noWorkspace?: boolean;
   pluginAuthType?: PluginAuthType | null;
   pluginAuthRefid?: string;
 }
@@ -37,6 +38,7 @@ export interface PluginGenerationOptions {
  * @param {boolean} [pluginGenerationOptions.clearCache] - Whether to clear the cache before generation.
  * @param {boolean} [pluginGenerationOptions.cleanOutput] - Whether to clean the output directory before generation.
  * @param {string[]} [pluginGenerationOptions.disabledValidationRules] - The validation rules to disable during generation.
+ * @param {boolean} [pluginGenerationOptions.noWorkspace] - Whether to generate without a workspace.
  * @param {PluginAuthType | null} [pluginGenerationOptions.pluginAuthType] - The authentication type for the plugin, if any.
  * @param {string} [pluginGenerationOptions.pluginAuthRefid] - The reference ID for the plugin authentication, if any.
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
@@ -66,6 +68,7 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
         disabledValidationRules: pluginGenerationOptions.disabledValidationRules ?? [],
         excludePatterns: pluginGenerationOptions.excludePatterns ?? [],
         includePatterns: pluginGenerationOptions.includePatterns ?? [],
+        noWorkspace: pluginGenerationOptions.noWorkspace ?? null,
         pluginAuthType: pluginGenerationOptions.pluginAuthType ?? null,
         pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid ?? '',
       } as GenerationConfiguration,
