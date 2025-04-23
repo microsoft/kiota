@@ -1,10 +1,6 @@
-import { KiotaLogEntry, KiotaTreeResult, KiotaOpenApiNode, LogLevel, SecurityRequirementObject, OAuth2SecurityScheme, HttpSecurityScheme, ApiKeySecurityScheme, OpenIdSecurityScheme, OpenApiSpecVersion } from "../../types";
+import { KiotaTreeResult, KiotaOpenApiNode, LogLevel, OAuth2SecurityScheme, HttpSecurityScheme, ApiKeySecurityScheme, OpenIdSecurityScheme, OpenApiSpecVersion } from "../../types";
 import { getKiotaTree } from "../../lib/getKiotaTree";
-
-function existsGreaterThanLevelLogs(logs: KiotaLogEntry[] | undefined, level: LogLevel): boolean {
-  if (!logs) return false;
-  return logs.some((log) => log.level >= level);
-}
+import { existsEqualOrGreaterThanLevelLogs } from "../assertUtils";
 
 function findOperationByPath(actual: KiotaTreeResult | undefined, path: string): KiotaOpenApiNode | undefined {
   if (!actual?.rootNode) return undefined;
@@ -28,8 +24,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
     const actualOperationNode = findOperationByPath(actual, '\\discriminateme#POST');
     expect(actualOperationNode).toBeDefined();
     expect(actualOperationNode?.operationId).toBeUndefined();
@@ -41,8 +37,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     // Check if the security requirements are defined correctly for get operation
     // It should have one security requirement: oAuth2AuthCode
@@ -131,8 +127,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     // Check if the security requirements are defined correctly for get operation
     // It should have one security requirement: oAuth2AuthCode
@@ -239,8 +235,8 @@ describe("getKiotaTree", () => {
     const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     const actualSecuritySchema = actual?.securitySchemes?.["oAuth2AuthCode"];
     expect(actualSecuritySchema).toBeDefined();
@@ -263,8 +259,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false, includeKiotaValidationRules: true });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     const actualListOperationNode = findOperationByPath(actual, '\\repairs#GET');
     expect(actualListOperationNode).toBeDefined();
@@ -289,8 +285,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
     const actualGlobalServer = actual?.servers?.[0];
     expect(actualGlobalServer).toBeDefined();
     expect(actualGlobalServer).toEqual('https://sample.server/api');
@@ -308,8 +304,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
     expect(actual?.servers?.[0]).toEqual('https://graph.microsoft.com/v1.0/');
   });
 
@@ -319,8 +315,8 @@ describe("getKiotaTree", () => {
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
-    expect(existsGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     const actualOperationNode = findOperationByPath(actual, '\\repairs#GET');
     expect(actualOperationNode).toBeDefined();
