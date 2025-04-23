@@ -142,6 +142,11 @@ public class GenerationConfiguration : ICloneable
         get; set;
     }
 
+    public bool NoWorkspace
+    {
+        get; set;
+    }
+
     public int MaxDegreeOfParallelism { get; set; } = -1;
     public object Clone()
     {
@@ -169,6 +174,7 @@ public class GenerationConfiguration : ICloneable
             IncludePluginExtensions = IncludePluginExtensions,
             MaxDegreeOfParallelism = MaxDegreeOfParallelism,
             SkipGeneration = SkipGeneration,
+            NoWorkspace = NoWorkspace,
             Operation = Operation,
             PatternsOverride = new(PatternsOverride ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             PluginTypes = new(PluginTypes ?? Enumerable.Empty<PluginType>()),
