@@ -15,7 +15,7 @@ function getTestRuntimeDependenciesPackages(): Package[] {
 describe("integration install", () => {
 
   test('should install to specific location', async () => {
-    const binaryVersion = '1.25.1';
+    const binaryVersion = '1.24.3';
     setKiotaConfig({
       binaryVersion
     })
@@ -33,7 +33,7 @@ describe("integration install", () => {
   }, 30000);
 
   test('should install specific version', async () => {
-    const binaryVersion = '1.25.1';
+    const binaryVersion = '1.24.3';
     setKiotaConfig({
       binaryVersion
     })
@@ -50,7 +50,7 @@ describe("integration install", () => {
   }, 30000);
 
   test('should raise an error for bad hash', async () => {
-    const binaryVersion = '1.25.1';
+    const binaryVersion = '1.24.3';
     setKiotaConfig({
       binaryVersion
     })
@@ -82,7 +82,7 @@ describe("integration install", () => {
 
 describe("sideloading install", () => {
   beforeAll(async () => {
-    const binaryVersion = '1.25.1';
+    const binaryVersion = '1.24.3';
     setKiotaConfig({
       binaryVersion
     })
