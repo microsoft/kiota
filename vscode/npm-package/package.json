@@ -47,6 +47,7 @@
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
     "copy-files": "node scripts/copy-files.js",
+    "generate-readme": "node scripts/generate-readme.js",
     "test:coverage": "jest --coverage --runInBand",
     "prepack": "npm run build",
     "package": "npm pack"
