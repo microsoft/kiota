@@ -245,17 +245,3 @@ Updates the clients by connecting to Kiota and sending a request to update.
 **Throws:**
 - Throws an error if the result of the update is an instance of Error.
 
-### `validateOpenApi`
-
-Validates an OpenAPI manifest by connecting to the Kiota service.
-
-**Parameters:**
-
-- `request`: *ValidateOpenApiRequest* The request object.
-- `request.descriptionPath`: *string* The path to the manifest file.
-
-**Returns:** A promise that resolves to the result of the validation.
-
-**Throws:**
-- If an error occurs while connecting to the Kiota service or validating the manifest.
-
