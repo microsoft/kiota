@@ -71,9 +71,8 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
             }
           }
           unzipFile(zipFilePath, installPath);
-          const kiotaPath = getKiotaPathInternal();
-          if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
-            makeExecutable(kiotaPath);
+          if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && installPath) {
+            makeExecutable(installPath);
           }
         } catch (error) {
           fs.rmdirSync(installPath, { recursive: true });
