@@ -2873,6 +2873,7 @@ paths:
         var weatherForecastSchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
             AdditionalProperties = new OpenApiSchema
             {
                 Type = JsonSchemaType.Object,
