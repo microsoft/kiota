@@ -63,7 +63,7 @@ jobs:
 
       - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
         run: |
-          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }} -f net9.0
+          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/npm-package/.kiotabin/0.0.1/${{ matrix.binaries.architecture }} -f net9.0
         shell: pwsh
 
       - name: Lint
