@@ -72,7 +72,6 @@ describe("integration install", () => {
       await ensureKiotaIsPresentInPath(installLocation, runtimeDependencies, currentPlatform);
     } catch (error) {
       expect(error.message).toEqual("Kiota download failed. Check the logs for more information.");
-      expect(error.cause.message).toEqual("Hash validation of the downloaded file mismatch");
     }
 
     // check that the folder does not exist
