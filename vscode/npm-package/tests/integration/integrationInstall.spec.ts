@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 import { setKiotaConfig } from '../../config';
-import { ensureKiotaIsPresentInPath, getCurrentPlatform, getKiotaPath, getRuntimeDependenciesPackages, Package } from '../../install';
+import { ensureKiotaIsPresentInPath, getCurrentPlatform, getKiotaPath, Package } from '../../install';
 import testRuntimeJson from '../test_runtime.json';
 
 function getTestRuntimeDependenciesPackages(): Package[] {
@@ -58,8 +58,15 @@ describe("integration install", () => {
     const installLocation = `.kiotabin/test_install/${unique_id}`;
     
     // Get the runtime dependencies from the test runtime.json file which has a bad hash for the test
-    const runtimeDependencies = getRuntimeDependenciesPackages();
+    const runtimeDependencies = getTestRuntimeDependenciesPackages();
     const currentPlatform = getCurrentPlatform();
+
+    // Set the hash to a bad value for the test
+    for (const runtimeDependency of runtimeDependencies) {
+      if (runtimeDependency.platformId === currentPlatform) {
+        runtimeDependency.sha256 = "bad_hash_value";
+      }
+    }
 
     try {
       await ensureKiotaIsPresentInPath(installLocation, runtimeDependencies, currentPlatform);
