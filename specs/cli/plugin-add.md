@@ -90,6 +90,7 @@ For `apimanifest`, the generated file will be named `{plugin-name}-apimanifest.j
 | `--authentication-ref-id \| --refid` | No | xxxxxxxx | The authentication reference id that will be used to connect to the API. Accepts a single string value.| Yes, without its value |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. | Yes |
 | `--output \| -o` | No | ./generated/plugins/github | The output directory or file path for the generated output files. This is relative to the location of `workspace.json`. Defaults to `./output`. | Yes, without its value |
+| `--no-workspace \| --nw` | No | true | When specified, the [`workspace.json`](workspace) file experience and `.kiota` directory and associated files will not be created and only the generated output files will be created. Defaults to false. | Yes |
 
 > [!NOTE]
 > It is not required to use the CLI to add new plugins. It is possible to add a new plugin by adding a new entry in the `plugins` section of the `workspace.json` file. See the [workspace.json schema](../schemas/workspace.json) for more information. Using `kiota plugin generate --plugin-name myPlugin` would be required to generate the plugins after manually adding them.
