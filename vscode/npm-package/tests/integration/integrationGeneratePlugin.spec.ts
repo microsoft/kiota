@@ -2,10 +2,115 @@ import path from 'path';
 import { generatePlugin } from '../../lib/generatePlugin';
 import { getKiotaTree } from '../../lib/getKiotaTree';
 import { getPluginManifest } from '../../lib/getPluginManifest';
-import { KiotaPluginType, ConsumerOperation } from '../../types';
+import { KiotaPluginType, ConsumerOperation, LogLevel } from '../../types';
 import { PluginAuthType } from '../../types';
+import { existsEqualOrGreaterThanLevelLogs } from '../assertUtils';
 
 describe("GeneratePlugin", () => {
+
+  test('generatePlugin_withoutWorkspaceAddOperationForExisting', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const outputPath = './.tests_output';
+    const pluginName = 'withoutWorkspaceAddOperationForExisting';
+
+    const pluginType = KiotaPluginType.ApiPlugin;
+    const actual = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Generate,
+      workingDirectory: '',
+      noWorkspace: true,
+    });
+    expect(actual).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+
+    // Second call to generatePlugin with the same parameters should raise an error
+    const actual2 = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Add,
+      workingDirectory: '',
+      noWorkspace: true,
+    });
+    expect(actual2).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.information)).toBeTruthy();
+
+    if (!actual?.aiPlugin) {
+      throw new Error('aiPlugin should be defined');
+    }
+    const actualPluginManifest = await getPluginManifest({
+      descriptionPath: actual?.aiPlugin
+    });
+    expect(actualPluginManifest).toBeDefined();
+
+    if (!actual?.openAPISpec) {
+      throw new Error('descriptionPath should be defined');
+    }
+    const actualApiManifest = await getKiotaTree({
+      descriptionPath: actual?.openAPISpec,
+    });
+    expect(actualApiManifest).toBeDefined();
+  });
+
+  test('generatePlugin_withWorkspaceAddOperationForExisting', async () => {
+    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const outputPath = './.tests_output';
+    const pluginName = 'withWorkspaceAddOperationForExisting';
+
+    const pluginType = KiotaPluginType.ApiPlugin;
+    const actual = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Generate,
+      workingDirectory: '',
+      noWorkspace: false,
+    });
+    expect(actual).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
+
+    // Second call to generatePlugin with the same parameters should raise an error
+    const actual2 = await generatePlugin({
+      descriptionPath: descriptionUrl,
+      outputPath: outputPath,
+      clearCache: false,
+      pluginType: pluginType,
+      pluginName: pluginName,
+      operation: ConsumerOperation.Add,
+      workingDirectory: '',
+      noWorkspace: false,
+    });
+    expect(actual2).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual2?.logs, LogLevel.error)).toBeTruthy();
+
+    if (!actual?.aiPlugin) {
+      throw new Error('aiPlugin should be defined');
+    }
+    const actualPluginManifest = await getPluginManifest({
+      descriptionPath: actual?.aiPlugin
+    });
+    expect(actualPluginManifest).toBeDefined();
+
+    if (!actual?.openAPISpec) {
+      throw new Error('descriptionPath should be defined');
+    }
+    const actualApiManifest = await getKiotaTree({
+      descriptionPath: actual?.openAPISpec,
+    });
+    expect(actualApiManifest).toBeDefined();
+  });
+
   test('generatePlugin_Simple', async () => {
     const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const outputPath = './.tests_output';
@@ -18,9 +123,12 @@ describe("GeneratePlugin", () => {
       pluginType: pluginType,
       pluginName: 'test3',
       operation: ConsumerOperation.Generate,
-      workingDirectory: ''
+      workingDirectory: '',
+      noWorkspace: true,
     });
     expect(actual).toBeDefined();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
+    expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.information)).toBeTruthy();
 
     if (!actual?.aiPlugin) {
       throw new Error('aiPlugin should be defined');
@@ -65,8 +173,7 @@ describe("GeneratePlugin", () => {
       descriptionPath: actual?.aiPlugin
     });
     expect(actualPluginManifest).toBeDefined();
-    expect(actualPluginManifest?.runtime[0].auth.type).toEqual('OAuthPluginVault');
-    expect(actualPluginManifest?.runtime[0].auth.reference_id).toEqual('{oAuth2AuthCode_REGISTRATION_ID}');
+    expect(actualPluginManifest?.runtime[0].auth.type).toEqual('None');
     expect(actualPluginManifest?.runtime[0].run_for_functions[0]).toEqual('listRepairs');
     expect(actualPluginManifest?.runtime[0].run_for_functions[1]).toEqual('repairs_post');
     expect(actualPluginManifest?.functions[0].name).toEqual('listRepairs');
@@ -86,7 +193,7 @@ describe("GeneratePlugin", () => {
     }
     const actualSecurityScheme = actualSecuritySchemes['oAuth2AuthCode'];
     expect(actualSecurityScheme).toBeDefined();
-    expect(actualSecurityScheme.referenceId).toEqual('{oAuth2AuthCode_REGISTRATION_ID}');
+    expect(actualSecurityScheme.referenceId).toEqual('');
   });
 
   

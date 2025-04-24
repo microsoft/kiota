@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info:
+  title: Repair Service
+  version: 1.0.0
+paths:
+  /repairs:
+    get:
+      operationId: listRepairs
+      responses:
+        "200":
+          description: A list of repairs
+          content:
+            application/json:
+              schema:
+                type: object

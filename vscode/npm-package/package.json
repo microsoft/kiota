@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/kiota",
-  "version": "1.0.0",
+  "version": "1.25.1",
   "description": "npm package exposing Kiota CLI functionality to TypeScript",
   "repository": {
     "url": "https://github.com/microsoft/kiota.git",
@@ -47,6 +47,7 @@
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "clean": "rimraf dist",
     "copy-files": "node scripts/copy-files.js",
+    "generate-readme": "node scripts/generate-readme.js",
     "test:coverage": "jest --coverage --runInBand",
     "prepack": "npm run build",
     "package": "npm pack"
