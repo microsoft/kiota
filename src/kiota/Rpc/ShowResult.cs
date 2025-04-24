@@ -1,6 +1,6 @@
 ﻿namespace kiota.Rpc;
 
-public enum OpenApiTreeSpecVersion : int
+public enum OpenApiTreeSpecVersion
 {
     OpenApi2_0 = 0,
     OpenApi3_0 = 1,
