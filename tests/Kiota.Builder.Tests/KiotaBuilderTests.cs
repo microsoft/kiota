@@ -15,6 +15,7 @@ using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
@@ -37,6 +38,33 @@ public sealed partial class KiotaBuilderTests : IDisposable
             File.Delete(file);
         _httpClient.Dispose();
         GC.SuppressFinalize(this);
+    }
+    [Fact]
+    public async Task CreateOpenApiDocumentWithResultAsync_ReturnsDiagnostics()
+    {
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.4
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /samplepath:
+    get:
+      description: response description
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var readResult = await builder.CreateOpenApiDocumentWithResultAsync(fs);
+        Assert.NotNull(readResult);
+        var document = readResult?.Document;
+        var diagnostics = readResult?.Diagnostic;
+        Assert.NotNull(document);
+        Assert.NotNull(diagnostics);
+        Assert.Equal(OpenApiSpecVersion.OpenApi3_0, diagnostics.SpecificationVersion);
     }
     [Fact]
     public async Task SupportsExternalReferences()
@@ -1307,7 +1335,7 @@ servers:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
         var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
-        var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
@@ -1379,7 +1407,7 @@ paths:
                 type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var treeNode = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.DeduplicatedSegment());
         Assert.Equal("enumeration", treeNode.Children.First().Value.DeduplicatedSegment());
