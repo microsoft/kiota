@@ -71,6 +71,8 @@ paths:
       x-ai-adaptive-card:
         data_path: $.users
         file: path_to_file
+        title: title
+        url: https://example.com
   /users/{id}:
     get:
       operationId: getUser
@@ -91,7 +93,7 @@ paths:
       x-ai-adaptive-card:
         data_path: $.user
         file: path_to_file
-        title: valid_title
+        title: title
         url: https://example.com
 components:
   schemas:
