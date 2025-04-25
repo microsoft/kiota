@@ -13,6 +13,7 @@ paths:
       x-ai-adaptive-card:
         data_path: $.test
         file: path_to_adaptive_card_file
+        title: listRepairs
       servers:
         - url: https://sample.server.overridden/api
       responses:

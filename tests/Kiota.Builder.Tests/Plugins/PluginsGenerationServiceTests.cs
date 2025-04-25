@@ -324,6 +324,7 @@ paths:
       x-ai-adaptive-card:
         data_path: $.test
         file: path_to_file
+        title: title
       responses:
         '200':
           description: test
@@ -1017,6 +1018,7 @@ paths:
       x-ai-adaptive-card:
         data_path: $.adaptiveCard
         file: path_to_file
+        title: title
       responses:
         '200':
           description: test
