@@ -420,31 +420,29 @@ public partial class PluginsGenerationService
 
     private static OpenApiDocument GetDocumentWithDefaultResponses(OpenApiDocument document)
     {
-        if (document.Paths is not null && document.Paths.Count > 0)
-        {
-            foreach (var path in document.Paths)
-            {
-                if (path.Value.Operations is not null)
-                {
-                    foreach (var operation in path.Value.Operations)
-                    {
-                        operation.Value.Responses ??= new OpenApiResponses();
+        if (document.Paths is null || document.Paths.Count == 0) return document;
 
-                        if (operation.Value.Responses.Count == 0)
+        foreach (var path in document.Paths)
+        {
+            if (path.Value.Operations is null) continue;
+
+            foreach (var operation in path.Value.Operations)
+            {
+                operation.Value.Responses ??= new OpenApiResponses();
+
+                if (operation.Value.Responses.Count == 0)
+                {
+                    operation.Value.Responses["200"] = new OpenApiResponse
+                    {
+                        Description = "The request has succeeded.",
+                        Content = new Dictionary<string, OpenApiMediaType>
                         {
-                            operation.Value.Responses["200"] = new OpenApiResponse
+                            ["text/plain"] = new OpenApiMediaType
                             {
-                                Description = "The request has succeeded.",
-                                Content = new Dictionary<string, OpenApiMediaType>
-                                {
-                                    ["text/plain"] = new OpenApiMediaType
-                                    {
-                                        Schema = new OpenApiSchema { Type = JsonSchemaType.String }
-                                    }
-                                }
-                            };
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                            }
                         }
-                    }
+                    };
                 }
             }
         }
