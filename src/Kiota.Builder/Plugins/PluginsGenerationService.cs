@@ -68,6 +68,8 @@ public partial class PluginsGenerationService
         // trimming a second time to remove any components that are no longer used after the inlining
         trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
         trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // removing the second ` - Subset` suffix from the title
+
+        trimmedPluginDocument = GetDocumentWithDefaultResponses(trimmedPluginDocument);
         // Ensure reference_id extension value is written according to the plugin auth
         EnsureSecuritySchemeExtensions(trimmedPluginDocument);
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
@@ -414,6 +416,42 @@ public partial class PluginsGenerationService
 
         var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
         return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
+    }
+
+    private static OpenApiDocument GetDocumentWithDefaultResponses(OpenApiDocument document)
+    {
+        if (document.Paths is not null && document.Paths.Count > 0)
+        {
+            foreach (var path in document.Paths)
+            {
+                if (path.Value.Operations is not null)
+                {
+                    foreach (var operation in path.Value.Operations)
+                    {
+                        if (operation.Value.Responses is null)
+                        {
+                            operation.Value.Responses = new OpenApiResponses();
+                        }
+
+                        if (operation.Value.Responses.Count == 0)
+                        {
+                            operation.Value.Responses["200"] = new OpenApiResponse
+                            {
+                                Description = "The request has succeeded.",
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["text/plain"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                                    }
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+        }
+        return document;
     }
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
@@ -764,7 +802,8 @@ public partial class PluginsGenerationService
             || response is null
             || response.Content is null
             || response.Content.Count == 0
-            || response.Content["application/json"]?.Schema is null)
+            || !response.Content.TryGetValue("application/json", out var mediaType)
+            || mediaType.Schema is null)
         {
             return null;
         }
