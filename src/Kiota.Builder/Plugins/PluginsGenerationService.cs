@@ -428,10 +428,7 @@ public partial class PluginsGenerationService
                 {
                     foreach (var operation in path.Value.Operations)
                     {
-                        if (operation.Value.Responses is null)
-                        {
-                            operation.Value.Responses = new OpenApiResponses();
-                        }
+                        operation.Value.Responses ??= new OpenApiResponses();
 
                         if (operation.Value.Responses.Count == 0)
                         {
