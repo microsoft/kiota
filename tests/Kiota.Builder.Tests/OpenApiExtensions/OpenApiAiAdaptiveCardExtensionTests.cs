@@ -28,7 +28,9 @@ public sealed class OpenApiAiAdaptiveCardExtensionTest : IDisposable
         """
         {
             "data_path": "$.items",
-            "file": "path_to_file"
+            "file": "path_to_file",
+            "title": "title",
+            "url": "https://example.com"
         }
         """;
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(oaiValueRepresentation));
@@ -37,6 +39,8 @@ public sealed class OpenApiAiAdaptiveCardExtensionTest : IDisposable
         Assert.NotNull(value);
         Assert.Equal("$.items", value.DataPath);
         Assert.Equal("path_to_file", value.File);
+        Assert.Equal("title", value.Title);
+        Assert.Equal("https://example.com", value.Url);
     }
     private readonly string TempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     [Fact]
@@ -67,6 +71,8 @@ paths:
       x-ai-adaptive-card:
         data_path: $.users
         file: path_to_file
+        title: title
+        url: https://example.com
   /users/{id}:
     get:
       operationId: getUser
@@ -87,6 +93,8 @@ paths:
       x-ai-adaptive-card:
         data_path: $.user
         file: path_to_file
+        title: title
+        url: https://example.com
 components:
   schemas:
     User:
@@ -120,7 +128,9 @@ components:
         var value = new OpenApiAiAdaptiveCardExtension
         {
             DataPath = "$.items",
-            File = "path_to_file"
+            File = "path_to_file",
+            Title = "title",
+            Url = "https://example.com"
         };
         using var sWriter = new StringWriter();
         OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
@@ -128,6 +138,6 @@ components:
 
         value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
         var result = sWriter.ToString();
-        Assert.Equal("{\"data_path\":\"$.items\",\"file\":\"path_to_file\"}", result);
+        Assert.Equal("{\"data_path\":\"$.items\",\"file\":\"path_to_file\",\"title\":\"title\",\"url\":\"https://example.com\"}", result);
     }
 }
