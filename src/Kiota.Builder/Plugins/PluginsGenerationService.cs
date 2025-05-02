@@ -28,8 +28,12 @@ public partial class PluginsGenerationService
     private const string ManifestFileNameSuffix = ".json";
     private const string DescriptionPathSuffix = "openapi.yml";
 
-    private readonly OpenApiDocument OAIDocument;
-    private readonly OpenApiUrlTreeNode TreeNode;
+    // Multiple files handling
+    private const string MultipleFilesPrefix = "description_m";
+    private const string MultipleFilesPattern = MultipleFilesPrefix + @"1-(\d+)\.yaml$";
+
+    private OpenApiDocument OAIDocument; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
+    private OpenApiUrlTreeNode TreeNode; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
     private readonly GenerationConfiguration Configuration;
     private readonly string WorkingDirectory;
     private readonly ILogger<KiotaBuilder> Logger;
@@ -50,7 +54,7 @@ public partial class PluginsGenerationService
 
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
-        Logger.LogInformation("Starting GenerateManifestAsync.");
+        Logger.LogInformation("Starting GenerateManifestAsync");
 
         // 1. cleanup any namings to be used later on.
         Configuration.ClientClassName = SanitizeClientClassName(); //drop any special characters
@@ -75,10 +79,85 @@ public partial class PluginsGenerationService
         }
     }
 
+
+    public async Task GenerateMultipleManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
+    {
+        Logger.LogInformation("Starting GenerateMultipleManifestsAsync");
+        ArgumentNullException.ThrowIfNull(downloadService, nameof(downloadService));
+
+        // Generate the first manifest
+        await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+        // Skip if APIPlugin is not included in the plugin types
+        if (!Configuration.PluginTypes.Contains(PluginType.APIPlugin))
+        {
+            Logger.LogInformation("Skipping APIPlugin generation as it is not included in the plugin types: {PluginTypes}", Configuration.PluginTypes);
+            return;
+        }
+        // Note: We are only proecessing API plugins below and ignoring any other plugin types.
+
+        // Check if Configuration.OpenAPIFilePath value matches MultipleFilesPattern
+        String originalClientClassName = Configuration.ClientClassName;
+        String originalFilePath = Configuration.OpenAPIFilePath;
+        var match = Regex.Match(originalFilePath, MultipleFilesPattern, RegexOptions.IgnoreCase);
+
+        if (match.Success)
+        {
+            // Generate manifests for all files
+            int filesCount = int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+            Logger.LogInformation("Number of files: {FileNumber} extracted from {FileName}", filesCount, originalFilePath);
+
+            for (var fileNumber = 2; fileNumber <= filesCount; fileNumber++)
+            {
+                await PrepareContextForNextFileAsync(downloadService, originalClientClassName, originalFilePath, fileNumber, cancellationToken).ConfigureAwait(false);
+
+                // Generate the manifest for the new file
+                await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            Logger.LogInformation("Configuration.OpenAPIFilePath does not match the filename filter {Filter}", MultipleFilesPattern);
+        }
+    }
+
+    private async Task PrepareContextForNextFileAsync(OpenApiDocumentDownloadService downloadService, string originalClientClassName, string originalFilePath, int fileNumber, CancellationToken cancellationToken)
+    {
+        (Configuration.ClientClassName, Configuration.OpenAPIFilePath) = GetNextFileInfo(originalClientClassName, originalFilePath, fileNumber);
+        Logger.LogInformation("Processing file {FileNumber} with ClientClassName: {ClientClassName}, OpenAPIFilePath: {OpenAPIFilePath}", fileNumber, Configuration.ClientClassName, Configuration.OpenAPIFilePath);
+
+        // Now, we need to update the status to process the next file
+        var (openAPIDocumentStream, _) = await downloadService.LoadStreamAsync(Configuration.OpenAPIFilePath, Configuration, null, false, cancellationToken).ConfigureAwait(false);
+        var openApiDocument = await downloadService.GetDocumentFromStreamAsync(openAPIDocumentStream, Configuration, false, cancellationToken).ConfigureAwait(false);
+        if (openApiDocument is null)
+            throw new InvalidOperationException($"Failed to load OpenAPI document from {Configuration.OpenAPIFilePath}");
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        // Update the fields to reflect on the new file
+        this.OAIDocument = openApiDocument;
+        this.TreeNode = urlTreeNode;
+    }
+
+    internal (string, string) GetNextFileInfo(string originalClientClassName, string originalFilePath, int fileNumber)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(originalClientClassName, nameof(originalClientClassName));
+        ArgumentException.ThrowIfNullOrEmpty(originalFilePath, nameof(originalFilePath));
+
+        // Check that originalFilePath contains MultipleFilesPrefix + "-"
+        if (!originalFilePath.Contains(MultipleFilesPrefix, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException($"The originalFilePath '{originalFilePath}' does not contain the prefix '{MultipleFilesPrefix}'.");
+
+        var updatedClientClassName = $"{originalClientClassName}-{fileNumber}";
+        var updatedOpenAPIFilePath = Regex.Replace(originalFilePath, $"{MultipleFilesPrefix}1-", $"{MultipleFilesPrefix}{fileNumber}-", RegexOptions.IgnoreCase);
+
+        return (updatedClientClassName, updatedOpenAPIFilePath);
+    }
+
     internal string SanitizeClientClassName()
     {
         return PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty);
     }
+
     internal void EnsureOutputDirectoryExists(string filePath)
     {
         var directory = Path.GetDirectoryName(filePath);
@@ -87,6 +166,7 @@ public partial class PluginsGenerationService
             Directory.CreateDirectory(directory);
         }
     }
+
     private async Task WriteOpenApiDescriptionAsync(string descriptionFullPath, CancellationToken cancellationToken)
     {
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
@@ -138,7 +218,6 @@ public partial class PluginsGenerationService
         await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
         await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-
 
         switch (pluginType)
         {
