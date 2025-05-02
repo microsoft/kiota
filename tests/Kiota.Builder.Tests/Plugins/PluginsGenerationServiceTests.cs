@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -6,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Plugins;
 using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
@@ -93,8 +95,14 @@ paths:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        
+        var manifestPaths = await pluginsGenerationService.GenerateManifestAsync();
+        Console.WriteLine($"Generated manifest paths: {string.Join(", ", manifestPaths.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
 
+        // Validate that the dictionary contains the plugin path for API plugin
+        var apiPluginPath = Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json");
+        Assert.Equal(manifestPaths[PluginType.APIPlugin], apiPluginPath);
+        Assert.True(File.Exists(apiPluginPath), $"The API plugin path '{apiPluginPath}' was not found.");
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json")));
         Assert.True(File.Exists(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apimanifest.json")));
         // v1 plugins are not generated anymore
@@ -583,6 +591,237 @@ paths:
         Assert.Single(resultingSpec.Paths["/test"].Operations[HttpMethod.Get].Responses);
     }
 
+    const string ManifestContent1 = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      externalDocs:
+        description: external docs for test path
+        url: http://localhost/test
+      responses:
+        '200':
+          description: test
+        '400':
+          description: client error response
+  /test/{id}:
+    get:
+      summary: description for test path with id
+      operationId: test.WithId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.message'
+        '500':
+          description: api error response
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        id:
+          anyOf:
+          - type: string
+          - type: integer
+        '@odata.type':
+          type: string
+    microsoft.graph.message:
+      allOf:
+      - $ref: '#/components/schemas/microsoft.graph.entity'
+      - type: object
+        title: message
+        properties:
+          subject:
+            type: string
+          body:
+            type: string";
+
+    const string ManifestContent2 = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test/{id}:
+    get:
+      summary: description 2 for test path with id
+      operationId: test.WithId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      - name: mode
+        in: query
+        required: true
+        description: The search mode
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.message'
+        '500':
+          description: api error response
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        id:
+          anyOf:
+          - type: string
+          - type: integer
+        '@odata.type':
+          type: string
+    microsoft.graph.message:
+      allOf:
+      - $ref: '#/components/schemas/microsoft.graph.entity'
+      - type: object
+        title: message
+        properties:
+          subject:
+            type: string
+          body:
+            type: string";
+
+
+    [Fact]
+    public async Task GeneratesManifestWithMultipleRuntimesAsync()
+    {
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(workingDirectory);
+
+        // Write the first description
+        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description_m1-2.yaml");
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+        // Write the second description
+        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description_m2-2.yaml");
+        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
+
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath1,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        // Generate the first manifest
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergePluginManifestsAsync(openAPIDocumentDS);
+
+        string ManifestFileName1 = "client-apiplugin.json";
+        string OpenApiFileName1 = "client-openapi.yml";
+        string ManifestFileName2 = "client2-apiplugin.json";
+        string OpenApiFileName2 = "client2-openapi.yml";
+        string ManifestFileNameMerged = "client-apiplugin-merged.json";
+
+        // assert that the paths are correct
+        string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
+        string manifestPath2 = Path.Combine(outputDirectory, ManifestFileName2);
+        string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
+        Assert.NotNull(manifestPaths);
+        Assert.Equal(3, manifestPaths.Count);
+        var dummyManifestPaths = new List<string>
+        {
+            manifestPath1,
+            manifestPath2,
+            manifestPathMerged
+        };
+        Assert.Equal(dummyManifestPaths, manifestPaths);
+
+        // Test that all manifests were created
+        Assert.True(File.Exists(manifestPath1));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName1)));
+        Assert.True(File.Exists(manifestPath2));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName2)));
+        Assert.True(File.Exists(manifestPathMerged));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(manifestPathMerged);
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal(OpenApiFileName1, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.Equal(3, resultingManifest.Document.Functions.Count);
+        Assert.Equal("test_get", resultingManifest.Document.Functions[0].Name);
+        Assert.Equal("test_WithId", resultingManifest.Document.Functions[1].Name);
+        Assert.Equal("test_WithId_m2", resultingManifest.Document.Functions[2].Name);
+        Assert.Equal(2, resultingManifest.Document.Runtimes.Count);
+        Assert.Equal(3, resultingManifest.Document.Capabilities.ConversationStarters.Count);
+        //Assert.Contains("Main", mainManifest.Capabilities.ConversationStarters.Select(cs => cs.Text));
+
+        // Check that every runtime has at least one function
+        foreach (var runtime in resultingManifest.Document.Runtimes)
+        {
+            Assert.NotEmpty(runtime.RunForFunctions);
+        }
+    }
+
+    [Fact]
+    public async Task GenerateAndMergePluginManifestsAsync_ThrowsException_WhenNoManifestsGenerated()
+    {
+        // Arrange
+        var mockDownloadService = new Mock<OpenApiDocumentDownloadService>(Mock.Of<HttpClient>(), Mock.Of<ILogger>());
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var generationConfiguration = new GenerationConfiguration
+        {
+            PluginTypes = new HashSet<PluginType> { PluginType.APIPlugin },
+            OutputPath = Path.GetTempPath(),
+            OpenAPIFilePath = "description_m1-1.yaml"
+        };
+        var service = new PluginsGenerationService(
+            new OpenApiDocument(),
+            OpenApiUrlTreeNode.Create(),
+            generationConfiguration,
+            generationConfiguration.OutputPath,
+            mockLogger.Object
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GenerateAndMergePluginManifestsAsync(mockDownloadService.Object, CancellationToken.None));
+    }
 
     #region Security
 
