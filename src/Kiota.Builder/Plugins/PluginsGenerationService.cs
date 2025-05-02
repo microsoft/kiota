@@ -24,6 +24,10 @@ namespace Kiota.Builder.Plugins;
 
 public partial class PluginsGenerationService
 {
+    private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
+    private const string ManifestFileNameSuffix = ".json";
+    private const string DescriptionPathSuffix = "openapi.yml";
+
     private readonly OpenApiDocument OAIDocument;
     private readonly OpenApiUrlTreeNode TreeNode;
     private readonly GenerationConfiguration Configuration;
@@ -44,76 +48,116 @@ public partial class PluginsGenerationService
         Logger = logger;
     }
 
-    private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
-    private const string ManifestFileNameSuffix = ".json";
-    private const string DescriptionPathSuffix = "openapi.yml";
     public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("Starting GenerateManifestAsync.");
+
         // 1. cleanup any namings to be used later on.
-        Configuration.ClientClassName =
-            PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty); //drop any special characters
+        Configuration.ClientClassName = SanitizeClientClassName(); //drop any special characters
+
         // 2. write the OpenApi description
+        Logger.LogDebug("Writing OpenAPI description.");
         var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
-        var directory = Path.GetDirectoryName(descriptionFullPath);
+        EnsureOutputDirectoryExists(descriptionFullPath);
+
+        await WriteOpenApiDescriptionAsync(descriptionFullPath, cancellationToken).ConfigureAwait(false);
+        Logger.LogInformation("OpenAPI description written to {DescriptionPath}.", descriptionFullPath);
+
+        // Step 3: Generate Plugin Manifests
+        foreach (var pluginType in Configuration.PluginTypes)
+        {
+            Logger.LogDebug("Generating plugin manifest for plugin type: {PluginType}.", pluginType);
+            var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
+            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
+            await GeneratePluginManifestAsync(pluginType, descriptionRelativePath, manifestOutputPath, cancellationToken).ConfigureAwait(false);
+            Logger.LogInformation("Plugin manifest generated for {PluginType} at {ManifestPath}.", pluginType, manifestOutputPath);
+        }
+    }
+
+    internal string SanitizeClientClassName()
+    {
+        return PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty);
+    }
+    internal void EnsureOutputDirectoryExists(string filePath)
+    {
+        var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
             Directory.CreateDirectory(directory);
-#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-        await using var descriptionStream = File.Create(descriptionFullPath, 4096);
-        await using var fileWriter = new StreamWriter(descriptionStream);
-#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
-        var descriptionWriter = new OpenApiYamlWriter(fileWriter, new() { InlineLocalReferences = true, InlineExternalReferences = true });
+        }
+    }
+    private async Task WriteOpenApiDescriptionAsync(string descriptionFullPath, CancellationToken cancellationToken)
+    {
         var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
         PrepareDescriptionForCopilot(trimmedPluginDocument);
+
         // trimming a second time to remove any components that are no longer used after the inlining
         trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
-        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // removing the second ` - Subset` suffix from the title
+        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // Remove the second ` - Subset` suffix
 
         trimmedPluginDocument = GetDocumentWithDefaultResponses(trimmedPluginDocument);
         // Ensure reference_id extension value is written according to the plugin auth
         EnsureSecuritySchemeExtensions(trimmedPluginDocument);
-        trimmedPluginDocument.SerializeAsV3(descriptionWriter);
-        await descriptionWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
-
-        // 3. write the plugins
-        foreach (var pluginType in Configuration.PluginTypes)
-        {
-            var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
-            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
 
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-            await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
-            await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
+        await using var descriptionStream = File.Create(descriptionFullPath, 4096);
+        await using var fileWriter = new StreamWriter(descriptionStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 
-            switch (pluginType)
-            {
-                case PluginType.APIPlugin:
-                    var pluginDocument = GetManifestDocument(descriptionRelativePath);
-                    pluginDocument.Write(writer);
-                    break;
-                case PluginType.APIManifest:
-                    var apiManifest = new ApiManifestDocument("application"); //TODO add application name
-                    // pass empty config hash so that its not included in this manifest.
-                    apiManifest.ApiDependencies[Configuration.ClientClassName] = Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory);
-                    var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
-                        ? DefaultContactName
-                        : OAIDocument.Info.Contact.Name;
-                    var publisherEmail = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Email)
-                        ? DefaultContactEmail
-                        : OAIDocument.Info.Contact.Email;
-                    apiManifest.Publisher = new Publisher(publisherName, publisherEmail);
-                    apiManifest.Write(writer);
-                    break;
-                case PluginType.OpenAI:
-                    // OpenAI plugins have been retired and are no longer supported. They only require the OpenAPI description now.
-                    break;
-                default:
-                    throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
-            }
+        // Write the OpenAPI description to the file
+        var descriptionWriter = new OpenApiYamlWriter(fileWriter, new() { InlineLocalReferences = true, InlineExternalReferences = true });
+        trimmedPluginDocument.SerializeAsV3(descriptionWriter);
+        await descriptionWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
 
-            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+    private ApiManifestDocument CreateApiManifestDocument(string descriptionRelativePath)
+    {
+        var apiManifest = new ApiManifestDocument("application"); // TODO: Add application name
+        // pass empty config hash so that its not included in this manifest.
+        apiManifest.ApiDependencies[Configuration.ClientClassName] = Configuration.ToApiDependency(
+            string.Empty,
+            TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [],
+            WorkingDirectory
+        );
+
+        var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
+            ? DefaultContactName
+            : OAIDocument.Info.Contact.Name;
+        var publisherEmail = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Email)
+            ? DefaultContactEmail
+            : OAIDocument.Info.Contact.Email;
+
+        apiManifest.Publisher = new Publisher(publisherName, publisherEmail);
+        return apiManifest;
+    }
+
+    private async Task GeneratePluginManifestAsync(PluginType pluginType, string descriptionRelativePath, string manifestOutputPath, CancellationToken cancellationToken)
+    {
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+        await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
+        await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+
+
+        switch (pluginType)
+        {
+            case PluginType.APIPlugin:
+                var pluginDocument = GetManifestDocument(descriptionRelativePath);
+                pluginDocument.Write(writer);
+                break;
+            case PluginType.APIManifest:
+                var apiManifest = CreateApiManifestDocument(descriptionRelativePath);
+                apiManifest.Write(writer);
+                break;
+            case PluginType.OpenAI:
+                // OpenAI plugins are no longer supported.
+                break;
+            default:
+                throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
         }
+
+        await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static string? GetExistingReferenceId(IOpenApiSecurityScheme schema)
