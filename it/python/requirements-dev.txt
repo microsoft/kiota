@@ -86,7 +86,7 @@ cryptography==44.0.2 ; python_version >= '3.7'
 
 frozenlist==1.6.0 ; python_version >= '3.7'
 
-h11==0.14.0 ; python_version >= '3.7'
+h11==0.16.0 ; python_version >= '3.7'
 
 h2==4.2.0
 
