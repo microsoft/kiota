@@ -59,10 +59,7 @@
     "ghcr.io/devcontainers-contrib/features/gradle-sdkman:2": {},
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/go:1": {},
-    "ghcr.io/devcontainers/features/java:1": {
-      // https://github.com/devcontainers/features/issues/1308
-      "version": "23"
-    },
+    "ghcr.io/devcontainers/features/java:1": {},
     "ghcr.io/devcontainers/features/rust:1": {},
     // disabled swift & ruby as their are failing for now
     "ghcr.io/devcontainers/features/powershell:1": {}
