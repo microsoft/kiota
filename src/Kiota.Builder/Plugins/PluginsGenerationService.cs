@@ -310,20 +310,37 @@ public partial class PluginsGenerationService
         this.TreeNode = urlTreeNode;
     }
 
+    /// <summary>
+    /// Generates the next file information based on the original client class name and file path.
+    /// This method is used to handle multiple OpenAPI files by following a specific naming convention <see cref="MultipleFilesPrefix" />
+    /// </summary>
+    /// <param name="originalClientClassName">The original client class name used as a base for generating the next file's class name.</param>
+    /// <param name="originalFilePath">The original file path of the OpenAPI document, which is used to derive the next file's path.</param>
+    /// <param name="fileNumber">The number of the file to process next, starting from 2 for subsequent files.</param>
+    /// <returns>A tuple containing the updated client class name and the updated OpenAPI file path for the next file.</returns>
+    /// <exception cref="ArgumentException">Thrown if the original client class name or file path is null or empty, or if the file path does not contain the required prefix.</exception>
     internal (string, string) GetNextFileInfo(string originalClientClassName, string originalFilePath, int fileNumber)
     {
+
         ArgumentException.ThrowIfNullOrEmpty(originalClientClassName, nameof(originalClientClassName));
         ArgumentException.ThrowIfNullOrEmpty(originalFilePath, nameof(originalFilePath));
 
-        // Check that originalFilePath contains MultipleFilesPrefix + "-"
+        // Check that originalFilePath contains the expected prefix
         if (!originalFilePath.Contains(MultipleFilesPrefix, StringComparison.OrdinalIgnoreCase))
+
             throw new ArgumentException($"The originalFilePath '{originalFilePath}' does not contain the prefix '{MultipleFilesPrefix}'.");
 
+
+
         var updatedClientClassName = $"{originalClientClassName}-{fileNumber}";
+
         var updatedOpenAPIFilePath = Regex.Replace(originalFilePath, $"{MultipleFilesPrefix}1-", $"{MultipleFilesPrefix}{fileNumber}-", RegexOptions.IgnoreCase);
 
+
+
         return (updatedClientClassName, updatedOpenAPIFilePath);
-    }
+
+    }
 
     internal string SanitizeClientClassName()
     {

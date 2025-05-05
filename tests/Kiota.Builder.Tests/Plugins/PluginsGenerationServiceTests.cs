@@ -718,9 +718,53 @@ components:
           body:
             type: string";
 
+        [Fact]
+        public async Task GenerateAndMergePluginManifestsAsync_SingleFileTest()
+        {
+            // Arrange
+            var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(workingDirectory);
+
+            var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description_m1-1.yaml");
+            await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+
+            var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+            var outputDirectory = Path.Combine(workingDirectory, "output");
+            var generationConfiguration = new GenerationConfiguration
+            {
+                OutputPath = outputDirectory,
+                OpenAPIFilePath = simpleDescriptionPath1,
+                PluginTypes = [PluginType.APIPlugin],
+                ClientClassName = "client",
+                ApiRootUrl = "http://localhost/", // Kiota builder would set this for us
+            };
+
+            var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false);
+            var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+            KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+            var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+            var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+
+            // Act
+            var manifestPaths = await pluginsGenerationService.GenerateAndMergePluginManifestsAsync(openAPIDocumentDS);
+
+            // Assert
+            Assert.NotNull(manifestPaths);
+            string ManifestFileName1 = "client-apiplugin.json";
+            string ManifestFileNameMerged = "client-apiplugin-merged.json";
+            string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
+            string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
+            var expectedManifestPaths = new List<string>
+            {
+                manifestPath1,
+                manifestPathMerged
+            };
+            Assert.Equal(expectedManifestPaths, manifestPaths);
+        }
 
     [Fact]
-    public async Task GeneratesManifestWithMultipleRuntimesAsync()
+    public async Task GeneratesManifestWithMultipleRuntimesAsync_TwoFilesTest()
     {
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(workingDirectory);
@@ -762,21 +806,23 @@ components:
         string manifestPath2 = Path.Combine(outputDirectory, ManifestFileName2);
         string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
         Assert.NotNull(manifestPaths);
-        Assert.Equal(3, manifestPaths.Count);
-        var dummyManifestPaths = new List<string>
+        var expectedManifestPaths = new List<string>
         {
             manifestPath1,
             manifestPath2,
             manifestPathMerged
         };
-        Assert.Equal(dummyManifestPaths, manifestPaths);
+        Assert.Equal(expectedManifestPaths, manifestPaths);
 
         // Test that all manifests were created
-        Assert.True(File.Exists(manifestPath1));
+        foreach (var manifestPath in manifestPaths)
+        {
+            Assert.True(File.Exists(manifestPath));
+        }
+
+        // Test that all OpenAPI files were created
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName1)));
-        Assert.True(File.Exists(manifestPath2));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName2)));
-        Assert.True(File.Exists(manifestPathMerged));
 
         // Validate the v2 plugin
         var manifestContent = await File.ReadAllTextAsync(manifestPathMerged);
@@ -790,12 +836,97 @@ components:
         Assert.Equal("test_WithId_m2", resultingManifest.Document.Functions[2].Name);
         Assert.Equal(2, resultingManifest.Document.Runtimes.Count);
         Assert.Equal(3, resultingManifest.Document.Capabilities.ConversationStarters.Count);
-        //Assert.Contains("Main", mainManifest.Capabilities.ConversationStarters.Select(cs => cs.Text));
 
         // Check that every runtime has at least one function
         foreach (var runtime in resultingManifest.Document.Runtimes)
         {
             Assert.NotEmpty(runtime.RunForFunctions);
+        }
+    }
+
+    [Fact]
+    public async Task GenerateAndMergePluginManifestsAsync_ThreeFilesTest()
+    {
+        // Arrange
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(workingDirectory);
+
+        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description_m1-3.yaml");
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+
+        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description_m2-3.yaml");
+        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
+
+        var simpleDescriptionPath3 = Path.Combine(workingDirectory, "description_m3-3.yaml");
+        var manifestContent3 = """
+            openapi: 3.0.0
+            info:
+              title: test
+              version: 1.0
+            servers:
+              - url: http://localhost/
+                description: There's no place like home
+            paths:
+              /test/{id}/details:
+                get:
+                  summary: description for test path with details
+                  operationId: test.WithDetails
+                  parameters:
+                  - name: id
+                    in: path
+                    required: true
+                    description: The id of the test
+                    schema:
+                      type: integer
+                      format: int32
+                  responses:
+                    '200':
+                      description: success
+            """;
+        await File.WriteAllTextAsync(simpleDescriptionPath3, manifestContent3);
+
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath1,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", // Kiota builder would set this for us
+        };
+
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+
+        // Act
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergePluginManifestsAsync(openAPIDocumentDS);
+
+        // Assert
+        Assert.NotNull(manifestPaths);
+        string ManifestFileName1 = "client-apiplugin.json";
+        string ManifestFileName2 = "client2-apiplugin.json";
+        string ManifestFileName3 = "client3-apiplugin.json";
+        string ManifestFileNameMerged = "client-apiplugin-merged.json";
+        string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
+        string manifestPath2 = Path.Combine(outputDirectory, ManifestFileName2);
+        string manifestPath3 = Path.Combine(outputDirectory, ManifestFileName3);
+        string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
+        var expectedManifestPaths = new List<string>
+        {
+            manifestPath1,
+            manifestPath2,
+            manifestPath3,
+            manifestPathMerged
+        };
+        Assert.Equal(expectedManifestPaths, manifestPaths);
+        foreach (var manifestPath in manifestPaths)
+        {
+            Assert.True(File.Exists(manifestPath));
         }
     }
 
@@ -1553,7 +1684,7 @@ paths:
 
     #endregion
 
-    #region Helper methods
+    #region Tests for helper methods
 
     /// <summary>
     /// Creates an instance of <see cref="PluginsGenerationService"/> with an empty OpenAPI document and URL tree node.
@@ -1563,15 +1694,11 @@ paths:
     /// <returns>An instance of <see cref="PluginsGenerationService"/> initialized with empty data.</returns>
     private PluginsGenerationService CreateEmptyPluginsGenerationService(GenerationConfiguration generationConfiguration)
     {
-
         var openApiDocument = new OpenApiDocument();
-
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
-
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         return new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-
     }
     [Fact]
     public void SanitizeClientClassName_RemovesSpecialCharacters()
