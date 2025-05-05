@@ -259,7 +259,7 @@ public partial class PluginsGenerationService
                 // Rename the function when adding to the main manifest document to prevent naming conflicts
                 var newName = $"{functionName}_m{manifestIndex + 1}";
                 Logger.LogDebug("Renaming function {FunctionName} to {NewName} in manifest {ManifestIndex}", functionName, newName, manifestIndex);
-                
+
                 function.Name = newName;
                 mainPluginManifestDocument.Functions.Add(function);
                 // Change the function name in the runtime

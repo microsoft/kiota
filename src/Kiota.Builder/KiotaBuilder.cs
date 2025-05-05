@@ -267,7 +267,7 @@ public partial class KiotaBuilder
                 await pluginsService.GenerateMultipleManifestsAsync(openApiDocumentDownloadService, cancellationToken).ConfigureAwait(false);
             else
                 await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
-            
+
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
