@@ -1699,7 +1699,8 @@ paths:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         return new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-    }
+    }
+
     [Fact]
     public void SanitizeClientClassName_RemovesSpecialCharacters()
     {

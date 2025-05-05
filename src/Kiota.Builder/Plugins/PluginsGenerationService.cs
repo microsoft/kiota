@@ -340,7 +340,8 @@ public partial class PluginsGenerationService
 
         return (updatedClientClassName, updatedOpenAPIFilePath);
 
-    }
+    }
+
 
     internal string SanitizeClientClassName()
     {
