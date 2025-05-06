@@ -25,7 +25,7 @@ namespace Kiota.Builder.Plugins;
 public partial class PluginsGenerationService
 {
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
-    private const string ManifestFileExt= ".json";
+    private const string ManifestFileExt = ".json";
     private const string DescriptionFileExt = ".yml";
 
     /// <summary>
@@ -94,7 +94,7 @@ public partial class PluginsGenerationService
     {
         var manifestFileName = $"{configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{configuration.FileNameSuffix}{ManifestFileExt}";
         var manifestOutputPath = Path.Combine(configuration.OutputPath, manifestFileName);
-        
+
         return manifestOutputPath;
     }
 

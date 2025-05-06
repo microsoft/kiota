@@ -955,7 +955,7 @@ components:
             service.GenerateAndMergeMultipleManifestsAsync(mockDownloadService.Object, CancellationToken.None));
     }
 
-    
+
 
 
     #region Security
