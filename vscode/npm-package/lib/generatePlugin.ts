@@ -1,9 +1,9 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from "..";
-import connectToKiota from "../connect";
-import { KiotaPluginType, GeneratePluginResult } from "../types";
 import * as path from "path";
+import { checkDocumentVersion, checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from "..";
+import connectToKiota from "../connect";
+import { GeneratePluginResult, KiotaPluginType } from "../types";
 
 export interface PluginGenerationOptions {
   descriptionPath: string;
@@ -88,6 +88,7 @@ export async function generatePlugin(pluginGenerationOptions: PluginGenerationOp
     return {
       aiPlugin: pathPluginManifest,
       openAPISpec: pathOfSpec, 
+      openAPISpecVersion: checkDocumentVersion(result as KiotaLogEntry[]),
       isSuccess: checkForSuccess(result as KiotaLogEntry[]),
       logs: result
     };

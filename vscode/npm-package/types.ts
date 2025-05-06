@@ -306,6 +306,7 @@ export interface ValidateOpenApiResult extends KiotaLoggedResult {
 export interface GeneratePluginResult extends KiotaResult {
   aiPlugin: string;
   openAPISpec: string;
+  openAPISpecVersion: string;
 }
 
 export interface PluginManifestResult extends KiotaResult {

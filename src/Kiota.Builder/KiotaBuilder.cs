@@ -260,6 +260,7 @@ public partial class KiotaBuilder
             if (openApiDocument is null || openApiTree is null)
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin
+            logger.LogInformation("Processing OpenAPI document version: {SpecVersion}", openApiDocument.Info.Version);
             sw.Start();
             var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
             await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
