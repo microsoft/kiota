@@ -243,7 +243,7 @@ internal partial class Server : IServer
         {
             globalLogger.LogCritical(ex, "error generating the plugin: {exceptionMessage}", ex.Message);
         }
-        return (globalLogger.LogEntries, configuration.PluginTypes.ToArray(), configuration.PluginAuthInformation).ToList();
+        return globalLogger.LogEntries;
     }
     public LanguagesInformation Info()
     {
