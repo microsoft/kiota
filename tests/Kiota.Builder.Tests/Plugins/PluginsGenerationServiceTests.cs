@@ -22,7 +22,7 @@ public sealed class PluginsGenerationServiceTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();
     private readonly ILogger<KiotaBuilder> _logger = new Mock<ILogger<KiotaBuilder>>().Object;
-    
+
     [Fact]
     public void Defensive()
     {
