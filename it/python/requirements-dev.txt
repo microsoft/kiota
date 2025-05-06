@@ -4,7 +4,7 @@ astroid==3.3.8 ; python_full_version >= '3.7.2'
 
 certifi==2025.4.26 ; python_version >= '3.6'
 
-charset-normalizer==3.4.1 ; python_full_version >= '3.7.0'
+charset-normalizer==3.4.2 ; python_full_version >= '3.7.0'
 
 colorama==0.4.6 ; sys_platform == 'win32'
 
@@ -40,7 +40,7 @@ platformdirs==4.3.7 ; python_version >= '3.7'
 
 pluggy==1.5.0 ; python_version >= '3.7'
 
-pylint==3.3.6
+pylint==3.3.7
 
 pytest==8.3.5
 
@@ -82,7 +82,7 @@ azure-identity==1.21.0
 
 cffi==1.17.1
 
-cryptography==44.0.2 ; python_version >= '3.7'
+cryptography==44.0.3 ; python_version >= '3.7'
 
 frozenlist==1.6.0 ; python_version >= '3.7'
 
