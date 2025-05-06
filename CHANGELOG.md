@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.26.0] - 2025-05-06
+
+### Added
+
 - Support for `--no-workspace` option in the CLI plugin add command to avoid using the workspace experience. [#6452](https://github.com/microsoft/kiota/issues/6452)
 
 ### Changed
@@ -1626,5 +1632,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
