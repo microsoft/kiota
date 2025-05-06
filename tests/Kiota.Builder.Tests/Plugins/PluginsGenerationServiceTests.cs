@@ -2216,7 +2216,7 @@ paths:
             },
             Runtimes = new List<Runtime>
             {
-                new OpenApiRuntime() 
+                new OpenApiRuntime()
             }
         };
 

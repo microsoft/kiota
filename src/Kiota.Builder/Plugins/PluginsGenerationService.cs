@@ -206,7 +206,7 @@ public partial class PluginsGenerationService
     {
         ArgumentNullException.ThrowIfNull(originalFilePath, nameof(originalFilePath));
         fileNumber = filesCount = 0;
-        
+
         // Check if the file path matches the pattern for multiple OpenAPI files
         var multipleFilesRequestMatch = Regex.Match(originalFilePath, MultipleFilesPattern, RegexOptions.IgnoreCase);
         if (!multipleFilesRequestMatch.Success)
