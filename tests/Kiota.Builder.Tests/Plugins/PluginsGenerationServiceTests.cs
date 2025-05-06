@@ -725,7 +725,7 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(workingDirectory);
 
-        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description_m1-1.yaml");
+        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-1.yaml");
         await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
 
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
@@ -747,12 +747,12 @@ components:
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergePluginManifestsAsync(openAPIDocumentDS);
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
 
         // Assert
         Assert.NotNull(manifestPaths);
         string ManifestFileName1 = "client-apiplugin.json";
-        string ManifestFileNameMerged = "client-apiplugin-merged.json";
+        string ManifestFileNameMerged = "client-apiplugin.json";
         string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
         string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
         var expectedManifestPaths = new List<string>
@@ -770,10 +770,10 @@ components:
         Directory.CreateDirectory(workingDirectory);
 
         // Write the first description
-        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description_m1-2.yaml");
+        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-2.yaml");
         await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
         // Write the second description
-        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description_m2-2.yaml");
+        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description-partial-2-2.yaml");
         await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
 
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
@@ -793,13 +793,13 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergePluginManifestsAsync(openAPIDocumentDS);
+        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
 
-        string ManifestFileName1 = "client-apiplugin.json";
-        string OpenApiFileName1 = "client-openapi.yml";
-        string ManifestFileName2 = "client2-apiplugin.json";
-        string OpenApiFileName2 = "client2-openapi.yml";
-        string ManifestFileNameMerged = "client-apiplugin-merged.json";
+        string ManifestFileName1 = "client-apiplugin-partial-1-2.json";
+        string OpenApiFileName1 = "client-openapi-partial-1-2.yml";
+        string ManifestFileName2 = "client-apiplugin-partial-2-2.json";
+        string OpenApiFileName2 = "client-openapi-partial-2-2.yml";
+        string ManifestFileNameMerged = "client-apiplugin.json";
 
         // assert that the paths are correct
         string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
@@ -851,13 +851,13 @@ components:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(workingDirectory);
 
-        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description_m1-3.yaml");
+        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-3.yaml");
         await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
 
-        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description_m2-3.yaml");
+        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description-partial-2-3.yaml");
         await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
 
-        var simpleDescriptionPath3 = Path.Combine(workingDirectory, "description_m3-3.yaml");
+        var simpleDescriptionPath3 = Path.Combine(workingDirectory, "description-partial-3-3.yaml");
         var manifestContent3 = """
             openapi: 3.0.0
             info:
@@ -904,14 +904,14 @@ components:
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergePluginManifestsAsync(openAPIDocumentDS);
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
 
         // Assert
         Assert.NotNull(manifestPaths);
-        string ManifestFileName1 = "client-apiplugin.json";
-        string ManifestFileName2 = "client2-apiplugin.json";
-        string ManifestFileName3 = "client3-apiplugin.json";
-        string ManifestFileNameMerged = "client-apiplugin-merged.json";
+        string ManifestFileName1 = "client-apiplugin-partial-1-3.json";
+        string ManifestFileName2 = "client-apiplugin-partial-2-3.json";
+        string ManifestFileName3 = "client-apiplugin-partial-3-3.json";
+        string ManifestFileNameMerged = "client-apiplugin.json";
         string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
         string manifestPath2 = Path.Combine(outputDirectory, ManifestFileName2);
         string manifestPath3 = Path.Combine(outputDirectory, ManifestFileName3);
@@ -940,7 +940,7 @@ components:
         {
             PluginTypes = new HashSet<PluginType> { PluginType.APIPlugin },
             OutputPath = Path.GetTempPath(),
-            OpenAPIFilePath = "description_m1-1.yaml"
+            OpenAPIFilePath = "description-partial-1-1.yaml"
         };
         var service = new PluginsGenerationService(
             new OpenApiDocument(),
@@ -952,9 +952,10 @@ components:
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.GenerateAndMergePluginManifestsAsync(mockDownloadService.Object, CancellationToken.None));
+            service.GenerateAndMergeMultipleManifestsAsync(mockDownloadService.Object, CancellationToken.None));
     }
 
+    
 
 
     #region Security
@@ -1717,36 +1718,23 @@ paths:
         Assert.Equal("MyClientName", result);
     }
 
-    [Fact]
-    public void SanitizeClientClassName_LeavesAlphanumericCharacters()
+    [Theory]
+    [InlineData("My@Client#Name!", "MyClientName")]
+    [InlineData("Client123Name", "Client123Name")]
+    [InlineData("", "")]
+    public void SanitizeClientClassName_ValidatesVariousInputs(string inputClientClassName, string expectedSanitizedName)
     {
         // Arrange
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration
         {
-            ClientClassName = "Client123Name"
+            ClientClassName = inputClientClassName
         });
 
         // Act
         var result = pluginsGenerationService.SanitizeClientClassName();
 
         // Assert
-        Assert.Equal("Client123Name", result);
-    }
-
-    [Fact]
-    public void SanitizeClientClassName_ReturnsEmptyString_WhenInputIsEmpty()
-    {
-        // Arrange
-        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration
-        {
-            ClientClassName = string.Empty
-        });
-
-        // Act
-        var result = pluginsGenerationService.SanitizeClientClassName();
-
-        // Assert
-        Assert.Equal(string.Empty, result);
+        Assert.Equal(expectedSanitizedName, result);
     }
 
     [Fact]
@@ -1810,31 +1798,30 @@ paths:
     }
 
     [Theory]
-    [InlineData("ClientName", "description_m1-2.yaml", 2, "ClientName-2", "description_m2-2.yaml")]
-    [InlineData("ClientName", "description_m1-3.yaml", 2, "ClientName-2", "description_m2-3.yaml")]
-    [InlineData("ClientName", "description_m1-3.yaml", 3, "ClientName-3", "description_m3-3.yaml")]
-    [InlineData("ClientName", "description_m1-9.yaml", 5, "ClientName-5", "description_m5-9.yaml")]
-    [InlineData("MyClient", "description_m1-8.yaml", 3, "MyClient-3", "description_m3-8.yaml")]
-    [InlineData("MyClient", "description_m1-8.yaml", 8, "MyClient-8", "description_m8-8.yaml")]
-    public void GetNextFileName_ValidInputs_ReturnsExpectedResults(string originalClientClassName, String originalFilePath, int fileNumber, string expectedClientClassName, string expectedFilePath)
+    [InlineData("description-partial-1-1.yaml", 1, "description-partial-1-1.yaml")]
+    [InlineData("description-partial-1-2.yaml", 2, "description-partial-2-2.yaml")]
+    [InlineData("description-partial-1-3.yaml", 2, "description-partial-2-3.yaml")]
+    [InlineData("description-partial-1-3.yaml", 3, "description-partial-3-3.yaml")]
+    [InlineData("description-partial-1-9.yaml", 5, "description-partial-5-9.yaml")]
+    [InlineData("description-partial-1-8.yaml", 3, "description-partial-3-8.yaml")]
+    [InlineData("description-partial-1-8.yaml", 8, "description-partial-8-8.yaml")]
+    public void GetNextFileInfo_ValidInputs_ReturnsExpectedResults(String originalFilePath, int fileNumber, string expectedFilePath)
     {
         // Arrange
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration
         {
-            ClientClassName = originalClientClassName,
             OpenAPIFilePath = originalFilePath
         });
 
         // Act
-        var (updatedClientClassName, updatedOpenAPIFilePath) = pluginsGenerationService.GetNextFileInfo(originalClientClassName, originalFilePath, fileNumber);
+        string updatedOpenAPIFilePath = pluginsGenerationService.GetNextFilePath(originalFilePath, fileNumber);
 
         // Assert
-        Assert.Equal(expectedClientClassName, updatedClientClassName);
         Assert.Equal(expectedFilePath, updatedOpenAPIFilePath);
     }
 
     [Fact]
-    public void GetNextFileName_InvalidRegex_ThrowsException()
+    public void GetNextFileInfo_InvalidRegex_ThrowsException()
     {
         // Arrange
         var generationConfiguration = new GenerationConfiguration
@@ -1845,7 +1832,319 @@ paths:
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(generationConfiguration);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetNextFileInfo(generationConfiguration.ClientNamespaceName, generationConfiguration.OpenAPIFilePath, 2));
+        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetNextFilePath(generationConfiguration.OpenAPIFilePath, 2));
+    }
+
+    [Theory]
+    [InlineData("openapi.agentname.actionname-partial-1-3.yaml", true, 3)] // Valid pattern with 3 files
+    [InlineData("openapi.agentname.actionname-partial-1-2.yaml", true, 2)] // Valid pattern with 2 files
+    [InlineData("openapi.agentname.actionname-partial-1-10.yaml", true, 10)] // Valid pattern with 10 files
+    [InlineData("openapi.agentname.actionname.yaml", false, 0)] // Invalid pattern, no partial prefix
+    [InlineData("openapi.agentname.actionname-partial-2-3.yaml", false, 0)] // Invalid pattern, not starting with 1
+    [InlineData("randomfile.yaml", false, 0)] // Completely invalid file name
+    [InlineData("", false, 0)] // Empty file name
+    public void TryMatchMultipleFilesRequest_ValidatesFilePatterns(string filePath, bool expectedResult, int expectedFilesCount)
+    {
+        // Arrange
+        var generationConfiguration = new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = filePath
+        };
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(generationConfiguration);
+
+        // Act
+        var result = pluginsGenerationService.TryMatchMultipleFilesRequest(filePath, out var filesCount);
+
+        // Assert
+        Assert.Equal(expectedResult, result);
+        Assert.Equal(expectedFilesCount, filesCount);
+    }
+
+    [Fact]
+    public void TryMatchMultipleFilesRequest_ThrowsArgumentNullException_WhenFilePathIsNull()
+    {
+        // Arrange  
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act & Assert  
+        Assert.Throws<ArgumentNullException>(() => pluginsGenerationService.TryMatchMultipleFilesRequest(null, out _));
+    }
+
+    [Fact]
+    public async Task SavePluginManifestAsync_SavesManifestSuccessfully()
+    {
+        // Arrange
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(workingDirectory);
+        var manifestPath = Path.Combine(workingDirectory, "test-manifest.json");
+        var pluginManifestDocument = new PluginManifestDocument
+        {
+            Namespace = "TestNamespace",
+            DescriptionForHuman = "Test Description"
+        };
+
+        // Act
+        await PluginsGenerationService.SavePluginManifestAsync(manifestPath, pluginManifestDocument);
+
+        // Assert
+        Assert.True(File.Exists(manifestPath), "The manifest file was not created.");
+        var savedContent = await File.ReadAllTextAsync(manifestPath);
+        Assert.Contains("\"namespace\": \"TestNamespace\"", savedContent);
+        Assert.Contains("\"description_for_human\": \"Test Description\"", savedContent);
+
+        // Cleanup
+        Directory.Delete(workingDirectory, true);
+    }
+
+    [Fact]
+    public async Task SavePluginManifestAsync_ThrowsException_WhenPathIsInvalid()
+    {
+        // Arrange
+        var invalidPath = Path.Combine("Invalid", "Path", "test-manifest.json");
+        var pluginManifestDocument = new PluginManifestDocument
+        {
+            Namespace = "TestNamespace",
+            DescriptionForHuman = "Test Description"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<DirectoryNotFoundException>(async () =>
+            await PluginsGenerationService.SavePluginManifestAsync(invalidPath, pluginManifestDocument));
+    }
+
+    [Fact]
+    public async Task SavePluginManifestAsync_OverwritesExistingFile()
+    {
+        // Arrange
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(workingDirectory);
+        var manifestPath = Path.Combine(workingDirectory, "test-manifest.json");
+        await File.WriteAllTextAsync(manifestPath, "{\"Namespace\":\"OldNamespace\"}");
+        var pluginManifestDocument = new PluginManifestDocument
+        {
+            Namespace = "NewNamespace",
+            DescriptionForHuman = "Updated Description"
+        };
+
+        // Act
+        await PluginsGenerationService.SavePluginManifestAsync(manifestPath, pluginManifestDocument);
+
+        // Assert
+        var savedContent = await File.ReadAllTextAsync(manifestPath);
+        Assert.Contains("\"namespace\": \"NewNamespace\"", savedContent);
+        Assert.Contains("\"description_for_human\": \"Updated Description\"", savedContent);
+
+        // Cleanup
+        Directory.Delete(workingDirectory, true);
+    }
+    [Fact]
+    public void MergeConversationStarters_MergesUniqueStarters()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = new List<ConversationStarter>
+                {
+                    new ConversationStarter { Text = "Starter1" },
+                    new ConversationStarter { Text = "Starter2" }
+                }
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = new List<ConversationStarter>
+                {
+                    new ConversationStarter { Text = "Starter2" }, // Duplicate
+                    new ConversationStarter { Text = "Starter3" }
+                }
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeConversationStarters(mainManifest, additionalManifest);
+
+        // Assert
+        Assert.NotNull(mainManifest.Capabilities.ConversationStarters);
+        Assert.Equal(3, mainManifest.Capabilities.ConversationStarters.Count);
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter1");
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter2");
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter3");
+    }
+
+    [Fact]
+    public void MergeConversationStarters_HandlesNullStartersInMainManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = null
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = new List<ConversationStarter>
+                {
+                    new ConversationStarter { Text = "Starter1" }
+                }
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeConversationStarters(mainManifest, additionalManifest);
+
+        // Assert
+        Assert.NotNull(mainManifest.Capabilities.ConversationStarters);
+        Assert.Single(mainManifest.Capabilities.ConversationStarters);
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter1");
+    }
+
+    [Fact]
+    public void MergeConversationStarters_HandlesNullStartersInAdditionalManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = new List<ConversationStarter>
+                {
+                    new ConversationStarter { Text = "Starter1" }
+                }
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = null
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeConversationStarters(mainManifest, additionalManifest);
+
+        // Assert
+        Assert.NotNull(mainManifest.Capabilities.ConversationStarters);
+        Assert.Single(mainManifest.Capabilities.ConversationStarters);
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter1");
+    }
+
+    [Fact]
+    public void MergeConversationStarters_HandlesNullCapabilitiesInAdditionalManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = new List<ConversationStarter>
+                {
+                    new ConversationStarter { Text = "Starter1" }
+                }
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Capabilities = null
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeConversationStarters(mainManifest, additionalManifest);
+
+        // Assert
+        Assert.NotNull(mainManifest.Capabilities.ConversationStarters);
+        Assert.Single(mainManifest.Capabilities.ConversationStarters);
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter1");
+    }
+
+    [Fact]
+    public void MergeConversationStarters_HandlesNullCapabilitiesInMainManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Capabilities = null
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Capabilities = new Capabilities
+            {
+                ConversationStarters = new List<ConversationStarter>
+                {
+                    new ConversationStarter { Text = "Starter1" }
+                }
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeConversationStarters(mainManifest, additionalManifest);
+
+        // Assert
+        Assert.NotNull(mainManifest.Capabilities);
+        Assert.NotNull(mainManifest.Capabilities.ConversationStarters);
+        Assert.Single(mainManifest.Capabilities.ConversationStarters);
+        Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter1");
+    }
+
+    [Theory]
+    [InlineData(1, 3, "-partial-1-3")]
+    [InlineData(2, 5, "-partial-2-5")]
+    [InlineData(10, 10, "-partial-10-10")]
+    [InlineData(1, 1, "-partial-1-1")]
+    public void GetFileNameSuffixForMultipleFiles_ValidInputs_ReturnsExpectedSuffix(int fileNumber, int filesCount, string expectedSuffix)
+    {
+        // Arrange
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        var result = pluginsGenerationService.GetFileNameSuffixForMultipleFiles(fileNumber, filesCount);
+
+        // Assert
+        Assert.Equal(expectedSuffix, result);
+    }
+
+    [Fact]
+    public void GetFileNameSuffixForMultipleFiles_ThrowsArgumentException_WhenFileNumberIsNegative()
+    {
+        // Arrange
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(-1, 3));
+    }
+
+    [Fact]
+    public void GetFileNameSuffixForMultipleFiles_ThrowsArgumentException_WhenFilesCountIsNegative()
+    {
+        // Arrange
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(1, -3));
     }
 
     #endregion

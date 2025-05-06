@@ -25,13 +25,19 @@ namespace Kiota.Builder.Plugins;
 public partial class PluginsGenerationService
 {
     private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
-    private const string ManifestFileNameSuffix = ".json";
-    private const string DescriptionPathSuffix = "openapi.yml";
+    private const string ManifestFileExt= ".json";
+    private const string DescriptionFileExt = ".yml";
 
-    // Multiple files handling
-    private const string MultipleFilesPrefix = "description_m";
-    private const string MultipleFilesPattern = MultipleFilesPrefix + @"1-(\d+)\.yaml$";
-    private const string MergedManifestFileSuffix = "-merged.json";
+    /// <summary>
+    /// Prefix used for identifying multiple OpenAPI files in a sequence, for example: openapi.agentname.actionname-partial-1-2.json
+    /// </summary>
+    private const string MultipleFilesPrefix = "-partial-";
+
+    /// <summary>
+    /// Regular expression pattern used to identify multiple OpenAPI files in a sequence.
+    /// For example: openapi.agentname.actionname-partial-1-2.yaml
+    /// </summary>
+    private const string MultipleFilesPattern = MultipleFilesPrefix + @"1-(\d+)\.";
 
     private OpenApiDocument OAIDocument; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
     private OpenApiUrlTreeNode TreeNode; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
@@ -62,7 +68,7 @@ public partial class PluginsGenerationService
 
         // 2. write the OpenApi description
         Logger.LogDebug("Writing OpenAPI description.");
-        var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
+        var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-openapi{Configuration.FileNameSuffix}{DescriptionFileExt}";
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
         EnsureOutputDirectoryExists(descriptionFullPath);
 
@@ -74,8 +80,8 @@ public partial class PluginsGenerationService
         foreach (var pluginType in Configuration.PluginTypes)
         {
             Logger.LogDebug("Generating plugin manifest for plugin type: {PluginType}.", pluginType);
-            var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
-            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
+            var manifestOutputPath = getManifestOutputPath(Configuration, pluginType);
+
             await GeneratePluginManifestAsync(pluginType, descriptionRelativePath, manifestOutputPath, cancellationToken).ConfigureAwait(false);
             Logger.LogInformation("Plugin manifest generated for {PluginType} at {ManifestPath}.", pluginType, manifestOutputPath);
 
@@ -83,6 +89,24 @@ public partial class PluginsGenerationService
         }
 
         return manifestPaths;
+    }
+    internal string getManifestOutputPath(GenerationConfiguration configuration, PluginType pluginType)
+    {
+        var manifestFileName = $"{configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{configuration.FileNameSuffix}{ManifestFileExt}";
+        var manifestOutputPath = Path.Combine(configuration.OutputPath, manifestFileName);
+        
+        return manifestOutputPath;
+    }
+
+    internal string GetFileNameSuffixForMultipleFiles(int fileNumber, int filesCount)
+    {
+        // throw ArgumentException if either parameter is negative
+        if (fileNumber < 1)
+            throw new ArgumentException($"The file number {fileNumber} is invalid. It should be greater than 0.");
+        if (filesCount < 1)
+            throw new ArgumentException($"The files count {filesCount} is invalid. It should be greater than 0.");
+
+        return $"{MultipleFilesPrefix}{fileNumber}-{filesCount}";
     }
 
     /// <summary>
@@ -94,11 +118,21 @@ public partial class PluginsGenerationService
     /// <param name="downloadService">The service used to download OpenAPI documents.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous operation. The result is a list of file paths to the generated API plugin manifests.</returns>
-    public async Task<List<string>> GenerateMultipleManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
+    private async Task<List<string>> GenerateMultipleManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting GenerateMultipleManifestsAsync");
         ArgumentNullException.ThrowIfNull(downloadService, nameof(downloadService));
         var generatedApiPluginManifestPaths = new List<string>();
+        string originalClientClassName = Configuration.ClientClassName;
+        string originalFilePath = Configuration.OpenAPIFilePath;
+
+        int filesCount = 1;
+        if (TryMatchMultipleFilesRequest(originalFilePath, out filesCount) && filesCount > 1)
+        {
+            // Update the client class name to match the first file
+            Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(1, filesCount);
+        }
+        Logger.LogInformation("Number of files: {FileNumber} extracted from {FileName}", filesCount, originalFilePath);
 
         // Generate the first manifest
         var manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
@@ -107,46 +141,60 @@ public partial class PluginsGenerationService
             generatedApiPluginManifestPaths.Add(apiPluginManifestPath);
         }
 
-        // Skip if APIPlugin is not included in the plugin types
-        if (!Configuration.PluginTypes.Contains(PluginType.APIPlugin))
+        // Check if the file path matches the pattern for multiple OpenAPI files
+        if (filesCount < 2)
         {
-            Logger.LogInformation("Skipping APIPlugin generation as it is not included in the plugin types: {PluginTypes}", Configuration.PluginTypes);
+            Logger.LogInformation("No multiple files to process. Only one file will be processed: {Path}", originalFilePath);
             return generatedApiPluginManifestPaths;
         }
-        // Note: We are only processing API plugins below and ignoring any other plugin types.
 
-        // Check if Configuration.OpenAPIFilePath value matches MultipleFilesPattern
-        string originalClientClassName = Configuration.ClientClassName;
-        string originalFilePath = Configuration.OpenAPIFilePath;
-        var match = Regex.Match(originalFilePath, MultipleFilesPattern, RegexOptions.IgnoreCase);
-
-        if (match.Success)
+        // We are only processing API plugins below and ignoring any other plugin types.
+        if (!Configuration.PluginTypes.Contains(PluginType.APIPlugin))
         {
-            // Generate manifests for all files
-            int filesCount = int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-            Logger.LogInformation("Number of files: {FileNumber} extracted from {FileName}", filesCount, originalFilePath);
-
-            for (var fileNumber = 2; fileNumber <= filesCount; fileNumber++)
-            {
-                await PrepareContextForNextFileAsync(downloadService, originalClientClassName, originalFilePath, fileNumber, cancellationToken).ConfigureAwait(false);
-
-                // Generate the manifest for the new file
-                manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
-                if (manifestPaths.TryGetValue(PluginType.APIPlugin, out apiPluginManifestPath))
-                {
-                    generatedApiPluginManifestPaths.Add(apiPluginManifestPath);
-                }
-
-            }
+            Logger.LogWarning("Skipping APIPlugin generation as it is not included in the plugin types: {PluginTypes}", Configuration.PluginTypes);
+            return generatedApiPluginManifestPaths;
         }
-        else
+
+        // Generate manifests for all files
+        for (var fileNumber = 2; fileNumber <= filesCount; fileNumber++)
         {
-            Logger.LogInformation("Configuration.OpenAPIFilePath does not match the filename filter {Filter}", MultipleFilesPattern);
+            // Prepare the context for the next file to follow the naming convention
+            await PrepareContextForNextFileAsync(downloadService, originalFilePath, fileNumber, filesCount, cancellationToken).ConfigureAwait(false);
+
+            // Generate the manifest for the new file
+            manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            if (manifestPaths.TryGetValue(PluginType.APIPlugin, out apiPluginManifestPath))
+            {
+                generatedApiPluginManifestPaths.Add(apiPluginManifestPath);
+            }
+
         }
 
         return generatedApiPluginManifestPaths;
     }
 
+    /// <summary>
+    /// Checks if the provided file path matches the pattern for multiple OpenAPI files
+    /// and extracts the total number of files in the sequence.
+    /// </summary>
+    /// <param name="originalFilePath">The file path to check against the multiple files pattern.</param>
+    /// <param name="filesCount">The total number of files in the sequence if the pattern matches.</param>
+    /// <returns>True if the file path matches the multiple files pattern; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="originalFilePath"/> is null.</exception>
+    internal bool TryMatchMultipleFilesRequest(string originalFilePath, out int filesCount)
+    {
+        ArgumentNullException.ThrowIfNull(originalFilePath, nameof(originalFilePath));
+
+        filesCount = 0;
+        var multipleFilesRequestMatch = Regex.Match(originalFilePath, MultipleFilesPattern, RegexOptions.IgnoreCase);
+        if (!multipleFilesRequestMatch.Success)
+        {
+            return false;
+        }
+
+        filesCount = int.Parse(multipleFilesRequestMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        return true;
+    }
 
     /// <summary>
     /// Generates and merges plugin manifests based on the OpenAPI document and configuration.
@@ -158,9 +206,13 @@ public partial class PluginsGenerationService
     /// <returns>A task representing the asynchronous operation. The result is a list of file paths to the generated manifests and the merged plugin manifest (as the last element). 
     /// The merged manifest file will have the suffix defined by <see cref="MergedManifestFileSuffix"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no plugin manifests are generated.</exception>
-    public async Task<List<string>> GenerateAndMergePluginManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
+    public async Task<List<string>> GenerateAndMergeMultipleManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting GenerateAndMergeManifestsAsync");
+
+        // Get the main plugin manifest output path before generating the manifests, as we need FileNameSuffix not to be set in GenerateMultipleManifestsAsync() for the output manifest path here
+        var mainPluginManifestOutputPath = getManifestOutputPath(Configuration, PluginType.APIPlugin);
+        Logger.LogInformation("Main plugin manifest output path: {MainPluginManifestOutputPath}", mainPluginManifestOutputPath);
 
         var manifestPaths = await GenerateMultipleManifestsAsync(downloadService, cancellationToken).ConfigureAwait(false);
         // throw exception if the list is empty
@@ -185,16 +237,14 @@ public partial class PluginsGenerationService
         }
 
         // Write the merged manifest to a new file
-        string mergedManifestOutputPath = Path.ChangeExtension(mainManifestPath, null) + MergedManifestFileSuffix;
-        Logger.LogInformation("Writing merged plugin manifest to {ManifestPath}", mergedManifestOutputPath);
-        await SavePluginManifestAsync(mergedManifestOutputPath, mainPluginManifestDocument).ConfigureAwait(false);
-        manifestPaths.Add(mergedManifestOutputPath);
+        Logger.LogInformation("Writing merged plugin manifest to {ManifestPath}", mainPluginManifestOutputPath);
+        await SavePluginManifestAsync(mainPluginManifestOutputPath, mainPluginManifestDocument).ConfigureAwait(false);
+        manifestPaths.Add(mainPluginManifestOutputPath);
 
         return manifestPaths;
     }
 
-
-    private static async Task SavePluginManifestAsync(string manifestPath, PluginManifestDocument pluginManifestDocument)
+    internal static async Task SavePluginManifestAsync(string manifestPath, PluginManifestDocument pluginManifestDocument)
     {
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
         await using var fileStream = File.Create(manifestPath, 4096);
@@ -211,6 +261,7 @@ public partial class PluginsGenerationService
             foreach (var conversationStarter in pluginManifestDocument.Capabilities.ConversationStarters)
             {
                 // Initialize the conversation starters if null
+                mainPluginManifestDocument.Capabilities ??= new Capabilities();
                 mainPluginManifestDocument.Capabilities.ConversationStarters ??= new List<ConversationStarter>();
                 if (!mainPluginManifestDocument.Capabilities.ConversationStarters.Any(cs => cs.Text == conversationStarter.Text))
                 {
@@ -292,10 +343,11 @@ public partial class PluginsGenerationService
         return documentValidationResults.Document!;
     }
 
-    private async Task PrepareContextForNextFileAsync(OpenApiDocumentDownloadService downloadService, string originalClientClassName, string originalFilePath, int fileNumber, CancellationToken cancellationToken)
+    private async Task PrepareContextForNextFileAsync(OpenApiDocumentDownloadService downloadService, string originalFilePath, int fileNumber, int filesCount, CancellationToken cancellationToken)
     {
-        (Configuration.ClientClassName, Configuration.OpenAPIFilePath) = GetNextFileInfo(originalClientClassName, originalFilePath, fileNumber);
-        Logger.LogInformation("Processing file {FileNumber} with ClientClassName: {ClientClassName}, OpenAPIFilePath: {OpenAPIFilePath}", fileNumber, Configuration.ClientClassName, Configuration.OpenAPIFilePath);
+        Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(fileNumber, filesCount);
+        Configuration.OpenAPIFilePath = GetNextFilePath(originalFilePath, fileNumber);
+        Logger.LogInformation("Processing file {FileNumber} with FileNameSuffix: {FileNameSuffix}, OpenAPIFilePath: {OpenAPIFilePath}", fileNumber, Configuration.FileNameSuffix, Configuration.OpenAPIFilePath);
 
         // Now, we need to update the status to process the next file
         var (openAPIDocumentStream, _) = await downloadService.LoadStreamAsync(Configuration.OpenAPIFilePath, Configuration, null, false, cancellationToken).ConfigureAwait(false);
@@ -311,37 +363,25 @@ public partial class PluginsGenerationService
     }
 
     /// <summary>
-    /// Generates the next file information based on the original client class name and file path.
+    /// Generates the next file path based on the original file path.
     /// This method is used to handle multiple OpenAPI files by following a specific naming convention <see cref="MultipleFilesPrefix" />
     /// </summary>
-    /// <param name="originalClientClassName">The original client class name used as a base for generating the next file's class name.</param>
     /// <param name="originalFilePath">The original file path of the OpenAPI document, which is used to derive the next file's path.</param>
     /// <param name="fileNumber">The number of the file to process next, starting from 2 for subsequent files.</param>
-    /// <returns>A tuple containing the updated client class name and the updated OpenAPI file path for the next file.</returns>
+    /// <returns>The updated OpenAPI file path for the next file.</returns>
     /// <exception cref="ArgumentException">Thrown if the original client class name or file path is null or empty, or if the file path does not contain the required prefix.</exception>
-    internal (string, string) GetNextFileInfo(string originalClientClassName, string originalFilePath, int fileNumber)
+    internal string GetNextFilePath(string originalFilePath, int fileNumber)
     {
-
-        ArgumentException.ThrowIfNullOrEmpty(originalClientClassName, nameof(originalClientClassName));
         ArgumentException.ThrowIfNullOrEmpty(originalFilePath, nameof(originalFilePath));
 
         // Check that originalFilePath contains the expected prefix
         if (!originalFilePath.Contains(MultipleFilesPrefix, StringComparison.OrdinalIgnoreCase))
-
             throw new ArgumentException($"The originalFilePath '{originalFilePath}' does not contain the prefix '{MultipleFilesPrefix}'.");
-
-
-
-        var updatedClientClassName = $"{originalClientClassName}-{fileNumber}";
 
         var updatedOpenAPIFilePath = Regex.Replace(originalFilePath, $"{MultipleFilesPrefix}1-", $"{MultipleFilesPrefix}{fileNumber}-", RegexOptions.IgnoreCase);
 
-
-
-        return (updatedClientClassName, updatedOpenAPIFilePath);
-
+        return updatedOpenAPIFilePath;
     }
-
 
     internal string SanitizeClientClassName()
     {
