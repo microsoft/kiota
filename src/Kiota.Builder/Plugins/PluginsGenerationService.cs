@@ -37,7 +37,7 @@ public partial class PluginsGenerationService
     /// Regular expression pattern used to identify multiple OpenAPI files in a sequence.
     /// For example: openapi.agentname.actionname-partial-1-2.yaml
     /// </summary>
-    private const string MultipleFilesPattern = MultipleFilesPrefix + @"1-(\d+)\.";
+    private const string MultipleFilesPattern = MultipleFilesPrefix + @"(\d+)-(\d+)\.";
 
     private OpenApiDocument OAIDocument; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
     private OpenApiUrlTreeNode TreeNode; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
@@ -125,14 +125,15 @@ public partial class PluginsGenerationService
         var generatedApiPluginManifestPaths = new List<string>();
         string originalClientClassName = Configuration.ClientClassName;
         string originalFilePath = Configuration.OpenAPIFilePath;
-
+        int fileNumber = 1;
         int filesCount = 1;
-        if (TryMatchMultipleFilesRequest(originalFilePath, out filesCount) && filesCount > 1)
+
+        if (TryMatchMultipleFilesRequest(originalFilePath, out fileNumber, out filesCount) && filesCount > 1)
         {
-            // Update the client class name to match the first file
-            Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(1, filesCount);
+            // Set the file name suffix so that the generated manifest file names follow the naming convention
+            Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(fileNumber, filesCount);
         }
-        Logger.LogInformation("Number of files: {FileNumber} extracted from {FileName}", filesCount, originalFilePath);
+        Logger.LogInformation("Number of files: {FileNumber} out of {FilesCount} extracted from {FileName}", fileNumber, filesCount, originalFilePath);
 
         // Generate the first manifest
         var manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
@@ -156,7 +157,7 @@ public partial class PluginsGenerationService
         }
 
         // Generate manifests for all files
-        for (var fileNumber = 2; fileNumber <= filesCount; fileNumber++)
+        for (++fileNumber; fileNumber <= filesCount; fileNumber++)
         {
             // Prepare the context for the next file to follow the naming convention
             await PrepareContextForNextFileAsync(downloadService, originalFilePath, fileNumber, filesCount, cancellationToken).ConfigureAwait(false);
@@ -174,6 +175,26 @@ public partial class PluginsGenerationService
     }
 
     /// <summary>
+    /// Extracts the first partial file name from the given file path by replacing the sequence number with "1".
+    /// </summary>
+    /// <param name="originalFilePath">The original file path containing the sequence number.</param>
+    /// <returns>The updated file path with the sequence number replaced by "1".</returns>
+    /// <exception cref="ArgumentException">Thrown when the provided file path is null or empty.</exception>
+    internal static string GetFirstPartialFileName(string originalFilePath)
+    {
+        if (string.IsNullOrEmpty(originalFilePath))
+            throw new ArgumentException("The file path cannot be null or empty.", nameof(originalFilePath));
+
+        string result = Regex.Replace(
+            originalFilePath,
+            MultipleFilesPattern,
+            match => $"{MultipleFilesPrefix}1-{match.Groups[2].Value}.",
+            RegexOptions.IgnoreCase
+        );
+        return result;
+    }
+
+    /// <summary>
     /// Checks if the provided file path matches the pattern for multiple OpenAPI files
     /// and extracts the total number of files in the sequence.
     /// </summary>
@@ -181,18 +202,26 @@ public partial class PluginsGenerationService
     /// <param name="filesCount">The total number of files in the sequence if the pattern matches.</param>
     /// <returns>True if the file path matches the multiple files pattern; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the <paramref name="originalFilePath"/> is null.</exception>
-    internal bool TryMatchMultipleFilesRequest(string originalFilePath, out int filesCount)
+    internal bool TryMatchMultipleFilesRequest(string originalFilePath, out int fileNumber, out int filesCount)
     {
         ArgumentNullException.ThrowIfNull(originalFilePath, nameof(originalFilePath));
-
-        filesCount = 0;
+        fileNumber = filesCount = 0;
+        
+        // Check if the file path matches the pattern for multiple OpenAPI files
         var multipleFilesRequestMatch = Regex.Match(originalFilePath, MultipleFilesPattern, RegexOptions.IgnoreCase);
         if (!multipleFilesRequestMatch.Success)
         {
             return false;
         }
 
-        filesCount = int.Parse(multipleFilesRequestMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        // Validate both numbers from the regular expression
+        if (!int.TryParse(multipleFilesRequestMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out fileNumber) ||
+            !int.TryParse(multipleFilesRequestMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out filesCount))
+        {
+            // Return false if any of these two numbers could not have been parsed
+            return false;
+        }
+
         return true;
     }
 
@@ -215,9 +244,14 @@ public partial class PluginsGenerationService
         Logger.LogInformation("Main plugin manifest output path: {MainPluginManifestOutputPath}", mainPluginManifestOutputPath);
 
         var manifestPaths = await GenerateMultipleManifestsAsync(downloadService, cancellationToken).ConfigureAwait(false);
-        // throw exception if the list is empty
         if (manifestPaths.Count == 0)
             throw new InvalidOperationException("No plugin manifests were generated.");
+        if (manifestPaths.Count == 1)
+        {
+            Logger.LogInformation("Only one plugin manifest was generated. No merging required.");
+            return manifestPaths;
+        }
+
         // Assign the first manifest path to a local variable mainManifest
         var mainManifestPath = manifestPaths[0];
 

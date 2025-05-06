@@ -751,13 +751,10 @@ components:
 
         // Assert
         Assert.NotNull(manifestPaths);
-        string ManifestFileName1 = "client-apiplugin.json";
         string ManifestFileNameMerged = "client-apiplugin.json";
-        string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
         string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
         var expectedManifestPaths = new List<string>
             {
-                manifestPath1,
                 manifestPathMerged
             };
         Assert.Equal(expectedManifestPaths, manifestPaths);
@@ -924,6 +921,94 @@ components:
             manifestPathMerged
         };
         Assert.Equal(expectedManifestPaths, manifestPaths);
+        foreach (var manifestPath in manifestPaths)
+        {
+            Assert.True(File.Exists(manifestPath));
+        }
+    }
+
+
+    [Fact]
+    public async Task GenerateAndMergePluginManifestsAsync_ThreeFiles_StartingFromSecondTest()
+    {
+        // Arrange
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(workingDirectory);
+
+        var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-3.yaml");
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+
+        var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description-partial-2-3.yaml");
+        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
+
+        var simpleDescriptionPath3 = Path.Combine(workingDirectory, "description-partial-3-3.yaml");
+        var manifestContent3 = """
+            openapi: 3.0.0
+            info:
+              title: test
+              version: 1.0
+            servers:
+              - url: http://localhost/
+                description: There's no place like home
+            paths:
+              /test/{id}/details:
+                get:
+                  summary: description for test path with details
+                  operationId: test.WithDetails
+                  parameters:
+                  - name: id
+                    in: path
+                    required: true
+                    description: The id of the test
+                    schema:
+                      type: integer
+                      format: int32
+                  responses:
+                    '200':
+                      description: success
+            """;
+        await File.WriteAllTextAsync(simpleDescriptionPath3, manifestContent3);
+
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath2,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", // Kiota builder would set this for us
+        };
+
+        // Start with the second manifest
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath2, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+
+        // Act
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
+
+        // Assert
+        Assert.NotNull(manifestPaths);
+        string ManifestFileName1 = "client-apiplugin-partial-1-3.json";
+        string ManifestFileName2 = "client-apiplugin-partial-2-3.json";
+        string ManifestFileName3 = "client-apiplugin-partial-3-3.json";
+        string ManifestFileNameMerged = "client-apiplugin.json";
+        string manifestPath1 = Path.Combine(outputDirectory, ManifestFileName1);
+        string manifestPath2 = Path.Combine(outputDirectory, ManifestFileName2);
+        string manifestPath3 = Path.Combine(outputDirectory, ManifestFileName3);
+        string manifestPathMerged = Path.Combine(outputDirectory, ManifestFileNameMerged);
+        var expectedManifestPaths = new List<string>
+        {
+            manifestPath2,
+            manifestPath3,
+            manifestPathMerged
+        };
+        Assert.Equal(expectedManifestPaths, manifestPaths);
+        Assert.False(File.Exists(manifestPath1));
         foreach (var manifestPath in manifestPaths)
         {
             Assert.True(File.Exists(manifestPath));
@@ -1836,14 +1921,20 @@ paths:
     }
 
     [Theory]
-    [InlineData("openapi.agentname.actionname-partial-1-3.yaml", true, 3)] // Valid pattern with 3 files
-    [InlineData("openapi.agentname.actionname-partial-1-2.yaml", true, 2)] // Valid pattern with 2 files
-    [InlineData("openapi.agentname.actionname-partial-1-10.yaml", true, 10)] // Valid pattern with 10 files
-    [InlineData("openapi.agentname.actionname.yaml", false, 0)] // Invalid pattern, no partial prefix
-    [InlineData("openapi.agentname.actionname-partial-2-3.yaml", false, 0)] // Invalid pattern, not starting with 1
-    [InlineData("randomfile.yaml", false, 0)] // Completely invalid file name
-    [InlineData("", false, 0)] // Empty file name
-    public void TryMatchMultipleFilesRequest_ValidatesFilePatterns(string filePath, bool expectedResult, int expectedFilesCount)
+    [InlineData("openapi.agentname.actionname-partial-1-3.yaml", true, 1, 3)] // Valid pattern with 3 files
+    [InlineData("openapi.agentname.actionname-partial-1-2.yaml", true, 1, 2)] // Valid pattern with 2 files
+    [InlineData("openapi.agentname.actionname-partial-1-10.yaml", true, 1, 10)] // Valid pattern with 10 files
+    [InlineData("openapi.agentname.actionname.yaml", false, 0, 0)] // Invalid pattern, no partial prefix
+    [InlineData("openapi.agentname.actionname-partial-2.yaml", false, 0, 0)] // Invalid pattern, not having the second number
+    [InlineData("openapi.agentname.actionname-partial-2-2.yaml", true, 2, 2)] // Valid pattern with 2 file
+    [InlineData("openapi.agentname.actionname-partial-2-5.yaml", true, 2, 5)] // Valid pattern with 5 files
+    [InlineData("openapi.agentname.actionname-partial-2-20.yaml", true, 2, 20)] // Valid pattern with 20 files
+    [InlineData("openapi.agentname.actionname-partial-1-0.yaml", true, 1, 0)] // Invalid pattern, zero files
+    [InlineData("openapi.agentname.actionname-partial-a-2.yaml", false, 0, 0)] // Invalid pattern, wrong first number
+    [InlineData("openapi.agentname.actionname-partial-1-b.yaml", false, 0, 0)] // Invalid pattern, wrong second number
+    [InlineData("randomfile.yaml", false, 0, 0)] // Completely invalid file name
+    [InlineData("", false, 0, 0)] // Empty file name
+    public void TryMatchMultipleFilesRequest_ValidatesFilePatterns(string filePath, bool expectedResult, int expectedFileNumber, int expectedFilesCount)
     {
         // Arrange
         var generationConfiguration = new GenerationConfiguration
@@ -1854,10 +1945,11 @@ paths:
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(generationConfiguration);
 
         // Act
-        var result = pluginsGenerationService.TryMatchMultipleFilesRequest(filePath, out var filesCount);
+        var result = pluginsGenerationService.TryMatchMultipleFilesRequest(filePath, out var fileNumber, out var filesCount);
 
         // Assert
         Assert.Equal(expectedResult, result);
+        Assert.Equal(expectedFileNumber, fileNumber);
         Assert.Equal(expectedFilesCount, filesCount);
     }
 
@@ -1868,7 +1960,7 @@ paths:
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
 
         // Act & Assert  
-        Assert.Throws<ArgumentNullException>(() => pluginsGenerationService.TryMatchMultipleFilesRequest(null, out _));
+        Assert.Throws<ArgumentNullException>(() => pluginsGenerationService.TryMatchMultipleFilesRequest(null, out _, out _));
     }
 
     [Fact]
@@ -2145,6 +2237,31 @@ paths:
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(1, -3));
+    }
+
+    [Theory]
+    [InlineData("description-partial-1-3.yaml", "description-partial-1-3.yaml")]
+    [InlineData("description-partial-2-3.yaml", "description-partial-1-3.yaml")]
+    [InlineData("description-partial-5-10.yaml", "description-partial-1-10.yaml")]
+    [InlineData("description-partial-10-10.yaml", "description-partial-1-10.yaml")]
+    [InlineData("description-partial-1-1.yaml", "description-partial-1-1.yaml")]
+    [InlineData("description-partial-a-b.yaml", "description-partial-a-b.yaml")]
+    [InlineData("description.yaml", "description.yaml")]
+    public void GetFirstPartialFileName_ValidInputs_ReturnsExpectedResults(string inputFilePath, string expectedFilePath)
+    {
+        // Act
+        var result = PluginsGenerationService.GetFirstPartialFileName(inputFilePath);
+
+        // Assert
+        Assert.Equal(expectedFilePath, result);
+    }
+
+    [Fact]
+    public void GetFirstPartialFileName_ThrowsArgumentException_WhenInputIsNullOrEmpty()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => PluginsGenerationService.GetFirstPartialFileName(null));
+        Assert.Throws<ArgumentException>(() => PluginsGenerationService.GetFirstPartialFileName(string.Empty));
     }
 
     #endregion
