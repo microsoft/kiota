@@ -3,12 +3,31 @@ import * as fs from 'fs';
 import { setKiotaConfig } from '../../config';
 import { ensureKiotaIsPresentInPath, getCurrentPlatform, getKiotaPath, Package } from '../../install';
 import testRuntimeJson from '../test_runtime.json';
+import path from 'path';
 
 function getTestRuntimeDependenciesPackages(): Package[] {
   if (testRuntimeJson.runtimeDependencies) {
     return JSON.parse(JSON.stringify(<Package[]>testRuntimeJson.runtimeDependencies));
   }
   throw new Error("No test runtime dependencies found");
+}
+
+function checkExecutePermission (path: string): Promise<boolean> {
+  return new Promise((resolve) => {
+      fs.access(path, fs.constants.X_OK, (err) => {
+          if (err) {
+              resolve(false);
+          } else {
+              resolve(true);
+            }
+      })
+  })
+}
+
+function getKiotaPathByInstallPath(installPath: string): string {
+  const fileName = process.platform === 'win32' ? 'kiota.exe' : 'kiota';
+  const directoryPath = path.join(installPath);
+  return path.join(directoryPath, fileName);
 }
 
 // Bigger timeout for the test to download the kiota binary
@@ -27,6 +46,11 @@ describe("integration install", () => {
 
     // check that the folder exists
     expect(fs.existsSync(installLocation)).toBe(true);
+
+    const kiotaPath: string = getKiotaPathByInstallPath(installLocation);
+    expect(fs.existsSync(kiotaPath)).toBe(true);
+    const hasExecutePermission = await checkExecutePermission(kiotaPath);
+    expect(hasExecutePermission).toBe(true);
 
     // remove folder content after test
     fs.rmSync(installLocation, { recursive: true });
