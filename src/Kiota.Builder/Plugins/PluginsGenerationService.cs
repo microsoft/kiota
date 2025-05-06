@@ -288,6 +288,11 @@ public partial class PluginsGenerationService
         pluginManifestDocument.Write(writer);
     }
 
+    /// <summary>
+    /// Merges conversation starters from the provided plugin manifest document into the main plugin manifest document.
+    /// </summary>
+    /// <param name="mainPluginManifestDocument">The main plugin manifest document where conversation starters will be merged.</param>
+    /// <param name="pluginManifestDocument">The plugin manifest document containing conversation starters to merge.</param>
     internal void MergeConversationStarters(PluginManifestDocument mainPluginManifestDocument, PluginManifestDocument pluginManifestDocument)
     {
         if (pluginManifestDocument.Capabilities?.ConversationStarters != null)
@@ -305,12 +310,19 @@ public partial class PluginsGenerationService
         }
     }
 
+    /// <summary>
+    /// Merges functions from the provided plugin manifest document into the main plugin manifest document.
+    /// This method ensures that functions are uniquely named to avoid conflicts and updates runtimes accordingly.
+    /// </summary>
+    /// <param name="mainPluginManifestDocument">The main plugin manifest document where functions will be merged.</param>
+    /// <param name="pluginManifestDocument">The plugin manifest document containing functions to merge.</param>
+    /// <param name="manifestIndex">The index of the current manifest being processed, used for renaming functions to avoid conflicts.</param>
     internal void MergeFunctions(PluginManifestDocument mainPluginManifestDocument, PluginManifestDocument pluginManifestDocument, int manifestIndex)
     {
         // return if runtimes is null
         if (pluginManifestDocument.Runtimes == null)
             return;
-
+        mainPluginManifestDocument.Functions ??= new List<Function>();
 
         // Reference all functions in the original runtimes in the main document explicitly
         foreach (var runtime in mainPluginManifestDocument.Runtimes)
@@ -332,31 +344,41 @@ public partial class PluginsGenerationService
         foreach (var runtime2 in pluginManifestDocument.Runtimes)
         {
             // We need to process either explicitly defined functions or all functions
-            var isExplicit = runtime2.RunForFunctions.Count > 0;
-            var functionNamesToProcess = isExplicit ? runtime2.RunForFunctions : pluginManifestDocument.Functions.Select(f => f.Name).ToList();
-            Logger.LogDebug("Adding {FunctionCount} functions: {FunctionNames}", functionNamesToProcess.Count, string.Join(", ", functionNamesToProcess));
+            runtime2.RunForFunctions ??= new List<string>();
+            var isExplicit = runtime2.RunForFunctions?.Count > 0;
+            var functionNamesToProcess = isExplicit ? runtime2.RunForFunctions : pluginManifestDocument.Functions?.Select(f => f.Name).ToList();
+            if (functionNamesToProcess == null || pluginManifestDocument.Functions == null)
+            {
+                // log warning and continue
+                Logger.LogWarning("No functions to process in the plugin manifest runtime {Runtime}", runtime2);
+                continue;
+            }
+            Logger.LogDebug("Adding {FunctionCount} functions: {FunctionNames}", functionNamesToProcess.Count, string.Join(", ", functionNamesToProcess!));
 
             // Add all functions referenced from the runtime
             for (int i = 0; i < functionNamesToProcess.Count; i++)
             {
                 var functionName = functionNamesToProcess[i];
                 var function = pluginManifestDocument.Functions.Single(f => f.Name == functionName);
-                // Rename the function when adding to the main manifest document to prevent naming conflicts
-                var newName = $"{functionName}_m{manifestIndex + 1}";
-                Logger.LogDebug("Renaming function {FunctionName} to {NewName} in manifest {ManifestIndex}", functionName, newName, manifestIndex);
-
-                function.Name = newName;
+                // Rename the function when adding to the main manifest document to prevent naming conflicts if needed
+                var existingFunction = mainPluginManifestDocument.Functions.FirstOrDefault(f => f.Name == functionName);
+                if (existingFunction != null)
+                {
+                    var newName = $"{functionName}_{manifestIndex + 1}";
+                    Logger.LogDebug("Renaming function {FunctionName} to {NewName} in manifest {ManifestIndex}", functionName, newName, manifestIndex);
+                    function.Name = newName;
+                }
                 mainPluginManifestDocument.Functions.Add(function);
                 // Change the function name in the runtime
                 if (isExplicit)
                 {
                     // Replace the function name in the runtime
-                    runtime2.RunForFunctions[i] = newName;
+                    runtime2.RunForFunctions![i] = function.Name;
                 }
                 else
                 {
                     // Add the function name to the runtime to make it explicitly referenced so it works with other runtimes
-                    runtime2.RunForFunctions.Add(newName);
+                    runtime2.RunForFunctions!.Add(function.Name);
                 }
                 // Add the runtime itself into the main manifest
                 mainPluginManifestDocument.Runtimes.Add(runtime2);

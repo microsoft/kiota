@@ -830,7 +830,7 @@ components:
         Assert.Equal(3, resultingManifest.Document.Functions.Count);
         Assert.Equal("test_get", resultingManifest.Document.Functions[0].Name);
         Assert.Equal("test_WithId", resultingManifest.Document.Functions[1].Name);
-        Assert.Equal("test_WithId_m2", resultingManifest.Document.Functions[2].Name);
+        Assert.Equal("test_WithId_2", resultingManifest.Document.Functions[2].Name);
         Assert.Equal(2, resultingManifest.Document.Runtimes.Count);
         Assert.Equal(3, resultingManifest.Document.Capabilities.ConversationStarters.Count);
 
@@ -2200,6 +2200,199 @@ paths:
         Assert.NotNull(mainManifest.Capabilities.ConversationStarters);
         Assert.Single(mainManifest.Capabilities.ConversationStarters);
         Assert.Contains(mainManifest.Capabilities.ConversationStarters, cs => cs.Text == "Starter1");
+    }
+
+
+    [Fact]
+    public void MergeFunctions_MergesUniqueFunctions()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function1" },
+                new Function { Name = "Function2" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime() 
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function3" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeFunctions(mainManifest, additionalManifest, 1);
+
+        // Assert
+        Assert.NotNull(mainManifest.Functions);
+        Assert.Equal(3, mainManifest.Functions.Count);
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function1");
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function2");
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function3");
+    }
+
+    [Fact]
+    public void MergeFunctions_AppendsManifestIndexToFunctionNames()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function1" },
+                new Function { Name = "Function2" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function2" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeFunctions(mainManifest, additionalManifest, 1);
+
+        // Assert
+        Assert.NotNull(mainManifest.Functions);
+        Assert.Equal(3, mainManifest.Functions.Count);
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function1");
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function2");
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function2_2");
+    }
+
+    [Fact]
+    public void MergeFunctions_HandlesNullFunctionsInMainManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Functions = null,
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function1" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeFunctions(mainManifest, additionalManifest, 1);
+
+        // Assert
+        Assert.NotNull(mainManifest.Functions);
+        Assert.Single(mainManifest.Functions);
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function1");
+    }
+
+    [Fact]
+    public void MergeFunctions_HandlesNullFunctionsInAdditionalManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function1" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Functions = null,
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeFunctions(mainManifest, additionalManifest, 1);
+
+        // Assert
+        Assert.NotNull(mainManifest.Functions);
+        Assert.Single(mainManifest.Functions);
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function1");
+    }
+
+    [Fact]
+    public void MergeFunctions_HandlesEmptyFunctionsInAdditionalManifest()
+    {
+        // Arrange
+        var mainManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>
+            {
+                new Function { Name = "Function1" }
+            },
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var additionalManifest = new PluginManifestDocument
+        {
+            Functions = new List<Function>(),
+            Runtimes = new List<Runtime>
+            {
+                new OpenApiRuntime()
+            }
+        };
+
+        var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
+
+        // Act
+        pluginsGenerationService.MergeFunctions(mainManifest, additionalManifest, 1);
+
+        // Assert
+        Assert.NotNull(mainManifest.Functions);
+        Assert.Single(mainManifest.Functions);
+        Assert.Contains(mainManifest.Functions, f => f.Name == "Function1");
     }
 
     [Theory]
