@@ -264,9 +264,13 @@ public partial class KiotaBuilder
             var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
             // Handle the multiple files generation
             if (handleMultipleFiles)
+            {
                 await pluginsService.GenerateAndMergeMultipleManifestsAsync(openApiDocumentDownloadService, cancellationToken).ConfigureAwait(false);
+            }
             else
+            {
                 await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            }
 
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;

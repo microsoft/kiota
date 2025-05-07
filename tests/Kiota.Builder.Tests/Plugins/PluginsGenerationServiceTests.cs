@@ -1890,7 +1890,7 @@ paths:
     [InlineData("description-partial-1-9.yaml", 5, "description-partial-5-9.yaml")]
     [InlineData("description-partial-1-8.yaml", 3, "description-partial-3-8.yaml")]
     [InlineData("description-partial-1-8.yaml", 8, "description-partial-8-8.yaml")]
-    public void GetNextFileInfo_ValidInputs_ReturnsExpectedResults(String originalFilePath, int fileNumber, string expectedFilePath)
+    public void GetNextFileInfo_ValidInputs_ReturnsExpectedResults(String originalFilePath, uint fileNumber, string expectedFilePath)
     {
         // Arrange
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration
@@ -1934,7 +1934,7 @@ paths:
     [InlineData("openapi.agentname.actionname-partial-1-b.yaml", false, 0, 0)] // Invalid pattern, wrong second number
     [InlineData("randomfile.yaml", false, 0, 0)] // Completely invalid file name
     [InlineData("", false, 0, 0)] // Empty file name
-    public void TryMatchMultipleFilesRequest_ValidatesFilePatterns(string filePath, bool expectedResult, int expectedFileNumber, int expectedFilesCount)
+    public void TryMatchMultipleFilesRequest_ValidatesFilePatterns(string filePath, bool expectedResult, uint expectedFileNumber, uint expectedFilesCount)
     {
         // Arrange
         var generationConfiguration = new GenerationConfiguration
@@ -2400,7 +2400,7 @@ paths:
     [InlineData(2, 5, "-partial-2-5")]
     [InlineData(10, 10, "-partial-10-10")]
     [InlineData(1, 1, "-partial-1-1")]
-    public void GetFileNameSuffixForMultipleFiles_ValidInputs_ReturnsExpectedSuffix(int fileNumber, int filesCount, string expectedSuffix)
+    public void GetFileNameSuffixForMultipleFiles_ValidInputs_ReturnsExpectedSuffix(uint fileNumber, uint filesCount, string expectedSuffix)
     {
         // Arrange
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
@@ -2413,23 +2413,23 @@ paths:
     }
 
     [Fact]
-    public void GetFileNameSuffixForMultipleFiles_ThrowsArgumentException_WhenFileNumberIsNegative()
+    public void GetFileNameSuffixForMultipleFiles_ThrowsArgumentException_WhenFileNumberIsZero()
     {
         // Arrange
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(-1, 3));
+        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(0, 3));
     }
 
     [Fact]
-    public void GetFileNameSuffixForMultipleFiles_ThrowsArgumentException_WhenFilesCountIsNegative()
+    public void GetFileNameSuffixForMultipleFiles_ThrowsArgumentException_WhenFilesCountIsZero()
     {
         // Arrange
         var pluginsGenerationService = CreateEmptyPluginsGenerationService(new GenerationConfiguration());
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(1, -3));
+        Assert.Throws<ArgumentException>(() => pluginsGenerationService.GetFileNameSuffixForMultipleFiles(1, 0));
     }
 
     [Theory]

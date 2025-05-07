@@ -98,12 +98,12 @@ public partial class PluginsGenerationService
         return manifestOutputPath;
     }
 
-    internal string GetFileNameSuffixForMultipleFiles(int fileNumber, int filesCount)
+    internal string GetFileNameSuffixForMultipleFiles(uint fileNumber, uint filesCount)
     {
         // throw ArgumentException if either parameter is negative
-        if (fileNumber < 1)
+        if (fileNumber == 0)
             throw new ArgumentException($"The file number {fileNumber} is invalid. It should be greater than 0.");
-        if (filesCount < 1)
+        if (filesCount == 0)
             throw new ArgumentException($"The files count {filesCount} is invalid. It should be greater than 0.");
 
         return $"{MultipleFilesPrefix}{fileNumber}-{filesCount}";
@@ -125,8 +125,8 @@ public partial class PluginsGenerationService
         var generatedApiPluginManifestPaths = new List<string>();
         string originalClientClassName = Configuration.ClientClassName;
         string originalFilePath = Configuration.OpenAPIFilePath;
-        int fileNumber = 1;
-        int filesCount = 1;
+        uint fileNumber = 1;
+        uint filesCount = 1;
 
         if (TryMatchMultipleFilesRequest(originalFilePath, out fileNumber, out filesCount) && filesCount > 1)
         {
@@ -202,7 +202,7 @@ public partial class PluginsGenerationService
     /// <param name="filesCount">The total number of files in the sequence if the pattern matches.</param>
     /// <returns>True if the file path matches the multiple files pattern; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the <paramref name="originalFilePath"/> is null.</exception>
-    internal bool TryMatchMultipleFilesRequest(string originalFilePath, out int fileNumber, out int filesCount)
+    internal bool TryMatchMultipleFilesRequest(string originalFilePath, out uint fileNumber, out uint filesCount)
     {
         ArgumentNullException.ThrowIfNull(originalFilePath, nameof(originalFilePath));
         fileNumber = filesCount = 0;
@@ -215,8 +215,8 @@ public partial class PluginsGenerationService
         }
 
         // Validate both numbers from the regular expression
-        if (!int.TryParse(multipleFilesRequestMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out fileNumber) ||
-            !int.TryParse(multipleFilesRequestMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out filesCount))
+        if (!uint.TryParse(multipleFilesRequestMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out fileNumber) ||
+            !uint.TryParse(multipleFilesRequestMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out filesCount))
         {
             // Return false if any of these two numbers could not have been parsed
             return false;
@@ -399,7 +399,7 @@ public partial class PluginsGenerationService
         return documentValidationResults.Document!;
     }
 
-    private async Task PrepareContextForNextFileAsync(OpenApiDocumentDownloadService downloadService, string originalFilePath, int fileNumber, int filesCount, CancellationToken cancellationToken)
+    private async Task PrepareContextForNextFileAsync(OpenApiDocumentDownloadService downloadService, string originalFilePath, uint fileNumber, uint filesCount, CancellationToken cancellationToken)
     {
         Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(fileNumber, filesCount);
         Configuration.OpenAPIFilePath = GetNextFilePath(originalFilePath, fileNumber);
@@ -426,7 +426,7 @@ public partial class PluginsGenerationService
     /// <param name="fileNumber">The number of the file to process next, starting from 2 for subsequent files.</param>
     /// <returns>The updated OpenAPI file path for the next file.</returns>
     /// <exception cref="ArgumentException">Thrown if the original client class name or file path is null or empty, or if the file path does not contain the required prefix.</exception>
-    internal string GetNextFilePath(string originalFilePath, int fileNumber)
+    internal string GetNextFilePath(string originalFilePath, uint fileNumber)
     {
         ArgumentException.ThrowIfNullOrEmpty(originalFilePath, nameof(originalFilePath));
 
