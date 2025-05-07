@@ -44,6 +44,7 @@ public partial class PluginsGenerationService
     private readonly GenerationConfiguration Configuration;
     private readonly string WorkingDirectory;
     private readonly ILogger<KiotaBuilder> Logger;
+    internal OpenApiDocumentDownloadService? DownloadService { get; set; }
 
     public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode,
         GenerationConfiguration configuration, string workingDirectory, ILogger<KiotaBuilder> logger)
@@ -80,7 +81,7 @@ public partial class PluginsGenerationService
         foreach (var pluginType in Configuration.PluginTypes)
         {
             Logger.LogDebug("Generating plugin manifest for plugin type: {PluginType}.", pluginType);
-            var manifestOutputPath = getManifestOutputPath(Configuration, pluginType);
+            var manifestOutputPath = GetManifestOutputPath(Configuration, pluginType);
 
             await GeneratePluginManifestAsync(pluginType, descriptionRelativePath, manifestOutputPath, cancellationToken).ConfigureAwait(false);
             Logger.LogInformation("Plugin manifest generated for {PluginType} at {ManifestPath}.", pluginType, manifestOutputPath);
@@ -90,7 +91,7 @@ public partial class PluginsGenerationService
 
         return manifestPaths;
     }
-    internal string getManifestOutputPath(GenerationConfiguration configuration, PluginType pluginType)
+    internal string GetManifestOutputPath(GenerationConfiguration configuration, PluginType pluginType)
     {
         var manifestFileName = $"{configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{configuration.FileNameSuffix}{ManifestFileExt}";
         var manifestOutputPath = Path.Combine(configuration.OutputPath, manifestFileName);
@@ -118,10 +119,9 @@ public partial class PluginsGenerationService
     /// <param name="downloadService">The service used to download OpenAPI documents.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous operation. The result is a list of file paths to the generated API plugin manifests.</returns>
-    private async Task<List<string>> GenerateMultipleManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
+    private async Task<List<string>> GenerateMultipleManifestsAsync(CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting GenerateMultipleManifestsAsync");
-        ArgumentNullException.ThrowIfNull(downloadService, nameof(downloadService));
         var generatedApiPluginManifestPaths = new List<string>();
         string originalClientClassName = Configuration.ClientClassName;
         string originalFilePath = Configuration.OpenAPIFilePath;
@@ -156,11 +156,12 @@ public partial class PluginsGenerationService
             return generatedApiPluginManifestPaths;
         }
 
+        ArgumentNullException.ThrowIfNull(DownloadService, nameof(DownloadService));
         // Generate manifests for all files
         for (++fileNumber; fileNumber <= filesCount; fileNumber++)
         {
             // Prepare the context for the next file to follow the naming convention
-            await PrepareContextForNextFileAsync(downloadService, originalFilePath, fileNumber, filesCount, cancellationToken).ConfigureAwait(false);
+            await PrepareContextForNextFileAsync(DownloadService, originalFilePath, fileNumber, filesCount, cancellationToken).ConfigureAwait(false);
 
             // Generate the manifest for the new file
             manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
@@ -235,15 +236,15 @@ public partial class PluginsGenerationService
     /// <returns>A task representing the asynchronous operation. The result is a list of file paths to the generated manifests and the merged plugin manifest (as the last element). 
     /// The merged manifest file will have the suffix defined by <see cref="MergedManifestFileSuffix"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no plugin manifests are generated.</exception>
-    public async Task<List<string>> GenerateAndMergeMultipleManifestsAsync(OpenApiDocumentDownloadService downloadService, CancellationToken cancellationToken = default)
+    public async Task<List<string>> GenerateAndMergeMultipleManifestsAsync(CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting GenerateAndMergeManifestsAsync");
 
         // Get the main plugin manifest output path before generating the manifests, as we need FileNameSuffix not to be set in GenerateMultipleManifestsAsync() for the output manifest path here
-        var mainPluginManifestOutputPath = getManifestOutputPath(Configuration, PluginType.APIPlugin);
+        var mainPluginManifestOutputPath = GetManifestOutputPath(Configuration, PluginType.APIPlugin);
         Logger.LogInformation("Main plugin manifest output path: {MainPluginManifestOutputPath}", mainPluginManifestOutputPath);
 
-        var manifestPaths = await GenerateMultipleManifestsAsync(downloadService, cancellationToken).ConfigureAwait(false);
+        var manifestPaths = await GenerateMultipleManifestsAsync(cancellationToken).ConfigureAwait(false);
         if (manifestPaths.Count == 0)
             throw new InvalidOperationException("No plugin manifests were generated.");
         if (manifestPaths.Count == 1)

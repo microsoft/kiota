@@ -18,7 +18,7 @@ using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
-public class OpenApiDocumentDownloadService
+internal class OpenApiDocumentDownloadService
 {
     private readonly ILogger Logger;
     private readonly HttpClient HttpClient;

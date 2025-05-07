@@ -745,9 +745,10 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
 
         // Assert
         Assert.NotNull(manifestPaths);
@@ -790,7 +791,9 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
+        pluginsGenerationService.DownloadService = openAPIDocumentDS;
+
+        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
 
         string ManifestFileName1 = "client-apiplugin-partial-1-2.json";
         string OpenApiFileName1 = "client-openapi-partial-1-2.yml";
@@ -899,9 +902,10 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
 
         // Assert
         Assert.NotNull(manifestPaths);
@@ -987,9 +991,10 @@ components:
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(openAPIDocumentDS);
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
 
         // Assert
         Assert.NotNull(manifestPaths);
@@ -1032,12 +1037,13 @@ components:
             OpenApiUrlTreeNode.Create(),
             generationConfiguration,
             generationConfiguration.OutputPath,
+            
             mockLogger.Object
         );
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.GenerateAndMergeMultipleManifestsAsync(mockDownloadService.Object, CancellationToken.None));
+            service.GenerateAndMergeMultipleManifestsAsync(CancellationToken.None));
     }
 
 
