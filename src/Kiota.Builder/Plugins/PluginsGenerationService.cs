@@ -44,7 +44,10 @@ public partial class PluginsGenerationService
     private readonly GenerationConfiguration Configuration;
     private readonly string WorkingDirectory;
     private readonly ILogger<KiotaBuilder> Logger;
-    internal OpenApiDocumentDownloadService? DownloadService { get; set; }
+    internal OpenApiDocumentDownloadService? DownloadService
+    {
+        get; set;
+    }
 
     public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode,
         GenerationConfiguration configuration, string workingDirectory, ILogger<KiotaBuilder> logger)

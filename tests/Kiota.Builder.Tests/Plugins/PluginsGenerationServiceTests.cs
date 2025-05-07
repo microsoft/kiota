@@ -1037,7 +1037,7 @@ components:
             OpenApiUrlTreeNode.Create(),
             generationConfiguration,
             generationConfiguration.OutputPath,
-            
+
             mockLogger.Object
         );
 

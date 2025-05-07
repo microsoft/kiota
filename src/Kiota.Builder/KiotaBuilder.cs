@@ -265,6 +265,7 @@ public partial class KiotaBuilder
             // Handle the multiple files generation
             if (handleMultipleFiles)
             {
+                pluginsService.DownloadService = openApiDocumentDownloadService;
                 await pluginsService.GenerateAndMergeMultipleManifestsAsync(cancellationToken).ConfigureAwait(false);
             }
             else
