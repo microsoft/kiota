@@ -102,12 +102,22 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains($"property_name: Optional[Graphtests.models.{TypeName}]", result);
     }
     [Fact]
-    public void WritesDefaultValuesForProperties()
+    public void WritesDefaultValuesForNullableProperties()
     {
         property.Kind = CodePropertyKind.Headers;
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("= None", result);
+    }
+    [Fact]
+    public void WritesDefaultValuesForNonNullableArrayProperties()
+    {
+        property.Kind = CodePropertyKind.Headers;
+        property.Type.IsNullable = false;
+        property.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("= field(default_factory=list)", result);
     }
 
     [Fact]

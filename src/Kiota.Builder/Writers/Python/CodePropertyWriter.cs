@@ -40,7 +40,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
             case CodePropertyKind.QueryParameter:
                 conventions.WriteInLineDescription(codeElement, writer);
                 var isNonNullableCollection = !codeElement.Type.IsNullable && codeElement.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} {(isNonNullableCollection ? "= []" : "= None")}");
+                var defaultFactoryType = codeElement.Type.CollectionKind.IsArray() ? "list" : "dict";
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} {(isNonNullableCollection ? $"= field(default_factory={defaultFactoryType})" : "= None")}");
                 writer.WriteLine();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
