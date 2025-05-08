@@ -72,7 +72,9 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
           }
           unzipFile(zipFilePath, installPath);
           if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && installPath) {
-            makeExecutable(installPath);
+            const fileName = getKiotaFileName();
+            const kiotaFilePath = path.join(installPath, fileName);
+            makeExecutable(kiotaFilePath);
           }
         } catch (error) {
           fs.rmdirSync(installPath, { recursive: true });
@@ -105,8 +107,12 @@ function getRuntimeVersion(): string {
   return getKiotaConfig().binaryVersion || runtimeJson.kiotaVersion;
 }
 
+function getKiotaFileName(): string {
+  return process.platform === 'win32' ? 'kiota.exe' : 'kiota';
+}
+
 function getKiotaPathInternal(withFileName = true): string | undefined {
-  const fileName = process.platform === 'win32' ? 'kiota.exe' : 'kiota';
+  const fileName = getKiotaFileName();
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
   const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
