@@ -46,6 +46,9 @@ public interface ILanguageRefiner
             case GenerationLanguage.Dart:
                 await new DartRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
+            case GenerationLanguage.AL:
+                await new ALRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                break;
         }
     }
 }
