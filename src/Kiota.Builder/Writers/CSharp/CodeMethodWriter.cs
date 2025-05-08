@@ -259,6 +259,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             {
                 defaultValue = defaultValue.TrimQuotes();
             }
+            else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
+            {
+                // cannot use TrimQuotes() as it would greedily remove the explicitly set quotes on both ends of the string 
+                defaultValue = defaultValue[1..^1].Replace("\"", "\\\"", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal);
+                defaultValue = $"\"{defaultValue}\"";
+            }
+
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
         }
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
