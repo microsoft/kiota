@@ -826,7 +826,7 @@ public class GoRefiner : CommonLanguageRefiner
             currentMethod.Parameters.Where(static x => x.Type.Name.Equals("ISerializationWriter", StringComparison.Ordinal)).ToList().ForEach(x => x.Type.Name = "SerializationWriter");
         else if (currentMethod.IsOfKind(CodeMethodKind.Deserializer))
         {
-            currentMethod.ReturnType.Name = $"map[string]func({conventions.SerializationHash}.ParseNode)(error)";
+            currentMethod.ReturnType.Name = $"map[string]func({conventions.SerializationHash}.ParseNode) error";
             currentMethod.Name = "getFieldDeserializers";
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.ClientConstructor, CodeMethodKind.Constructor, CodeMethodKind.RawUrlConstructor))
