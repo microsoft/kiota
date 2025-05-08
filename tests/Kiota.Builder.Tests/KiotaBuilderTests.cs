@@ -1424,6 +1424,7 @@ paths:
         await builder.GenerateClientAsync(new());
         _tempFiles.Add(tempFilePath);
     }
+
     [Fact]
     public void Single_root_node_creates_single_request_builder_class()
     {
