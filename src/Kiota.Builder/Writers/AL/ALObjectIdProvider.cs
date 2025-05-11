@@ -15,7 +15,12 @@ public class ALObjectIdProvider
     }
     public int StartRange
     {
-        get => _startRange ?? 0;
+        get
+        {
+            if (_startRange == null)
+                _startRange = 50000;
+            return (int)_startRange;
+        }
     }
     public int HighestObjectCounter
     {
