@@ -51,10 +51,15 @@ public static class CodeClassExtensions
         ArgumentNullException.ThrowIfNull(codeClass);
         return codeClass.Properties.Where(p1 => p1.IsGlobalVariable());
     }
-    public static IEnumerable<CodeMethod> GetPropertyMethods(this CodeClass parentClass)
+    public static IEnumerable<CodeMethod> GetPropertyGetterMethods(this CodeClass parentClass)
     {
         ArgumentNullException.ThrowIfNull(parentClass);
-        return parentClass.Methods.Where(x => x.IsPropertyMethod());
+        return parentClass.Methods.Where(x => x.IsGetterMethod());
+    }
+    public static IEnumerable<CodeMethod> GetPropertySetterMethods(this CodeClass parentClass)
+    {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        return parentClass.Methods.Where(x => x.IsSetterMethod());
     }
     public static void AddDefaultImplements(this CodeClass currentClass)
     {

@@ -27,6 +27,7 @@ public class ALRefiner : CommonLanguageRefiner, ILanguageRefiner
             UpdateApiClientClass(generatedCode, _configuration);
             cancellationToken.ThrowIfCancellationRequested();
             MovePropertiesToMethods(generatedCode);
+            ModifyMethodName1(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             UpdateModelClasses(generatedCode);
             UpdateRequestBuilderClasses(generatedCode, _configuration);
@@ -35,7 +36,7 @@ public class ALRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddObjectProperties(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddAppJsonAsCodeFunction(generatedCode, _configuration);
-            ModifyMethodName(generatedCode);
+            ModifyMethodName2(generatedCode);
             UpdateMethodParameters(generatedCode);
         }, cancellationToken);
     }
@@ -134,14 +135,14 @@ public class ALRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     // Since we can't add methods with the same name to the DOM, in a previous step we added a "-overload" suffix to the method name.
     // This method removes the suffix from the method name.
-    protected static void ModifyMethodName(CodeElement currentElement)
+    protected static void ModifyMethodName2(CodeElement currentElement)
     {
         if (currentElement is CodeMethod currentMethod)
         {
             if (currentMethod.Name.Contains("-overload", StringComparison.CurrentCulture))
                 currentMethod.Name = currentMethod.Name.Replace("-overload", "", StringComparison.CurrentCulture);
         }
-        CrawlTree(currentElement, ModifyMethodName);
+        CrawlTree(currentElement, ModifyMethodName2);
     }
     protected static void RemoveAdditionalDataProperty(CodeElement currentElement)
     {
@@ -167,11 +168,22 @@ public class ALRefiner : CommonLanguageRefiner, ILanguageRefiner
             foreach (var property in propertiesToMove)
             {
                 currentClass.RemoveChildElement(property);
-                currentClass.AddMethod(property.ToCodeMethod());
-                // TODO: Think about adding setter methods as well
+                currentClass.AddMethod(property.ToGetterCodeMethod());
+                currentClass.AddMethod(property.ToSetterCodeMethod());
             }
         }
         CrawlTree(currentElement, MovePropertiesToMethods);
+    }
+    protected static void ModifyMethodName1(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod)
+        {
+            if (currentMethod.IsGetterMethod())
+                currentMethod.Name = currentMethod.Name.Replace("Get-", String.Empty, StringComparison.CurrentCulture);
+            if (currentMethod.IsSetterMethod())
+                currentMethod.Name = currentMethod.Name.Replace("Set-", String.Empty, StringComparison.CurrentCulture);
+        }
+        CrawlTree(currentElement, ModifyMethodName1);
     }
     protected static void RemoveNotSupportedParameters(CodeElement currentElement)
     {
@@ -266,7 +278,7 @@ public class ALRefiner : CommonLanguageRefiner, ILanguageRefiner
                 if (!currentClass.Usings.Any(x => x.Name.Equals(propertyTypeNamespace.Name, StringComparison.OrdinalIgnoreCase)))
                     currentClass.AddUsing(new CodeUsing { Name = propertyTypeNamespace.Name });
                 currentClass.RemoveChildElement(property);
-                currentClass.AddMethod(property.ToCodeMethod());
+                currentClass.AddMethod(property.ToGetterCodeMethod());
             }
         }
         CrawlTree(currentElement, childElement => UpdateRequestBuilderClasses(childElement, configuration));

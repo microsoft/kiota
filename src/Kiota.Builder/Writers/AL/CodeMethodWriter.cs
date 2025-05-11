@@ -99,7 +99,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, ALConventionServic
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             case CodeMethodKind.Custom:
                 WriteSetBodyMethodBody(codeElement, writer);
-                WriteFromPropertyMethodBody(codeElement, writer);
+                WriteFromPropertyGetterMethodBody(codeElement, writer);
+                WriteFromPropertySetterMethodBody(codeElement, writer);
                 WriteValidateBodyMethodBody(codeElement, parentClass, writer);
                 WriteApiClientInitializeMethodBody(codeElement, parentClass, writer);
                 WriteSetIdentifierMethodBody(codeElement, parentClass, writer);
@@ -267,9 +268,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, ALConventionServic
         writer.WriteLine("APIAuthorization := NewAPIAuthorization;");
     }
 
-    private void WriteFromPropertyMethodBody(CodeMethod codeElement, LanguageWriter writer)
+    private void WriteFromPropertyGetterMethodBody(CodeMethod codeElement, LanguageWriter writer)
     {
-        if (!codeElement.IsPropertyMethod())
+        if (!codeElement.IsGetterMethod())
             return;
         if (codeElement.GetSourceType() == "List")
         {
@@ -285,7 +286,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, ALConventionServic
             writer.IncreaseIndent();
             if (conventions.IsCodeunitType(codeElement.ReturnType))
             {
-                writer.WriteLine($"Clear(TargetCodeunit);");
+                writer.WriteLine($"Clear(TarCodeunit);");
                 writer.WriteLine($"TargetCodeunit.SetBody(JToken, DebugCall);");
                 writer.WriteLine($"CodeunitList.Add(TargetCodeunit);");
             }
@@ -336,6 +337,59 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, ALConventionServic
             }
         }
     }
+    private void WriteFromPropertySetterMethodBody(CodeMethod codeElement, LanguageWriter writer)
+    {
+        if (!codeElement.IsSetterMethod())
+            return;
+        var param = codeElement.OrderedParameters().FirstOrDefault();
+        if (param == null)
+            throw new InvalidOperationException("Setter method should have a parameter");
+        var targetName = param.Name;
+        if (codeElement.GetSourceType() == "List")
+        {
+            writer.WriteLine($"foreach v in {param.Name} do");
+            writer.IncreaseIndent();
+            if (conventions.IsCodeunitType(param.Type))
+                writer.WriteLine($"JSONHelper.AddToArrayIfNotEmpty(JArray, v);");
+            else
+                writer.WriteLine($"JArray.Add(v);");
+            writer.DecreaseIndent();
+            targetName = "JArray";
+        }
+        if (conventions.IsPrimitiveType(param.Type) || (targetName != param.Name))
+        {
+            writer.WriteLine($"if {conventions.ModelCodeunitJsonBodyVariableName}.SelectToken('{codeElement.Name}', SubToken) then");
+            writer.IncreaseIndent();
+            writer.WriteLine($"SubToken.AsObject().Replace('{codeElement.Name}', {targetName})");
+            writer.DecreaseIndent();
+            writer.WriteLine("else");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{conventions.ModelCodeunitJsonBodyVariableName}.AsObject().Add('{codeElement.Name}', {targetName});");
+            writer.DecreaseIndent();
+        }
+        else if (conventions.IsEnumType(param.Type))
+        {
+            writer.WriteLine($"if {conventions.ModelCodeunitJsonBodyVariableName}.SelectToken('{codeElement.Name}', SubToken) then");
+            writer.IncreaseIndent();
+            writer.WriteLine($"SubToken.AsObject().Replace('{codeElement.Name}', {targetName}.AsInteger())");
+            writer.DecreaseIndent();
+            writer.WriteLine("else");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{conventions.ModelCodeunitJsonBodyVariableName}.AsObject().Add('{codeElement.Name}', {targetName}.AsInteger());");
+            writer.DecreaseIndent();
+        }
+        else
+        {
+            writer.WriteLine($"if {conventions.ModelCodeunitJsonBodyVariableName}.SelectToken('{codeElement.Name}', SubToken) then");
+            writer.IncreaseIndent();
+            writer.WriteLine($"SubToken.AsObject().Replace('{codeElement.Name}', {targetName}.ToJson())");
+            writer.DecreaseIndent();
+            writer.WriteLine("else");
+            writer.IncreaseIndent();
+            writer.WriteLine($"{conventions.ModelCodeunitJsonBodyVariableName}.AsObject().Add('{codeElement.Name}', {targetName}.ToJson());");
+            writer.DecreaseIndent();
+        }
+    }
     private void WriteValidateBodyMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         if (codeElement.Name != "ValidateBody")
@@ -347,11 +401,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, ALConventionServic
         {
             writer.WriteLine($"{local.Key} := {local.Key.ToFirstCharacterUpperCase()}();");
         }
+        foreach (var local in GetPropertySetterLocals(parentClass))
+        {
+            writer.WriteLine($"{local.Key.ToFirstCharacterUpperCase()}({local.Key});");
+        }
     }
     private Dictionary<string, CodeTypeBase> GetPropertyGetterLocals(CodeClass parentClass)
     {
         var locals = new Dictionary<string, CodeTypeBase>();
-        foreach (var local in parentClass.GetPropertyMethods())
+        foreach (var local in parentClass.GetPropertyGetterMethods())
+        {
+            locals.Add(local.Name, local.ReturnType);
+        }
+        return locals;
+    }
+    private Dictionary<string, CodeTypeBase> GetPropertySetterLocals(CodeClass parentClass)
+    {
+        var locals = new Dictionary<string, CodeTypeBase>();
+        foreach (var local in parentClass.GetPropertySetterMethods())
         {
             locals.Add(local.Name, local.ReturnType);
         }

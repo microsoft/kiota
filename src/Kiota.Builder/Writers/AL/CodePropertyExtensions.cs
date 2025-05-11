@@ -22,7 +22,7 @@ internal static class CodePropertyExtensions
         option.AddCustomProperty("object-property", "true");
         return option;
     }
-    public static CodeParameter ToCodeParameter(this CodeProperty property)
+    public static CodeParameter ToCodeParameter(this CodeProperty property, string name = "")
     {
         ArgumentNullException.ThrowIfNull(property);
         var parameter = new CodeParameter
@@ -31,22 +31,29 @@ internal static class CodePropertyExtensions
             Type = property.Type,
             DefaultValue = property.DefaultValue
         };
+        if (!string.IsNullOrEmpty(name))
+            parameter.Name = name;
         return parameter;
     }
-    public static CodeMethod ToCodeMethod(this CodeProperty property)
+    public static CodeMethod ToGetterCodeMethod(this CodeProperty property)
     {
         ArgumentNullException.ThrowIfNull(property);
         var method = new CodeMethod
         {
-            Name = ReservedNamesProvider.GetSafeName(property.Name),
+            Name = $"Get-{ReservedNamesProvider.GetSafeName(property.Name)}", // workaround, because we can't add getter and setter with same name
+            SimpleName = ReservedNamesProvider.GetSafeName(property.Name),
             Access = property.Access,
             ReturnType = property.Type,
             Kind = CodeMethodKind.Custom
         };
         if (property.Kind == CodePropertyKind.RequestBuilder)
+        {
+            method.Name = method.SimpleName;
             method.SetSource("from request-builder");
+        }
         else
             method.SetSourceFromProperty(property);
+        method.AddCustomProperty("method-type", "Getter");
         switch (property.Type.CollectionKind)
         {
             case CodeTypeCollectionKind.None:
@@ -60,7 +67,39 @@ internal static class CodePropertyExtensions
                 throw new InvalidOperationException("Array properties are not (yet?) supported");
             case CodeTypeCollectionKind.Complex:
                 if (property.Kind == CodePropertyKind.Custom)
-                    method.AddParameter(DefaultComplexCollectionParameters(property.Type));
+                    method.AddParameter(DefaultGetterComplexCollectionParameters(property.Type));
+                break;
+            default:
+                throw new InvalidOperationException("Unknown collection kind");
+        }
+        return method;
+    }
+    public static CodeMethod ToSetterCodeMethod(this CodeProperty property)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+        var method = new CodeMethod
+        {
+            Name = $"Set-{ReservedNamesProvider.GetSafeName(property.Name)}", // workaround, because we can't add getter and setter with same name
+            SimpleName = ReservedNamesProvider.GetSafeName(property.Name),
+            Access = property.Access,
+            ReturnType = new CodeType { Name = "void" },
+            Kind = CodeMethodKind.Custom
+        };
+        if (property.Kind == CodePropertyKind.RequestBuilder)
+            method.SetSource("from request-builder");
+        else
+            method.SetSourceFromProperty(property);
+        method.AddCustomProperty("method-type", "Setter");
+        method.AddParameter(property.ToCodeParameter("p"));
+        switch (property.Type.CollectionKind)
+        {
+            case CodeTypeCollectionKind.None:
+                break;
+            case CodeTypeCollectionKind.Array:
+                throw new InvalidOperationException("Array properties are not (yet?) supported");
+            case CodeTypeCollectionKind.Complex:
+                if (property.Kind == CodePropertyKind.Custom)
+                    method.AddParameter(DefaultSetterComplexCollectionParameters(property.Type));
                 break;
             default:
                 throw new InvalidOperationException("Unknown collection kind");
@@ -82,7 +121,7 @@ internal static class CodePropertyExtensions
         ArgumentNullException.ThrowIfNull(properties);
         return properties.Select(p1 => p1.ToVariable());
     }
-    private static CodeParameter[] DefaultComplexCollectionParameters(CodeTypeBase propertyType)
+    private static CodeParameter[] DefaultGetterComplexCollectionParameters(CodeTypeBase propertyType)
     {
         var parameters = new List<CodeParameter>
         {
@@ -92,6 +131,15 @@ internal static class CodePropertyExtensions
         };
         if (!ConventionService.IsCodeunitType(propertyType))
             parameters.RemoveAt(parameters.IndexOf(parameters.First(x => x.Name == "TargetCodeunit")));
+        return [.. parameters];
+    }
+    private static CodeParameter[] DefaultSetterComplexCollectionParameters(CodeTypeBase propertyType)
+    {
+        var parameters = new List<CodeParameter>
+        {
+            ALVariableProvider.GetLocalVariableP("v", propertyType.CloneWithoutCollection(), "1"),
+            ALVariableProvider.GetLocalVariableP("JArray", "JsonArray", "2")
+        };
         return [.. parameters];
     }
 }

@@ -226,7 +226,7 @@ public static class ALVariableProvider
             },
             Kind = CodeMethodKind.Custom
         };
-        codeClass.GetPropertyMethods().ToList().ForEach(x => { method.AddParameter(ALVariableProvider.GetLocalVariableP(x.Name, x.ReturnType, "0")); });
+        codeClass.GetPropertyGetterMethods().ToList().ForEach(x => { method.AddParameter(ALVariableProvider.GetLocalVariableP(x.Name.Replace("Get-", String.Empty, StringComparison.CurrentCulture), x.ReturnType, "0")); });
         method.SetPragmasVariables(["AA0021", "AA0202"]);
         return method;
     }
@@ -247,10 +247,10 @@ public static class ALVariableProvider
         var method = GetToJsonMethod(codeClass);
         method.Name = $"{method.Name}-overload";   // needed as workaround, to be able to add overloads (AL doesn't support optional params)
                                                    // this is changed back in a later step        
-        var methods = codeClass.GetPropertyMethods().ToList();
+        var methods = codeClass.GetPropertyGetterMethods().ToList();
         if (methods.Count == 0)
             return null;
-        codeClass.GetPropertyMethods().ToList().ForEach(x =>
+        codeClass.GetPropertyGetterMethods().ToList().ForEach(x =>
         {
             var param = new CodeParameter { Name = x.Name, Type = x.ReturnType };
             if (ConventionService.IsCodeunitType(param.Type))
