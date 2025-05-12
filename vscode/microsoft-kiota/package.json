@@ -516,7 +516,7 @@
   },
   "dependencies": {
     "@microsoft/kiota": "^1.0.0",
-    "@vscode/extension-telemetry": "^0.9.8",
+    "@vscode/extension-telemetry": "^1.0.0",
     "@vscode/l10n": "^0.0.18"
   },
   "devDependencies": {
