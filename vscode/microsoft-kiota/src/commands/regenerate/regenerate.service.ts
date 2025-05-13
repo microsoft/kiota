@@ -2,7 +2,7 @@ import {
   ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient,
   generatePlugin, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, LogLevel, PluginObjectProperties
 } from "@microsoft/kiota";
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";

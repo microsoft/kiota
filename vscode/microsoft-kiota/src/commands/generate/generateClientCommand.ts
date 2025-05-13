@@ -1,5 +1,5 @@
 import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, KiotaResult, LogLevel } from "@microsoft/kiota";
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from "vscode";
 

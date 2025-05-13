@@ -15,7 +15,7 @@
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
     <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.25.1</VersionPrefix>
+    <VersionPrefix>1.27.0</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
@@ -56,5 +56,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\AdaptiveCardTemplate.json" />
   </ItemGroup>
 </Project>

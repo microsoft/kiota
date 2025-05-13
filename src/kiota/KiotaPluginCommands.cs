@@ -60,6 +60,15 @@ public static class KiotaPluginCommands
         authRefIdOption.AddAlias("--refid");
         return authRefIdOption;
     }
+    internal static Option<bool> GetNoWorkspaceOption()
+    {
+        var noWorkspaceOption = new Option<bool>("--no-workspace", "Disables the workspace management for the plugin.")
+        {
+            IsRequired = false,
+        };
+        noWorkspaceOption.AddAlias("--nw");
+        return noWorkspaceOption;
+    }
     public static Command GetAddCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -68,6 +77,7 @@ public static class KiotaPluginCommands
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var skipGenerationOption = KiotaClientCommands.GetSkipGenerationOption();
+        var noWorkspaceOption = GetNoWorkspaceOption();
         var pluginNameOption = GetPluginNameOption();
         var pluginType = GetPluginTypeOption();
         var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
@@ -83,6 +93,7 @@ public static class KiotaPluginCommands
             pluginType,
             pluginAuthTypeOption,
             pluginAuthRefIdOption,
+            noWorkspaceOption,
             //TODO overlay when we have support for it in OAI.net
         };
         command.AddValidator(commandResult =>
@@ -101,6 +112,7 @@ public static class KiotaPluginCommands
             ExcludePatternsOption = excludePatterns,
             SkipGenerationOption = skipGenerationOption,
             LogLevelOption = logLevelOption,
+            NoWorkspaceOption = noWorkspaceOption,
         };
         return command;
     }
