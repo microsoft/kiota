@@ -15,7 +15,7 @@ configuration:
       # Indicates whether "Require a pull request before merging" is enabled. boolean
       requiresPullRequestBeforeMerging: true
       # Specifies the number of pull request reviews before merging. int (0-6). Should be null/empty if PRs are not required
-      requiredApprovingReviewsCount: 2
+      requiredApprovingReviewsCount: 1
       # Require review from Code Owners. Requires requiredApprovingReviewsCount. boolean
       requireCodeOwnersReview: true
       # Are commits required to be signed. boolean.
