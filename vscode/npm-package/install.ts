@@ -1,4 +1,5 @@
 import AdmZip from 'adm-zip';
+import { createHash } from 'crypto';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -41,13 +42,13 @@ async function runIfNotLocked(action: () => Promise<void>) {
 export async function ensureKiotaIsPresent() {
   const installPath = getKiotaPathInternal(false);
   if (installPath) {
-    await ensureKiotaIsPresentInPath(installPath);
+    const runtimeDependencies = getRuntimeDependenciesPackages();
+    const currentPlatform = getCurrentPlatform();
+    await ensureKiotaIsPresentInPath(installPath, runtimeDependencies, currentPlatform);
   }
 }
 
-export async function ensureKiotaIsPresentInPath(installPath: string) {
-  const runtimeDependencies = getRuntimeDependenciesPackages();
-  const currentPlatform = getCurrentPlatform();
+export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDependencies: Package[], currentPlatform: string) {
   if (installPath) {
     if (!fs.existsSync(installPath) || fs.readdirSync(installPath).length === 0) {
       await runIfNotLocked(async () => {
@@ -65,11 +66,15 @@ export async function ensureKiotaIsPresentInPath(installPath: string) {
           } else {
             const downloadUrl = getDownloadUrl(currentPlatform);
             await downloadFileFromUrl(downloadUrl, zipFilePath);
+            if (!await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
+              throw new Error("Hash validation of the downloaded file mismatch");
+            }
           }
           unzipFile(zipFilePath, installPath);
-          const kiotaPath = getKiotaPathInternal();
-          if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && kiotaPath) {
-            makeExecutable(kiotaPath);
+          if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && installPath) {
+            const fileName = getKiotaFileName();
+            const kiotaFilePath = path.join(installPath, fileName);
+            makeExecutable(kiotaFilePath);
           }
         } catch (error) {
           fs.rmdirSync(installPath, { recursive: true });
@@ -102,8 +107,12 @@ function getRuntimeVersion(): string {
   return getKiotaConfig().binaryVersion || runtimeJson.kiotaVersion;
 }
 
+function getKiotaFileName(): string {
+  return process.platform === 'win32' ? 'kiota.exe' : 'kiota';
+}
+
 function getKiotaPathInternal(withFileName = true): string | undefined {
-  const fileName = process.platform === 'win32' ? 'kiota.exe' : 'kiota';
+  const fileName = getKiotaFileName();
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
   const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
@@ -123,6 +132,17 @@ function getKiotaPathInternal(withFileName = true): string | undefined {
 function unzipFile(zipFilePath: string, destinationPath: string) {
   const zip = new AdmZip(zipFilePath);
   zip.extractAllTo(destinationPath, true);
+}
+
+async function doesFileHashMatch(destinationPath: string, hashValue: string): Promise<boolean> {
+  const hash = createHash('sha256');
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
+      const computedValue = hash.digest('hex');
+      hash.destroy();
+      resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
+    });
+  });
 }
 
 function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
@@ -146,7 +166,7 @@ function getDownloadUrl(platform: string): string {
   return `${baseDownloadUrl}/v${getRuntimeVersion()}/${platform}.zip`;
 }
 
-function getRuntimeDependenciesPackages(): Package[] {
+export function getRuntimeDependenciesPackages(): Package[] {
   if (runtimeJson.runtimeDependencies) {
     return JSON.parse(JSON.stringify(<Package[]>runtimeJson.runtimeDependencies));
   }

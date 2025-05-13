@@ -18,6 +18,20 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     {
         get; set;
     }
+
+    public string? Title
+    {
+        get; set;
+    }
+
+#pragma warning disable CA1056 // URI-like properties should not be strings
+
+    public string? Url
+#pragma warning restore CA1056 // URI-like properties should not be strings
+
+    {
+        get; set;
+    }
     public static OpenApiAiAdaptiveCardExtension Parse(JsonNode source)
     {
         if (source is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
@@ -30,8 +44,16 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
         {
             extension.File = fileStrValue;
         }
-        if (string.IsNullOrEmpty(extension.DataPath) || string.IsNullOrEmpty(extension.File))
-            throw new ArgumentOutOfRangeException(nameof(source), "Both of the properties 'x-ai-adaptive-card.dataPath' and 'x-ai-adaptive-card.file' must be set.");
+        if (rawObject.TryGetPropertyValue(nameof(Title).ToFirstCharacterLowerCase(), out var title) && title is JsonValue titleValue && titleValue.GetValueKind() is JsonValueKind.String && titleValue.TryGetValue<string>(out var titleStrValue))
+        {
+            extension.Title = titleStrValue;
+        }
+        if (rawObject.TryGetPropertyValue(nameof(Url).ToFirstCharacterLowerCase(), out var url) && url is JsonValue urlValue && urlValue.GetValueKind() is JsonValueKind.String && urlValue.TryGetValue<string>(out var urlStrValue))
+        {
+            extension.Url = urlStrValue;
+        }
+        if (string.IsNullOrEmpty(extension.DataPath) || string.IsNullOrEmpty(extension.File) || string.IsNullOrEmpty(extension.Title))
+            throw new ArgumentOutOfRangeException(nameof(source), "The properties 'x-ai-adaptive-card.dataPath', 'x-ai-adaptive-card.file' and 'x-ai-adaptive-card.title' must be set.");
         return extension;
     }
 
@@ -39,12 +61,19 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
-        if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File))
+        if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File) && !string.IsNullOrEmpty(Title))
         {
             writer.WritePropertyName(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase());
             writer.WriteValue(DataPath);
             writer.WritePropertyName(nameof(File).ToFirstCharacterLowerCase());
             writer.WriteValue(File);
+            writer.WritePropertyName(nameof(Title).ToFirstCharacterLowerCase());
+            writer.WriteValue(Title);
+            if (!string.IsNullOrEmpty(Url))
+            {
+                writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
+                writer.WriteValue(Url);
+            }
         }
         writer.WriteEndObject();
     }

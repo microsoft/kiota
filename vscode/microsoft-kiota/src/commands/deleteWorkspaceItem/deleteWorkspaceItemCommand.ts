@@ -1,5 +1,5 @@
 import { getLogEntriesForLevel, KiotaResult, LogLevel, removeClient, removePlugin } from "@microsoft/kiota";
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
 import { extensionId } from "../../constants";

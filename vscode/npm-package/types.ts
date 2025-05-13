@@ -91,7 +91,17 @@ export interface KiotaLoggedResult {
   logs: KiotaLogEntry[];
 }
 
+export enum OpenApiSpecVersion {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  V2_0 = 0,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  V3_0 = 1,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  V3_1 = 2,
+}
+
 export interface KiotaTreeResult extends KiotaLoggedResult {
+  specVersion: OpenApiSpecVersion;
   rootNode?: KiotaOpenApiNode;
   apiTitle?: string;
   servers?: string[];
@@ -247,6 +257,7 @@ export interface GenerationConfiguration {
   usesBackingStore: boolean;
   pluginTypes: KiotaPluginType[];
   operation: ConsumerOperation;
+  noWorkspace?: boolean,
   pluginAuthRefid?: string;
   pluginAuthType?: PluginAuthType | null;
 }

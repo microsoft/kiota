@@ -1,5 +1,5 @@
 import { searchDescription } from "@microsoft/kiota";
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
 import { extensionId, SHOW_MESSAGE_AFTER_API_LOAD, treeViewId } from "../../constants";
