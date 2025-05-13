@@ -37,6 +37,10 @@ public class GenerationConfiguration : ICloneable
     }
     public string OpenAPIFilePath { get; set; } = "openapi.yaml";
     public string ApiManifestPath { get; set; } = "apimanifest.json";
+    // Optional filename suffix to be used when generating multiple API plugins for the same OpenAPI file.
+    // Note: It can not be set from the outside, it is only used internally when generating the plugin manifest.
+    internal string FileNameSuffix { get; set; } = "";
+
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
     public AccessModifier TypeAccessModifier { get; set; } = AccessModifier.Public;

@@ -24,11 +24,30 @@ namespace Kiota.Builder.Plugins;
 
 public partial class PluginsGenerationService
 {
-    private readonly OpenApiDocument OAIDocument;
-    private readonly OpenApiUrlTreeNode TreeNode;
+    private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
+    private const string ManifestFileExt = ".json";
+    private const string DescriptionFileExt = ".yml";
+
+    /// <summary>
+    /// Prefix used for identifying multiple OpenAPI files in a sequence, for example: openapi.agentname.actionname-partial-1-2.json
+    /// </summary>
+    private const string MultipleFilesPrefix = "-partial-";
+
+    /// <summary>
+    /// Regular expression pattern used to identify multiple OpenAPI files in a sequence.
+    /// For example: openapi.agentname.actionname-partial-1-2.yaml
+    /// </summary>
+    private const string MultipleFilesPattern = MultipleFilesPrefix + @"(\d+)-(\d+)\.";
+
+    private OpenApiDocument OAIDocument; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
+    private OpenApiUrlTreeNode TreeNode; // Can not be readonly anymore because of the GenerateMultipleManifestsAsync method
     private readonly GenerationConfiguration Configuration;
     private readonly string WorkingDirectory;
     private readonly ILogger<KiotaBuilder> Logger;
+    internal OpenApiDocumentDownloadService? DownloadService
+    {
+        get; set;
+    }
 
     public PluginsGenerationService(OpenApiDocument document, OpenApiUrlTreeNode openApiUrlTreeNode,
         GenerationConfiguration configuration, string workingDirectory, ILogger<KiotaBuilder> logger)
@@ -44,74 +63,470 @@ public partial class PluginsGenerationService
         Logger = logger;
     }
 
-    private static readonly OpenAPIRuntimeComparer _openAPIRuntimeComparer = new();
-    private const string ManifestFileNameSuffix = ".json";
-    private const string DescriptionPathSuffix = "openapi.yml";
-    public async Task GenerateManifestAsync(CancellationToken cancellationToken = default)
+    public async Task<Dictionary<PluginType, string>> GenerateManifestAsync(CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("Starting GenerateManifestAsync");
+
         // 1. cleanup any namings to be used later on.
-        Configuration.ClientClassName =
-            PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty); //drop any special characters
+        Configuration.ClientClassName = SanitizeClientClassName(); //drop any special characters
+
         // 2. write the OpenApi description
-        var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-{DescriptionPathSuffix}";
+        Logger.LogDebug("Writing OpenAPI description.");
+        var descriptionRelativePath = $"{Configuration.ClientClassName.ToLowerInvariant()}-openapi{Configuration.FileNameSuffix}{DescriptionFileExt}";
         var descriptionFullPath = Path.Combine(Configuration.OutputPath, descriptionRelativePath);
-        var directory = Path.GetDirectoryName(descriptionFullPath);
+        EnsureOutputDirectoryExists(descriptionFullPath);
+
+        await WriteOpenApiDescriptionAsync(descriptionFullPath, cancellationToken).ConfigureAwait(false);
+        Logger.LogInformation("OpenAPI description written to {DescriptionPath}.", descriptionFullPath);
+
+        // Step 3: Generate Plugin Manifests and collect paths
+        var manifestPaths = new Dictionary<PluginType, string>();
+        foreach (var pluginType in Configuration.PluginTypes)
+        {
+            Logger.LogDebug("Generating plugin manifest for plugin type: {PluginType}.", pluginType);
+            var manifestOutputPath = GetManifestOutputPath(Configuration, pluginType);
+
+            await GeneratePluginManifestAsync(pluginType, descriptionRelativePath, manifestOutputPath, cancellationToken).ConfigureAwait(false);
+            Logger.LogInformation("Plugin manifest generated for {PluginType} at {ManifestPath}.", pluginType, manifestOutputPath);
+
+            manifestPaths[pluginType] = manifestOutputPath;
+        }
+
+        return manifestPaths;
+    }
+    internal string GetManifestOutputPath(GenerationConfiguration configuration, PluginType pluginType)
+    {
+        var manifestFileName = $"{configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}{configuration.FileNameSuffix}{ManifestFileExt}";
+        var manifestOutputPath = Path.Combine(configuration.OutputPath, manifestFileName);
+
+        return manifestOutputPath;
+    }
+
+    internal string GetFileNameSuffixForMultipleFiles(uint fileNumber, uint filesCount)
+    {
+        // throw ArgumentException if either parameter is negative
+        if (fileNumber == 0)
+            throw new ArgumentException($"The file number {fileNumber} is invalid. It should be greater than 0.");
+        if (filesCount == 0)
+            throw new ArgumentException($"The files count {filesCount} is invalid. It should be greater than 0.");
+
+        return $"{MultipleFilesPrefix}{fileNumber}-{filesCount}";
+    }
+
+    /// <summary>
+    /// Generates multiple plugin manifests based on the OpenAPI document and configuration.
+    /// This method processes the primary OpenAPI file and additional files if the configuration specifies multiple files by following the naming convention <see cref="MultipleFilesPattern"/>."/>
+    /// It ensures that each file is downloaded, processed, and its corresponding manifest is generated using <see cref="GenerateManifestAsync"/>.
+    /// Only the APIPlugin type is processed in this method, other types are ignored.
+    /// </summary>
+    /// <param name="downloadService">The service used to download OpenAPI documents.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation. The result is a list of file paths to the generated API plugin manifests.</returns>
+    private async Task<List<string>> GenerateMultipleManifestsAsync(CancellationToken cancellationToken = default)
+    {
+        Logger.LogInformation("Starting GenerateMultipleManifestsAsync");
+        var generatedApiPluginManifestPaths = new List<string>();
+        string originalClientClassName = Configuration.ClientClassName;
+        string originalFilePath = Configuration.OpenAPIFilePath;
+        uint fileNumber = 1;
+        uint filesCount = 1;
+
+        if (TryMatchMultipleFilesRequest(originalFilePath, out fileNumber, out filesCount) && filesCount > 1)
+        {
+            // Set the file name suffix so that the generated manifest file names follow the naming convention
+            Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(fileNumber, filesCount);
+        }
+        Logger.LogInformation("Number of files: {FileNumber} out of {FilesCount} extracted from {FileName}", fileNumber, filesCount, originalFilePath);
+
+        // Generate the first manifest
+        var manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+        if (manifestPaths.TryGetValue(PluginType.APIPlugin, out var apiPluginManifestPath))
+        {
+            generatedApiPluginManifestPaths.Add(apiPluginManifestPath);
+        }
+
+        // Check if the file path matches the pattern for multiple OpenAPI files
+        if (filesCount < 2)
+        {
+            Logger.LogInformation("No multiple files to process. Only one file will be processed: {Path}", originalFilePath);
+            return generatedApiPluginManifestPaths;
+        }
+
+        // We are only processing API plugins below and ignoring any other plugin types.
+        if (!Configuration.PluginTypes.Contains(PluginType.APIPlugin))
+        {
+            Logger.LogWarning("Skipping APIPlugin generation as it is not included in the plugin types: {PluginTypes}", Configuration.PluginTypes);
+            return generatedApiPluginManifestPaths;
+        }
+
+        ArgumentNullException.ThrowIfNull(DownloadService, nameof(DownloadService));
+        // Generate manifests for all files
+        for (++fileNumber; fileNumber <= filesCount; fileNumber++)
+        {
+            // Prepare the context for the next file to follow the naming convention
+            await PrepareContextForNextFileAsync(DownloadService, originalFilePath, fileNumber, filesCount, cancellationToken).ConfigureAwait(false);
+
+            // Generate the manifest for the new file
+            manifestPaths = await GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            if (manifestPaths.TryGetValue(PluginType.APIPlugin, out apiPluginManifestPath))
+            {
+                generatedApiPluginManifestPaths.Add(apiPluginManifestPath);
+            }
+
+        }
+
+        return generatedApiPluginManifestPaths;
+    }
+
+    /// <summary>
+    /// Extracts the first partial file name from the given file path by replacing the sequence number with "1".
+    /// </summary>
+    /// <param name="originalFilePath">The original file path containing the sequence number.</param>
+    /// <returns>The updated file path with the sequence number replaced by "1".</returns>
+    /// <exception cref="ArgumentException">Thrown when the provided file path is null or empty.</exception>
+    internal static string GetFirstPartialFileName(string originalFilePath)
+    {
+        if (string.IsNullOrEmpty(originalFilePath))
+            throw new ArgumentException("The file path cannot be null or empty.", nameof(originalFilePath));
+
+        string result = Regex.Replace(
+            originalFilePath,
+            MultipleFilesPattern,
+            match => $"{MultipleFilesPrefix}1-{match.Groups[2].Value}.",
+            RegexOptions.IgnoreCase
+        );
+        return result;
+    }
+
+    /// <summary>
+    /// Checks if the provided file path matches the pattern for multiple OpenAPI files
+    /// and extracts the total number of files in the sequence.
+    /// </summary>
+    /// <param name="originalFilePath">The file path to check against the multiple files pattern.</param>
+    /// <param name="filesCount">The total number of files in the sequence if the pattern matches.</param>
+    /// <returns>True if the file path matches the multiple files pattern; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="originalFilePath"/> is null.</exception>
+    internal bool TryMatchMultipleFilesRequest(string originalFilePath, out uint fileNumber, out uint filesCount)
+    {
+        ArgumentNullException.ThrowIfNull(originalFilePath, nameof(originalFilePath));
+        fileNumber = filesCount = 0;
+
+        // Check if the file path matches the pattern for multiple OpenAPI files
+        var multipleFilesRequestMatch = Regex.Match(originalFilePath, MultipleFilesPattern, RegexOptions.IgnoreCase);
+        if (!multipleFilesRequestMatch.Success)
+        {
+            return false;
+        }
+
+        // Validate both numbers from the regular expression
+        if (!uint.TryParse(multipleFilesRequestMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out fileNumber) ||
+            !uint.TryParse(multipleFilesRequestMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture, out filesCount))
+        {
+            // Return false if any of these two numbers could not have been parsed
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Generates and merges plugin manifests based on the OpenAPI document and configuration.
+    /// This method processes multiple OpenAPI files if specified, generates their respective manifests,
+    /// and merges them into a single manifest file.
+    /// </summary>
+    /// <param name="downloadService">The service used to download OpenAPI documents.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation. The result is a list of file paths to the generated manifests and the merged plugin manifest (as the last element). 
+    /// The merged manifest file will have the suffix defined by <see cref="MergedManifestFileSuffix"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no plugin manifests are generated.</exception>
+    public async Task<List<string>> GenerateAndMergeMultipleManifestsAsync(CancellationToken cancellationToken = default)
+    {
+        Logger.LogInformation("Starting GenerateAndMergeManifestsAsync");
+
+        // Get the main plugin manifest output path before generating the manifests, as we need FileNameSuffix not to be set in GenerateMultipleManifestsAsync() for the output manifest path here
+        var mainPluginManifestOutputPath = GetManifestOutputPath(Configuration, PluginType.APIPlugin);
+        Logger.LogInformation("Main plugin manifest output path: {MainPluginManifestOutputPath}", mainPluginManifestOutputPath);
+
+        var manifestPaths = await GenerateMultipleManifestsAsync(cancellationToken).ConfigureAwait(false);
+        if (manifestPaths.Count == 0)
+            throw new InvalidOperationException("No plugin manifests were generated.");
+        if (manifestPaths.Count == 1)
+        {
+            Logger.LogInformation("Only one plugin manifest was generated. No merging required.");
+            return manifestPaths;
+        }
+
+        // Assign the first manifest path to a local variable mainManifest
+        var mainManifestPath = manifestPaths[0];
+
+        // Read the main manifest content
+        var mainPluginManifestDocument = await ReadManifestContentAsync(mainManifestPath, cancellationToken).ConfigureAwait(false);
+
+        // for each manifest path, read the content and merge it into the main manifest
+
+        for (int manifestIndex = 1; manifestIndex < manifestPaths.Count; manifestIndex++) // Skip the first one as it's already read
+        {
+            var manifestPath = manifestPaths[manifestIndex];
+            var pluginManifestDocument = await ReadManifestContentAsync(manifestPath, cancellationToken).ConfigureAwait(false);
+
+            // Merge the data into the main manifest
+            MergeConversationStarters(mainPluginManifestDocument, pluginManifestDocument);
+            MergeFunctions(mainPluginManifestDocument, pluginManifestDocument, manifestIndex);
+        }
+
+        // Write the merged manifest to a new file
+        Logger.LogInformation("Writing merged plugin manifest to {ManifestPath}", mainPluginManifestOutputPath);
+        await SavePluginManifestAsync(mainPluginManifestOutputPath, mainPluginManifestDocument).ConfigureAwait(false);
+        manifestPaths.Add(mainPluginManifestOutputPath);
+
+        return manifestPaths;
+    }
+
+    internal static async Task SavePluginManifestAsync(string manifestPath, PluginManifestDocument pluginManifestDocument)
+    {
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+        await using var fileStream = File.Create(manifestPath, 4096);
+        await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+
+        pluginManifestDocument.Write(writer);
+    }
+
+    /// <summary>
+    /// Merges conversation starters from the provided plugin manifest document into the main plugin manifest document.
+    /// </summary>
+    /// <param name="mainPluginManifestDocument">The main plugin manifest document where conversation starters will be merged.</param>
+    /// <param name="pluginManifestDocument">The plugin manifest document containing conversation starters to merge.</param>
+    internal void MergeConversationStarters(PluginManifestDocument mainPluginManifestDocument, PluginManifestDocument pluginManifestDocument)
+    {
+        if (pluginManifestDocument.Capabilities?.ConversationStarters != null)
+        {
+            foreach (var conversationStarter in pluginManifestDocument.Capabilities.ConversationStarters)
+            {
+                // Initialize the conversation starters if null
+                mainPluginManifestDocument.Capabilities ??= new Capabilities();
+                mainPluginManifestDocument.Capabilities.ConversationStarters ??= new List<ConversationStarter>();
+                if (!mainPluginManifestDocument.Capabilities.ConversationStarters.Any(cs => cs.Text == conversationStarter.Text))
+                {
+                    mainPluginManifestDocument.Capabilities.ConversationStarters.Add(conversationStarter);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Merges functions from the provided plugin manifest document into the main plugin manifest document.
+    /// This method ensures that functions are uniquely named to avoid conflicts and updates runtimes accordingly.
+    /// </summary>
+    /// <param name="mainPluginManifestDocument">The main plugin manifest document where functions will be merged.</param>
+    /// <param name="pluginManifestDocument">The plugin manifest document containing functions to merge.</param>
+    /// <param name="manifestIndex">The index of the current manifest being processed, used for renaming functions to avoid conflicts.</param>
+    internal void MergeFunctions(PluginManifestDocument mainPluginManifestDocument, PluginManifestDocument pluginManifestDocument, int manifestIndex)
+    {
+        // return if runtimes is null
+        if (pluginManifestDocument.Runtimes == null)
+            return;
+        mainPluginManifestDocument.Functions ??= new List<Function>();
+
+        // Reference all functions in the original runtimes in the main document explicitly
+        foreach (var runtime in mainPluginManifestDocument.Runtimes)
+        {
+            // Initialize the list of functions to run for if it's null or empty
+            runtime.RunForFunctions ??= new List<string>();
+            if (!runtime.RunForFunctions.Any())
+            {
+                // Add all current functions in the first manifest if not already referenced
+                runtime.RunForFunctions.AddRange(
+                    mainPluginManifestDocument.Functions
+                        .Where(function => !runtime.RunForFunctions.Contains(function.Name))
+                        .Select(function => function.Name)
+                );
+            }
+        }
+
+        // Merge runtimes and referenced functions
+        foreach (var runtime2 in pluginManifestDocument.Runtimes)
+        {
+            // We need to process either explicitly defined functions or all functions
+            runtime2.RunForFunctions ??= new List<string>();
+            var isExplicit = runtime2.RunForFunctions?.Count > 0;
+            var functionNamesToProcess = isExplicit ? runtime2.RunForFunctions : pluginManifestDocument.Functions?.Select(f => f.Name).ToList();
+            if (functionNamesToProcess == null || pluginManifestDocument.Functions == null)
+            {
+                // log warning and continue
+                Logger.LogWarning("No functions to process in the plugin manifest runtime {Runtime}", runtime2);
+                continue;
+            }
+            Logger.LogDebug("Adding {FunctionCount} functions: {FunctionNames}", functionNamesToProcess.Count, string.Join(", ", functionNamesToProcess!));
+
+            // Add all functions referenced from the runtime
+            for (int i = 0; i < functionNamesToProcess.Count; i++)
+            {
+                var functionName = functionNamesToProcess[i];
+                var function = pluginManifestDocument.Functions.Single(f => f.Name == functionName);
+                // Rename the function when adding to the main manifest document to prevent naming conflicts if needed
+                var existingFunction = mainPluginManifestDocument.Functions.FirstOrDefault(f => f.Name == functionName);
+                if (existingFunction != null)
+                {
+                    var newName = $"{functionName}_{manifestIndex + 1}";
+                    Logger.LogDebug("Renaming function {FunctionName} to {NewName} in manifest {ManifestIndex}", functionName, newName, manifestIndex);
+                    function.Name = newName;
+                }
+                mainPluginManifestDocument.Functions.Add(function);
+                // Change the function name in the runtime
+                if (isExplicit)
+                {
+                    // Replace the function name in the runtime
+                    runtime2.RunForFunctions![i] = function.Name;
+                }
+                else
+                {
+                    // Add the function name to the runtime to make it explicitly referenced so it works with other runtimes
+                    runtime2.RunForFunctions!.Add(function.Name);
+                }
+                // Add the runtime itself into the main manifest
+                mainPluginManifestDocument.Runtimes.Add(runtime2);
+            }
+        }
+    }
+
+    private static async Task<PluginManifestDocument> ReadManifestContentAsync(string manifestPath, CancellationToken cancellationToken)
+    {
+        var manifestContent = await File.ReadAllTextAsync(manifestPath, cancellationToken).ConfigureAwait(false);
+        var jsonDocument = JsonDocument.Parse(manifestContent);
+        var documentValidationResults = PluginManifestDocument.Load(jsonDocument.RootElement);
+
+        // Throw exception if the manifest is not valid
+        if (!documentValidationResults.IsValid || documentValidationResults.Document is null)
+            throw new InvalidOperationException($"The manifest at {manifestPath} is not valid. Issues found: {documentValidationResults.Problems}");
+
+        return documentValidationResults.Document!;
+    }
+
+    private async Task PrepareContextForNextFileAsync(OpenApiDocumentDownloadService downloadService, string originalFilePath, uint fileNumber, uint filesCount, CancellationToken cancellationToken)
+    {
+        Configuration.FileNameSuffix = GetFileNameSuffixForMultipleFiles(fileNumber, filesCount);
+        Configuration.OpenAPIFilePath = GetNextFilePath(originalFilePath, fileNumber);
+        Logger.LogInformation("Processing file {FileNumber} with FileNameSuffix: {FileNameSuffix}, OpenAPIFilePath: {OpenAPIFilePath}", fileNumber, Configuration.FileNameSuffix, Configuration.OpenAPIFilePath);
+
+        // Now, we need to update the status to process the next file
+        var (openAPIDocumentStream, _) = await downloadService.LoadStreamAsync(Configuration.OpenAPIFilePath, Configuration, null, false, cancellationToken).ConfigureAwait(false);
+        var openApiDocument = await downloadService.GetDocumentFromStreamAsync(openAPIDocumentStream, Configuration, false, cancellationToken).ConfigureAwait(false);
+        if (openApiDocument is null)
+            throw new InvalidOperationException($"Failed to load OpenAPI document from {Configuration.OpenAPIFilePath}");
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        // Update the fields to reflect on the new file
+        this.OAIDocument = openApiDocument;
+        this.TreeNode = urlTreeNode;
+    }
+
+    /// <summary>
+    /// Generates the next file path based on the original file path.
+    /// This method is used to handle multiple OpenAPI files by following a specific naming convention <see cref="MultipleFilesPrefix" />
+    /// </summary>
+    /// <param name="originalFilePath">The original file path of the OpenAPI document, which is used to derive the next file's path.</param>
+    /// <param name="fileNumber">The number of the file to process next, starting from 2 for subsequent files.</param>
+    /// <returns>The updated OpenAPI file path for the next file.</returns>
+    /// <exception cref="ArgumentException">Thrown if the original client class name or file path is null or empty, or if the file path does not contain the required prefix.</exception>
+    internal string GetNextFilePath(string originalFilePath, uint fileNumber)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(originalFilePath, nameof(originalFilePath));
+
+        // Check that originalFilePath contains the expected prefix
+        if (!originalFilePath.Contains(MultipleFilesPrefix, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException($"The originalFilePath '{originalFilePath}' does not contain the prefix '{MultipleFilesPrefix}'.");
+
+        var updatedOpenAPIFilePath = Regex.Replace(originalFilePath, $"{MultipleFilesPrefix}1-", $"{MultipleFilesPrefix}{fileNumber}-", RegexOptions.IgnoreCase);
+
+        return updatedOpenAPIFilePath;
+    }
+
+    internal string SanitizeClientClassName()
+    {
+        return PluginNameCleanupRegex().Replace(Configuration.ClientClassName, string.Empty);
+    }
+
+    internal void EnsureOutputDirectoryExists(string filePath)
+    {
+        var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
             Directory.CreateDirectory(directory);
+        }
+    }
+
+    private async Task WriteOpenApiDescriptionAsync(string descriptionFullPath, CancellationToken cancellationToken)
+    {
+        var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
+        PrepareDescriptionForCopilot(trimmedPluginDocument);
+
+        // trimming a second time to remove any components that are no longer used after the inlining
+        trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
+        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // Remove the second ` - Subset` suffix
+
+        trimmedPluginDocument = GetDocumentWithDefaultResponses(trimmedPluginDocument);
+        // Ensure reference_id extension value is written according to the plugin auth
+        EnsureSecuritySchemeExtensions(trimmedPluginDocument);
+
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
         await using var descriptionStream = File.Create(descriptionFullPath, 4096);
         await using var fileWriter = new StreamWriter(descriptionStream);
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+
+        // Write the OpenAPI description to the file
         var descriptionWriter = new OpenApiYamlWriter(fileWriter, new() { InlineLocalReferences = true, InlineExternalReferences = true });
-        var trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(OAIDocument);
-        PrepareDescriptionForCopilot(trimmedPluginDocument);
-        // trimming a second time to remove any components that are no longer used after the inlining
-        trimmedPluginDocument = GetDocumentWithTrimmedComponentsAndResponses(trimmedPluginDocument);
-        trimmedPluginDocument.Info.Title = trimmedPluginDocument.Info.Title?[..^9]; // removing the second ` - Subset` suffix from the title
-        // Ensure reference_id extension value is written according to the plugin auth
-        EnsureSecuritySchemeExtensions(trimmedPluginDocument);
         trimmedPluginDocument.SerializeAsV3(descriptionWriter);
         await descriptionWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
 
-        // 3. write the plugins
-        foreach (var pluginType in Configuration.PluginTypes)
-        {
-            var manifestFileName = $"{Configuration.ClientClassName.ToLowerInvariant()}-{pluginType.ToString().ToLowerInvariant()}";
-            var manifestOutputPath = Path.Combine(Configuration.OutputPath, $"{manifestFileName}{ManifestFileNameSuffix}");
+    private ApiManifestDocument CreateApiManifestDocument(string descriptionRelativePath)
+    {
+        var apiManifest = new ApiManifestDocument("application"); // TODO: Add application name
+        // pass empty config hash so that its not included in this manifest.
+        apiManifest.ApiDependencies[Configuration.ClientClassName] = Configuration.ToApiDependency(
+            string.Empty,
+            TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [],
+            WorkingDirectory
+        );
 
+        var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
+            ? DefaultContactName
+            : OAIDocument.Info.Contact.Name;
+        var publisherEmail = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Email)
+            ? DefaultContactEmail
+            : OAIDocument.Info.Contact.Email;
+
+        apiManifest.Publisher = new Publisher(publisherName, publisherEmail);
+        return apiManifest;
+    }
+
+    private async Task GeneratePluginManifestAsync(PluginType pluginType, string descriptionRelativePath, string manifestOutputPath, CancellationToken cancellationToken)
+    {
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-            await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
-            await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
+        await using var fileStream = pluginType == PluginType.OpenAI ? Stream.Null : File.Create(manifestOutputPath, 4096);
+        await using var writer = new Utf8JsonWriter(fileStream, new JsonWriterOptions { Indented = true });
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 
-            switch (pluginType)
-            {
-                case PluginType.APIPlugin:
-                    var pluginDocument = GetManifestDocument(descriptionRelativePath);
-                    pluginDocument.Write(writer);
-                    break;
-                case PluginType.APIManifest:
-                    var apiManifest = new ApiManifestDocument("application"); //TODO add application name
-                    // pass empty config hash so that its not included in this manifest.
-                    apiManifest.ApiDependencies[Configuration.ClientClassName] = Configuration.ToApiDependency(string.Empty, TreeNode?.GetRequestInfo().ToDictionary(static x => x.Key, static x => x.Value) ?? [], WorkingDirectory);
-                    var publisherName = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Name)
-                        ? DefaultContactName
-                        : OAIDocument.Info.Contact.Name;
-                    var publisherEmail = string.IsNullOrEmpty(OAIDocument.Info?.Contact?.Email)
-                        ? DefaultContactEmail
-                        : OAIDocument.Info.Contact.Email;
-                    apiManifest.Publisher = new Publisher(publisherName, publisherEmail);
-                    apiManifest.Write(writer);
-                    break;
-                case PluginType.OpenAI:
-                    // OpenAI plugins have been retired and are no longer supported. They only require the OpenAPI description now.
-                    break;
-                default:
-                    throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
-            }
-
-            await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+        switch (pluginType)
+        {
+            case PluginType.APIPlugin:
+                var pluginDocument = GetManifestDocument(descriptionRelativePath);
+                pluginDocument.Write(writer);
+                break;
+            case PluginType.APIManifest:
+                var apiManifest = CreateApiManifestDocument(descriptionRelativePath);
+                apiManifest.Write(writer);
+                break;
+            case PluginType.OpenAI:
+                // OpenAI plugins are no longer supported.
+                break;
+            default:
+                throw new NotImplementedException($"The {pluginType} plugin is not implemented.");
         }
+
+        await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static string? GetExistingReferenceId(IOpenApiSecurityScheme schema)
@@ -414,6 +829,37 @@ public partial class PluginsGenerationService
 
         var predicate = OpenApiFilterService.CreatePredicate(requestUrls: requestUrls, source: doc);
         return OpenApiFilterService.CreateFilteredDocument(doc, predicate);
+    }
+
+    private static OpenApiDocument GetDocumentWithDefaultResponses(OpenApiDocument document)
+    {
+        if (document.Paths is null || document.Paths.Count == 0) return document;
+
+        foreach (var path in document.Paths)
+        {
+            if (path.Value.Operations is null) continue;
+
+            foreach (var operation in path.Value.Operations)
+            {
+                operation.Value.Responses ??= new OpenApiResponses();
+
+                if (operation.Value.Responses.Count == 0)
+                {
+                    operation.Value.Responses["200"] = new OpenApiResponse
+                    {
+                        Description = "The request has succeeded.",
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            ["text/plain"] = new OpenApiMediaType
+                            {
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                            }
+                        }
+                    };
+                }
+            }
+        }
+        return document;
     }
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
@@ -764,7 +1210,8 @@ public partial class PluginsGenerationService
             || response is null
             || response.Content is null
             || response.Content.Count == 0
-            || response.Content["application/json"]?.Schema is null)
+            || !response.Content.TryGetValue("application/json", out var mediaType)
+            || mediaType.Schema is null)
         {
             return null;
         }

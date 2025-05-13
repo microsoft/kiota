@@ -39,6 +39,7 @@ using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Services;
 using DomHttpMethod = Kiota.Builder.CodeDOM.HttpMethod;
 using NetHttpMethod = System.Net.Http.HttpMethod;
@@ -93,12 +94,12 @@ public partial class KiotaBuilder
                 File.Delete(subFile);
         }
     }
-    public async Task<OpenApiUrlTreeNode?> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
+    public async Task<(OpenApiUrlTreeNode?, OpenApiDiagnostic?)> GetUrlTreeNodeAsync(CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         var inputPath = config.OpenAPIFilePath;
-        var (_, openApiTree, _) = await GetTreeNodeInternalAsync(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
-        return openApiTree;
+        var (_, openApiTree, _, openApiDiagnostic) = await GetTreeNodeInternalAsync(inputPath, false, sw, cancellationToken).ConfigureAwait(false);
+        return (openApiTree, openApiDiagnostic);
     }
     public OpenApiDocument? OpenApiDocument => openApiDocument;
     private static string NormalizeApiManifestPath(RequestInfo request, string? baseUrl)
@@ -153,7 +154,7 @@ public partial class KiotaBuilder
             return null;
         }
     }
-    private async Task<(int, OpenApiUrlTreeNode?, bool)> GetTreeNodeInternalAsync(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
+    private async Task<(int, OpenApiUrlTreeNode?, bool, OpenApiDiagnostic?)> GetTreeNodeInternalAsync(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
         logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
         var stepId = 0;
@@ -174,12 +175,13 @@ public partial class KiotaBuilder
         await using var input = await LoadStreamAsync(inputPath, cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2007
         if (input.Length == 0)
-            return (0, null, false);
+            return (0, null, false, null);
         StopLogAndReset(sw, $"step {++stepId} - reading the stream - took");
 
         // Parse OpenAPI
         sw.Start();
-        openApiDocument = await CreateOpenApiDocumentAsync(input, generating, cancellationToken).ConfigureAwait(false);
+        var readResult = await CreateOpenApiDocumentWithResultAsync(input, generating, cancellationToken).ConfigureAwait(false);
+        openApiDocument = readResult?.Document;
         StopLogAndReset(sw, $"step {++stepId} - parsing the document - took");
 
         sw.Start();
@@ -222,7 +224,7 @@ public partial class KiotaBuilder
             StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
         }
 
-        return (stepId, openApiTree, shouldGenerate);
+        return (stepId, openApiTree, shouldGenerate, readResult?.Diagnostic);
     }
     private void UpdateConfigurationFromOpenApiDocument()
     {
@@ -251,7 +253,7 @@ public partial class KiotaBuilder
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>Whether the generated plugin was updated or not</returns>
-    public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken)
+    public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken, Boolean handleMultipleFiles = true)
     {
         return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
         {
@@ -260,7 +262,17 @@ public partial class KiotaBuilder
             // generate plugin
             sw.Start();
             var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
-            await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            // Handle the multiple files generation
+            if (handleMultipleFiles)
+            {
+                pluginsService.DownloadService = openApiDocumentDownloadService;
+                await pluginsService.GenerateAndMergeMultipleManifestsAsync(cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
@@ -332,7 +344,7 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
+            var (stepId, openApiTree, shouldGenerate, _) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (shouldGenerate)
             {
@@ -502,6 +514,10 @@ public partial class KiotaBuilder
     internal Task<OpenApiDocument?> CreateOpenApiDocumentAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
     {
         return openApiDocumentDownloadService.GetDocumentFromStreamAsync(input, config, generating, cancellationToken);
+    }
+    internal Task<ReadResult?> CreateOpenApiDocumentWithResultAsync(Stream input, bool generating = false, CancellationToken cancellationToken = default)
+    {
+        return openApiDocumentDownloadService.GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken);
     }
     public static string GetDeeperMostCommonNamespaceNameForModels(OpenApiDocument document)
     {
@@ -2114,7 +2130,7 @@ public partial class KiotaBuilder
 
         // Add the class to the namespace after the serialization members
         // as other threads looking for the existence of the class may find the class but the additional data/backing store properties may not be fully populated causing duplication
-        var includeAdditionalDataProperties = config.IncludeAdditionalData && schema.AdditionalPropertiesAllowed;
+        var includeAdditionalDataProperties = config.IncludeAdditionalData && (schema.AdditionalPropertiesAllowed || schema.AdditionalProperties is not null);
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore, static s => s);
 
         var newClass = currentNamespace.AddClass(newClassStub).First();
