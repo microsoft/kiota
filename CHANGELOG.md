@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where having `additionalProperties` schema (instead of true) would not generate `AdditionalData` property. [#6443](https://github.com/microsoft/kiota/issues/6443)
+
 ## [1.26.0] - 2025-05-06
 
 ### Added
