@@ -1101,12 +1101,13 @@ public partial class KiotaBuilder
                                         .Skip(parentNode.Path.Count(static x => x == OpenAPIUrlTreeNodePathSeparator)))
                                         .Trim(OpenAPIUrlTreeNodePathSeparator, ForwardSlash, '{', '}');
         var pathItems = GetPathItems(currentNode);
-        var parameter = pathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ? pathItem.Parameters
-                        ?.Select(static x => new { Parameter = x, IsPathParameter = true })
-                        .Union(pathItems[Constants.DefaultOpenApiLabel].Operations?.SelectMany(static x => x.Value.Parameters ?? []).Select(static x => new { Parameter = x, IsPathParameter = false }) ?? [])
-                        .OrderBy(static x => x.IsPathParameter)
-                        .Select(static x => x.Parameter)
-                        .FirstOrDefault(x => parameterName.Equals(x.Name, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
+        var parameter = pathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ?
+                        (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
+                            .Select(static x => new { Parameter = x, IsPathParameter = true })
+                            .Union(pathItems[Constants.DefaultOpenApiLabel].Operations?.SelectMany(static x => x.Value.Parameters ?? []).Select(static x => new { Parameter = x, IsPathParameter = false }) ?? [])
+                            .OrderBy(static x => x.IsPathParameter)
+                            .Select(static x => x.Parameter)
+                            .FirstOrDefault(x => parameterName.Equals(x.Name, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
                         default;
         var type = parameter switch
         {
