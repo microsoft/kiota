@@ -38,9 +38,9 @@ describe("integration install", () => {
     setKiotaConfig({
       binaryVersion
     })
-    const currentPlatform = getCurrentPlatform();
 
     // Skip the test for win-arm until a version is available
+    const currentPlatform = getCurrentPlatform();
     if (currentPlatform === 'win-arm64') {
       console.log('Skipping test for win-arm64 until a published version is available');
       return;
@@ -68,9 +68,9 @@ describe("integration install", () => {
     setKiotaConfig({
       binaryVersion
     })
-    const currentPlatform = getCurrentPlatform();
 
     // Skip the test for win-arm until a version is available
+    const currentPlatform = getCurrentPlatform();
     if (currentPlatform === 'win-arm64') {
       console.log('Skipping test for win-arm64 until a published version is available');
       return;
@@ -123,9 +123,16 @@ describe("sideloading install", () => {
     setKiotaConfig({
       binaryVersion
     })
+
+    // Skip the test for win-arm until a version is available
+    const currentPlatform = getCurrentPlatform();
+    if (currentPlatform === 'win-arm64') {
+      console.log('Skipping test for win-arm64 until a published version is available');
+      return;
+    }
+
     const installLocation = getKiotaPath();
     const runtimeDependencies = getTestRuntimeDependenciesPackages();
-    const currentPlatform = getCurrentPlatform();
     await ensureKiotaIsPresentInPath(installLocation, runtimeDependencies, currentPlatform);
     const zipFilePath = `${installLocation}.zip`;
 
