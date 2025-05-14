@@ -38,10 +38,17 @@ describe("integration install", () => {
     setKiotaConfig({
       binaryVersion
     })
+
+    // Skip the test for win-arm until a version is available
+    const currentPlatform = getCurrentPlatform();
+    if (currentPlatform === 'win-arm64') {
+      console.log('Skipping test for win-arm64 until a published version is available');
+      return;
+    }
+
     const unique_id = Math.random().toString(36).substring(7);
     const installLocation = `.kiotabin/test_install/${unique_id}`;
     const testRuntimeDependencies = getTestRuntimeDependenciesPackages();
-    const currentPlatform = getCurrentPlatform();
     await ensureKiotaIsPresentInPath(installLocation, testRuntimeDependencies, currentPlatform);
 
     // check that the folder exists
@@ -61,7 +68,14 @@ describe("integration install", () => {
     setKiotaConfig({
       binaryVersion
     })
+
+    // Skip the test for win-arm until a version is available
     const currentPlatform = getCurrentPlatform();
+    if (currentPlatform === 'win-arm64') {
+      console.log('Skipping test for win-arm64 until a published version is available');
+      return;
+    }
+
     const kiotaPath = getKiotaPath().split(currentPlatform)[0] + currentPlatform;
     const testRuntimeDependencies = getTestRuntimeDependenciesPackages();
     await ensureKiotaIsPresentInPath(kiotaPath, testRuntimeDependencies, currentPlatform);
@@ -78,12 +92,19 @@ describe("integration install", () => {
     setKiotaConfig({
       binaryVersion
     })
+
+    // Skip the test for win-arm until a version is available
+    const currentPlatform = getCurrentPlatform();
+    if (currentPlatform === 'win-arm64') {
+      console.log('Skipping test for win-arm64 until a published version is available');
+      return;
+    }
+
     const unique_id = Math.random().toString(36).substring(7);
     const installLocation = `.kiotabin/test_install/${unique_id}`;
     
     // Get the runtime dependencies from the test runtime.json file which has a bad hash for the test
     const runtimeDependencies = getTestRuntimeDependenciesPackages();
-    const currentPlatform = getCurrentPlatform();
 
     // Set the hash to a bad value for the test
     for (const runtimeDependency of runtimeDependencies) {
@@ -109,9 +130,16 @@ describe("sideloading install", () => {
     setKiotaConfig({
       binaryVersion
     })
+
+    // Skip the test for win-arm until a version is available
+    const currentPlatform = getCurrentPlatform();
+    if (currentPlatform === 'win-arm64') {
+      console.log('Skipping test for win-arm64 until a published version is available');
+      return;
+    }
+
     const installLocation = getKiotaPath();
     const runtimeDependencies = getTestRuntimeDependenciesPackages();
-    const currentPlatform = getCurrentPlatform();
     await ensureKiotaIsPresentInPath(installLocation, runtimeDependencies, currentPlatform);
     const zipFilePath = `${installLocation}.zip`;
 
@@ -125,7 +153,12 @@ describe("sideloading install", () => {
     const unique_id = Math.random().toString(36).substring(7);
     const installLocation = `.kiotabin/test_install/${unique_id}`;
     const runtimeDependencies = getTestRuntimeDependenciesPackages();
+    // Skip the test for win-arm until a version is available
     const currentPlatform = getCurrentPlatform();
+    if (currentPlatform === 'win-arm64') {
+      console.log('Skipping test for win-arm64 until a published version is available');
+      return;
+    }
     await ensureKiotaIsPresentInPath(installLocation, runtimeDependencies, currentPlatform);
 
     // check that the folder exists
