@@ -1866,29 +1866,30 @@ public partial class KiotaBuilder
             ?.ToList()
             .ForEach(x => unionType.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
         var membersWithNoName = 0;
-        foreach (var currentSchema in schemas!)
-        {
-            var shortestNamespace = GetShortestNamespace(codeNamespace, currentSchema);
-            var className = currentSchema.GetSchemaName().CleanupSymbolName();
-            if (string.IsNullOrEmpty(className))
-                if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
-                {
-                    if (currentSchema.IsArray())
-                        primitiveType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-                    if (!unionType.ContainsType(primitiveType))
-                        unionType.AddType(primitiveType);
-                    continue;
-                }
-                else
-                    className = $"{unionType.Name}Member{++membersWithNoName}";
-            var declarationType = new CodeType
+        if (schemas is not null)
+            foreach (var currentSchema in schemas)
             {
-                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
-                CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
-            };
-            if (!unionType.ContainsType(declarationType))
-                unionType.AddType(declarationType);
-        }
+                var shortestNamespace = GetShortestNamespace(codeNamespace, currentSchema);
+                var className = currentSchema.GetSchemaName().CleanupSymbolName();
+                if (string.IsNullOrEmpty(className))
+                    if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
+                    {
+                        if (currentSchema.IsArray())
+                            primitiveType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+                        if (!unionType.ContainsType(primitiveType))
+                            unionType.AddType(primitiveType);
+                        continue;
+                    }
+                    else
+                        className = $"{unionType.Name}Member{++membersWithNoName}";
+                var declarationType = new CodeType
+                {
+                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
+                    CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
+                };
+                if (!unionType.ContainsType(declarationType))
+                    unionType.AddType(declarationType);
+            }
         if (schema.IsArrayOfTypes())
         {
             AddTypeArrayMemberToComposedType(schema, JsonSchemaType.Boolean, unionType);
