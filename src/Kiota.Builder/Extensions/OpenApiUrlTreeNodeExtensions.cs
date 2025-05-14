@@ -72,9 +72,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     }
     private static IEnumerable<IOpenApiParameter> GetParametersForPathItem(IOpenApiPathItem pathItem, string nodeSegment)
     {
-        if (pathItem.Parameters is null)
-            return [];
-        return pathItem.Parameters
+        return (pathItem.Parameters ?? [])
                     .Union(pathItem.Operations?.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()) ?? [])
                     .Where(static x => x.In == ParameterLocation.Path)
                     .Where(x => nodeSegment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
