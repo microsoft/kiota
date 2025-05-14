@@ -217,7 +217,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 (null, true) => pathItem.Operations!.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
                 _ => [],
             };
-            var parameters = pathItem.Parameters?
+            var parameters = (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
                                     .Union(operationQueryParameters)
                                     .Where(static x => x.In == ParameterLocation.Query)
                                     .DistinctBy(static x => x.Name, StringComparer.Ordinal)
