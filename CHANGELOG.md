@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for windows arm64. [#6427](https://github.com/microsoft/kiota/issues/6427)
 - golang: indent with tabs instead of spaces
 - golang: if there is only one return argument, omit the parentheses
 - golang: remove trailing spaces on comments
@@ -18,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: correctly indent case statements inside a switch
 
 ### Changed
+
+- Fixed a bug where having `additionalProperties` schema (instead of true) would not generate `AdditionalData` property. [#6443](https://github.com/microsoft/kiota/issues/6443)
+- Fixed a bug where escaped line breaks and/or double quotes defined in the schema object properties would break the generation of CSharp client [#6472](https://github.com/microsoft/kiota/issues/6472)
 
 ## [1.26.0] - 2025-05-06
 

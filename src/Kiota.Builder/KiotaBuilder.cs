@@ -253,7 +253,7 @@ public partial class KiotaBuilder
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>Whether the generated plugin was updated or not</returns>
-    public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken)
+    public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken, Boolean handleMultipleFiles = true)
     {
         return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
         {
@@ -262,7 +262,17 @@ public partial class KiotaBuilder
             // generate plugin
             sw.Start();
             var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
-            await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            // Handle the multiple files generation
+            if (handleMultipleFiles)
+            {
+                pluginsService.DownloadService = openApiDocumentDownloadService;
+                await pluginsService.GenerateAndMergeMultipleManifestsAsync(cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await pluginsService.GenerateManifestAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
@@ -2120,7 +2130,7 @@ public partial class KiotaBuilder
 
         // Add the class to the namespace after the serialization members
         // as other threads looking for the existence of the class may find the class but the additional data/backing store properties may not be fully populated causing duplication
-        var includeAdditionalDataProperties = config.IncludeAdditionalData && schema.AdditionalPropertiesAllowed;
+        var includeAdditionalDataProperties = config.IncludeAdditionalData && (schema.AdditionalPropertiesAllowed || schema.AdditionalProperties is not null);
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore, static s => s);
 
         var newClass = currentNamespace.AddClass(newClassStub).First();

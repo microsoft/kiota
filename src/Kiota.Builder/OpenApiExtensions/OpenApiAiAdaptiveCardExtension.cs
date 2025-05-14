@@ -34,7 +34,10 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     }
     public static OpenApiAiAdaptiveCardExtension Parse(JsonNode source)
     {
-        if (source is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
+        // We are supporting empty extension to avoid creating the template when emitting from typespec scenario
+        var emptyExtension = new OpenApiAiAdaptiveCardExtension();
+        if (source is not JsonObject rawObject)
+            return emptyExtension;
         var extension = new OpenApiAiAdaptiveCardExtension();
         if (rawObject.TryGetPropertyValue(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase(), out var dataPath) && dataPath is JsonValue dataPathValue && dataPathValue.GetValueKind() is JsonValueKind.String && dataPathValue.TryGetValue<string>(out var dataPathStrValue))
         {
@@ -52,8 +55,9 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
         {
             extension.Url = urlStrValue;
         }
+        // We are supporting empty extension to avoid creating the template when emitting from typespec scenario
         if (string.IsNullOrEmpty(extension.DataPath) || string.IsNullOrEmpty(extension.File) || string.IsNullOrEmpty(extension.Title))
-            throw new ArgumentOutOfRangeException(nameof(source), "The properties 'x-ai-adaptive-card.dataPath', 'x-ai-adaptive-card.file' and 'x-ai-adaptive-card.title' must be set.");
+            return emptyExtension;
         return extension;
     }
 
