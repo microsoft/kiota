@@ -1108,15 +1108,24 @@ public partial class PluginsGenerationService
             return capabilities;
         }
 
-
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name) ??
-            GetResponseSemanticsFromTemplate(openApiOperation, configuration, logger);
-
-        return new FunctionCapabilities
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        if (responseSemantics != null)
         {
-            ResponseSemantics = responseSemantics
-        };
+            return new FunctionCapabilities
+            {
+                ResponseSemantics = responseSemantics
+            };
+        }
 
+        var responseSemanticsFromTemplate = GetResponseSemanticsFromTemplate(openApiOperation, configuration, logger);
+        if (responseSemanticsFromTemplate != null)
+        {
+            return new FunctionCapabilities
+            {
+                ResponseSemantics = responseSemanticsFromTemplate
+            };
+        }
+        return null;
     }
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
@@ -1187,6 +1196,12 @@ public partial class PluginsGenerationService
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
         {
+            // This is a workaround for integration with TypeSpec when passing empty object from adaptiveCardExtension
+            if (string.IsNullOrEmpty(adaptiveCard.DataPath) || string.IsNullOrEmpty(adaptiveCard.File) || string.IsNullOrEmpty(adaptiveCard.Title))
+            {
+                return null;
+            }
+
             JsonNode node = new JsonObject();
             node["file"] = JsonValue.Create(adaptiveCard.File);
             using JsonDocument doc = JsonDocument.Parse(node.ToJsonString());
@@ -1214,6 +1229,16 @@ public partial class PluginsGenerationService
             || mediaType.Schema is null)
         {
             return null;
+        }
+
+        // This is a workaround for integration with TypeSpec when passing empty object from adaptiveCardExtension
+        if (openApiOperation.Extensions is not null &&
+    openApiOperation.Extensions.TryGetValue(OpenApiAiAdaptiveCardExtension.Name, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
+        {
+            if (string.IsNullOrEmpty(adaptiveCard.DataPath) || string.IsNullOrEmpty(adaptiveCard.File) || string.IsNullOrEmpty(adaptiveCard.Title))
+            {
+                return null;
+            }
         }
 
         string functionName = openApiOperation.OperationId;
