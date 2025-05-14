@@ -2968,7 +2968,7 @@ paths:
         };
         var weatherForecastResponse = new OpenApiResponse
         {
-            Content =
+            Content = new()
             {
                 ["application/json"] = new OpenApiMediaType
                 {
@@ -2982,7 +2982,8 @@ paths:
             {
                 ["weatherforecast"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
@@ -8948,7 +8949,9 @@ components:
     public async Task NestedIntersectionTypeAllOfAsync()
     {
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
+        await using var fs = await GetDocumentStreamAsync(
+"""
+openapi: 3.0.3
 info:
   title: Model Registry REST API
   version: v1alpha2
@@ -8961,7 +8964,7 @@ servers:
   - url: 'http://localhost:8080'
 paths:
   /api/model_registry/v1alpha2/registered_models:
-    summary: Path used to manage the list of registeredmodels.
+    summary: Path used to manage the list of registered models.
     description: >-
       The REST endpoint/path used to list and create zero or more `RegisteredModel` entities.  This path contains a `GET` and `POST` operation to perform the list and create tasks, respectively.
     get:
@@ -9028,7 +9031,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RegisteredModelList'
-      description: A response containing a list of `RegisteredModel` entities.\");
+      description: A response containing a list of `RegisteredModel` entities.
+""");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
