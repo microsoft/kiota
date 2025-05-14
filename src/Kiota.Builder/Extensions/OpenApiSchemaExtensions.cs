@@ -416,9 +416,9 @@ public static class OpenApiSchemaExtensions
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
             else if (schema.AnyOf is { Count: > 0 })
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
-            else if ((schema.AllOf?.Any(allOfEvaluatorForMappings) ?? false) && schema.AllOf[^1].Equals(schema.AllOf.Last(allOfEvaluatorForMappings)))
-                // ensure the matched AllOf entry is the last in the list
-                return GetDiscriminatorMappings(schema.AllOf.Last(allOfEvaluatorForMappings), inheritanceIndex);
+            else if (schema.IsInherited() && schema.AllOf?.FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
+                // ensure we're in an inheritance context and get the discriminator from the parent when available
+                return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
             else if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
                 return GetAllInheritanceSchemaReferences(refId, inheritanceIndex)
                            .Where(static x => !string.IsNullOrEmpty(x))

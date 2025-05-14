@@ -3631,6 +3631,25 @@ paths:
     [Fact]
     public async Task AddsDiscriminatorMappingsAllOfImplicitAsync()
     {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
         var entitySchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
@@ -3659,7 +3678,7 @@ paths:
         {
             Type = JsonSchemaType.Object,
             AllOf = new List<IOpenApiSchema> {
-                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.entity", document),
                 new OpenApiSchema {
                     Properties = new Dictionary<string, IOpenApiSchema> {
                         {
@@ -3683,7 +3702,7 @@ paths:
         {
             Type = JsonSchemaType.Object,
             AllOf = new List<IOpenApiSchema> {
-                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchemaReference("microsoft.graph.directoryObject", document),
                 new OpenApiSchema {
                     Properties = new Dictionary<string, IOpenApiSchema> {
                         {
@@ -3709,29 +3728,11 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject")
+                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject", document)
                 }
             },
         };
-        var document = new OpenApiDocument
-        {
-            Paths = new OpenApiPaths
-            {
-                ["objects"] = new OpenApiPathItem
-                {
-                    Operations = new()
-                    {
-                        [NetHttpMethod.Get] = new OpenApiOperation
-                        {
-                            Responses = new OpenApiResponses
-                            {
-                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
-                            }
-                        }
-                    }
-                }
-            },
-        };
+
         document.AddComponent("microsoft.graph.entity", entitySchema);
         document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
         document.AddComponent("microsoft.graph.user", userSchema);
@@ -3773,6 +3774,25 @@ paths:
     [Fact]
     public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNotAsync()
     {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
         var entitySchema = new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
@@ -3798,10 +3818,10 @@ paths:
                 Mapping = new Dictionary<string, OpenApiSchemaReference>
                 {
                     {
-                        "microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject")
+                        "microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject", document)
                     },
                     {
-                        "microsoft.graph.user", new OpenApiSchemaReference("microsoft.graph.user")
+                        "microsoft.graph.user", new OpenApiSchemaReference("microsoft.graph.user", document)
                     }
                 }
             },
@@ -3810,7 +3830,7 @@ paths:
         {
             Type = JsonSchemaType.Object,
             AllOf = [
-                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchemaReference("microsoft.graph.entity", document),
                 new OpenApiSchema
                 {
                     Properties = new Dictionary<string, IOpenApiSchema> {
@@ -3835,7 +3855,7 @@ paths:
         {
             Type = JsonSchemaType.Object,
             AllOf = [
-                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchemaReference("microsoft.graph.directoryObject", document),
                 new OpenApiSchema
                 {
                     Properties = new Dictionary<string, IOpenApiSchema> {
@@ -3862,26 +3882,7 @@ paths:
             {
                 ["application/json"] = new OpenApiMediaType
                 {
-                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject")
-                }
-            },
-        };
-        var document = new OpenApiDocument
-        {
-            Paths = new OpenApiPaths
-            {
-                ["objects"] = new OpenApiPathItem
-                {
-                    Operations = new()
-                    {
-                        [NetHttpMethod.Get] = new OpenApiOperation
-                        {
-                            Responses = new OpenApiResponses
-                            {
-                                ["200"] = new OpenApiResponseReference("microsoft.graph.directoryObjects"),
-                            }
-                        }
-                    }
+                    Schema = new OpenApiSchemaReference("microsoft.graph.directoryObject", document)
                 }
             },
         };
