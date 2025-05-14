@@ -418,7 +418,7 @@ components:
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
         Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
-        Assert.Null(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics);// no response semantics is added if no adaptive card
+        Assert.Null(resultingManifest.Document.Functions[1].Capabilities);// no response semantics is added if no adaptive card
     }
 
 
@@ -521,7 +521,7 @@ components:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
-        Assert.Null(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics); // no response semantics is added if no schema
+        Assert.Null(resultingManifest.Document.Functions[0].Capabilities); // no response semantics is added if no schema
         Assert.NotNull(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics); // response semantics is added if response has schema
         string jsonString = $"{{\"file\": \"./adaptiveCards/{resultingManifest.Document.Functions[1].Name}.json\"}}";
         using JsonDocument doc = JsonDocument.Parse(jsonString);
@@ -532,6 +532,101 @@ components:
         var path = Path.Combine(outputDirectory, "adaptiveCards", $"{resultingManifest.Document.Functions[1].Name}.json");
         Assert.True(File.Exists(path));
 
+    }
+
+    [Fact]
+    public async Task GeneratesManifestWithEmptyAdaptiveCardExtensionAsync()
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test/{id}:
+    get:
+      summary: description for test path with id
+      operationId: test.WithId
+      x-ai-adaptive-card: {}
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: The id of the test
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/microsoft.graph.message'
+        '500':
+          description: api error response
+components:
+  schemas:
+    microsoft.graph.entity:
+      title: entity
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        id:
+          anyOf:
+          - type: string
+          - type: integer
+        '@odata.type':
+          type: string
+    microsoft.graph.message:
+      allOf:
+      - $ref: '#/components/schemas/microsoft.graph.entity'
+      - type: object
+        title: message
+        properties:
+          subject:
+            type: string
+          body:
+            type: string";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync();
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        // Validate the v2 plugin
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
+        Assert.Single(resultingManifest.Document.Functions);// all functions are generated despite missing operationIds
+        Assert.Null(resultingManifest.Document.Functions[0].Capabilities); // response semantics is added if response has schema but it is not if empty adaptive card extension is present
+        // validate adaptive card does not exist
+        var path = Path.Combine(outputDirectory, "adaptiveCards", $"{resultingManifest.Document.Functions[0].Name}.json");
+        Assert.False(File.Exists(path));
     }
 
     [Fact]
@@ -1515,7 +1610,7 @@ paths:
         Assert.Contains("personalData", resultingManifest.Document.Functions[0].Capabilities.SecurityInfo.DataHandling);
 
         // Second function has no response semantics
-        Assert.Null(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics);
+        Assert.Null(resultingManifest.Document.Functions[1].Capabilities);
     }
 
     [Fact]
