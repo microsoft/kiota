@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using Kiota.Builder.OpenApiExtensions;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Models.References;
@@ -218,7 +219,8 @@ public static class OpenApiSchemaExtensions
     /// <param name="result">Resulting merged schema.</param>
     private static void AddOriginalReferenceIdExtension(this IOpenApiSchema schema, OpenApiSchema result)
     {
-        if (schema is not OpenApiSchemaReference schemaReference || string.IsNullOrEmpty(schemaReference.Reference.Id) || result.Extensions is null) return;
+        if (schema is not OpenApiSchemaReference schemaReference || string.IsNullOrEmpty(schemaReference.Reference.Id)) return;
+        result.Extensions ??= new Dictionary<string, IOpenApiExtension>(StringComparer.Ordinal);
         result.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
     }
 
