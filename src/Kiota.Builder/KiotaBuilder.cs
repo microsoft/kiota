@@ -2529,7 +2529,7 @@ public partial class KiotaBuilder
     }
     private CodeClass? CreateOperationParameterClass(OpenApiUrlTreeNode node, NetHttpMethod operationType, OpenApiOperation operation, CodeClass parentClass)
     {
-        var parameters = node.PathItems[Constants.DefaultOpenApiLabel].Parameters?.Union(operation.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static p => p.In == ParameterLocation.Query).ToArray() ?? [];
+        var parameters = (node.PathItems[Constants.DefaultOpenApiLabel].Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Union(operation.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static p => p.In == ParameterLocation.Query).ToArray();
         if (parameters.Length != 0)
         {
             var parameterClass = parentClass.AddInnerClass(new CodeClass
