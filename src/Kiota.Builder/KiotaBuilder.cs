@@ -32,7 +32,6 @@ using Kiota.Builder.Settings;
 using Kiota.Builder.WorkspaceManagement;
 using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.ApiManifest;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.MicrosoftExtensions;
