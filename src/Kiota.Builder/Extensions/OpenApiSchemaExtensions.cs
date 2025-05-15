@@ -418,7 +418,7 @@ public static class OpenApiSchemaExtensions
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
             else if (schema.AnyOf is { Count: > 0 })
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
-            else if (schema.IsInherited() && schema.AllOf?.FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
+            else if (schema.IsInherited() && schema.AllOf?.OfType<OpenApiSchema>().FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
                 // ensure we're in an inheritance context and get the discriminator from the parent when available
                 return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
             else if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))

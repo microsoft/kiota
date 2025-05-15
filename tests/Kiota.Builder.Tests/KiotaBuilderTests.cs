@@ -4251,76 +4251,6 @@ components:
     [Fact]
     public void InheritedTypeWithInlineSchemaWorks()
     {
-        var baseObject = new OpenApiSchema
-        {
-            Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, IOpenApiSchema> {
-                {
-                    "name", new OpenApiSchema {
-                        Type = JsonSchemaType.String
-                    }
-                },
-                {
-                    "kind", new OpenApiSchema {
-                        Type = JsonSchemaType.String
-                    }
-                }
-            },
-            Discriminator = new OpenApiDiscriminator
-            {
-                PropertyName = "kind",
-                Mapping = new Dictionary<string, OpenApiSchemaReference> {
-                    {
-                        "derivedObject", new OpenApiSchemaReference("subNS.derivedObject")
-                    }
-                }
-            },
-        };
-        var derivedObject = new OpenApiSchema
-        {
-            Type = JsonSchemaType.Object,
-            AllOf = [
-                new OpenApiSchemaReference("subNS.baseObject"),
-                new OpenApiSchema
-                {
-                    Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema> {
-                        {
-                            "special", new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        }
-                    },
-                    Discriminator = new OpenApiDiscriminator
-                    {
-                        PropertyName = "kind",
-                        Mapping = new Dictionary<string, OpenApiSchemaReference> {
-                            {
-                                "secondLevelDerivedObject", new OpenApiSchemaReference("subNS.secondLevelDerivedObject")
-                            }
-                        }
-                    },
-                }
-            ],
-        };
-        var secondLevelDerivedObject = new OpenApiSchema
-        {
-            Type = JsonSchemaType.Object,
-            AllOf = [
-                new OpenApiSchemaReference("subNS.derivedObject"),
-                new OpenApiSchema
-                {
-                    Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema> {
-                        {
-                            "moreSpecial", new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        }
-                    }
-                }
-            ],
-        };
         var document = new OpenApiDocument
         {
             Paths = new OpenApiPaths
@@ -4349,6 +4279,77 @@ components:
                 }
             },
         };
+        var baseObject = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "name", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                {
+                    "kind", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                }
+            },
+            Discriminator = new OpenApiDiscriminator
+            {
+                PropertyName = "kind",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    {
+                        "derivedObject", new OpenApiSchemaReference("subNS.derivedObject", document)
+                    }
+                }
+            },
+        };
+        var derivedObject = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = [
+                new OpenApiSchemaReference("subNS.baseObject", document),
+                new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "special", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                    Discriminator = new OpenApiDiscriminator
+                    {
+                        PropertyName = "kind",
+                        Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                            {
+                                "secondLevelDerivedObject", new OpenApiSchemaReference("subNS.secondLevelDerivedObject", document)
+                            }
+                        }
+                    },
+                }
+            ],
+        };
+        var secondLevelDerivedObject = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = [
+                new OpenApiSchemaReference("subNS.derivedObject", document),
+                new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "moreSpecial", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    }
+                }
+            ],
+        };
+
         document.AddComponent("subNS.baseObject", baseObject);
         document.AddComponent("subNS.derivedObject", derivedObject);
         document.AddComponent("subNS.secondLevelDerivedObject", secondLevelDerivedObject);
@@ -4363,8 +4364,7 @@ components:
         Assert.NotNull(requestBuilderClass);
         var requestExecutorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
         Assert.NotNull(requestExecutorMethod);
-        var executorReturnType = requestExecutorMethod.ReturnType as CodeType;
-        Assert.NotNull(executorReturnType);
+        Assert.IsType<CodeType>(requestExecutorMethod.ReturnType);
         Assert.Contains("derivedObject", requestExecutorMethod.ReturnType.Name);
         var derivedObjectClass = codeModel.FindChildByName<CodeClass>("derivedObject");
         Assert.NotNull(derivedObjectClass);
