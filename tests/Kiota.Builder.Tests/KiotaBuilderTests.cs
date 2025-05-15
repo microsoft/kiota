@@ -71,7 +71,7 @@ paths:
     {
         var tempFilePathReferee = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePathReferee,
-    """
+"""
 openapi: 3.1.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -98,7 +98,7 @@ components:
 """);
         var tempFilePathReferrer = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
         await File.WriteAllTextAsync(tempFilePathReferrer,
-    $$$"""
+$$$"""
 openapi: 3.1.1
 info:
   title: OData Service for namespace microsoft.graph
