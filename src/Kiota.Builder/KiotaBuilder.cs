@@ -722,7 +722,7 @@ public partial class KiotaBuilder
 
             if (child.IsPathSegmentWithSingleSimpleParameter())
             {
-                var indexerParameterType = GetIndexerParameter(child, currentNode);
+                var indexerParameterType = GetIndexerParameter(child);
                 codeClass.AddIndexer(CreateIndexer($"{propIdentifier}-indexer", propType, indexerParameterType, child, currentNode));
             }
             else if (child.IsComplexPathMultipleParameters())
@@ -1094,12 +1094,9 @@ public partial class KiotaBuilder
         };
     }
     private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
-    private const char OpenAPIUrlTreeNodePathSeparator = '\\';
-    private CodeParameter GetIndexerParameter(OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
+    private CodeParameter GetIndexerParameter(OpenApiUrlTreeNode currentNode)
     {
-        var parameterName = string.Join(OpenAPIUrlTreeNodePathSeparator, currentNode.Path.Split(OpenAPIUrlTreeNodePathSeparator, StringSplitOptions.RemoveEmptyEntries)
-                                        .Skip(parentNode.Path.Count(static x => x == OpenAPIUrlTreeNodePathSeparator)))
-                                        .Trim(OpenAPIUrlTreeNodePathSeparator, ForwardSlash, '{', '}');
+        var parameterName = currentNode.Segment.Trim('{', '}');
         var pathItems = GetPathItems(currentNode);
         var parameter = pathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ?
                         (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
