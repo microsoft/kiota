@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.26.1] - 2025-05-15
+
+### Added
+
 - Added support for windows arm64. [#6427](https://github.com/microsoft/kiota/issues/6427)
 - golang: indent with tabs instead of spaces
 - golang: if there is only one return argument, omit the parentheses
