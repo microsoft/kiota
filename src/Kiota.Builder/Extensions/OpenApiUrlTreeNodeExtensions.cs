@@ -72,9 +72,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
     }
     private static IEnumerable<IOpenApiParameter> GetParametersForPathItem(IOpenApiPathItem pathItem, string nodeSegment)
     {
-        if (pathItem.Parameters is null)
-            return [];
-        return pathItem.Parameters
+        return (pathItem.Parameters ?? [])
                     .Union(pathItem.Operations?.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()) ?? [])
                     .Where(static x => x.In == ParameterLocation.Path)
                     .Where(x => nodeSegment.Contains($"{{{x.Name}}}", StringComparison.OrdinalIgnoreCase));
@@ -85,7 +83,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             node.IsComplexPathMultipleParameters())
             if (node.PathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem))
                 return GetParametersForPathItem(pathItem, node.DeduplicatedSegment());
-            else if (node.Children.Any())
+            else if (node.Children.Count > 0)
                 return node.Children
                             .Where(static x => x.Value.PathItems.ContainsKey(Constants.DefaultOpenApiLabel))
                             .SelectMany(x => GetParametersForPathItem(x.Value.PathItems[Constants.DefaultOpenApiLabel], node.DeduplicatedSegment()))
@@ -211,13 +209,13 @@ public static partial class OpenApiUrlTreeNodeExtensions
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel) && includeQueryParameters)
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
-            var operationQueryParameters = (operationType, pathItem.Operations is not null && pathItem.Operations.Any()) switch
+            var operationQueryParameters = (operationType, pathItem.Operations is { Count: > 0 }) switch
             {
                 (HttpMethod ot, _) when pathItem.Operations!.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
                 (null, true) => pathItem.Operations!.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
                 _ => [],
             };
-            var parameters = pathItem.Parameters?
+            var parameters = (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
                                     .Union(operationQueryParameters)
                                     .Where(static x => x.In == ParameterLocation.Query)
                                     .DistinctBy(static x => x.Name, StringComparer.Ordinal)

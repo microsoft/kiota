@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi.Models;
 using Xunit;
@@ -47,7 +48,13 @@ public class OpenApiResponsesExtensionsTests
         var responses = new OpenApiResponses();
         foreach (var sc in statusCodes)
         {
-            responses.Add(sc, new OpenApiResponse());
+            responses.Add(sc, new OpenApiResponse
+            {
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType()
+                }
+            });
         }
         return responses;
     }
