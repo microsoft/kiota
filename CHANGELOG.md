@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- golang: indent with tabs instead of spaces
+- golang: if there is only one return argument, omit the parentheses
+- golang: remove trailing spaces on comments
+- golang: fix import ordering
+- golang: correctly indent case statements inside a switch
+
 ### Changed
 
 ## [1.26.1] - 2025-05-15
@@ -18,11 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for windows arm64. [#6427](https://github.com/microsoft/kiota/issues/6427)
-- golang: indent with tabs instead of spaces
-- golang: if there is only one return argument, omit the parentheses
-- golang: remove trailing spaces on comments
-- golang: fix import ordering
-- golang: correctly indent case statements inside a switch
 
 ### Changed
 
