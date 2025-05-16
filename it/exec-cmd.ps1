@@ -146,6 +146,15 @@ elseif ($language -eq "go") {
             go test
         } -ErrorAction Stop
 
+        Invoke-Call -ScriptBlock {
+            $fmtStdOut, $fmtStdErr = "", ""
+            $fmtStdOut = go fmt ./... 2>&1
+            if ($fmtStdOut) {
+                Write-Host "go fmt produced output, so the generated code is not correctly formatted by kiota:`n$fmtStdOut"
+                exit 1
+            }
+        } -ErrorAction Stop
+
         Pop-Location
     }
     else {
