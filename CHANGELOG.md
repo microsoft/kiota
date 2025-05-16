@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed an issue where migration from lock to workspace would fail because of stream management. [#6515](https://github.com/microsoft/kiota/issues/6515)
+
 ## [1.26.1] - 2025-05-15
 
 ### Added
