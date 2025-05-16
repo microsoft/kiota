@@ -482,7 +482,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             _ when string.IsNullOrEmpty(returnTypeString) => "{", // no leading space in this case
             _ => " {",
         };
-        writer.WriteLine($"{funcPrefix}{associatedTypePrefix}{methodName}({parameters}) {returnTypeString}{openingBracket}");
+        var firstPart = $"{funcPrefix}{associatedTypePrefix}{methodName}({parameters})";
+        var finalString = (returnTypeString, openingBracket) switch
+        {
+            _ when string.IsNullOrEmpty(returnTypeString) && string.IsNullOrEmpty(openingBracket) => firstPart,
+            _ => $"{firstPart} {returnTypeString}{openingBracket}"
+        };
+        writer.WriteLine(finalString);
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {

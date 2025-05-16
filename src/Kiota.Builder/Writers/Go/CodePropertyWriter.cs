@@ -28,7 +28,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, GoConventionSe
                 var returnType = codeElement.Parent is CodeElement parent ? conventions.GetTypeString(codeElement.Type, parent) : string.Empty;
                 conventions.WriteShortDescription(codeElement, writer);
                 conventions.WriteDeprecation(codeElement, writer);
-                writer.WriteLine($"{propertyName} {returnType}{suffix}");
+                writer.WriteLine(string.IsNullOrEmpty(returnType) && string.IsNullOrEmpty(suffix) ? propertyName : $"{propertyName} {returnType}{suffix}");
                 break;
         }
     }
