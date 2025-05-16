@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where path items with a trailing slash would be missing query parameters. [#6569](https://github.com/microsoft/kiota/issues/6569)
+
 ## [1.26.1] - 2025-05-15
 
 ### Added
