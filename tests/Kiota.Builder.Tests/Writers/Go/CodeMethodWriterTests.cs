@@ -12,6 +12,7 @@ using Kiota.Builder.Writers.Go;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
+
 public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -634,7 +635,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("(error)", result);
+        Assert.Contains(" error {", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -2300,7 +2301,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
 
         // Then
-        Assert.Contains("Error()(string) {", result);
+        Assert.Contains("Error() string {", result);
         Assert.Contains("return *(m.GetProp1()", result);
     }
 
