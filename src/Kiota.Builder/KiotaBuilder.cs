@@ -676,6 +676,7 @@ public partial class KiotaBuilder
     private const string RequestAdapterParameterName = "requestAdapter";
     private const string ConstructorMethodName = "constructor";
     internal const string UntypedNodeName = "UntypedNode";
+    internal const string TrailingSlashPlaceholder = "EmptyPathSegment";
     /// <summary>
     /// Create a CodeClass instance that is a request builder class for the OpenApiUrlTreeNode
     /// </summary>
@@ -697,7 +698,7 @@ public partial class KiotaBuilder
         else
         {
             var targetNS = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNamespace.EnsureItemNamespace() : currentNamespace;
-            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix);
+            var className = currentNode.DoesNodeBelongToItemSubnamespace() ? currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, ItemRequestBuilderSuffix, placeholder: TrailingSlashPlaceholder) : currentNode.GetNavigationPropertyName(config.StructuredMimeTypes, RequestBuilderSuffix, placeholder: TrailingSlashPlaceholder);
             codeClass = targetNS.AddClass(new CodeClass
             {
                 Name = currentNamespace.Name.EndsWith(OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) ? className.CleanupSymbolName().Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase) : className.CleanupSymbolName(),
@@ -714,8 +715,8 @@ public partial class KiotaBuilder
         // Add properties for children
         foreach (var child in currentNode.Children.Select(static x => x.Value))
         {
-            var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes);
-            var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix);
+            var propIdentifier = child.GetNavigationPropertyName(config.StructuredMimeTypes, placeholder: TrailingSlashPlaceholder);
+            var propType = child.GetNavigationPropertyName(config.StructuredMimeTypes, child.DoesNodeBelongToItemSubnamespace() ? ItemRequestBuilderSuffix : RequestBuilderSuffix, placeholder: TrailingSlashPlaceholder);
             if (child.Segment.Equals(OpenApiUrlTreeNodeExtensions.ReservedItemName, StringComparison.OrdinalIgnoreCase) && !child.DoesNodeBelongToItemSubnamespace())
                 propType = propType.Replace(OpenApiUrlTreeNodeExtensions.ReservedItemName, OpenApiUrlTreeNodeExtensions.ReservedItemNameEscaped, StringComparison.OrdinalIgnoreCase);
 

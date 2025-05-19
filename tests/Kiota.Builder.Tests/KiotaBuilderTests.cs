@@ -4659,11 +4659,16 @@ components:
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var requestBuilder = codeModel.FindChildByName<CodeClass>("ContractsRequestBuilder");
-        Assert.NotNull(requestBuilder);
-        var property = requestBuilder.Properties.First(static x => x.Kind is CodePropertyKind.UrlTemplate);
-        Assert.NotNull(property);
-        Assert.Equal("\"{+baseurl}/api/contracts/{?type*}\"", property.DefaultValue);
+        var contractsRequestBuilder = codeModel.FindChildByName<CodeClass>("ContractsRequestBuilder");
+        Assert.NotNull(contractsRequestBuilder);
+        var contractsProperty = contractsRequestBuilder.Properties.First(static x => x.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(contractsProperty);
+        Assert.Equal("\"{+baseurl}/api/contracts\"", contractsProperty.DefaultValue);
+        var emptyRequestBuilder = codeModel.FindChildByName<CodeClass>("EmptyPathSegmentRequestBuilder");
+        Assert.NotNull(emptyRequestBuilder);
+        var emptyProperty = emptyRequestBuilder.Properties.First(static x => x.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(emptyProperty);
+        Assert.Equal("\"{+baseurl}/api/contracts/{?type*}\"", emptyProperty.DefaultValue);
     }
     [Fact]
     public void MapsArrayOfTypesAsUnionType()

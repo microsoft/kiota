@@ -102,16 +102,16 @@ public static partial class OpenApiUrlTreeNodeExtensions
         ArgumentNullException.ThrowIfNull(currentNode);
         return currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => x.LastOrDefault() ?? string.Empty);
     }
-    internal static string GetNavigationPropertyName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, OpenApiResponse? response = default, OpenApiSchema? schema = default, bool requestBody = false)
+    internal static string GetNavigationPropertyName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, OpenApiResponse? response = default, OpenApiSchema? schema = default, bool requestBody = false, string? placeholder = null)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
-        var result = currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => string.Join(string.Empty, x.Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())), false);
+        var result = currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => string.Join(string.Empty, x.Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())), false, placeholder);
         if (httpVerbs.Contains(result))
             return $"{result}Path"; // we don't run the change of an operation conflicting with a path on the same request builder
         return result;
     }
     private static readonly HashSet<string> httpVerbs = new(8, StringComparer.OrdinalIgnoreCase) { "get", "post", "put", "patch", "delete", "head", "options", "trace" };
-    private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, IOpenApiResponse? response, IOpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer, bool skipExtension = true)
+    private static string GetSegmentName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix, string? prefix, OpenApiOperation? operation, IOpenApiResponse? response, IOpenApiSchema? schema, bool requestBody, Func<IEnumerable<string>, string> segmentsReducer, bool skipExtension = true, string? placeholder = null)
     {
         var referenceName = schema?.GetClassName();
         var rawClassName = referenceName is not null && !string.IsNullOrEmpty(referenceName) ?
@@ -121,6 +121,8 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                 ((requestBody ? operation?.GetRequestSchema(structuredMimeTypes) : operation?.GetResponseSchema(structuredMimeTypes))?.GetClassName() is string requestClassName && !string.IsNullOrEmpty(requestClassName) ?
                                     requestClassName :
                                     CleanupParametersFromPath(currentNode.DeduplicatedSegment())?.ReplaceValueIdentifier()));
+        if (string.IsNullOrEmpty(rawClassName) && !string.IsNullOrEmpty(placeholder))
+            rawClassName = placeholder;
         if (!string.IsNullOrEmpty(rawClassName) && string.IsNullOrEmpty(referenceName))
         {
             if (stripExtensionForIndexersTestRegex().IsMatch(rawClassName)) // {id}.json is considered as indexer
@@ -223,17 +225,12 @@ public static partial class OpenApiUrlTreeNodeExtensions
     {
         ArgumentNullException.ThrowIfNull(currentNode);
         var queryStringParameters = string.Empty;
-        if (currentNode.HasOperations(Constants.DefaultOpenApiLabel) && includeQueryParameters)
+        var trailingSlashItem = $"{currentNode.Path}\\";
+        if (includeQueryParameters && currentNode.HasOperations(Constants.DefaultOpenApiLabel))
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
 
             var parameters = pathItem.GetParameters(operationType);
-            if (currentNode.Children.TryGetValue($"{currentNode.Path}\\", out var currentNodeWithTrailingSlash))
-            {
-                // having a node with a trailing slash means we have 2 nodes in the tree
-                parameters = parameters.Union(currentNodeWithTrailingSlash.PathItems[Constants.DefaultOpenApiLabel].GetParameters(operationType))
-                            .ToArray();
-            }
             if (parameters.Length != 0)
             {
                 var requiredParameters = string.Join("&", parameters.Where(static x => x.Required)
