@@ -13,6 +13,7 @@ using Microsoft.OpenApi.Models.References;
 using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
+
 public static partial class OpenApiUrlTreeNodeExtensions
 {
     private static string GetDotIfBothNotNullOfEmpty(string x, string y) => string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ? string.Empty : ".";
@@ -202,6 +203,22 @@ public static partial class OpenApiUrlTreeNodeExtensions
             .Any(static x => x.Required);
     }
 
+    private static IOpenApiParameter[] GetParameters(this IOpenApiPathItem pathItem, HttpMethod? operationType = null)
+    {
+        var operationQueryParameters = (operationType, pathItem.Operations is { Count: > 0 }) switch
+        {
+            (HttpMethod ot, _) when pathItem.Operations!.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
+            (null, true) => pathItem.Operations!.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
+            _ => [],
+        };
+        return (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
+                        .Union(operationQueryParameters)
+                        .Where(static x => x.In == ParameterLocation.Query)
+                        .DistinctBy(static x => x.Name, StringComparer.Ordinal)
+                        .OrderBy(static x => x.Name, StringComparer.Ordinal)
+                        .ToArray() ?? [];
+    }
+
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, HttpMethod? operationType = null, bool includeQueryParameters = true, bool includeBaseUrl = true)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
@@ -209,18 +226,14 @@ public static partial class OpenApiUrlTreeNodeExtensions
         if (currentNode.HasOperations(Constants.DefaultOpenApiLabel) && includeQueryParameters)
         {
             var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
-            var operationQueryParameters = (operationType, pathItem.Operations is { Count: > 0 }) switch
+
+            var parameters = pathItem.GetParameters(operationType);
+            if (currentNode.Children.TryGetValue($"{currentNode.Path}\\", out var currentNodeWithTrailingSlash))
             {
-                (HttpMethod ot, _) when pathItem.Operations!.TryGetValue(ot, out var operation) && operation.Parameters is not null => operation.Parameters,
-                (null, true) => pathItem.Operations!.SelectMany(static x => x.Value.Parameters ?? Enumerable.Empty<IOpenApiParameter>()).Where(static x => x.In == ParameterLocation.Query),
-                _ => [],
-            };
-            var parameters = (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
-                                    .Union(operationQueryParameters)
-                                    .Where(static x => x.In == ParameterLocation.Query)
-                                    .DistinctBy(static x => x.Name, StringComparer.Ordinal)
-                                    .OrderBy(static x => x.Name, StringComparer.Ordinal)
-                                    .ToArray() ?? [];
+                // having a node with a trailing slash means we have 2 nodes in the tree
+                parameters = parameters.Union(currentNodeWithTrailingSlash.PathItems[Constants.DefaultOpenApiLabel].GetParameters(operationType))
+                            .ToArray();
+            }
             if (parameters.Length != 0)
             {
                 var requiredParameters = string.Join("&", parameters.Where(static x => x.Required)

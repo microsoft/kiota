@@ -29,6 +29,7 @@ using Xunit;
 using NetHttpMethod = System.Net.Http.HttpMethod;
 
 namespace Kiota.Builder.Tests;
+
 public sealed partial class KiotaBuilderTests : IDisposable
 {
     private readonly List<string> _tempFiles = new();
@@ -4571,6 +4572,98 @@ components:
         Assert.NotNull(property);
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [Fact]
+    public void IncludesQueryParameterInUriTemplate()
+    {
+        var documentJSON =
+"""
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "Rest API",
+		"version": "25.05.15",
+		"description": ""
+	},
+	"paths": {
+		"/api/contracts/": {
+			"get": {
+				"operationId": "rest_backend_api_contract_get_contracts",
+				"summary": "Get Contracts",
+				"parameters": [
+					{
+						"in": "query",
+						"name": "type",
+						"schema": {
+							"allOf": [
+								{
+									"enum": [
+										"PROPERTY",
+										"LEASE",
+										"SUBLEASE",
+										"EXCHANGE"
+									],
+									"title": "ContractType",
+									"type": "string"
+								}
+							]
+						},
+						"required": false
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Vertrag"
+				]
+			}
+		},
+		"/api/contracts/lease/": {
+			"get": {
+				"operationId": "rest_backend_api_contract_get_lease_contracts",
+				"summary": "Get Lease Contracts",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"type": "string"
+									},
+									"title": "Response",
+									"type": "array"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+""";
+        var (document, _) = OpenApiDocument.Parse(documentJSON, OpenApiConstants.Json);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("ContractsRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var property = requestBuilder.Properties.First(static x => x.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(property);
+        Assert.Equal("\"{+baseurl}/api/contracts/{?type*}\"", property.DefaultValue);
     }
     [Fact]
     public void MapsArrayOfTypesAsUnionType()
