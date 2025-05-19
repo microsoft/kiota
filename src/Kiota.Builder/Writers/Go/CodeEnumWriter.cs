@@ -20,7 +20,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine($"package {ns.Name.GetLastNamespaceSegment().Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)}");
         }
 
-        var usings = codeElement.Usings.Select(static x => x.Name).OrderBy(static x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        var usings = codeElement.Usings.Select(static x => x.Name).Order(StringComparer.OrdinalIgnoreCase).ToList();
         if (usings.Count > 0)
         {
             writer.StartBlock("import (");
