@@ -18,6 +18,7 @@ using Microsoft.OpenApi.Reader;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
+
 internal class OpenApiDocumentDownloadService
 {
     private readonly ILogger Logger;
@@ -110,6 +111,8 @@ internal class OpenApiDocumentDownloadService
         var settings = new OpenApiReaderSettings
         {
             RuleSet = ruleSet,
+            LoadExternalRefs = true,
+            LeaveStreamOpen = true,
         };
 
         // Add all extensions for generation
@@ -128,8 +131,6 @@ internal class OpenApiDocumentDownloadService
                 lastSlashIndex = rawUri.Length - 1;
             var documentUri = new Uri(rawUri[..lastSlashIndex]);
             settings.BaseUrl = documentUri;
-            settings.LoadExternalRefs = true;
-            settings.LeaveStreamOpen = true;
         }
 #pragma warning disable CA1031
         catch
