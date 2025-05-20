@@ -635,7 +635,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains(" error {", result);
+        Assert.Contains("() {", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -986,7 +986,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(methodForTest);
         var result = tw.ToString();
         Assert.Contains("m.BaseRequestBuilder.RequestAdapter", result);
-        Assert.Contains("WithId(id i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22.UUID)(Somecustomtype)", result);
+        Assert.Contains("WithId(id i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22.UUID) Somecustomtype", result);
         Assert.Contains("m.BaseRequestBuilder.PathParameters", result);
         Assert.Contains("[\"id\"] = id.String()", result);
         Assert.Contains("return", result);
@@ -1370,7 +1370,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"func (m *ParentClass) MethodName(ctx context.Context, b []RequestOption, c *RequestConfig)([]i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91.DateOnly, error)", result);
+        Assert.Contains($"func (m *ParentClass) MethodName(ctx context.Context, b []RequestOption, c *RequestConfig) ([]i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91.DateOnly, error)", result);
         Assert.Contains("res, err := m.BaseRequestBuilder.RequestAdapter.SendPrimitiveCollection(ctx, requestInfo, \"dateonly\", nil)", result);
         Assert.Contains($"val := make([]i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91.DateOnly, len(res))", result);
         Assert.Contains("return val, nil", result);
@@ -1673,7 +1673,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         setup();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}()(*{ReturnTypeName}, error)", result);// async default
+        Assert.Contains($"{MethodName.ToFirstCharacterUpperCase()}() (*{ReturnTypeName}, error)", result);// async default
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
