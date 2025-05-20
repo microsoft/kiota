@@ -70,7 +70,7 @@ paths:
     [Fact]
     public async Task SupportsExternalReferences()
     {
-        var tempFilePathReferee = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePathReferee = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePathReferee,
 """
 openapi: 3.1.1
@@ -97,7 +97,7 @@ components:
         id:
           type: string
 """);
-        var tempFilePathReferrer = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePathReferrer = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePathReferrer,
 $$$"""
 openapi: 3.1.1
@@ -115,7 +115,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './{{{Path.GetFileName(tempFilePathReferee)}}}#/components/schemas/MySchema'
+                $ref: '{{{tempFilePathReferee}}}#/components/schemas/MySchema'
 components:
   schemas:
     MySchema:
