@@ -43,7 +43,7 @@ public sealed partial class KiotaBuilderTests : IDisposable
     [Fact]
     public async Task CreateOpenApiDocumentWithResultAsync_ReturnsDiagnostics()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.4
 servers:
   - url: https://graph.microsoft.com/v1.0
@@ -144,7 +144,7 @@ components:
     [Theory]
     public async Task SupportsRelativeServerUrlAsync(string descriptionUrl, string serverRelativeUrl, string expected)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -179,7 +179,7 @@ paths:
     [Fact]
     public async Task HonoursNoneKeyForSerializationAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -215,7 +215,7 @@ paths:
     [Fact]
     public async Task DeduplicatesHostNamesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -251,7 +251,7 @@ paths:
     [Fact]
     public async Task DeduplicatesHostNamesWithOpenAPI2Async()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"swagger: 2.0
 info:
   title: OData Service for namespace microsoft.graph
@@ -289,7 +289,7 @@ paths:
     [Fact]
     public async Task HandlesSpecialCharactersInPathSegmentAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -334,7 +334,7 @@ components:
     [Fact]
     public async Task HandlesPathWithRepeatedSegment()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -402,7 +402,7 @@ components:
     [Fact]
     public async Task HandlesPathWithItemInNameSegment()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -500,7 +500,7 @@ components:
     [Fact]
     public async Task ParsesEnumDescriptionsAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -578,7 +578,7 @@ components:
     [Fact]
     public async Task ParsesEnumFlagsInformationAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -628,7 +628,7 @@ components:
     [Fact]
     public async Task DoesntConflictOnModelsNamespaceAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -692,7 +692,7 @@ components:
     [InlineData(GenerationLanguage.Ruby)]
     public async Task DoesNotAddSuperflousFieldsToModelsAsync(GenerationLanguage language)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
 info:
   title: Example API
@@ -782,7 +782,7 @@ components:
     [Fact]
     public async Task NamesComponentsInlineSchemasProperlyAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -853,7 +853,7 @@ components:
     [InlineData("deprecated: true")]
     public async Task DoesNotIntroduceIntermediateTypesForMeaninglessPropertiesAsync(string additionalInformation)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -907,7 +907,7 @@ components:
     [Fact]
     public async Task TrimsInheritanceUnusedModelsAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1063,7 +1063,7 @@ components:
     [Fact]
     public async Task DisambiguatesReservedPropertiesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1140,7 +1140,7 @@ components:
     [Fact]
     public async Task TrimsInheritanceUnusedModelsWithUnionAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1280,7 +1280,7 @@ components:
     [Fact]
     public async Task ParsesKiotaExtensionAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1312,7 +1312,7 @@ servers:
     [Fact]
     public async Task UpdatesGenerationConfigurationFromInformationAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1347,7 +1347,7 @@ servers:
     [Fact]
     public async Task DoesntFailOnEmptyKiotaExtensionAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1365,7 +1365,7 @@ servers:
     [Fact]
     public async Task DoesntFailOnParameterWithoutSchemaKiotaExtensionAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1389,7 +1389,7 @@ paths:
     [Fact]
     public async Task GetsUrlTreeNodeAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -1418,7 +1418,7 @@ paths:
     [Fact]
     public async Task DoesntThrowOnMissingServerForV2Async()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllLinesAsync(tempFilePath, new[] { "swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https", " - http" });
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
@@ -3989,7 +3989,7 @@ paths:
     [Fact]
     public async Task AnyOfArrayWorksAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
   title: AnyOf Array
@@ -4829,7 +4829,7 @@ components:
     [Theory]
     public async Task AddsQueryParameterTypesAsModelsAsync(bool ecb)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -6653,7 +6653,7 @@ components:
     [Fact]
     public async Task DisambiguatesOperationsConflictingWithPath1Async()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
@@ -6703,7 +6703,7 @@ components:
     [Fact]
     public async Task DisambiguatesOperationsConflictingWithPath2Async()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
@@ -6753,7 +6753,7 @@ components:
     [Fact]
     public async Task IndexerAndRequestBuilderNamesMatchAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
@@ -6800,7 +6800,7 @@ components:
     [Fact]
     public async Task IndexerTypeIsAccurateAndBackwardCompatibleIndexersAreAddedAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
   title: Microsoft Graph get user API
@@ -6934,7 +6934,7 @@ components:
     [Fact]
     public async Task MapsBooleanEnumToBooleanTypeAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
     title: Microsoft Graph get user API
@@ -6970,7 +6970,7 @@ paths:
     [Fact]
     public async Task MapsNumberEnumToDoubleTypeAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
 info:
     title: Microsoft Graph get user API
@@ -7007,7 +7007,7 @@ paths:
     [Theory]
     public async Task CleansInlineTypeNamesAsync(string raw, string expected)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -7193,7 +7193,7 @@ paths:
     [Fact]
     public async Task MergesIntersectionTypesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -7251,7 +7251,7 @@ components:
     [Fact]
     public async Task SkipsInvalidItemsPropertiesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -7296,7 +7296,7 @@ paths:
     [Fact]
     public async Task GetsCorrectInheritedInlineSchemaNameAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
 servers:
 - url: https://api.github.com
@@ -7351,7 +7351,7 @@ components:
     [Fact]
     public async Task DescriptionTakenFromAllOfAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -7423,7 +7423,7 @@ components:
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7463,7 +7463,7 @@ components:
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsWithSuperTypeAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7520,7 +7520,7 @@ components:
     [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsInQueryParametersAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7564,7 +7564,7 @@ paths:
     [Fact]
     public async Task SupportsMultiPartFormAsRequestBodyWithDefaultMimeTypesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7640,7 +7640,7 @@ components:
     [Fact]
     public async Task SupportsMultiPartFormAsRequestBodyWithoutEncodingWithDefaultMimeTypesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7699,7 +7699,7 @@ components:
     [Fact]
     public async Task SupportsMultiPartFormAsRequestBodyWithoutEncodingWithDefaultMimeTypesAsyncWithNonDefaultMimeTypesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7757,7 +7757,7 @@ components:
     [Fact]
     public async Task SupportsMultipleContentTypesAsRequestBodyWithDefaultMimeTypesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7828,7 +7828,7 @@ components:
     [Fact]
     public async Task SupportsMultipleContentTypesAsRequestBodyWithMultipartPriorityNoEncodingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7899,7 +7899,7 @@ components:
     [Fact]
     public async Task SupportsMultipleContentTypesAsRequestBodyWithMultipartPriorityAndEncodingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Example
@@ -7977,7 +7977,7 @@ components:
     [Fact]
     public async Task ComplexInheritanceStructuresAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: Broken inheritance
@@ -8080,7 +8080,7 @@ components:
     [Fact]
     public async Task InheritanceWithAllOfInBaseTypeAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -8133,7 +8133,7 @@ components:
     [Fact]
     public async Task InlineSchemaWithSingleAllOfReferenceAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -8215,7 +8215,7 @@ components:
     [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaChildClassAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -8287,7 +8287,7 @@ components:
     [Fact]
     public async Task InheritanceWithAllOfBaseClassNoAdditionalPropertiesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -8360,7 +8360,7 @@ components:
     [Fact]
     public async Task ExclusiveUnionSingleEntriesMergingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
     """
 openapi: 3.0.0
@@ -8448,7 +8448,7 @@ components:
     [Fact]
     public async Task ExclusiveUnionInheritanceEntriesMergingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
     """
 openapi: 3.0.0
@@ -8566,7 +8566,7 @@ components:
     [Fact]
     public async Task ExclusiveUnionIntersectionEntriesMergingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
     """
 openapi: 3.0.0
@@ -8703,7 +8703,7 @@ components:
     [Fact]
     public async Task InclusiveUnionSingleEntriesMergingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
     """
 openapi: 3.0.0
@@ -8791,7 +8791,7 @@ components:
     [Fact]
     public async Task InclusiveUnionInheritanceEntriesMergingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
     """
 openapi: 3.0.0
@@ -8909,7 +8909,7 @@ components:
     [Fact]
     public async Task InclusiveUnionIntersectionEntriesMergingAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
     """
 openapi: 3.0.0
@@ -9046,7 +9046,7 @@ components:
     [Fact]
     public async Task NestedIntersectionTypeAllOfAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(
 """
 openapi: 3.0.3
@@ -9146,7 +9146,7 @@ components:
     [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaParentClassAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -9225,7 +9225,7 @@ components:
     [Fact]
     public async Task InheritanceWithAllOfWith2Parts1Schema1InlineNoDiscriminatorAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -9275,7 +9275,7 @@ components:
     [Fact]
     public async Task InheritanceWithAllOfWith1Part1SchemaAndPropertiesNoDiscriminatorAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -9325,7 +9325,7 @@ components:
     [Theory]
     public async Task InheritanceWithAllOfWith3Parts1Schema2InlineAsync(bool reverseOrder)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -9381,7 +9381,7 @@ components:
     [Fact]
     public async Task InheritanceWithoutObjectTypeHasAllPropertiesAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.3
 servers:
   - url: 'https://example.com'
@@ -9430,7 +9430,7 @@ components:
     [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineTypeAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -9493,7 +9493,7 @@ components:
     [Fact]
     public async Task EnumsWithNullableDoesNotResultInInlineTypeInReveredOrderAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
@@ -9556,7 +9556,7 @@ components:
     [Fact]
     public async Task AnyTypeResponseAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: The Jira Cloud platform REST API
@@ -9738,7 +9738,7 @@ components:
                                  $ref: '#/components/schemas/EnumValue'
                      """;
 
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await GetDocumentStreamAsync(schemaDocument);
 
         var builder = new KiotaBuilder(
