@@ -343,6 +343,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
             var segmentIndex = indexNode.Value.Path.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList().IndexOf(indexNode.Value.Segment);
             var newSegmentParameterName = oldSegmentName.EndsWith("-id", StringComparison.OrdinalIgnoreCase) ? oldSegmentName : $"{{{oldSegmentName.TrimSuffix("id", StringComparison.OrdinalIgnoreCase)}-id}}";
             indexNode.Value.Path = indexNode.Value.Path.Replace(indexNode.Key, newSegmentParameterName, StringComparison.OrdinalIgnoreCase);
+            indexNode.Value.AdditionalData.Add(Constants.KiotaSegmentNameTreeNodeExtensionKey, [newSegmentParameterName]);
             indexNode.Value.AddDeduplicatedSegment(newSegmentParameterName);
             node.Children.Add(newSegmentParameterName, indexNode.Value);
             CopyNodeIntoOtherNode(indexNode.Value, indexNode.Value, indexNode.Key, newSegmentParameterName, logger);

@@ -1096,12 +1096,14 @@ public partial class KiotaBuilder
     private static CodeType DefaultIndexerParameterType => new() { Name = "string", IsExternal = true };
     private CodeParameter GetIndexerParameter(OpenApiUrlTreeNode currentNode)
     {
-        var parameterName = currentNode.Segment.Trim('{', '}');
+        var parameterName = (currentNode.AdditionalData.TryGetValue(Constants.KiotaSegmentNameTreeNodeExtensionKey, out var newNames) && newNames is { Count: > 0 } ?
+                        newNames[0] :
+                        currentNode.Segment).Trim('{', '}');
         var pathItems = GetPathItems(currentNode);
         var parameter = pathItems.TryGetValue(Constants.DefaultOpenApiLabel, out var pathItem) ?
                         (pathItem.Parameters ?? Enumerable.Empty<IOpenApiParameter>())
                             .Select(static x => new { Parameter = x, IsPathParameter = true })
-                            .Union(pathItems[Constants.DefaultOpenApiLabel].Operations?.SelectMany(static x => x.Value.Parameters ?? []).Select(static x => new { Parameter = x, IsPathParameter = false }) ?? [])
+                            .Union(pathItem.Operations?.SelectMany(static x => x.Value.Parameters ?? []).Select(static x => new { Parameter = x, IsPathParameter = false }) ?? [])
                             .OrderBy(static x => x.IsPathParameter)
                             .Select(static x => x.Parameter)
                             .FirstOrDefault(x => parameterName.Equals(x.Name, StringComparison.OrdinalIgnoreCase) && x.In == ParameterLocation.Path) :
