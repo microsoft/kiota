@@ -36,3 +36,6 @@ This will create a folder in `vscode/npm-package/.kiotabin/0.0.1/<rid>/` with th
 ```sh
 npm test
 ```
+
+### Debugging the Kiota npm package 
+See [Debugging the package](https://github.com/microsoft/kiota/blob/main/vscode/npm-package/debugging.md)
