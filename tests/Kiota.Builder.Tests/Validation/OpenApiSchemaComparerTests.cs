@@ -27,13 +27,15 @@ public class OpenApiSchemaComparerTests
     {
         var schema = new OpenApiSchema
         {
-
+            AnyOf = [],
+            Properties = [],
         };
         schema.Properties.Add("test", schema);
         schema.AnyOf.Add(schema);
         var schema2 = new OpenApiSchema
         {
-
+            AnyOf = [],
+            Properties = [],
         };
         schema2.Properties.Add("test", schema2);
         schema2.AnyOf.Add(schema2);

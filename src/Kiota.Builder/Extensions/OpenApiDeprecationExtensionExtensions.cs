@@ -34,7 +34,7 @@ internal static class OpenApiDeprecationExtensionExtensions
         if (operation.Deprecated && operation.Extensions is not null && operation.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
         else if (operation.Responses?.Values
-                                .SelectMany(static x => x.Content?.Values ?? [])
+                                .SelectMany(static x => x.Content?.Values.Select(static x => x) ?? [])
                                 .Select(static x => x?.Schema)
                                 .OfType<OpenApiSchema>()
                                 .Select(static x => x.GetDeprecationInformation())

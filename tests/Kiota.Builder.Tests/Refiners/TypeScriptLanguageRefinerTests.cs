@@ -14,6 +14,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
+
 public sealed class TypeScriptLanguageRefinerTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();
@@ -951,7 +952,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
     public async Task ParsesAndRefinesUnionOfPrimitiveValuesAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);

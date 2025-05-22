@@ -159,14 +159,9 @@ internal class OpenApiDocumentDownloadService
         return readResult;
     }
 
-    internal Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
-        var documentWithResult = GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken);
-        return documentWithResult.ContinueWith(
-            static x => x.Result?.Document,
-            cancellationToken,
-            TaskContinuationOptions.None,
-            TaskScheduler.Default
-        );
+        var result = await GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken).ConfigureAwait(false);
+        return result?.Document;
     }
 }
