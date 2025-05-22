@@ -41,6 +41,6 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
             (schema.OneOf is null || schema.OneOf.All(static x => !x.IsObjectType())))
             return;
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName()) || !schema.GetDiscriminatorMappings(idx).Any())
-            context.CreateWarning(nameof(MissingDiscriminator), $"The schema {address} is a polymorphic type but does not define a discriminator. This will result in a serialization errors.");
+            context.CreateWarning(nameof(MissingDiscriminator), $"The schema {address} is a polymorphic type but does not define a discriminator. This will result in serialization errors.");
     }
 }
