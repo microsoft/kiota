@@ -254,11 +254,12 @@ public partial class KiotaBuilder
     /// <returns>Whether the generated plugin was updated or not</returns>
     public async Task<bool> GeneratePluginAsync(CancellationToken cancellationToken, Boolean handleMultipleFiles = true)
     {
-        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, treeDiagnostics, CancellationToken) =>
         {
             if (openApiDocument is null || openApiTree is null)
                 throw new InvalidOperationException("The OpenAPI document and the URL tree must be loaded before generating the plugins");
             // generate plugin
+            logger.LogInformation("Processing OpenAPI document version: {SpecVersion}", treeDiagnostics?.SpecificationVersion.ToString());
             sw.Start();
             var pluginsService = new PluginsGenerationService(openApiDocument, openApiTree, config, Directory.GetCurrentDirectory(), logger);
             // Handle the multiple files generation
@@ -284,7 +285,7 @@ public partial class KiotaBuilder
     /// <returns>Whether the generated code was updated or not</returns>
     public async Task<bool> GenerateClientAsync(CancellationToken cancellationToken)
     {
-        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, CancellationToken) =>
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, _, CancellationToken) =>
         {
             // Create Source Model
             sw.Start();
@@ -322,7 +323,7 @@ public partial class KiotaBuilder
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
     }
-    private async Task<bool> GenerateConsumerAsync(Func<Stopwatch, int, OpenApiUrlTreeNode?, CancellationToken, Task<int>> innerGenerationSteps, CancellationToken cancellationToken)
+    private async Task<bool> GenerateConsumerAsync(Func<Stopwatch, int, OpenApiUrlTreeNode?, OpenApiDiagnostic?, CancellationToken, Task<int>> innerGenerationSteps, CancellationToken cancellationToken)
     {
         var sw = new Stopwatch();
         // Read input stream
@@ -343,11 +344,11 @@ public partial class KiotaBuilder
         }
         try
         {
-            var (stepId, openApiTree, shouldGenerate, _) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
+            var (stepId, openApiTree, shouldGenerate, diagnostics) = await GetTreeNodeInternalAsync(inputPath, true, sw, cancellationToken).ConfigureAwait(false);
 
             if (shouldGenerate)
             {
-                stepId = await innerGenerationSteps(sw, stepId, openApiTree, cancellationToken).ConfigureAwait(false);
+                stepId = await innerGenerationSteps(sw, stepId, openApiTree, diagnostics, cancellationToken).ConfigureAwait(false);
 
                 await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
             }
