@@ -95,6 +95,7 @@ public class CodeConstant : CodeTerminalWithKind<CodeConstantKind>, IDocumentedE
             Name = $"{codeClass.Name.ToFirstCharacterLowerCase()}{RequestsMetadataSuffix}",
             Kind = CodeConstantKind.RequestsMetadata,
             OriginalCodeElement = codeClass,
+            UriTemplate = $"{codeClass.Name.ToFirstCharacterLowerCase()}{UriTemplateSuffix}",
         };
         result.Documentation.DescriptionTemplate = "Metadata for all the requests in the request builder.";
         if (usingsToAdd is { Length: > 0 } usingsToAddList)
