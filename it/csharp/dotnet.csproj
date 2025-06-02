@@ -11,7 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.14.0" />
     <PackageReference Include="Microsoft.Kiota.Abstractions" Version="1.17.3" />
-    <PackageReference Include="Microsoft.Kiota.Authentication.Azure" Version="1.17.2" />
+    <PackageReference Include="Microsoft.Kiota.Authentication.Azure" Version="1.17.3" />
     <PackageReference Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="1.17.2" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Form" Version="1.17.2" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="1.17.2" />
