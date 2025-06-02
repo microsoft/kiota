@@ -125,7 +125,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ClearCache = clearCache;
             try
             {
-                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
+                var (urlTreeNode, _) = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
 
                 var builder = new StringBuilder();
                 if (urlTreeNode != null)
@@ -203,8 +203,9 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         // set up telemetry tags
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(8)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(9)
         {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.openapi", redacted),
             new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
             new($"{TelemetryLabels.TagCommandParams}.max_depth", redacted),

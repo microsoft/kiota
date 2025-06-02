@@ -1,9 +1,9 @@
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { searchDescription } from "@microsoft/kiota";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as vscode from "vscode";
 
 import { extensionId, SHOW_MESSAGE_AFTER_API_LOAD, treeViewId } from "../../constants";
 import { setDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { searchDescription } from "../../kiotaInterop";
 import { searchSteps } from "../../modules/steps/searchSteps";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { getExtensionSettings } from "../../types/extensionSettings";
@@ -55,9 +55,15 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
       title: vscode.l10n.t("Searching...")
-    }, (progress, _) => {
+    }, async (progress, _) => {
       const settings = getExtensionSettings(extensionId);
-      return searchDescription({ searchTerm: x, clearCache: settings.clearCache });
+      try {
+        return await searchDescription({ searchTerm: x, clearCache: settings.clearCache });
+      } catch (err) {
+        const error = err as Error;
+        vscode.window.showErrorMessage(error.message);
+        return undefined;
+      }
     }));
 
     if (config.descriptionPath) {

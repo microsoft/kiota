@@ -62,8 +62,6 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
 
-
-
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -106,7 +104,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId0))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -196,8 +194,9 @@ internal class EditHandler : BaseKiotaCommandHandler
         out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(8)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(9)
         {
+            new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.skip_generation", skipGeneration),
         } : null;
         const string redacted = TelemetryLabels.RedactedValuePlaceholder;

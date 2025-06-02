@@ -1,5 +1,18 @@
 ﻿namespace kiota.Rpc;
 
-public record PathItem(string path, string segment, PathItem[] children, bool selected, bool isOperation = false, Uri? documentationUrl = null);
+public enum OpenApiTreeSpecVersion
+{
+    OpenApi2_0 = 0,
+    OpenApi3_0 = 1,
+    OpenApi3_1 = 2,
+}
 
-public record ShowResult(List<LogEntry> logs, PathItem? rootNode, string? apiTitle);
+public record ShowResult(
+    OpenApiTreeSpecVersion? specVersion,
+    List<LogEntry> logs,
+    PathItem? rootNode,
+    string? apiTitle,
+    IEnumerable<string>? servers = null,
+    IList<IDictionary<string, IList<string>?>>? security = null,
+    IDictionary<string, SecuritySchemeInfo>? securitySchemes = null);
+

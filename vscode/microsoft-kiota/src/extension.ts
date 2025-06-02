@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import TelemetryReporter from '@vscode/extension-telemetry';
+import { ClientOrPluginProperties, setKiotaConfig } from "@microsoft/kiota";
+import { TelemetryReporter } from '@vscode/extension-telemetry';
 import * as vscode from "vscode";
 
 import { CloseDescriptionCommand } from './commands/closeDescriptionCommand';
@@ -25,7 +26,6 @@ import { UpdateClientsCommand } from './commands/updateClients/updateClientsComm
 import { dependenciesInfo, extensionId, statusBarCommandId, treeViewId } from "./constants";
 import { getGenerationConfiguration } from './handlers/configurationHandler';
 import { UriHandler } from './handlers/uriHandler';
-import { ClientOrPluginProperties, setKiotaConfig } from "./kiotaInterop";
 import { WorkspaceContentService } from './modules/workspace';
 import { CodeLensProvider } from './providers/codelensProvider';
 import { DependenciesViewProvider } from "./providers/dependenciesViewProvider";

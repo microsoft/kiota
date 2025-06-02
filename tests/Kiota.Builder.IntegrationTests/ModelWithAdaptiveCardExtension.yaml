@@ -1,0 +1,44 @@
+openapi: 3.0.0
+info:
+  title: Repair Service
+  version: 1.0.0
+servers:
+  - url: https://sample.server/api
+paths:
+  /repairs:
+    get:
+      operationId: listRepairs
+      summary: List all repairs with oauth
+      description: Returns a list of repairs with their details and images
+      x-ai-adaptive-card:
+        data_path: $.test
+        file: path_to_adaptive_card_file
+        title: listRepairs
+      responses:
+        "200":
+          description: A list of repairs
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      summary: Put repair objet
+      description: Returns a list of repairs with their details and images
+      x-ai-adaptive-card: {}
+      responses:
+        "200":
+          description: A new repair
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create new repair with oauth
+      description: Returns the create repair
+      responses:
+        "200":
+          description: A new repair
+          content:
+            application/json:
+              schema:
+                type: object

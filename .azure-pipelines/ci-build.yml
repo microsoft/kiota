@@ -54,6 +54,13 @@ parameters:
         os: "windows"
         image: "windows-latest"
         pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "win-arm64"
+        jobPrefix: "win_arm64"
+        os: "windows"
+        image: windows-2022-arm64
+        pool: 1es-windows-latest-arm
+        # arm64 is not currently available in the shared pool
+        hostArchitecture: "arm64"
       - architecture: "linux-x64"
         jobPrefix: "linux_x64"
         os: "linux"
@@ -380,6 +387,8 @@ extends:
                   name: ${{ distribution.pool }}
                   os: ${{ distribution.os }}
                   image: ${{ distribution.image }}
+                  ${{ if eq(distribution.hostArchitecture, 'arm64') }}:
+                    hostArchitecture: ${{ distribution.hostArchitecture }}
                 templateContext:
                   sdl:
                     baseline:
@@ -403,6 +412,11 @@ extends:
                     displayName: "Use .NET 9"
                     inputs:
                       version: 9.x
+
+                  - script: dotnet tool install --global PowerShell
+                    displayName: "Install PowerShell"
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                    # powershell is not installed by default on arm64 images
 
                   - pwsh: |
                       Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -579,15 +593,7 @@ extends:
                       targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
 
           - job: build_vscode_extension
-            dependsOn:
-              [
-                win_x64_build_binaries,
-                win_x86_build_binaries,
-                linux_x64_build_binaries,
-                linux_arm64_build_binaries,
-                osx_x64_build_binaries,
-                osx_arm64_build_binaries,
-              ]
+            dependsOn: [build_npm_package]
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -609,18 +615,24 @@ extends:
                 submodules: true
               - task: NodeTool@0
                 inputs:
-                  versionSpec: "18.x"
+                  versionSpec: "20.x"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/src/kiotaInterop/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
-              - script: npm i -g @vscode/vsce
-                displayName: "Install vsce"
-              - script: npm ci
-                displayName: "Install dependencies"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+              - script: npm i -g @vscode/vsce rimraf
+                displayName: "Install Global dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: |
+                  npm install
+                  npm list
+                displayName: "Install vscode dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm run build
+                displayName: "build npm package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
                 workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
@@ -687,6 +699,66 @@ extends:
                 inputs:
                   artifactName: VSCode
                   targetPath: "$(Build.ArtifactStagingDirectory)/VSCode"
+          - job: build_npm_package
+            dependsOn:
+              [
+                win_x64_build_binaries,
+                win_x86_build_binaries,
+                win_arm64_build_binaries,
+                linux_x64_build_binaries,
+                linux_arm64_build_binaries,
+                osx_x64_build_binaries,
+                osx_arm64_build_binaries,
+              ]
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+            steps:
+              - checkout: self
+                clean: true
+                submodules: true
+              - task: NodeTool@0
+                inputs:
+                  versionSpec: "20.x"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
+                displayName: "Set version suffix"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                displayName: "Get Kiota's version-number from .csproj"
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+                displayName: "Update NPM package version-number"
+              - script: |
+                  npm i -g rimraf
+                displayName: "Install Global dependencies"
+              - script: npm install
+                displayName: "Install package dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm run package:package
+                displayName: "Package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/npm-package
+                  sourceFolder: $(Build.SourcesDirectory)/vscode/npm-package
+                  contents: |
+                    *.tgz
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: Npm Package"
+                inputs:
+                  artifactName: npm-package
+                  targetPath: "$(Build.ArtifactStagingDirectory)/npm-package"
 
       - stage: deploy
         condition: and(or(contains(variables['build.sourceBranch'], 'refs/tags/v'), eq(variables['build.sourceBranch'], '${{ parameters.previewBranch }}')), succeeded())
@@ -763,6 +835,9 @@ extends:
                 - input: pipelineArtifact
                   artifactName: changelog
                   targetPath: "$(Pipeline.Workspace)/changelog"
+                - input: pipelineArtifact
+                  artifactName: npm-package
+                  targetPath: "$(Pipeline.Workspace)/npm-package"
                 - ${{ each distribution in parameters.distributions }}:
                     - input: pipelineArtifact
                       artifactName: Binaries_${{ distribution.jobPrefix }}
@@ -794,6 +869,7 @@ extends:
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
+                          $(Pipeline.Workspace)/*.tgz
                           $(Pipeline.Workspace)/*.nupkg
                           $(Pipeline.Workspace)/*.snupkg
                         addChangeLog: false
@@ -809,6 +885,7 @@ extends:
                         assets: |
                           $(Pipeline.Workspace)/*.zip
                           $(Pipeline.Workspace)/*.vsix
+                          $(Pipeline.Workspace)/*.tgz
                           $(Pipeline.Workspace)/*.nupkg
                           $(Pipeline.Workspace)/*.snupkg
                         addChangeLog: false
@@ -974,3 +1051,41 @@ extends:
                     "$(Build.SourcesDirectory)"
                 displayName: "Build and Push Release Image"
                 condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+          - job: deploy_npm
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: windows
+              image: windows-2022
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: npm-package
+                  targetPath: $(Pipeline.Workspace)/npm-package
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+            dependsOn:
+              - github_release
+            steps:
+              - task: NodeTool@0
+                inputs:
+                  versionSpec: "20.x"
+              - task: EsrpRelease@7
+                inputs:
+                  connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                  keyvaultname: "akv-prod-eastus"
+                  authcertname: "ReferenceLibraryPrivateCert"
+                  signcertname: "ReferencePackagePublisherCertificate"
+                  clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  intent: "PackageDistribution"
+                  contenttype: "npm"
+                  contentsource: "Folder"
+                  folderlocation: "$(Pipeline.Workspace)/npm-package/"
+                  waitforreleasecompletion: true
+                  owners: $(NPM_OWNERS_LIST)
+                  approvers: $(NPM_APPROVERS_LIST)
+                  serviceendpointurl: "https://api.esrp.microsoft.com"
+                  mainpublisher: "ESRPRELPACMAN"
+                  domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"

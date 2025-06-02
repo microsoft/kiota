@@ -1,11 +1,11 @@
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, KiotaResult, LogLevel } from "@microsoft/kiota";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from "vscode";
 
 import { API_MANIFEST_FILE, extensionId, treeViewFocusCommand, treeViewId } from "../../constants";
 import { setGenerationConfiguration } from "../../handlers/configurationHandler";
 import { clearDeepLinkParams, getDeepLinkParams } from "../../handlers/deepLinkParamsHandler";
-import { ConsumerOperation, generateClient, generatePlugin, generationLanguageToString, getLanguageInformationForDescription, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, KiotaResult, LogLevel } from "../../kiotaInterop";
 import { GenerateState, generateSteps } from "../../modules/steps/generateSteps";
 import { DependenciesViewProvider } from "../../providers/dependenciesViewProvider";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
@@ -183,7 +183,7 @@ export class GenerateClientCommand extends Command {
   }
 
   private async generateManifestAndRefreshUI(config: Partial<GenerateState>, settings: ExtensionSettings, outputPath: string, selectedPaths: string[]): Promise<KiotaResult | undefined> {
-    const pluginTypes = KiotaPluginType.ApiManifest;
+    const pluginType = KiotaPluginType.ApiManifest;
     const result = await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       cancellable: false,
@@ -192,12 +192,12 @@ export class GenerateClientCommand extends Command {
       const start = performance.now();
       const result = await generatePlugin(
         {
-          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          descriptionPath: this._openApiTreeProvider.descriptionUrl,
           outputPath: outputPath,
-          pluginTypes: [pluginTypes],
+          pluginType,
           includePatterns: selectedPaths,
           excludePatterns: [],
-          clientClassName: typeof config.pluginName === "string"
+          pluginName: typeof config.pluginName === "string"
             ? config.pluginName
             : "ApiClient",
           clearCache: settings.clearCache,
@@ -212,7 +212,7 @@ export class GenerateClientCommand extends Command {
       const errorsCount = result ? getLogEntriesForLevel(result.logs, LogLevel.critical, LogLevel.error).length : 0;
       const reporter = new TelemetryReporter(this._context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendRawTelemetryEvent(`${extensionId}.generateManifest.completed`, {
-        "pluginType": pluginTypes.toString(),
+        "pluginType": pluginType.toString(),
         "errorsCount": errorsCount.toString(),
       }, {
         "duration": duration,
@@ -237,12 +237,12 @@ export class GenerateClientCommand extends Command {
       const start = performance.now();
       const result = await generatePlugin(
         {
-          openAPIFilePath: this._openApiTreeProvider.descriptionUrl,
+          descriptionPath: this._openApiTreeProvider.descriptionUrl,
           outputPath: outputPath,
-          pluginTypes,
+          pluginType: pluginTypes[0],
           includePatterns: selectedPaths,
           excludePatterns: [],
-          clientClassName: typeof config.pluginName === "string"
+          pluginName: typeof config.pluginName === "string"
             ? config.pluginName
             : "ApiClient",
           clearCache: settings.clearCache,

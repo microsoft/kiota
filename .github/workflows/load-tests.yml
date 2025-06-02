@@ -47,7 +47,7 @@ jobs:
           dotnet build ./src/kiota
       - name: Run the CLI
         run: |
-          curl -o petstore.yaml https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.yaml
+          curl -o petstore.yaml https://raw.githubusercontent.com/OAI/OpenAPI-Specification/refs/heads/main/_archive_/schemas/v3.0/pass/petstore.yaml
           curl -o twitter.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/twitter.com/current/2.61/openapi.json
           curl -o notion.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/notion.com/1.0.0/openapi.json
           curl -o stripe.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/stripe.com/2022-11-15/openapi.json

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Security;
 using System.Threading;
@@ -10,17 +9,16 @@ using AsyncKeyedLock;
 using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Readers;
 using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
+
 internal class OpenApiDocumentDownloadService
 {
     private readonly ILogger Logger;
@@ -99,7 +97,7 @@ internal class OpenApiDocumentDownloadService
         return (input, isDescriptionFromWorkspaceCopy);
     }
 
-    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -107,17 +105,22 @@ internal class OpenApiDocumentDownloadService
         var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
                     ValidationRuleSet.GetEmptyRuleSet() :
                     ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
-        if (generating)
+        bool generatingMode = generating || config.IncludeKiotaValidationRules == true;
+        if (generatingMode)
             ruleSet.AddKiotaValidationRules(config);
         var settings = new OpenApiReaderSettings
         {
             RuleSet = ruleSet,
+            LoadExternalRefs = true,
+            LeaveStreamOpen = true,
         };
 
         // Add all extensions for generation
         settings.AddGenerationExtensions();
         settings.AddYamlReader();
-        if (config.IsPluginConfiguration)
+        // Add plugins extensions to parse from the OpenAPI file
+        bool addPluginsExtensions = config.IsPluginConfiguration || config.IncludePluginExtensions == true;
+        if (addPluginsExtensions)
             settings.AddPluginsExtensions();// Add all extensions for plugins
 
         try
@@ -128,8 +131,6 @@ internal class OpenApiDocumentDownloadService
                 lastSlashIndex = rawUri.Length - 1;
             var documentUri = new Uri(rawUri[..lastSlashIndex]);
             settings.BaseUrl = documentUri;
-            settings.LoadExternalRefs = true;
-            settings.LeaveStreamOpen = true;
         }
 #pragma warning disable CA1031
         catch
@@ -139,10 +140,10 @@ internal class OpenApiDocumentDownloadService
         }
         var readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
-        if (generating)
+        if (generatingMode && readResult.Diagnostic?.Warnings is { Count: > 0 })
             foreach (var warning in readResult.Diagnostic.Warnings)
                 Logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
-        if (readResult.Diagnostic.Errors.Any())
+        if (readResult.Diagnostic?.Errors is { Count: > 0 })
         {
             Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
             foreach (var parsingError in readResult.Diagnostic.Errors)
@@ -155,6 +156,12 @@ internal class OpenApiDocumentDownloadService
             Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
         }
 
-        return readResult.Document;
+        return readResult;
+    }
+
+    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    {
+        var result = await GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken).ConfigureAwait(false);
+        return result?.Document;
     }
 }

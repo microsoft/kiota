@@ -1,8 +1,8 @@
+import { KiotaSearchResultItem } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 import { l10n, QuickPickItem } from 'vscode';
 
 import { BaseStepsState, MultiStepInput } from '.';
-import { KiotaSearchResultItem } from '../../kiotaInterop';
 import { isValidUrl } from '../../util';
 import { isFilePath } from '../../utilities/temporary-folder';
 import { shouldResume, validateIsNotEmpty } from './utils';

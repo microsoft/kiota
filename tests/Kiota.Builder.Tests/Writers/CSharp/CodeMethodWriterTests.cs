@@ -1515,6 +1515,32 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueEscapedLineBreak = "\"someVal\n\"";
+        var expectedValueEscapedLineBreak = @"""someVal\n""";
+        var escapedLineBreakPropName = "propWithDefaultEscapedLineBreak";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = escapedLineBreakPropName,
+            DefaultValue = defaultValueEscapedLineBreak,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+        var defaultValueEscapedQuotes = "\"this is \"surrounded by quotes\"\"";
+        var expectedValueEscapedQuotes = @"""this is \""surrounded by quotes\""""";
+        var escapedQuotesPropName = "propWithDefaultEscapedQuotes";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = escapedQuotesPropName,
+            DefaultValue = defaultValueEscapedQuotes,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("<summary>", result);
@@ -1523,6 +1549,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
         Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
         Assert.Contains($"{boolPropName.ToFirstCharacterUpperCase()} = {defaultValueBool.TrimQuotes()}", result);
+        Assert.Contains($"{escapedLineBreakPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedLineBreak}", result);
+        Assert.Contains($"{escapedQuotesPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedQuotes}", result);
     }
     [Fact]
     public void WritesWithUrl()

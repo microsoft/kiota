@@ -195,32 +195,83 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private static void WriteApiConstructorBody(CodeFile parentFile, CodeMethod method, LanguageWriter writer)
     {
-        WriteSerializationRegistration(method.SerializerModules, writer, "registerDefaultSerializer");
-        WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
-        if (method.Parameters.OfKind(CodeParameterKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase() is not string requestAdapterArgumentName) return;
+        if (method.Parameters.OfKind(CodeParameterKind.RequestAdapter)?.Name.ToFirstCharacterLowerCase() is not string
+            requestAdapterArgumentName) return;
+        writer.StartBlock($"if ({requestAdapterArgumentName} === undefined) {{");
+        writer.WriteLine($"throw new Error(\"{requestAdapterArgumentName} cannot be undefined\");");
+        writer.CloseBlock();
+
+        writer.WriteLine("let serializationWriterFactory : SerializationWriterFactoryRegistry");
+        writer.WriteLine("let parseNodeFactoryRegistry : ParseNodeFactoryRegistry");
+        writer.WriteLine("");
+
+        writer.StartBlock(
+            $"if ({requestAdapterArgumentName}.getParseNodeFactory() instanceof ParseNodeFactoryRegistry) {{");
+        writer.WriteLine(
+            $"parseNodeFactoryRegistry = {requestAdapterArgumentName}.getParseNodeFactory() as ParseNodeFactoryRegistry");
+        writer.DecreaseIndent();
+        writer.StartBlock("} else {");
+        writer.WriteLine(
+            $"throw new Error(\"{requestAdapterArgumentName}.getParseNodeFactory() is not a ParseNodeFactoryRegistry\")");
+        writer.CloseBlock();
+        writer.WriteLine("");
+
+        writer.StartBlock(
+            "if (requestAdapter.getSerializationWriterFactory() instanceof SerializationWriterFactoryRegistry) {");
+        writer.WriteLine(
+            $"serializationWriterFactory = {requestAdapterArgumentName}.getSerializationWriterFactory() as SerializationWriterFactoryRegistry");
+        writer.DecreaseIndent();
+        writer.StartBlock("} else {");
+        writer.WriteLine(
+            $"throw new Error(\"{requestAdapterArgumentName}.getSerializationWriterFactory() is not a SerializationWriterFactoryRegistry\")");
+        writer.CloseBlock();
+        writer.WriteLine("");
+
+        WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
+            "registerDefaultSerializer");
+        writer.WriteLine("");
+        writer.WriteLine($"const backingStoreFactory = {requestAdapterArgumentName}.getBackingStoreFactory();");
+        WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
+            "registerDefaultDeserializer", "backingStoreFactory");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            writer.StartBlock($"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === null || {requestAdapterArgumentName}.baseUrl === \"\") {{");
+            writer.StartBlock(
+                $"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === null || {requestAdapterArgumentName}.baseUrl === \"\") {{");
             writer.WriteLine($"{requestAdapterArgumentName}.baseUrl = \"{method.BaseUrl}\";");
             writer.CloseBlock();
         }
+
         writer.StartBlock($"const pathParameters: Record<string, unknown> = {{");
         writer.WriteLine($"\"baseurl\": {requestAdapterArgumentName}.baseUrl,");
         writer.CloseBlock("};");
         if (method.Parameters.OfKind(CodeParameterKind.BackingStore)?.Name is string backingStoreParameterName)
-            writer.WriteLine($"{requestAdapterArgumentName}.enableBackingStore({backingStoreParameterName.ToFirstCharacterLowerCase()});");
-        if (parentFile.Interfaces.FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is CodeInterface codeInterface)
+            writer.WriteLine(
+                $"{requestAdapterArgumentName}.enableBackingStore({backingStoreParameterName.ToFirstCharacterLowerCase()});");
+        if (parentFile.Interfaces.FirstOrDefault(static x => x.Kind is CodeInterfaceKind.RequestBuilder) is
+            CodeInterface codeInterface)
         {
-            var navigationMetadataConstantName = parentFile.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.NavigationMetadataSuffix}", false) is { } navConstant ? navConstant.Name.ToFirstCharacterUpperCase() : "undefined";
-            var requestsMetadataConstantName = parentFile.FindChildByName<CodeConstant>($"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.RequestsMetadataSuffix}", false) is { } reqConstant ? reqConstant.Name.ToFirstCharacterUpperCase() : "undefined";
-            writer.WriteLine($"return apiClientProxifier<{codeInterface.Name.ToFirstCharacterUpperCase()}>({requestAdapterArgumentName}, pathParameters, {navigationMetadataConstantName}, {requestsMetadataConstantName});");
+            var navigationMetadataConstantName =
+                parentFile.FindChildByName<CodeConstant>(
+                    $"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.NavigationMetadataSuffix}",
+                    false) is { } navConstant
+                    ? navConstant.Name.ToFirstCharacterUpperCase()
+                    : "undefined";
+            var requestsMetadataConstantName =
+                parentFile.FindChildByName<CodeConstant>(
+                        $"{codeInterface.Name.ToFirstCharacterUpperCase()}{CodeConstant.RequestsMetadataSuffix}",
+                        false) is
+                { } reqConstant
+                    ? reqConstant.Name.ToFirstCharacterUpperCase()
+                    : "undefined";
+            writer.WriteLine(
+                $"return apiClientProxifier<{codeInterface.Name.ToFirstCharacterUpperCase()}>({requestAdapterArgumentName}, pathParameters, {navigationMetadataConstantName}, {requestsMetadataConstantName});");
         }
     }
-    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string methodName)
+    private static void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, string objectName, string methodName, params string[] additionalParam)
     {
         if (serializationModules != null)
             foreach (var module in serializationModules)
-                writer.WriteLine($"{methodName}({module});");
+                writer.WriteLine($"{objectName}.{methodName}({module}{(additionalParam != null && additionalParam.Length > 0 ? ", " + string.Join(", ", additionalParam) : string.Empty)});");
     }
 
     private void WriteFactoryMethod(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)

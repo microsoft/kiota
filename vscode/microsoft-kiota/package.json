@@ -3,7 +3,7 @@
   "displayName": "Microsoft Kiota",
   "publisher": "ms-graph",
   "description": "Client generator for HTTP REST APIs described by OpenAPI which helps eliminate the need to take a dependency on a different API client for every API that you need to call, as well as limiting the generation to the exact API surface area you're interested in, thanks to a filtering capability.",
-  "version": "1.21.100000001",
+  "version": "1.25.100000002",
   "telemetryInstrumentationKey": "1b2ee3d8-9aae-4adc-8832-fcf257233e91",
   "icon": "images/logo.png",
   "engines": {
@@ -511,40 +511,24 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile && npm run compile-tests && npm run lint",
     "lint": "eslint",
-    "test": "npm run test:unit && vscode-test",
-    "test:coverage": "npm run pretest && test --coverage",
-    "test:unit": "jest --detectOpenHandles"
-  },
-  "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^4.2.0",
-    "@types/adm-zip": "^0.5.7",
-    "@types/follow-redirects": "^1.14.4",
-    "@types/jest": "^29.5.14",
-    "@types/node": "22.x",
-    "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.26.1",
-    "@typescript-eslint/parser": "^8.26.1",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
-    "chai": "^5.2.0",
-    "eslint": "^9.22.0",
-    "glob": "^11.0.1",
-    "ts-jest": "^29.2.6",
-    "ts-loader": "^9.5.2",
-    "typemoq": "^2.1.0",
-    "typescript": "^5.8.2",
-    "webpack": "^5.98.0",
-    "webpack-cli": "^6.0.1"
+    "test": "vscode-test",
+    "test:coverage": "npm run pretest && test --coverage"
   },
   "dependencies": {
-    "@vscode/extension-telemetry": "^0.9.8",
-    "@vscode/l10n": "^0.0.18",
-    "adm-zip": "^0.5.16",
-    "is-online": "^11.0.0",
-    "jest": "^29.7.0",
-    "original-fs": "^1.2.0",
-    "uuid": "^11.1.0",
-    "vscode-jsonrpc": "^8.2.1"
+    "@microsoft/kiota": "^1.0.0",
+    "@vscode/extension-telemetry": "^1.0.0",
+    "@vscode/l10n": "^0.0.18"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/sinon": "^17.0.4",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.4.1",
+    "chai": "^5.2.0",
+    "mocha": "^11.1.0",
+    "sinon": "^20.0.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
   }
 }

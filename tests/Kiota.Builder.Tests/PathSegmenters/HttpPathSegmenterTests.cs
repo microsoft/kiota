@@ -11,7 +11,7 @@ namespace Kiota.Builder.Tests.PathSegmenters
 
         public HttpPathSegmenterTests()
         {
-            var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+            var tempFilePath = Path.GetTempFileName();
             segmenter = new HttpPathSegmenter(tempFilePath, "client");
         }
 

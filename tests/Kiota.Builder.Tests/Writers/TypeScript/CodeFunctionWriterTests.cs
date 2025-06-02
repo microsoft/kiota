@@ -17,6 +17,7 @@ using Xunit;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
+
 public sealed class CodeFunctionWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -671,8 +672,14 @@ public sealed class CodeFunctionWriterTests : IDisposable
         root.TryAddCodeFile("foo", function, CodeInterface.FromRequestBuilder(parentClass));
         writer.Write(function);
         var result = tw.ToString();
-        Assert.Contains("registerDefaultSerializer", result);
-        Assert.Contains("registerDefaultDeserializer", result);
+        Assert.Contains(
+            "serializationWriterFactory = requestAdapter.getSerializationWriterFactory() as SerializationWriterFactoryRegistry",
+            result);
+        Assert.Contains("parseNodeFactoryRegistry = requestAdapter.getParseNodeFactory() as ParseNodeFactoryRegistry",
+            result);
+        Assert.Contains("const backingStoreFactory = requestAdapter.getBackingStoreFactory();", result);
+        Assert.Contains("serializationWriterFactory.registerDefaultSerializer", result);
+        Assert.Contains("parseNodeFactoryRegistry.registerDefaultDeserializer", result);
         Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
         Assert.Contains($"\"baseurl\": requestAdapter.baseUrl", result);
         Assert.Contains($"apiClientProxifier<", result);
@@ -1199,7 +1206,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_UnionOfPrimitiveValues_FactoryFunctionAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1246,7 +1253,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_UnionOfObjects_FactoryMethodAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1287,7 +1294,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_UnionOfPrimitiveValues_SerializerFunctionAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1326,7 +1333,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_UnionOfObjects_SerializerFunctionsAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1367,7 +1374,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_CodeIntersectionType_FactoryMethodAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1405,7 +1412,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_CodeIntersectionType_DeserializerFunctionsAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1443,7 +1450,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
     public async Task Writes_CodeIntersectionType_SerializerFunctionsAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, CodeIntersectionTypeSampleYml.OpenApiYaml);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "FooBar", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);

@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const isCI = process.env.CI === 'true'; // Check if we are in a CI environment
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -10,7 +11,7 @@ const path = require('path');
 /** @type WebpackConfig */
 const extensionConfig = {
   target: 'node', // VS Code extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-	mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
+  mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
 
   entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {
@@ -24,14 +25,18 @@ const extensionConfig = {
     // modules added here also need to be added in the .vscodeignore file
     // https://github.com/microsoft/vscode-extension-telemetry/issues/150
     'applicationinsights-native-metrics': 'commonjs applicationinsights-native-metrics', // ignored because we don't ship native module
-		'@opentelemetry/tracing': 'commonjs @opentelemetry/tracing', // ignored because we don't ship this module
-		'@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation', // ignored because we don't ship this module
-		'@azure/opentelemetry-instrumentation-azure-sdk': 'commonjs @azure/opentelemetry-instrumentation-azure-sdk', // ignored because we don't ship this module
+    '@opentelemetry/tracing': 'commonjs @opentelemetry/tracing', // ignored because we don't ship this module
+    '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation', // ignored because we don't ship this module
+    '@azure/opentelemetry-instrumentation-azure-sdk': 'commonjs @azure/opentelemetry-instrumentation-azure-sdk', // ignored because we don't ship this module
     '@azure/functions-core': 'commonjs @azure/functions-core', // ignored because we don't ship this module
   },
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    symlinks: true,
+    alias: isCI ? {
+      '@microsoft/kiota': path.resolve(__dirname, '../npm-package'),
+    } : {},
   },
   module: {
     rules: [
@@ -51,4 +56,4 @@ const extensionConfig = {
     level: "log", // enables logging required for problem matchers
   },
 };
-module.exports = [ extensionConfig ];
+module.exports = [extensionConfig];

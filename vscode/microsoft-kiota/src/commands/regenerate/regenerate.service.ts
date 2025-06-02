@@ -1,10 +1,13 @@
-import TelemetryReporter from "@vscode/extension-telemetry";
+import {
+  ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient,
+  generatePlugin, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, LogLevel, PluginObjectProperties
+} from "@microsoft/kiota";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import * as path from "path";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 
 import { extensionId } from "../../constants";
-import { ClientObjectProperties, ClientOrPluginProperties, ConsumerOperation, generateClient, generatePlugin, getLogEntriesForLevel, KiotaGenerationLanguage, KiotaPluginType, LogLevel, PluginObjectProperties } from "../../kiotaInterop";
 import { OpenApiTreeProvider } from "../../providers/openApiTreeProvider";
 import { ExtensionSettings } from "../../types/extensionSettings";
 import { getWorkspaceJsonDirectory, parseGenerationLanguage, parsePluginType } from "../../util";
@@ -70,12 +73,12 @@ export class RegenerateService {
       const start = performance.now();
       const result = await generatePlugin(
         {
-          openAPIFilePath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
+          descriptionPath: pluginObjectItem.descriptionLocation ? pluginObjectItem.descriptionLocation : this._openApiTreeProvider.descriptionUrl,
           outputPath: pluginObjectItem.outputPath,
-          pluginTypes,
+          pluginType: pluginTypes[0],
           includePatterns: selectedPaths ? selectedPaths : pluginObjectItem.includePatterns,
           excludePatterns: [],
-          clientClassName: this._clientKey,
+          pluginName: this._clientKey,
           clearCache: settings.clearCache,
           cleanOutput: false,
           disabledValidationRules: settings.disableValidationRules,

@@ -431,5 +431,26 @@ public class DartLanguageRefinerTests
         Assert.Contains(buildermethods, x => x.IsOfKind(CodeMethodKind.Custom) && x.Name.Equals("clone", StringComparison.Ordinal));
         Assert.Contains(modelmethods, x => x.IsOfKind(CodeMethodKind.Custom) && x.Name.Equals("copyWith", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task PreservesPropertyNames()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model,
+        }).First();
+        model.AddProperty(new CodeProperty
+        {
+            Name = "Property",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        Assert.Equal("property", model.Properties.First().Name);
+        Assert.Equal("Property", model.Properties.First().WireName);
+    }
     #endregion
 }

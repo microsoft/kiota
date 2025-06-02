@@ -20,9 +20,9 @@ internal static class OpenApiDocumentExtensions
             {
                 inheritanceIndex.TryAdd(entry.Key, new(StringComparer.OrdinalIgnoreCase));
                 if (entry.Value.AllOf != null)
-                    foreach (var allOfEntry in entry.Value.AllOf.OfType<OpenApiSchemaReference>())
+                    foreach (var allOfEntry in entry.Value.AllOf.OfType<OpenApiSchemaReference>().Where(static x => !string.IsNullOrEmpty(x.Reference.Id)))
                     {
-                        var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id, new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase));
+                        var dependents = inheritanceIndex.GetOrAdd(allOfEntry.Reference.Id!, new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase));
                         dependents.TryAdd(entry.Key, false);
                     }
             });
