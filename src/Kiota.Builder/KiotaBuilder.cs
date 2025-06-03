@@ -1264,6 +1264,7 @@ public partial class KiotaBuilder
     private static readonly HashSet<string> noContentStatusCodes = new(redirectStatusCodes, StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "304" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> errorStatusCodesWithDefault = new(errorStatusCodes, StringComparer.OrdinalIgnoreCase) { DefaultResponseIndicator };
     private void AddErrorMappingsForExecutorMethod(OpenApiUrlTreeNode currentNode, OpenApiOperation operation, CodeMethod executorMethod)
     {
         if (operation.Responses is null) return;
@@ -1474,15 +1475,17 @@ public partial class KiotaBuilder
             {
                 (_, true) => [],
                 (null, _) => operation.Responses!
-                                .WhereValidForMediaTypeSelection()
-                                .SelectMany(static x => x.Value.Content!)
-                                .Select(static x => x.Key) //get the successful non structured media types first, with a default 1 priority
-                                .Union(config.StructuredMimeTypes.GetAcceptedTypes(
-                                                            operation.Responses!
-                                                            .WhereValidForMediaTypeSelection()
-                                                            .SelectMany(static x => x.Value.Content!) // we can safely ignore unstructured ones as they won't be used in error mappings anyway and the body won't be read
-                                                            .Select(static x => x.Key)))
-                        .Distinct(StringComparer.OrdinalIgnoreCase),
+                            .Where(static x => !errorStatusCodesWithDefault.Contains(x.Key) && x.Value.Content is not null)
+                            .SelectMany(static x => x.Value.Content!)
+                            .Select(static x => x.Key)
+                            .Select(static x => x.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]) //get the successful non structured media types first, with a default 1 priority
+                            .Union(config.StructuredMimeTypes
+                                        .GetAcceptedTypes(
+                                            operation.Responses!
+                                                .Where(static x => errorStatusCodesWithDefault.Contains(x.Key) && x.Value.Content is not null) // get any structured error ones, with the priority from the configuration
+                                                .SelectMany(static x => x.Value.Content!) // we can safely ignore unstructured ones as they won't be used in error mappings anyway and the body won't be read
+                                                .Select(static x => x.Key)))
+                            .Distinct(StringComparer.OrdinalIgnoreCase),
                 (_, false) => config.StructuredMimeTypes.GetAcceptedTypes(operation.Responses!.Values.Where(static x => x.Content is not null).SelectMany(static x => x.Content!).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
             };
             generatorMethod.AddAcceptedResponsesTypes(mediaTypes);
