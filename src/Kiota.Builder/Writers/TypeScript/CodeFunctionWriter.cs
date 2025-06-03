@@ -201,38 +201,23 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"throw new Error(\"{requestAdapterArgumentName} cannot be undefined\");");
         writer.CloseBlock();
 
-        writer.WriteLine("let serializationWriterFactory : SerializationWriterFactoryRegistry");
-        writer.WriteLine("let parseNodeFactoryRegistry : ParseNodeFactoryRegistry");
-        writer.WriteLine("");
-
-        writer.StartBlock(
-            $"if ({requestAdapterArgumentName}.getParseNodeFactory() instanceof ParseNodeFactoryRegistry) {{");
-        writer.WriteLine(
-            $"parseNodeFactoryRegistry = {requestAdapterArgumentName}.getParseNodeFactory() as ParseNodeFactoryRegistry");
-        writer.DecreaseIndent();
-        writer.StartBlock("} else {");
-        writer.WriteLine(
-            $"throw new Error(\"{requestAdapterArgumentName}.getParseNodeFactory() is not a ParseNodeFactoryRegistry\")");
-        writer.CloseBlock();
-        writer.WriteLine("");
-
-        writer.StartBlock(
-            "if (requestAdapter.getSerializationWriterFactory() instanceof SerializationWriterFactoryRegistry) {");
-        writer.WriteLine(
-            $"serializationWriterFactory = {requestAdapterArgumentName}.getSerializationWriterFactory() as SerializationWriterFactoryRegistry");
-        writer.DecreaseIndent();
-        writer.StartBlock("} else {");
-        writer.WriteLine(
-            $"throw new Error(\"{requestAdapterArgumentName}.getSerializationWriterFactory() is not a SerializationWriterFactoryRegistry\")");
-        writer.CloseBlock();
-        writer.WriteLine("");
-
-        WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
-            "registerDefaultSerializer");
-        writer.WriteLine("");
+        writer.WriteLine($"const serializationWriterFactory = {requestAdapterArgumentName}.getSerializationWriterFactory() as SerializationWriterFactoryRegistry;");
+        writer.WriteLine($"const parseNodeFactoryRegistry = {requestAdapterArgumentName}.getParseNodeFactory() as ParseNodeFactoryRegistry;");
         writer.WriteLine($"const backingStoreFactory = {requestAdapterArgumentName}.getBackingStoreFactory();");
+        writer.WriteLine(string.Empty);
+
+        writer.StartBlock("if (parseNodeFactoryRegistry.registerDefaultDeserializer) {");
         WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
             "registerDefaultDeserializer", "backingStoreFactory");
+        writer.CloseBlock();
+        writer.WriteLine(string.Empty);
+
+        writer.StartBlock("if (serializationWriterFactory.registerDefaultSerializer) {");
+        WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
+            "registerDefaultSerializer");
+        writer.CloseBlock();
+        writer.WriteLine(string.Empty);
+
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock(
