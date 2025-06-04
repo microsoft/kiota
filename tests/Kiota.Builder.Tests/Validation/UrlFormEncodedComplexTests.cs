@@ -10,10 +10,10 @@ namespace Kiota.Builder.Tests.Validation;
 
 public class UrlFormEncodedComplexTests
 {
-  [Fact]
-  public async Task AddsAWarningWhenUrlEncodedNotObjectRequestBody()
-  {
-    var documentTxt = @"openapi: 3.0.1
+    [Fact]
+    public async Task AddsAWarningWhenUrlEncodedNotObjectRequestBody()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -35,13 +35,13 @@ paths:
               schema:
                 type: string
                 format: int32";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Single(diagnostic.Warnings);
-  }
-  [Fact]
-  public async Task AddsAWarningWhenUrlEncodedNotObjectResponse()
-  {
-    var documentTxt = @"openapi: 3.0.1
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task AddsAWarningWhenUrlEncodedNotObjectResponse()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -57,13 +57,13 @@ paths:
               schema:
                 type: string
                 format: int32";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Single(diagnostic.Warnings);
-  }
-  [Fact]
-  public async Task AddsAWarningWhenUrlEncodedComplexPropertyOnRequestBody()
-  {
-    var documentTxt = @"openapi: 3.0.1
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task AddsAWarningWhenUrlEncodedComplexPropertyOnRequestBody()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -90,13 +90,13 @@ paths:
               schema:
                 type: string
                 format: int32";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Single(diagnostic.Warnings);
-  }
-  [Fact]
-  public async Task AddsAWarningWhenUrlEncodedComplexPropertyOnResponse()
-  {
-    var documentTxt = @"openapi: 3.0.1
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task AddsAWarningWhenUrlEncodedComplexPropertyOnResponse()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -117,13 +117,13 @@ paths:
                       properties:
                         prop:
                           type: string";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Single(diagnostic.Warnings);
-  }
-  [Fact]
-  public async Task DoesntAddAWarningWhenUrlEncoded()
-  {
-    var documentTxt = @"openapi: 3.0.1
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task DoesntAddAWarningWhenUrlEncoded()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -141,13 +141,13 @@ paths:
                 properties:
                   prop:
                     type: string";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Empty(diagnostic.Warnings);
-  }
-  [Fact]
-  public async Task DoesntAddAWarningOnArrayProperty()
-  {
-    var documentTxt = @"openapi: 3.0.1
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task DoesntAddAWarningOnArrayProperty()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -176,13 +176,13 @@ paths:
                 properties:
                   prop:
                     type: string";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Empty(diagnostic.Warnings);
-  }
-  [Fact]
-  public async Task DoesntAddAWarningWhenNotUrlEncoded()
-  {
-    var documentTxt = @"openapi: 3.0.1
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task DoesntAddAWarningWhenNotUrlEncoded()
+    {
+        var documentTxt = @"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph
   description: This OData service is located at https://graph.microsoft.com/v1.0
@@ -198,17 +198,17 @@ paths:
               schema:
                 type: enum
                 format: string";
-    var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-    Assert.Empty(diagnostic.Warnings);
-  }
-  private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
-  {
-    var rule = new UrlFormEncodedComplex();
-    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
-    var settings = new OpenApiReaderSettings();
-    settings.RuleSet.Add(typeof(OpenApiOperation), [rule]);
-    settings.AddYamlReader();
-    var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
-    return result.Diagnostic;
-  }
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
+    {
+        var rule = new UrlFormEncodedComplex();
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(document));
+        var settings = new OpenApiReaderSettings();
+        settings.RuleSet.Add(typeof(OpenApiOperation), [rule]);
+        settings.AddYamlReader();
+        var result = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+        return result.Diagnostic;
+    }
 }

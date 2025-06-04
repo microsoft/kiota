@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
-using Microsoft.OpenApi.MicrosoftExtensions;
 using Microsoft.OpenApi;
+using Microsoft.OpenApi.MicrosoftExtensions;
 
 namespace Kiota.Builder.Extensions;
 
