@@ -1,8 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
 

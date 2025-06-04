@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
+
 public class MultipleServerEntries : ValidationRule<OpenApiDocument>
 {
     public MultipleServerEntries() : base(nameof(MultipleServerEntries), static (context, document) =>

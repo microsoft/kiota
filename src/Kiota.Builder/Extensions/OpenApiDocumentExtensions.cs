@@ -3,8 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.EqualityComparers;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Extensions;
 

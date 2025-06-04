@@ -2,10 +2,8 @@
 using System.Text;
 using System.Threading.Tasks;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Validations;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;

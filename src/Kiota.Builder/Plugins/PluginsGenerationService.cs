@@ -12,13 +12,8 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.ApiManifest;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
-using Microsoft.OpenApi.Services;
-using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.Plugins;
 
@@ -1017,7 +1012,7 @@ public partial class PluginsGenerationService
         return (runtimes.ToArray(), functions.ToArray(), conversationStarters.ToArray());
     }
 
-    private static Auth GetAuth(List<OpenApiSecurityRequirement> securityRequirements)
+    private static Auth GetAuth(IList<OpenApiSecurityRequirement> securityRequirements)
     {
         // Only one security requirement object is allowed
         const string tooManySchemesError = "Multiple security requirements are not supported. Operations can only list one security requirement.";

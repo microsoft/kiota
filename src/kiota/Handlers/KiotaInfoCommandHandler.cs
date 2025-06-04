@@ -11,9 +11,10 @@ using Kiota.Builder;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Writers;
+using Microsoft.OpenApi;
 
 namespace kiota.Handlers;
+
 internal class
     KiotaInfoCommandHandler : KiotaSearchBasedCommandHandler
 {

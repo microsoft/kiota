@@ -1,8 +1,6 @@
-﻿using System.IO;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Settings;
 /// <summary>

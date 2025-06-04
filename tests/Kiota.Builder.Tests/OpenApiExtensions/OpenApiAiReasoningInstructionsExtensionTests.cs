@@ -8,7 +8,6 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Writers;
 using Moq;
 using Xunit;
 

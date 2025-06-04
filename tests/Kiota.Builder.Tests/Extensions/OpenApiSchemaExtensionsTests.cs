@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Nodes;
+﻿using System.Collections.Generic;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public class OpenApiSchemaExtensionsTests
 {
     [Fact]

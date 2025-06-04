@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public class OpenApiOperationExtensionsTests
 {
     [Fact]

@@ -4,12 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Extensions;
+
 public static class OpenApiSchemaExtensions
 {
     private static readonly Func<IOpenApiSchema, IList<IOpenApiSchema>> classNamesFlattener = x =>

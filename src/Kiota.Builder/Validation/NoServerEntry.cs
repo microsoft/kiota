@@ -1,5 +1,4 @@
-﻿using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Validations;
+﻿using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
 

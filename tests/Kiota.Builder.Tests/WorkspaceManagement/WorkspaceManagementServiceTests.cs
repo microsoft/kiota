@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Lock;
-using Kiota.Builder.Tests.Manifest;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 using Moq;

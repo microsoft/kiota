@@ -5,14 +5,12 @@ using System.Net.Http;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
-using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi;
 
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
 {
     [Fact]
@@ -801,7 +799,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -833,7 +831,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -865,7 +863,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -952,7 +950,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -974,7 +972,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -1025,7 +1023,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -1050,7 +1048,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
