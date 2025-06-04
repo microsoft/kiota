@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.MicrosoftExtensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
+
 internal static class OpenApiDeprecationExtensionExtensions
 {
     internal static DeprecationInformation ToDeprecationInformation(this OpenApiDeprecationExtension value)

@@ -5,12 +5,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.MicrosoftExtensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
-using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
 

@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
+
 public class MissingDiscriminator : ValidationRule<OpenApiDocument>
 {
     public MissingDiscriminator(GenerationConfiguration configuration) : base(nameof(MissingDiscriminator), (context, document) =>

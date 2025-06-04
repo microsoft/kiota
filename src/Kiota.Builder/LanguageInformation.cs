@@ -5,8 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Writers;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder;
 

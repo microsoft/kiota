@@ -7,17 +7,16 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Plugins;
 using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Services;
 using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Plugins;
+
 public sealed class PluginsGenerationServiceTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();

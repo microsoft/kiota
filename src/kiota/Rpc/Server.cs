@@ -9,10 +9,11 @@ using Kiota.Builder.WorkspaceManagement;
 using Kiota.Generated;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi;
 using DeclarativeAgentsManifest = Microsoft.DeclarativeAgents.Manifest;
 
 namespace kiota.Rpc;
+
 internal partial class Server : IServer
 {
     protected KiotaConfiguration Configuration

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
+
 public class DivergentResponseSchema : ValidationRule<OpenApiOperation>
 {
     private static readonly OpenApiSchemaComparer schemaComparer = new();
