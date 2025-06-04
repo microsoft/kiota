@@ -1,7 +1,5 @@
 ﻿using Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi;
 
 namespace kiota.Rpc
 {

@@ -3,9 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Interfaces;
+
 namespace Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Writers;
 
 public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
 {

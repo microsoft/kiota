@@ -2,14 +2,12 @@
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Writers;
 using Moq;
 using Xunit;
 

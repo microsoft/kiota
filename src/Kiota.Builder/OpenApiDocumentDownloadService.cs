@@ -13,9 +13,8 @@ using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
 

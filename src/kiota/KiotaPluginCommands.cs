@@ -2,9 +2,10 @@
 using kiota.Handlers.Plugin;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace kiota;
+
 public static class KiotaPluginCommands
 {
     public static Command GetPluginNodeCommand()

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Writers.Go;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;

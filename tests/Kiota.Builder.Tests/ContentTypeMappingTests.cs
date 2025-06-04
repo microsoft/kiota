@@ -7,9 +7,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 using Moq;
 using Xunit;
 using NetHttpMethod = System.Net.Http.HttpMethod;
@@ -98,7 +96,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                             {
                                 [statusCode] = new OpenApiResponse
                                 {
-                                    Content = new()
+                                    Content = new Dictionary<string, OpenApiMediaType>()
                                     {
                                         [contentType] = new OpenApiMediaType
                                         {
@@ -189,7 +187,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                         {
                             RequestBody = new OpenApiRequestBody
                             {
-                                Content = new()
+                                Content = new Dictionary<string, OpenApiMediaType>()
                                 {
                                     [contentType] = new OpenApiMediaType
                                     {

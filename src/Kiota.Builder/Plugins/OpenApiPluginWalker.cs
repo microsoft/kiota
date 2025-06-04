@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Plugins;
 
