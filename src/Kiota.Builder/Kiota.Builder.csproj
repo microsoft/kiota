@@ -38,7 +38,7 @@
     <PackageReference Include="AsyncKeyedLock" Version="7.1.6" />
     <PackageReference Include="DotNet.Glob" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Kiota.Bundle" Version="1.17.3" />
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="1.17.4" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.0.0-preview.23" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="2.0.0-preview5" />
     <PackageReference Include="Microsoft.OpenApi.YamlReader" Version="2.0.0-preview.23" />
