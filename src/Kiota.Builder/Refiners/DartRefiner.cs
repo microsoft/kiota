@@ -315,7 +315,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else
         {
-            currentProperty.SerializationName = currentProperty.Name;
+            if (!currentProperty.IsNameEscaped)
+                currentProperty.SerializationName = currentProperty.Name;
+
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
