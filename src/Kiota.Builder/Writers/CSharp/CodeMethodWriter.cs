@@ -449,6 +449,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
+                else if (requestParams.requestBody.Type is CodeType bodyType2 && (bodyType2.TypeDefinition is CodeEnum))
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromEnum{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
                 else
                     writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
         }
