@@ -451,5 +451,27 @@ public class DartLanguageRefinerTests
         Assert.Equal("property", model.Properties.First().Name);
         Assert.Equal("Property", model.Properties.First().WireName);
     }
+
+    [Fact]
+    public async Task DoesntOverwriteSerializationNameIfAlreadySet()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model,
+        }).First();
+        model.AddProperty(new CodeProperty
+        {
+            Name = "CustomType",
+            SerializationName = "$type",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        Assert.Equal("customType", model.Properties.First().Name);
+        Assert.Equal("\\$type", model.Properties.First().WireName);
+    }
     #endregion
 }
