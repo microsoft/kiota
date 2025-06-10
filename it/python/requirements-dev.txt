@@ -84,7 +84,7 @@ cffi==1.17.1
 
 cryptography==45.0.3 ; python_version >= '3.7'
 
-frozenlist==1.6.2 ; python_version >= '3.7'
+frozenlist==1.7.0 ; python_version >= '3.7'
 
 h11==0.16.0 ; python_version >= '3.7'
 
