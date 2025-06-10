@@ -46,7 +46,7 @@ pytest==8.4.0
 
 pytest-asyncio==0.26.0
 
-requests==2.32.3 ; python_version >= '3.7'
+requests==2.32.4 ; python_version >= '3.7'
 
 toml==0.10.2
 
