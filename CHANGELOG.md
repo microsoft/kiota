@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.27.0] - 2025-06-11
+
+### Added
+
+### Changed
+
 - Fixed a bug where TypeScript clients instantiation would fail. [#6597](https://github.com/microsoft/kiota/issues/6597)
 - Fixed a bug where path items with a trailing slash would cause collisions, missing query parameters and more.
 - Fixed a bug where path items with a trailing slash would be missing query parameters. [#6569](https://github.com/microsoft/kiota/issues/6569)
@@ -1653,3 +1659,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
