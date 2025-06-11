@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public PythonRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -298,7 +299,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         }
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, true, currentProperty.Type);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
@@ -320,7 +321,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 urlTplParams.Documentation.DescriptionTemplate = "The raw url or the url-template parameters for the request.";
             }
         }
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, true, currentMethod.Parameters
                                             .Select(x => x.Type)
                                             .Union(new[] { currentMethod.ReturnType })
                                             .ToArray());

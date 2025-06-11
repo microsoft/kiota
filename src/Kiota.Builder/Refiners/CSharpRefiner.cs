@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -216,16 +217,16 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.DefaultValue = "new List<IRequestOption>()";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
             currentProperty.DefaultValue = $"new {currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, true, currentProperty.Type);
     }
     protected static void CorrectMethodType(CodeMethod currentMethod)
     {
         ArgumentNullException.ThrowIfNull(currentMethod);
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, true, currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.PathQueryAndHeaderParameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, true, currentMethod.PathQueryAndHeaderParameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
@@ -233,7 +234,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
     protected static void CorrectIndexerType(CodeIndexer currentIndexer)
     {
         ArgumentNullException.ThrowIfNull(currentIndexer);
-        CorrectCoreTypes(currentIndexer.Parent as CodeClass, DateTypesReplacements, currentIndexer.IndexParameter.Type);
+        CorrectCoreTypes(currentIndexer.Parent as CodeClass, DateTypesReplacements, true, currentIndexer.IndexParameter.Type);
     }
 
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
