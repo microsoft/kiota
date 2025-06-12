@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public class SwiftRefiner : CommonLanguageRefiner
 {
     public SwiftRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -117,7 +118,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             if (currentMethod.IsOfKind(CodeMethodKind.Factory))
                 currentMethod.ReturnType = new CodeType { Name = "Parsable", IsNullable = false, IsExternal = true };
         }
-        CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(parentClass, DateTypesReplacements, types: currentMethod.Parameters
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
@@ -184,7 +185,7 @@ public class SwiftRefiner : CommonLanguageRefiner
             }
             else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter) && currentProperty.Parent is CodeClass parentClass)
                 currentProperty.Type.Name = $"{parentClass.Name}{currentProperty.Type.Name}";
-            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, types: currentProperty.Type);
         }
     }
 

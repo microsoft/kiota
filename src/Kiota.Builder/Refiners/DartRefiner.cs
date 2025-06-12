@@ -10,6 +10,7 @@ using Kiota.Builder.Writers.Dart;
 
 
 namespace Kiota.Builder.Refiners;
+
 public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     private const string MultipartBodyClassName = "MultipartBody";
@@ -266,7 +267,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 .ToList()
                 .ForEach(x => x.Type.Name = x.Type.Name[1..]); // removing the "I"
         }
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, types: currentMethod.Parameters
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
@@ -321,7 +322,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, types: currentProperty.Type);
     }
 
     private static void CorrectImplements(ProprietableBlockDeclaration block)

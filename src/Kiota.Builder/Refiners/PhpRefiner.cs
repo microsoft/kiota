@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.Refiners;
+
 public class PhpRefiner : CommonLanguageRefiner
 {
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
@@ -260,7 +261,7 @@ public class PhpRefiner : CommonLanguageRefiner
             currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
             currentProperty.Type.Name = "array";
         }
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, types: currentProperty.Type);
     }
 
     private void CorrectMethodType(CodeMethod method)
@@ -269,7 +270,7 @@ public class PhpRefiner : CommonLanguageRefiner
         {
             method.ReturnType.Name = "array";
         }
-        CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, method.Parameters
+        CorrectCoreTypes(method.Parent as CodeClass, DateTypesReplacements, types: method.Parameters
             .Select(static x => x.Type)
             .Union(new[] { method.ReturnType })
             .ToArray());

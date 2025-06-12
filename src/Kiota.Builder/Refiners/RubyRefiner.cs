@@ -10,6 +10,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Refiners;
+
 public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public RubyRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -219,7 +220,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, types: currentMethod.Parameters
                                     .Select(x => x.Type)
                                     .Union(new[] { currentMethod.ReturnType })
                                     .ToArray());
@@ -263,7 +264,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentProperty.DefaultValue = "Hash.new";
         }
 
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, types: currentProperty.Type);
 
     }
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
