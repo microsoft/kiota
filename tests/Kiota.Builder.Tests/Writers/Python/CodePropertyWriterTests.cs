@@ -7,6 +7,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
+
 public sealed class CodePropertyWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -108,6 +109,18 @@ public sealed class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("= None", result);
+    }
+
+    [Fact]
+    public void WritesDefaultValuesForNonNullableArrayPropertiesWhenDefaultValueSet()
+    {
+        property.Kind = CodePropertyKind.QueryParameter;
+        property.Type.IsNullable = false;
+        property.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+        property.DefaultValue = "field(default_factory=list)";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("= field(default_factory=list)", result);
     }
 
     [Fact]
