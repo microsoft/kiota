@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public PythonRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -293,6 +294,12 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentProperty.DefaultValue = "None";
             currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+        }
+        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameters, CodePropertyKind.QueryParameter)
+                 && currentProperty.Type.IsArray && !currentProperty.Type.IsNullable)
+        {
+            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+            currentProperty.DefaultValue = "field(default_factory=list)";
         }
         else
         {

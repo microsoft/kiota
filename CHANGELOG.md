@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where media types from error responses would be missing from the accept header. [#6572](https://github.com/microsoft/kiota/issues/6572)
 - Fixed a bug where serialization names for Dart were not correct [#6624](https://github.com/microsoft/kiota/issues/6624)
 - Fixed a bug where imports from __future__ would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
+- Python: Set a default value for non-nullable array fields. [#6350](https://github.com/microsoft/kiota/issues/6350)
 
 ## [1.26.1] - 2025-05-15
 

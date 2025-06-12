@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventionService>
 {
     private readonly CodeUsingWriter _codeUsingWriter;
@@ -40,7 +41,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
             case CodePropertyKind.QueryParameter:
                 conventions.WriteInLineDescription(codeElement, writer);
                 var isNonNullableCollection = !codeElement.Type.IsNullable && codeElement.Type.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
-                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} {(isNonNullableCollection ? "= []" : "= None")}");
+                var defaultValue = isNonNullableCollection ? "[]" : "None";
+                if (!string.IsNullOrEmpty(codeElement.DefaultValue))
+                {
+                    defaultValue = codeElement.DefaultValue;
+                }
+                writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
                 writer.WriteLine();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
