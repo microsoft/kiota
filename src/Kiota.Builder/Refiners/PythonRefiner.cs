@@ -295,6 +295,19 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.DefaultValue = "None";
             currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
         }
+        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameters, CodePropertyKind.QueryParameter)
+                 && currentProperty.Type.IsArray && !currentProperty.Type.IsNullable)
+        {
+            // Set the default_factory so that one single instance of the default values
+            // are not shared across instances of the class.
+            // This is required as of Python 3.11 with dataclasses.
+            // https://github.com/python/cpython/issues/8884
+            //
+            // Also handle the case change that would otherwise have been done
+            // below in the final else block.
+            currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
+            currentProperty.DefaultValue = "field(default_factory=list)";
+        }
         else
         {
             currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
