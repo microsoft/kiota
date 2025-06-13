@@ -543,7 +543,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
         AddRequestBodyParameters();
-        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "UntypedNode", IsExternal = true};
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "UntypedNode", IsExternal = true };
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("SetContentFromParsable", result);
