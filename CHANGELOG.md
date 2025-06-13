@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Python: Set a default value for non-nullable array fields. [#6350](https://github.com/microsoft/kiota/issues/6350)
+- Fixed a bug causing an error in generation of requests which have an enum or an UntypedNode as body. [microsoft/kiota-dotnet#537](https://github.com/microsoft/kiota-dotnet/issues/537)
 
 ## [1.27.0] - 2025-06-11
 
