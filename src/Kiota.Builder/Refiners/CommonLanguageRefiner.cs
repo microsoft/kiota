@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
     protected static readonly char[] UnderscoreArray = new[] { '_' };
@@ -802,7 +803,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 
 
             if (usingsToAdd.Length != 0)
-                (currentClass.Parent is CodeClass parentClass ? parentClass : currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
+                (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
     }
@@ -881,10 +882,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, c => AddParsableImplementsForModelClasses(c, className));
     }
-    protected static void CorrectCoreTypes(CodeClass? parentClass, Dictionary<string, (string, CodeUsing?)> coreTypesReplacements, params CodeTypeBase[] types)
+    protected static void CorrectCoreTypes(CodeClass? currentClass, Dictionary<string, (string, CodeUsing?)> coreTypesReplacements, bool languageSupportsNestedClasses = false, params CodeTypeBase[] types)
     {
         ArgumentNullException.ThrowIfNull(coreTypesReplacements);
-        if (parentClass == null)
+        if (currentClass == null)
             return;
         foreach (var type in types.Where(x => x != null && !string.IsNullOrEmpty(x.Name) && coreTypesReplacements.ContainsKey(x.Name)))
         {
@@ -892,7 +893,21 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             if (!string.IsNullOrEmpty(replacement.Item1))
                 type.Name = replacement.Item1;
             if (replacement.Item2 != null)
-                parentClass.AddUsing((CodeUsing)replacement.Item2.Clone());
+                switch (currentClass.Parent)
+                {
+                    case CodeClass parentClass when languageSupportsNestedClasses:
+                        parentClass.AddUsing((CodeUsing)replacement.Item2.Clone()); //lots of languages do not support imports on nested classes
+                        break;
+                    case CodeInterface parentInterface when languageSupportsNestedClasses:
+                        parentInterface.AddUsing((CodeUsing)replacement.Item2.Clone()); //lots of languages do not support imports on nested classes
+                        break;
+                    case CodeFile parentFile when languageSupportsNestedClasses:
+                        parentFile.AddUsing((CodeUsing)replacement.Item2.Clone()); //lots of languages do not support imports on nested classes
+                        break;
+                    default:
+                        currentClass.AddUsing((CodeUsing)replacement.Item2.Clone());
+                        break;
+                }
         }
     }
     protected static void InlineParentClasses(CodeElement currentElement, CodeElement parent)
