@@ -536,6 +536,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyForUntypedNode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "UntypedNode", IsExternal = true};
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetContentFromParsable", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyForCollection()
     {
         setup();
