@@ -5,10 +5,10 @@ go 1.23.0
 toolchain go1.24.1
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
 	github.com/microsoft/kiota-abstractions-go v1.9.2
 	github.com/microsoft/kiota-authentication-azure-go v1.3.0
-	github.com/microsoft/kiota-http-go v1.5.3
+	github.com/microsoft/kiota-http-go v1.5.4
 	github.com/microsoft/kiota-serialization-form-go v1.1.2
 	github.com/microsoft/kiota-serialization-json-go v1.1.2
 	github.com/microsoft/kiota-serialization-multipart-go v1.1.2

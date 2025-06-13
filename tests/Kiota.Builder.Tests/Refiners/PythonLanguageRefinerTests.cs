@@ -9,6 +9,7 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
+
 public class PythonLanguageRefinerTests
 {
     private readonly CodeNamespace root;
@@ -89,6 +90,37 @@ public class PythonLanguageRefinerTests
         Assert.Single(model.Properties, x => x.IsNameEscaped);
         Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
     }
+
+    [Fact]
+    public async Task AddsQueryParameterDefaultValueToNonNullListsAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.QueryParameters,
+        }).First();
+
+        model.AddProperty(new CodeProperty
+        {
+            Name = "sortBy",
+            Type = new CodeType
+            {
+                Name = "string",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                IsNullable = false
+            },
+
+            Kind = CodePropertyKind.QueryParameter
+        });
+
+        Assert.Empty(model.Methods);
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
+        Assert.Single(model.Properties, x => x.Name.Equals("sort_by"));
+        Assert.Single(model.Properties, x => x.IsNameEscaped);
+        Assert.Single(model.Properties, x => x.DefaultValue.Equals("field(default_factory=list)"));
+    }
+
     [Theory]
     [InlineData("None")]
     [InlineData("while")]

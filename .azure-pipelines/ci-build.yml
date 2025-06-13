@@ -909,7 +909,7 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - powershell: |
+                    - pwsh: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                       displayName: remove other nupkgs to avoid duplication
                     - task: 1ES.PublishNuget@1
@@ -938,7 +938,7 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - powershell: |
+                    - pwsh: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                       displayName: remove other nupkgs to avoid duplication
                     - task: 1ES.PublishNuget@1
@@ -968,37 +968,37 @@ extends:
                   inlineScript: |
                     az acr login --name $(REGISTRY)
 
-              - powershell: |
+              - pwsh: |
                   $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
                   $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
                   Write-Host "##vso[task.setvariable variable=truncatedRunNumber]$truncatedNumber"
                 displayName: "Get truncated run number"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
 
-              - powershell: |
+              - pwsh: |
                   $result = ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
                   Write-Host "##vso[task.setvariable variable=versionSuffix;isoutput=true]$result"
                 displayName: "Set version suffix"
                 name: getversionsuffix
 
-              - powershell: |
+              - pwsh: |
                   ./scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(getversionsuffix.versionSuffix)"
                 displayName: "Set version suffix in csproj for generators"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
 
-              - powershell: |
+              - pwsh: |
                   $version = ./scripts/get-version-from-csproj.ps1
                   Write-Host "Version found: $version" 
                   Write-Host "##vso[task.setvariable variable=version;isoutput=true]$version"
                 displayName: "Get Kiota version number"
                 name: getversion
 
-              - powershell: |
+              - pwsh: |
                   ./scripts/update-versions.ps1
                 displayName: "Update dependencies versions"
 
               - script: |
-                  docker run --privileged --rm tonistiigi/binfmt --install all
+                  docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
                 displayName: "Enable multi-platform builds"
 
               - script: |
@@ -1009,7 +1009,7 @@ extends:
                   docker buildx inspect --bootstrap
                 displayName: "Ensure BuildX is working"
 
-              - powershell: |
+              - pwsh: |
                   $date = Get-Date -Format "yyyyMMdd"
                   Write-Host "##vso[task.setvariable variable=currentDate]$date"
                 displayName: "Get current date"
