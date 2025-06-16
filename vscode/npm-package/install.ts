@@ -24,6 +24,35 @@ const windowsPlatform = 'win';
 const osxPlatform = 'osx';
 const linuxPlatform = 'linux';
 
+/**
+ * Checks if a file or directory exists asynchronously
+ * @param filePath Path to check
+ * @returns Promise<boolean> true if exists, false otherwise
+ */
+async function checkFileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks if a directory is empty asynchronously
+ * @param dirPath Directory path to check
+ * @returns Promise<boolean> true if directory is empty or doesn't exist, false otherwise
+ */
+async function isDirectoryEmpty(dirPath: string): Promise<boolean> {
+  try {
+    const files = await fs.promises.readdir(dirPath);
+    return files.length === 0;
+  } catch {
+    // If directory doesn't exist, consider it as "empty" for our use case
+    return true;
+  }
+}
+
 async function runIfNotLocked(action: () => Promise<void>) {
   const installStartTimeStamp = state[kiotaInstallStatusKey];
   const currentTimeStamp = new Date().getTime();
@@ -50,7 +79,7 @@ export async function ensureKiotaIsPresent() {
 
 export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDependencies: Package[], currentPlatform: string) {
   if (installPath) {
-    if (!fs.existsSync(installPath) || fs.readdirSync(installPath).length === 0) {
+    if (!await checkFileExists(installPath) || await isDirectoryEmpty(installPath)) {
       await runIfNotLocked(async () => {
         try {
           const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
@@ -61,7 +90,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
           const zipFilePath = `${installPath}.zip`;
           // If env variable that points to kiota binary zip exists, use it to copy the file instead of downloading it
           const kiotaBinaryZip = process.env.KIOTA_SIDELOADING_BINARY_ZIP_PATH;
-          if (kiotaBinaryZip && fs.existsSync(kiotaBinaryZip)) {
+          if (kiotaBinaryZip && await checkFileExists(kiotaBinaryZip)) {
             fs.copyFileSync(kiotaBinaryZip, zipFilePath);
           } else {
             const downloadUrl = getDownloadUrl(currentPlatform);
