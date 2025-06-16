@@ -145,11 +145,15 @@ async function doesFileHashMatch(destinationPath: string, hashValue: string): Pr
   });
 }
 
-function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
-  return new Promise((resolve) => {
+function downloadFileFromUrl(url: string, destinationPath: string, maxRedirects: number = 10, redirectCount: number = 0): Promise<void> {
+  return new Promise((resolve, reject) => {
     https.get(url, (response: any) => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        resolve(downloadFileFromUrl(response.headers.location, destinationPath));
+        if (redirectCount >= maxRedirects) {
+          reject(new Error(`Too many redirects. Maximum of ${maxRedirects} redirects allowed.`));
+          return;
+        }
+        resolve(downloadFileFromUrl(response.headers.location, destinationPath, maxRedirects, redirectCount + 1));
       } else {
         const filePath = fs.createWriteStream(destinationPath);
         response.pipe(filePath);
@@ -157,7 +161,12 @@ function downloadFileFromUrl(url: string, destinationPath: string): Promise<void
           filePath.close();
           resolve(undefined);
         });
+        filePath.on('error', (error: Error) => {
+          reject(error);
+        });
       }
+    }).on('error', (error: Error) => {
+      reject(error);
     });
   });
 }
