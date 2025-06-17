@@ -19,6 +19,8 @@ export enum KiotaGenerationLanguage {
   CLI = 8,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   Dart = 9,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  HTTP = 10,
 };
 
 export enum KiotaPluginType {
@@ -163,6 +165,8 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
       return "CLI";
     case KiotaGenerationLanguage.Dart:
       return "Dart";
+    case KiotaGenerationLanguage.HTTP:
+      return "HTTP";
     default:
       throw new Error("unknown language");
   }
@@ -179,6 +183,7 @@ export const allGenerationLanguages = [
   KiotaGenerationLanguage.Swift,
   KiotaGenerationLanguage.TypeScript,
   KiotaGenerationLanguage.Dart,
+  KiotaGenerationLanguage.HTTP,
 ];
 
 /**
