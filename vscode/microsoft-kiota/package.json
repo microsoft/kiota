@@ -273,6 +273,11 @@
           "command": "kiota.migrateFromLockFile",
           "when": "resourceExtname == .json && resourceFilename == kiota-lock.json",
           "group": "navigation"
+        },
+        {
+          "command": "kiota.openApiExplorer.loadOpenApiDescriptionFromFile",
+          "when": "resourceExtname =~ /\\.(yaml|yml)$/",
+          "group": "2_kiota@2"
         }
       ],
       "view/title": [
@@ -455,6 +460,12 @@
         "icon": "$(new-file)"
       },
       {
+        "command": "kiota.openApiExplorer.loadOpenApiDescriptionFromFile",
+        "category": "Kiota",
+        "title": "%kiota.openApiExplorer.loadFromFile.title%",
+        "icon": "$(file-code)"
+      },
+      {
         "command": "kiota.workspace.openWorkspaceFile",
         "title": "%kiota.openApiExplorer.openFile.title%"
       },
@@ -521,6 +532,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@stylistic/eslint-plugin-ts": "^4.4.1",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
     "@types/sinon": "^17.0.4",
