@@ -2,12 +2,12 @@
 using System.Text;
 using System.Threading.Tasks;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
+
 public class InconsistentTypeFormatPairTests
 {
     [Fact]
@@ -80,7 +80,7 @@ paths:
     public async Task DoesntAddWarningOnNullable()
     {
         var documentTxt =
-"""
+    """
 openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph

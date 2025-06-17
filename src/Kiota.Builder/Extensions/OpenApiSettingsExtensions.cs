@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Reader;
 
 namespace Kiota.Builder.Extensions;
+
 public static class OpenApiSettingsExtensions
 {
     /// <summary>

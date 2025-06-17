@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
@@ -27,13 +28,15 @@ public class OpenApiSchemaComparerTests
     {
         var schema = new OpenApiSchema
         {
-
+            AnyOf = [],
+            Properties = new Dictionary<string, IOpenApiSchema>(),
         };
         schema.Properties.Add("test", schema);
         schema.AnyOf.Add(schema);
         var schema2 = new OpenApiSchema
         {
-
+            AnyOf = [],
+            Properties = new Dictionary<string, IOpenApiSchema>(),
         };
         schema2.Properties.Add("test", schema2);
         schema2.AnyOf.Add(schema2);

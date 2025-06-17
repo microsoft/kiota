@@ -9,9 +9,10 @@ using Kiota.Builder;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Services;
+using Microsoft.OpenApi;
 
 namespace kiota.Handlers;
+
 internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 {
     private readonly KeyValuePair<string, object?>[] _commonTags =
@@ -125,7 +126,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ClearCache = clearCache;
             try
             {
-                var urlTreeNode = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
+                var (urlTreeNode, _) = await new KiotaBuilder(logger, Configuration.Generation, httpClient).GetUrlTreeNodeAsync(cancellationToken).ConfigureAwait(false);
 
                 var builder = new StringBuilder();
                 if (urlTreeNode != null)

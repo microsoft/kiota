@@ -1,0 +1,29 @@
+{
+  "kiotaVersion": "1.24.3",
+  "runtimeDependencies": [
+    {
+      "platformId": "win-x64",
+      "sha256": "3D51C24918FAC2677555D6712D109E50322FF90B67C16FC8AD797046D33F1C00"
+    },
+    {
+      "platformId": "win-x86",
+      "sha256": "7273C5CA7657EDA005E614C81C9776F88476F9CB50E15ABDE9C3A4506BC12C5A"
+    },
+    {
+      "platformId": "linux-x64",
+      "sha256": "41D8227129C1B2A034E9A70D64EC862F7B35D0ED94689299522D0E34FEB75163"
+    },
+    {
+      "platformId": "linux-arm64",
+      "sha256": "00996BCDFBA1A98EBC3539D22E80041043FB157A3313A3B2374908DBFAE38240"
+    },
+    {
+      "platformId": "osx-x64",
+      "sha256": "2434B695B571724E04EA1B54A581EF03F190731156FCACA1D3AA2EBEADBF0C3F"
+    },
+    {
+      "platformId": "osx-arm64",
+      "sha256": "4AA5A6036A09E0363C169BDE5D679A751418E885C8CBD53DEF43DDC49062B906"
+    }
+  ]
+}

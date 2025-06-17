@@ -2,11 +2,10 @@
 using System.Linq;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
+
 public class UrlFormEncodedComplex : ValidationRule<OpenApiOperation>
 {
     private static readonly StructuredMimeTypesCollection validContentTypes = new() {

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Writers.Go;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
+
 public class GoLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
@@ -447,7 +447,7 @@ public class GoLanguageRefinerTests
     [Fact]
     public async Task ValidatesNamingOfRequestBuilderDoesNotRepeatIdCharacterAsync()
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var fs = await KiotaBuilderTests.GetDocumentStreamAsync(@"openapi: 3.0.1
 info:
   title: OData Service for namespace microsoft.graph

@@ -54,6 +54,13 @@ parameters:
         os: "windows"
         image: "windows-latest"
         pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "win-arm64"
+        jobPrefix: "win_arm64"
+        os: "windows"
+        image: windows-2022-arm64
+        pool: 1es-windows-latest-arm
+        # arm64 is not currently available in the shared pool
+        hostArchitecture: "arm64"
       - architecture: "linux-x64"
         jobPrefix: "linux_x64"
         os: "linux"
@@ -380,6 +387,8 @@ extends:
                   name: ${{ distribution.pool }}
                   os: ${{ distribution.os }}
                   image: ${{ distribution.image }}
+                  ${{ if eq(distribution.hostArchitecture, 'arm64') }}:
+                    hostArchitecture: ${{ distribution.hostArchitecture }}
                 templateContext:
                   sdl:
                     baseline:
@@ -403,6 +412,11 @@ extends:
                     displayName: "Use .NET 9"
                     inputs:
                       version: 9.x
+
+                  - script: dotnet tool install --global PowerShell
+                    displayName: "Install PowerShell"
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                    # powershell is not installed by default on arm64 images
 
                   - pwsh: |
                       Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -690,6 +704,7 @@ extends:
               [
                 win_x64_build_binaries,
                 win_x86_build_binaries,
+                win_arm64_build_binaries,
                 linux_x64_build_binaries,
                 linux_arm64_build_binaries,
                 osx_x64_build_binaries,
@@ -894,7 +909,7 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - powershell: |
+                    - pwsh: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                       displayName: remove other nupkgs to avoid duplication
                     - task: 1ES.PublishNuget@1
@@ -923,7 +938,7 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - powershell: |
+                    - pwsh: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                       displayName: remove other nupkgs to avoid duplication
                     - task: 1ES.PublishNuget@1
@@ -953,37 +968,37 @@ extends:
                   inlineScript: |
                     az acr login --name $(REGISTRY)
 
-              - powershell: |
+              - pwsh: |
                   $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
                   $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
                   Write-Host "##vso[task.setvariable variable=truncatedRunNumber]$truncatedNumber"
                 displayName: "Get truncated run number"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
 
-              - powershell: |
+              - pwsh: |
                   $result = ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
                   Write-Host "##vso[task.setvariable variable=versionSuffix;isoutput=true]$result"
                 displayName: "Set version suffix"
                 name: getversionsuffix
 
-              - powershell: |
+              - pwsh: |
                   ./scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(getversionsuffix.versionSuffix)"
                 displayName: "Set version suffix in csproj for generators"
                 condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
 
-              - powershell: |
+              - pwsh: |
                   $version = ./scripts/get-version-from-csproj.ps1
                   Write-Host "Version found: $version" 
                   Write-Host "##vso[task.setvariable variable=version;isoutput=true]$version"
                 displayName: "Get Kiota version number"
                 name: getversion
 
-              - powershell: |
+              - pwsh: |
                   ./scripts/update-versions.ps1
                 displayName: "Update dependencies versions"
 
               - script: |
-                  docker run --privileged --rm tonistiigi/binfmt --install all
+                  docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
                 displayName: "Enable multi-platform builds"
 
               - script: |
@@ -994,7 +1009,7 @@ extends:
                   docker buildx inspect --bootstrap
                 displayName: "Ensure BuildX is working"
 
-              - powershell: |
+              - pwsh: |
                   $date = Get-Date -Format "yyyyMMdd"
                   Write-Host "##vso[task.setvariable variable=currentDate]$date"
                 displayName: "Get current date"
@@ -1059,18 +1074,18 @@ extends:
                   versionSpec: "20.x"
               - task: EsrpRelease@7
                 inputs:
-                  connectedservicename: 'Federated DevX ESRP Managed Identity Connection'
-                  keyvaultname: 'akv-prod-eastus'
-                  authcertname: 'ReferenceLibraryPrivateCert'
-                  signcertname: 'ReferencePackagePublisherCertificate'
-                  clientid: '65035b7f-7357-4f29-bf25-c5ee5c3949f8'
-                  intent: 'PackageDistribution'
-                  contenttype: 'npm'
-                  contentsource: 'Folder'
-                  folderlocation: '$(Pipeline.Workspace)/npm-package/'
+                  connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                  keyvaultname: "akv-prod-eastus"
+                  authcertname: "ReferenceLibraryPrivateCert"
+                  signcertname: "ReferencePackagePublisherCertificate"
+                  clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  intent: "PackageDistribution"
+                  contenttype: "npm"
+                  contentsource: "Folder"
+                  folderlocation: "$(Pipeline.Workspace)/npm-package/"
                   waitforreleasecompletion: true
                   owners: $(NPM_OWNERS_LIST)
                   approvers: $(NPM_APPROVERS_LIST)
-                  serviceendpointurl: 'https://api.esrp.microsoft.com'
-                  mainpublisher: 'ESRPRELPACMAN'
-                  domaintenantid: 'cdc5aeea-15c5-4db6-b079-fcadd2505dc2'
+                  serviceendpointurl: "https://api.esrp.microsoft.com"
+                  mainpublisher: "ESRPRELPACMAN"
+                  domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"

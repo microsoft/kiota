@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-using Kiota.Builder.CodeDOM;
-using Kiota.Builder.Writers;
+﻿using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers.Http;
 using Xunit;
 

@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.MicrosoftExtensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Services;
 
 namespace Kiota.Builder.Extensions;
+
 internal static class OpenApiDeprecationExtensionExtensions
 {
     internal static DeprecationInformation ToDeprecationInformation(this OpenApiDeprecationExtension value)
@@ -34,7 +33,7 @@ internal static class OpenApiDeprecationExtensionExtensions
         if (operation.Deprecated && operation.Extensions is not null && operation.Extensions.TryGetValue(OpenApiDeprecationExtension.Name, out var deprecatedExtension) && deprecatedExtension is OpenApiDeprecationExtension deprecatedValue)
             return deprecatedValue.ToDeprecationInformation();
         else if (operation.Responses?.Values
-                                .SelectMany(static x => x.Content?.Values ?? [])
+                                .SelectMany(static x => x.Content?.Values.Select(static x => x) ?? [])
                                 .Select(static x => x?.Schema)
                                 .OfType<OpenApiSchema>()
                                 .Select(static x => x.GetDeprecationInformation())

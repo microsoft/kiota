@@ -13,11 +13,11 @@ using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
+
 internal class OpenApiDocumentDownloadService
 {
     private readonly ILogger Logger;
@@ -96,7 +96,7 @@ internal class OpenApiDocumentDownloadService
         return (input, isDescriptionFromWorkspaceCopy);
     }
 
-    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -110,6 +110,8 @@ internal class OpenApiDocumentDownloadService
         var settings = new OpenApiReaderSettings
         {
             RuleSet = ruleSet,
+            LoadExternalRefs = true,
+            LeaveStreamOpen = true,
         };
 
         // Add all extensions for generation
@@ -128,8 +130,6 @@ internal class OpenApiDocumentDownloadService
                 lastSlashIndex = rawUri.Length - 1;
             var documentUri = new Uri(rawUri[..lastSlashIndex]);
             settings.BaseUrl = documentUri;
-            settings.LoadExternalRefs = true;
-            settings.LeaveStreamOpen = true;
         }
 #pragma warning disable CA1031
         catch
@@ -155,6 +155,12 @@ internal class OpenApiDocumentDownloadService
             Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
         }
 
-        return readResult.Document;
+        return readResult;
+    }
+
+    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    {
+        var result = await GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken).ConfigureAwait(false);
+        return result?.Document;
     }
 }

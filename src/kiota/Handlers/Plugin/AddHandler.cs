@@ -11,7 +11,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace kiota.Handlers.Plugin;
 
@@ -61,6 +61,11 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+
+    public required Option<bool> NoWorkspaceOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -73,6 +78,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         string? pluginAuthRefId = context.ParseResult.GetValueForOption(PluginAuthRefIdOption);
         string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);
         bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
+        bool noWorkspace = context.ParseResult.GetValueForOption(NoWorkspaceOption);
         string? className = context.ParseResult.GetValueForOption(ClassOption);
         List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
@@ -100,6 +106,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         Configuration.Generation.SkipGeneration = skipGeneration;
+        Configuration.Generation.NoWorkspace = noWorkspace;
         Configuration.Generation.Operation = ConsumerOperation.Add;
         if (pluginTypes is { Count: > 0 })
             Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();

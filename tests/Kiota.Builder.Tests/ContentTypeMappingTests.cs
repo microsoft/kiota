@@ -7,9 +7,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 using Moq;
 using Xunit;
 using NetHttpMethod = System.Net.Http.HttpMethod;
@@ -90,14 +88,18 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                [statusCode] = new OpenApiResponse {
-                                    Content = {
-                                        [contentType] = new OpenApiMediaType {
+                                [statusCode] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    {
+                                        [contentType] = new OpenApiMediaType
+                                        {
                                             Schema = addModel ? new OpenApiSchemaReference("myobject") : null
                                         }
                                     }
@@ -179,12 +181,16 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
-                            RequestBody = new OpenApiRequestBody {
-                                Content = {
-                                    [contentType] = new OpenApiMediaType {
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>()
+                                {
+                                    [contentType] = new OpenApiMediaType
+                                    {
                                         Schema = addModel ? new OpenApiSchemaReference("myobject") : null
                                     }
                                 }
@@ -254,13 +260,19 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Get] = new OpenApiOperation
                         {
                             Responses = new OpenApiResponses
                             {
-                                ["200"] = new OpenApiResponse {
-                                    Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = contentMediaTypes.Split(',').Select(x => new
+                                    {
+                                        Key = x.Trim(),
+                                        value = new OpenApiMediaType
+                                        {
                                             Schema = new OpenApiSchemaReference("myobject"),
                                         }
                                     }).ToDictionary(x => x.Key, x => x.value)
@@ -315,6 +327,86 @@ public sealed class ContentTypeMappingTests : IDisposable
     }
     [Theory]
     [InlineData("application/json, text/plain", "application/json", "application/json", "text/plain")]
+    [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml", "application/yaml,application/json;q=0.8", "text/plain")]
+    [InlineData("*/*", "application/json;q=0.8", "", "application/json;q=0.8")]
+    [InlineData("application/json, */*", "application/json;q=0.8", "application/json;q=0.8", "*/*")]
+    [InlineData("application/png, application/jpg", "application/json;q=0.8", "", "application/json;q=0.8")]
+    public void IncludeErrorsMediaTypeInAcceptHeader(string contentMediaTypes, string structuredMimeTypes, string expectedAcceptHeader, string unexpectedMimeTypes)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse(),
+                                ["403"] = new OpenApiResponse
+                                {
+                                    Content = contentMediaTypes.Split(',').Select(x => new
+                                    {
+                                        Key = x.Trim(),
+                                        value = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("myobject"),
+                                        }
+                                    }).ToDictionary(x => x.Key, x => x.value)
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+            Components = new()
+            {
+                Schemas = new Dictionary<string, IOpenApiSchema> {
+                    {
+                        "myobject", new OpenApiSchema {
+                            Type = JsonSchemaType.Object,
+                            Properties = new Dictionary<string, IOpenApiSchema> {
+                                {
+                                    "id", new OpenApiSchema {
+                                        Type = JsonSchemaType.String,
+                                    }
+                                }
+                            },
+                        }
+                    }
+                }
+            }
+        };
+        document.RegisterComponents();
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "TestClient",
+                ClientNamespaceName = "TestSdk",
+                ApiRootUrl = "https://localhost",
+                StructuredMimeTypes = new(structuredMimeTypes.Split(',').Select(x => x.Trim()))
+            }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(static x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        var generator = rbClass.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestGenerator));
+        Assert.NotNull(generator);
+        foreach (var header in expectedAcceptHeader.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            Assert.Contains(header.Trim(), generator.AcceptedResponseTypes);
+        foreach (var header in unexpectedMimeTypes.Split(','))
+            Assert.DoesNotContain(header.Trim(), generator.AcceptedResponseTypes);
+    }
+    [Theory]
+    [InlineData("application/json, text/plain", "application/json", "application/json", "text/plain")]
     [InlineData("application/json, text/plain, application/yaml", "application/json;q=0.8,application/yaml", "application/yaml", "text/plain")]
     [InlineData("*/*", "application/json;q=0.8", "", "application/json")]
     [InlineData("application/json, */*", "application/json;q=0.8", "application/json", "*/*")]
@@ -327,12 +419,17 @@ public sealed class ContentTypeMappingTests : IDisposable
             {
                 ["answer"] = new OpenApiPathItem
                 {
-                    Operations = {
+                    Operations = new()
+                    {
                         [NetHttpMethod.Post] = new OpenApiOperation
                         {
                             RequestBody = new OpenApiRequestBody
                             {
-                                Content = contentMediaTypes.Split(',').Select(x => new {Key = x.Trim(), value = new OpenApiMediaType {
+                                Content = contentMediaTypes.Split(',').Select(x => new
+                                {
+                                    Key = x.Trim(),
+                                    value = new OpenApiMediaType
+                                    {
                                         Schema = new OpenApiSchemaReference("myobject"),
                                     }
                                 }).ToDictionary(x => x.Key, x => x.value)

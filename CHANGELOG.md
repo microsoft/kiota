@@ -13,18 +13,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where union of primitive types collection would not compile in dotnet. [#6635](https://github.com/microsoft/kiota/issues/6635)
+- Fixes generation of usings/imports in where Date Types are placed in a nested class. [#6286](https://github.com/microsoft/kiota/issues/6286)
+- Python: Set a default value for non-nullable array fields. [#6350](https://github.com/microsoft/kiota/issues/6350)
+- Fixed a bug causing an error in generation of requests which have an enum or an UntypedNode as body. [microsoft/kiota-dotnet#537](https://github.com/microsoft/kiota-dotnet/issues/537)
+
+## [1.27.0] - 2025-06-11
+
+### Added
+
+### Changed
+
+- Fixed a bug where TypeScript clients instantiation would fail. [#6597](https://github.com/microsoft/kiota/issues/6597)
+- Fixed a bug where path items with a trailing slash would cause collisions, missing query parameters and more.
+- Fixed a bug where path items with a trailing slash would be missing query parameters. [#6569](https://github.com/microsoft/kiota/issues/6569)
+- Fixed an issue where migration from lock to workspace would fail because of stream management. [#6515](https://github.com/microsoft/kiota/issues/6515)
+- Fixed a bug where media types from error responses would be missing from the accept header. [#6572](https://github.com/microsoft/kiota/issues/6572)
+- Fixed a bug where serialization names for Dart were not correct [#6624](https://github.com/microsoft/kiota/issues/6624)
+- Fixed a bug where imports from __future__ would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
+
+## [1.26.1] - 2025-05-15
+
+### Added
+
+- Added support for windows arm64. [#6427](https://github.com/microsoft/kiota/issues/6427)
+
+### Changed
+
+- Fixed a bug where having `additionalProperties` schema (instead of true) would not generate `AdditionalData` property. [#6443](https://github.com/microsoft/kiota/issues/6443)
+- Fixed a bug where escaped line breaks and/or double quotes defined in the schema object properties would break the generation of CSharp client [#6472](https://github.com/microsoft/kiota/issues/6472)
+
+## [1.26.0] - 2025-05-06
+
+### Added
+
+- Support for `--no-workspace` option in the CLI plugin add command to avoid using the workspace experience. [#6452](https://github.com/microsoft/kiota/issues/6452)
+
+### Changed
+
 - Fixed a bug where Dart properties casing would change for serialization.
 - Fixed a bug where default response definitions were being considered for Media Type selection [#6413](https://github.com/microsoft/kiota/issues/6413)
 
 ## [1.25.1] - 2025-04-03
 
 ### Changed
+
 - Fixed a bug with http client generation where query parameters were being processed incorrectly. [#6268](https://github.com/microsoft/kiota/issues/6268)
 
 ### Added
+
 - Extracted and created an npm package from the VS Code - Kiota interop module. [#6172](https://github.com/microsoft/kiota/pull/6172)
 
-- Added support for generating function capabilities in plugin manifest from x-ai-capabilities OpenApi extension. [#6369](https://github.com/microsoft/kiota/issues/6369)   
+- Added support for generating function capabilities in plugin manifest from x-ai-capabilities OpenApi extension. [#6369](https://github.com/microsoft/kiota/issues/6369)
 
 - Added a comment on top of every golang file to indicate the file is machine generated so it can be excluded from various tools. [#6363](https://github.com/microsoft/kiota/issues/6363)
 
@@ -1624,5 +1664,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
-

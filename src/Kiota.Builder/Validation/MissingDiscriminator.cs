@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
+
 public class MissingDiscriminator : ValidationRule<OpenApiDocument>
 {
     public MissingDiscriminator(GenerationConfiguration configuration) : base(nameof(MissingDiscriminator), (context, document) =>
@@ -41,6 +40,6 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
             (schema.OneOf is null || schema.OneOf.All(static x => !x.IsObjectType())))
             return;
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName()) || !schema.GetDiscriminatorMappings(idx).Any())
-            context.CreateWarning(nameof(MissingDiscriminator), $"The schema {address} is a polymorphic type but does not define a discriminator. This will result in a serialization errors.");
+            context.CreateWarning(nameof(MissingDiscriminator), $"The schema {address} is a polymorphic type but does not define a discriminator. This will result in serialization errors.");
     }
 }

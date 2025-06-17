@@ -1,10 +1,11 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
+
 public class ValidationRuleSetExtensionsTests
 {
     [Fact]

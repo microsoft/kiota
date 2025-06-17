@@ -3,9 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Interfaces;
+
 namespace Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Writers;
 
 public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
 {
@@ -18,9 +17,26 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     {
         get; set;
     }
+
+    public string? Title
+    {
+        get; set;
+    }
+
+#pragma warning disable CA1056 // URI-like properties should not be strings
+
+    public string? Url
+#pragma warning restore CA1056 // URI-like properties should not be strings
+
+    {
+        get; set;
+    }
     public static OpenApiAiAdaptiveCardExtension Parse(JsonNode source)
     {
-        if (source is not JsonObject rawObject) throw new ArgumentOutOfRangeException(nameof(source));
+        // We are supporting empty extension to avoid creating the template when emitting from typespec scenario
+        var emptyExtension = new OpenApiAiAdaptiveCardExtension();
+        if (source is not JsonObject rawObject)
+            return emptyExtension;
         var extension = new OpenApiAiAdaptiveCardExtension();
         if (rawObject.TryGetPropertyValue(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase(), out var dataPath) && dataPath is JsonValue dataPathValue && dataPathValue.GetValueKind() is JsonValueKind.String && dataPathValue.TryGetValue<string>(out var dataPathStrValue))
         {
@@ -30,8 +46,17 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
         {
             extension.File = fileStrValue;
         }
-        if (string.IsNullOrEmpty(extension.DataPath) || string.IsNullOrEmpty(extension.File))
-            throw new ArgumentOutOfRangeException(nameof(source), "Both of the properties 'x-ai-adaptive-card.dataPath' and 'x-ai-adaptive-card.file' must be set.");
+        if (rawObject.TryGetPropertyValue(nameof(Title).ToFirstCharacterLowerCase(), out var title) && title is JsonValue titleValue && titleValue.GetValueKind() is JsonValueKind.String && titleValue.TryGetValue<string>(out var titleStrValue))
+        {
+            extension.Title = titleStrValue;
+        }
+        if (rawObject.TryGetPropertyValue(nameof(Url).ToFirstCharacterLowerCase(), out var url) && url is JsonValue urlValue && urlValue.GetValueKind() is JsonValueKind.String && urlValue.TryGetValue<string>(out var urlStrValue))
+        {
+            extension.Url = urlStrValue;
+        }
+        // We are supporting empty extension to avoid creating the template when emitting from typespec scenario
+        if (string.IsNullOrEmpty(extension.DataPath) || string.IsNullOrEmpty(extension.File) || string.IsNullOrEmpty(extension.Title))
+            return emptyExtension;
         return extension;
     }
 
@@ -39,12 +64,19 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
-        if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File))
+        if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File) && !string.IsNullOrEmpty(Title))
         {
             writer.WritePropertyName(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase());
             writer.WriteValue(DataPath);
             writer.WritePropertyName(nameof(File).ToFirstCharacterLowerCase());
             writer.WriteValue(File);
+            writer.WritePropertyName(nameof(Title).ToFirstCharacterLowerCase());
+            writer.WriteValue(Title);
+            if (!string.IsNullOrEmpty(Url))
+            {
+                writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
+                writer.WriteValue(Url);
+            }
         }
         writer.WriteEndObject();
     }

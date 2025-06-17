@@ -1,5 +1,5 @@
 ﻿using Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi;
 
 namespace kiota.Rpc
 {
@@ -10,9 +10,9 @@ namespace kiota.Rpc
             if (extensions is not null &&
                 extensions.TryGetValue(OpenApiAiAdaptiveCardExtension.Name, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
             {
-                if (adaptiveCard.DataPath is not null && adaptiveCard.File is not null)
+                if (adaptiveCard.DataPath is not null && adaptiveCard.File is not null && adaptiveCard.Title is not null)
                 {
-                    return new AdaptiveCardInfo(adaptiveCard.DataPath, adaptiveCard.File);
+                    return new AdaptiveCardInfo(adaptiveCard.DataPath, adaptiveCard.File, adaptiveCard.Title, adaptiveCard.Url);
                 }
             }
             return null;

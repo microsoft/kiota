@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace kiota.Rpc;
 
@@ -24,8 +23,10 @@ public class FakeLogger<T> : ILogger<T>
         return true;
     }
 
+#nullable enable
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         LogEntries.Add(new(logLevel, formatter(state, exception)));
     }
+#nullable restore
 }

@@ -1,6 +1,6 @@
 ﻿using Kiota.Builder.Extensions;
 using Microsoft.DeclarativeAgents.Manifest;
-using Microsoft.OpenApi.Extensions;
+using Microsoft.OpenApi;
 
 namespace kiota.Rpc
 {

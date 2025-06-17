@@ -1,8 +1,6 @@
 ﻿
 using System;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.OpenApiExtensions;
 /// <summary>
