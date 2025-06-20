@@ -1069,12 +1069,10 @@ extends:
             dependsOn:
               - github_release
             steps:
-              - task: NodeTool@0
-                inputs:
-                  versionSpec: "20.x"
-              - task: EsrpRelease@7
+              - task: EsrpRelease@9
                 inputs:
                   connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                  usemanagedidentity: false
                   keyvaultname: "akv-prod-eastus"
                   authcertname: "ReferenceLibraryPrivateCert"
                   signcertname: "ReferencePackagePublisherCertificate"
