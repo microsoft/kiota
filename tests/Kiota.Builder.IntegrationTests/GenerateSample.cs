@@ -17,12 +17,14 @@ public sealed class GenerateSample : IDisposable
     }
     private readonly HttpClient _httpClient = new();
     [InlineData(GenerationLanguage.CSharp, false)]
+    [InlineData(GenerationLanguage.CSharp13, false)]
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
     [InlineData(GenerationLanguage.Go, false)]
     [InlineData(GenerationLanguage.Dart, false)]
     [InlineData(GenerationLanguage.Ruby, false)]
     [InlineData(GenerationLanguage.CSharp, true)]
+    [InlineData(GenerationLanguage.CSharp13, true)]
     [InlineData(GenerationLanguage.Java, true)]
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
@@ -45,12 +47,14 @@ public sealed class GenerateSample : IDisposable
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp, false)]
+    [InlineData(GenerationLanguage.CSharp13, false)]
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
     [InlineData(GenerationLanguage.Go, false)]
     [InlineData(GenerationLanguage.Dart, false)]
     [InlineData(GenerationLanguage.Ruby, false)]
     [InlineData(GenerationLanguage.CSharp, true)]
+    [InlineData(GenerationLanguage.CSharp13, true)]
     [InlineData(GenerationLanguage.Java, true)]
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
@@ -73,12 +77,14 @@ public sealed class GenerateSample : IDisposable
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp, false)]
+    [InlineData(GenerationLanguage.CSharp13, false)]
     [InlineData(GenerationLanguage.Java, false)]
     [InlineData(GenerationLanguage.TypeScript, false)]
     [InlineData(GenerationLanguage.Go, false)]
     [InlineData(GenerationLanguage.Dart, false)]
     [InlineData(GenerationLanguage.Ruby, false)]
     [InlineData(GenerationLanguage.CSharp, true)]
+    [InlineData(GenerationLanguage.CSharp13, true)]
     [InlineData(GenerationLanguage.Java, true)]
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
@@ -101,6 +107,7 @@ public sealed class GenerateSample : IDisposable
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.CSharp13)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.Go)]
     [InlineData(GenerationLanguage.Dart)]
@@ -124,6 +131,7 @@ public sealed class GenerateSample : IDisposable
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.CSharp13)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.Go)]
     [InlineData(GenerationLanguage.Dart)]
@@ -174,6 +182,7 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("_", fullText);
     }
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.CSharp13)]
     [InlineData(GenerationLanguage.Go)]
     [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Java)]
@@ -208,6 +217,7 @@ public sealed class GenerateSample : IDisposable
         switch (language)
         {
             case GenerationLanguage.CSharp:
+            case GenerationLanguage.CSharp13:
                 Assert.Contains("[QueryParameter(\"startDateTime\")]", fullText);
                 break;
             case GenerationLanguage.Dart:

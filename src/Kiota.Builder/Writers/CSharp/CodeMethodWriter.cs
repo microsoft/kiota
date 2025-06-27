@@ -635,27 +635,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code);
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
         var methodName = isConstructor ? parentClass.Name.ToFirstCharacterUpperCase() : code.Name.ToFirstCharacterUpperCase();
+        var accessModifier = conventions.GetAccessModifier(code.Access);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
-        if (includeNullableReferenceType)
-        {
-            var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
-            var nullableParameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer)
-                                                          .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ?
-                                                                                        GetParameterSignatureWithNullableRefType(p, code) :
-                                                                                        conventions.GetParameterSignature(p, code))
-                                                          .ToList());
-            CSharpConventionService.WriteNullableOpening(writer);
-            writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix}");
-            writer.WriteLine("{");
-            CSharpConventionService.WriteNullableMiddle(writer);
-        }
+        var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
+        var nullableParameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer)
+                                                        .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ?
+                                                                                    GetParameterSignatureWithNullableRefType(p, code) :
+                                                                                    conventions.GetParameterSignature(p, code))
+                                                        .ToList());
+        var nullableSignature = $"{accessModifier} {staticModifier}{hideModifier}{completeReturnTypeWithNullable}{methodName}({nullableParameters}){baseSuffix}";
+        var nonNullableSignature = $"{accessModifier} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix}";
 
-        writer.WriteLine($"{conventions.GetAccessModifier(code.Access)} {staticModifier}{hideModifier}{completeReturnType}{methodName}({parameters}){baseSuffix}");
-        writer.WriteLine("{");
-
-        if (includeNullableReferenceType)
-            CSharpConventionService.WriteNullableClosing(writer);
-
+        conventions.WriteNullableAware(
+            writer,
+            includeNullableReferenceType,
+            writer => CSharpConventionService.WriteStartingBlock(writer, nullableSignature),
+            writer => CSharpConventionService.WriteStartingBlock(writer, nonNullableSignature)
+        );
     }
 
     private string GetParameterSignatureWithNullableRefType(CodeParameter parameter, CodeElement targetElement)
