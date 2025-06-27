@@ -14,6 +14,7 @@
   "kiota.openApiExplorer.removeAllFromSelectedEndpoints.title": "Remove all",
   "kiota.openApiExplorer.closeDescription.title": "Close API description",
   "kiota.openApiExplorer.openDescription.title": "Add API description",
+  "kiota.openApiExplorer.loadFromFile.title": "Load in Kiota API Explorer",
   "kiota.searchLock.title": "Search for a lock file",
   "kiota.openApiExplorer.filterDescription.title": "Filter API description",
   "kiota.openApiExplorer.openDocumentationPage.title": "Open documentation page",
