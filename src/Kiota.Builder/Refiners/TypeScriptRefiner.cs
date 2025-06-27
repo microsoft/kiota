@@ -168,6 +168,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             GenerateReusableModelsCodeFiles(modelsNamespace);
             GenerateRequestBuilderCodeFiles(modelsNamespace);
             GroupReusableModelsInSingleFile(modelsNamespace);
+            MergeConflictingBuilderCodeFiles(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -279,6 +280,36 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 .ToArray() is { Length: > 0 } constantUsings)
             parentLevelInterface.AddUsing(constantUsings);
         CrawlTree(currentElement, AddDownwardsConstantsImports);
+    }
+
+    private static void MergeConflictingBuilderCodeFiles(CodeNamespace modelsNamespace)
+    {
+        if (modelsNamespace.Parent is not CodeNamespace mainNamespace) return;
+        var elementsToConsider = mainNamespace.Namespaces.Except([modelsNamespace]).OfType<CodeElement>().ToArray();
+        foreach (var element in elementsToConsider)
+            MergeConflictingBuilderCodeFilesForElement(element);
+    }
+    private static void MergeConflictingBuilderCodeFilesForElement(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace currentNamespace && currentNamespace.Files.ToArray() is { Length: > 1 } codeFiles)
+        {
+            var targetFile = codeFiles.First();
+            foreach (var fileToMerge in codeFiles.Skip(1))
+            {
+                if (fileToMerge.Classes.Any())
+                    targetFile.AddElements(fileToMerge.Classes.ToArray());
+                if (fileToMerge.Constants.Any())
+                    targetFile.AddElements(fileToMerge.Constants.ToArray());
+                if (fileToMerge.Enums.Any())
+                    targetFile.AddElements(fileToMerge.Enums.ToArray());
+                if (fileToMerge.Interfaces.Any())
+                    targetFile.AddElements(fileToMerge.Interfaces.ToArray());
+                if (fileToMerge.Usings.Any())
+                    targetFile.AddElements(fileToMerge.Usings.ToArray());
+                currentNamespace.RemoveChildElement(fileToMerge);
+            }
+        }
+        CrawlTree(currentElement, MergeConflictingBuilderCodeFilesForElement);
     }
 
     private static CodeFile? GenerateModelCodeFile(CodeInterface codeInterface, CodeNamespace codeNamespace)
