@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using Kiota.Builder.OpenApiExtensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Extensions;
+
 public static class OpenApiSchemaExtensions
 {
     private static readonly Func<IOpenApiSchema, IList<IOpenApiSchema>> classNamesFlattener = x =>
@@ -198,7 +197,7 @@ public static class OpenApiSchemaExtensions
             {
                 if (string.IsNullOrEmpty(result.Discriminator.PropertyName) && !string.IsNullOrEmpty(discriminator.PropertyName))
                     result.Discriminator.PropertyName = discriminator.PropertyName;
-                if (discriminator.Mapping?.Any() ?? false)
+                if (discriminator.Mapping is { Count: > 0 })
                     result.Discriminator.Mapping = discriminator.Mapping.ToDictionary(static x => x.Key, static x => x.Value);
             }
 
@@ -218,7 +217,8 @@ public static class OpenApiSchemaExtensions
     /// <param name="result">Resulting merged schema.</param>
     private static void AddOriginalReferenceIdExtension(this IOpenApiSchema schema, OpenApiSchema result)
     {
-        if (schema is not OpenApiSchemaReference schemaReference || string.IsNullOrEmpty(schemaReference.Reference.Id) || result.Extensions is null) return;
+        if (schema is not OpenApiSchemaReference schemaReference || string.IsNullOrEmpty(schemaReference.Reference.Id)) return;
+        result.Extensions ??= new Dictionary<string, IOpenApiExtension>(StringComparer.Ordinal);
         result.Extensions.TryAdd(OpenApiKiotaMergedExtension.Name, new OpenApiKiotaMergedExtension(schemaReference.Reference.Id));
     }
 
@@ -272,13 +272,13 @@ public static class OpenApiSchemaExtensions
     {
         return schema.IsExclusiveUnion() &&
                 schema.OneOf is { Count: 3 } &&
-                schema.OneOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
+                schema.OneOf.Count(static x => x.Enum is { Count: > 0 }) == 1 &&
                 schema.OneOf.Count(isODataType) == 1 &&
                 schema.OneOf.Count(isStringType) == 1
                 ||
             schema.IsInclusiveUnion() &&
                 schema.AnyOf is { Count: 3 } &&
-                schema.AnyOf.Count(static x => x.Enum?.Any() ?? false) == 1 &&
+                schema.AnyOf.Count(static x => x.Enum is { Count: > 0 }) == 1 &&
                 schema.AnyOf.Count(isODataType) == 1 &&
                 schema.AnyOf.Count(isStringType) == 1;
     }
@@ -287,13 +287,13 @@ public static class OpenApiSchemaExtensions
         if (schema is null) return false;
         return schema.IsExclusiveUnion() &&
                schema.OneOf is { Count: 3 } &&
-               schema.OneOf.Count(static x => isStringType(x) && (x.Enum?.Any() ?? false)) == 1 &&
+               schema.OneOf.Count(static x => isStringType(x) && (x.Enum is { Count: > 0 })) == 1 &&
                schema.OneOf.Count(isODataType) == 1 &&
                schema.OneOf.Count(isStringType) == 2
                ||
                schema.IsInclusiveUnion() &&
                schema.AnyOf is { Count: 3 } &&
-               schema.AnyOf.Count(static x => isStringType(x) && (x.Enum?.Any() ?? false)) == 1 &&
+               schema.AnyOf.Count(static x => isStringType(x) && (x.Enum is { Count: > 0 })) == 1 &&
                schema.AnyOf.Count(isODataType) == 1 &&
                schema.AnyOf.Count(isStringType) == 2
                ||
@@ -411,14 +411,14 @@ public static class OpenApiSchemaExtensions
     {
         if (schema == null)
             return [];
-        if (!(schema.Discriminator?.Mapping?.Any() ?? false))
+        if (schema.Discriminator?.Mapping is not { Count: > 0 })
             if (schema.OneOf is { Count: > 0 })
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
             else if (schema.AnyOf is { Count: > 0 })
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
-            else if ((schema.AllOf?.Any(allOfEvaluatorForMappings) ?? false) && schema.AllOf[^1].Equals(schema.AllOf.Last(allOfEvaluatorForMappings)))
-                // ensure the matched AllOf entry is the last in the list
-                return GetDiscriminatorMappings(schema.AllOf.Last(allOfEvaluatorForMappings), inheritanceIndex);
+            else if (schema.IsInherited() && schema.AllOf?.OfType<OpenApiSchema>().FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
+                // ensure we're in an inheritance context and get the discriminator from the parent when available
+                return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
             else if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
                 return GetAllInheritanceSchemaReferences(refId, inheritanceIndex)
                            .Where(static x => !string.IsNullOrEmpty(x))
@@ -428,9 +428,11 @@ public static class OpenApiSchemaExtensions
                 return [];
 
         return schema.Discriminator
-                .Mapping;
+                .Mapping
+                .Where(static x => !string.IsNullOrEmpty(x.Value.Reference.Id))
+                .Select(static x => KeyValuePair.Create(x.Key, x.Value.Reference.Id!));
     }
-    private static readonly Func<IOpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping?.Any() ?? false;
+    private static readonly Func<IOpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping is { Count: > 0 };
     private static IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
     {
         ArgumentException.ThrowIfNullOrEmpty(currentReferenceId);

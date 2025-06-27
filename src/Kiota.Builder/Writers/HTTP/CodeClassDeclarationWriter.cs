@@ -4,10 +4,10 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Microsoft.Kiota.Abstractions;
-using Microsoft.OpenApi.ApiManifest;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Writers.Http;
+
 public class CodeClassDeclarationWriter(HttpConventionService conventionService) : CodeProprietableBlockDeclarationWriter<ClassDeclaration>(conventionService)
 {
     private static class Constants

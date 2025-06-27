@@ -12,13 +12,8 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.ApiManifest;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
-using Microsoft.OpenApi.Services;
-using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.Plugins;
 
@@ -567,7 +562,13 @@ public partial class PluginsGenerationService
         {
             if (schema.Discriminator?.Mapping is null)
                 return;
-            var keysToRemove = schema.Discriminator.Mapping.Where(x => _document.Components?.Schemas is null || !_document.Components.Schemas.ContainsKey(x.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1])).Select(static x => x.Key).ToArray();
+            var keysToRemove = schema.Discriminator
+                                    .Mapping
+                                    .Where(x => _document.Components?.Schemas is null ||
+                                                                    x.Value.Reference.Id is not null &&
+                                                                    !_document.Components.Schemas.ContainsKey(x.Value.Reference.Id.Split('/', StringSplitOptions.RemoveEmptyEntries)[^1]))
+                                    .Select(static x => x.Key)
+                                    .ToArray();
             foreach (var key in keysToRemove)
                 schema.Discriminator.Mapping.Remove(key);
             base.Visit(schema);

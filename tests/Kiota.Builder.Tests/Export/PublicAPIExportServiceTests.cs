@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -92,7 +91,7 @@ components:
     [InlineData(GenerationLanguage.PHP)]
     public async Task GeneratesExportsAndFileHasExpectedAssertionsAsync(GenerationLanguage generationLanguage)
     {
-        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        var tempFilePath = Path.GetTempFileName();
         await using var testDocumentStream = await GetTestDocumentStreamAsync();
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var generationConfig = new GenerationConfiguration
@@ -199,7 +198,7 @@ components:
         Assert.Contains("exportNamespace.Graph~~>BaseRequestBuilder<Graph>", exportContents); // captures class inheritance. TS does not do inheritance due to interfaces.
         Assert.Contains("exportNamespace.models.microsoft.graph.User~~>AdditionalDataHolder; Parsable", exportContents);// captures implemented interfaces
         Assert.Contains("exportNamespace.models.microsoft.graph.User::|public|id:string", exportContents);// captures property location,type and access inheritance. No getter/setter in TS
-        // NOTE: No constructors in TS
+                                                                                                          // NOTE: No constructors in TS
         Assert.Contains("exportNamespace.me.meRequestBuilder::|public|toGetRequestInformation(requestConfiguration?:RequestConfiguration<object>):RequestInformation", exportContents);// captures methods, their parameters(name and types), return and access
         Assert.Contains("exportNamespace.models.microsoft.graph::createUserFromDiscriminatorValue(parseNode:ParseNode):User", exportContents);// captures code functions
         Assert.Contains("exportNamespace.models.microsoft.graph::deserializeIntoUser(User:User={}):Record<string, (node: ParseNode) => void>", exportContents);// captures code functions and default params

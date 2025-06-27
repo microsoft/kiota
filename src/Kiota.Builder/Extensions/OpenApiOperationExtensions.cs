@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.Configuration;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Extensions;
+
 public static class OpenApiOperationExtensions
 {
     internal static readonly HashSet<string> SuccessCodes = new(StringComparer.OrdinalIgnoreCase) { "200", "201", "202", "203", "206", "2XX" }; //204 excluded as it won't have a schema

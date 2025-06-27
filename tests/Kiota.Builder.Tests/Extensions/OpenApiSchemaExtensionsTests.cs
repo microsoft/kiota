@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Nodes;
+﻿using System.Collections.Generic;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Models.References;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public class OpenApiSchemaExtensionsTests
 {
     [Fact]
@@ -1107,6 +1104,7 @@ public class OpenApiSchemaExtensionsTests
     [Fact]
     public void ReturnsEmptyPropertyNameOnCircularReferences()
     {
+        var document = new OpenApiDocument();
         var entitySchema = new OpenApiSchema
         {
             Properties = new Dictionary<string, IOpenApiSchema>
@@ -1130,14 +1128,13 @@ public class OpenApiSchemaExtensionsTests
             ],
             Discriminator = new OpenApiDiscriminator
             {
-                Mapping = new Dictionary<string, string>
+                Mapping = new Dictionary<string, OpenApiSchemaReference>
                 {
-                    ["microsoft.graph.entity"] = "entity",
-                    ["microsoft.graph.user"] = "user"
+                    ["microsoft.graph.entity"] = new OpenApiSchemaReference("entity", document),
+                    ["microsoft.graph.user"] = new OpenApiSchemaReference("user", document)
                 }
             }
         };
-        var document = new OpenApiDocument();
         document.AddComponent("microsoft.graph.entity", entitySchema);
         document.AddComponent("microsoft.graph.user", userSchema);
         document.SetReferenceHostDocument();

@@ -21,6 +21,7 @@ export function getExtensionSettings(extensionId: string): ExtensionSettings {
             [KiotaGenerationLanguage.Swift]: getLanguageSerializationConfiguration(extensionId, "Swift"),
             [KiotaGenerationLanguage.TypeScript]: getLanguageSerializationConfiguration(extensionId, "TypeScript"),
             [KiotaGenerationLanguage.Dart]: getLanguageSerializationConfiguration(extensionId, "Dart"),
+            [KiotaGenerationLanguage.HTTP]: getLanguageSerializationConfiguration(extensionId, "HTTP"),
         },
     };
 }

@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Go;
 
 namespace Kiota.Builder.Refiners;
+
 public class GoRefiner : CommonLanguageRefiner
 {
     public GoRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -862,7 +863,7 @@ public class GoRefiner : CommonLanguageRefiner
             if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter codeParameter)
                 codeParameter.Type.IsNullable = false;
         }
-        CorrectCoreTypes(parentClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(parentClass, DateTypesReplacements, types: currentMethod.Parameters
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
@@ -941,7 +942,7 @@ public class GoRefiner : CommonLanguageRefiner
                 currentProperty.Type.Name = "RequestOption";
                 currentProperty.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
             }
-            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+            CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, types: currentProperty.Type);
         }
     }
     /// <summary>

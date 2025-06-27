@@ -1,20 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
-using Kiota.Builder.Tests.OpenApiSampleFiles;
 using Kiota.Builder.Writers;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
-using static Kiota.Builder.Refiners.HttpRefiner;
 
 namespace Kiota.Builder.Tests.Writers.Http;
 public sealed class CodeClassDeclarationWriterTests : IDisposable

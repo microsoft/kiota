@@ -1,8 +1,6 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
-using Microsoft.OpenApi.Validations;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
 

@@ -13,9 +13,8 @@ using Kiota.Builder.SearchProviders.APIsGuru;
 using Kiota.Builder.Validation;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Validations;
 
 namespace Kiota.Builder;
 
@@ -159,14 +158,9 @@ internal class OpenApiDocumentDownloadService
         return readResult;
     }
 
-    internal Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<OpenApiDocument?> GetDocumentFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
-        var documentWithResult = GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken);
-        return documentWithResult.ContinueWith(
-            static x => x.Result?.Document,
-            cancellationToken,
-            TaskContinuationOptions.None,
-            TaskScheduler.Default
-        );
+        var result = await GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken).ConfigureAwait(false);
+        return result?.Document;
     }
 }

@@ -7,17 +7,16 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
-using Kiota.Builder.Extensions;
 using Kiota.Builder.Plugins;
 using Microsoft.DeclarativeAgents.Manifest;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
-using Microsoft.OpenApi.Services;
 using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Plugins;
+
 public sealed class PluginsGenerationServiceTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();
@@ -43,7 +42,9 @@ public sealed class PluginsGenerationServiceTests : IDisposable
     [InlineData("My-Super complex() %@#$& Name", "MySupercomplexName")]//drop the space and special characters
     public async Task GeneratesManifestAsync(string inputPluginName, string expectedPluginName)
     {
-        var simpleDescriptionContent = @"openapi: 3.0.0
+        var simpleDescriptionContent =
+"""
+openapi: 3.0.0
 info:
   title: test
   version: 1.0
@@ -51,6 +52,13 @@ info:
 servers:
   - url: http://localhost/
     description: There's no place like home
+tags:
+  - name: test
+    description: test description we've created
+    externalDocs:
+      description: external docs for test path
+      url: http://localhost/test
+      x-random-extension: true
 paths:
   /test:
     get:
@@ -76,7 +84,8 @@ paths:
           format: int32
       responses:
         '200':
-          description: test";
+          description: test
+""";
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
         await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
@@ -297,18 +306,18 @@ components:
         Assert.Empty(resultResult.Diagnostic.Errors);
 
         // Assertions / validations
-        Assert.Empty(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
-        Assert.Empty(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
+        Assert.Null(resultDocument.Components.Schemas);// no schema is referenced. so ensure they are all removed
+        Assert.Null(resultDocument.Extensions); // no extension at root (unsupported extension is removed)
         Assert.Equal(2, resultDocument.Paths.Count); // document has only two paths
         Assert.Equal(originalDocument.Paths["/test"].Operations[HttpMethod.Get].Responses.Count - 1, resultDocument.Paths["/test"].Operations[HttpMethod.Get].Responses.Count); // We removed the error response
         Assert.NotEmpty(resultDocument.Paths["/test"].Operations[HttpMethod.Get].Responses["200"].Description); // response description string is not empty
         Assert.Null(resultDocument.Paths["/test"].Operations[HttpMethod.Get].ExternalDocs); // external docs are removed
-        Assert.Empty(resultDocument.Paths["/test"].Operations[HttpMethod.Get].Extensions); // NO UNsupported extension
+        Assert.Null(resultDocument.Paths["/test"].Operations[HttpMethod.Get].Extensions); // NO UNsupported extension
         Assert.Equal(originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Count - 1, resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Count); // Responses are still intact.
         Assert.NotEmpty(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Description);// response description string is not empty
         Assert.Single(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Extensions); // 1 supported extension still present in operation
-        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
-        Assert.Empty(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
+        Assert.Null(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf); // allOf were merged
+        Assert.Null(resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].AnyOf); // anyOf we selected
         Assert.Equal(JsonSchemaType.String, resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.Properties["id"].Type.Value);
         Assert.DoesNotContain("500", resultDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Keys, StringComparer.OrdinalIgnoreCase); // We removed the error response
     }

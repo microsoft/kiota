@@ -4,7 +4,8 @@
 
 Context: you're a developer working on the extension, and you want to debug/step through the extension code.
 
-1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Release -r <rid> -o ./vscode/microsoft-kiota/.kiotabin/<kiotaVersionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and kiotaVersionInPackage is the kiotaVersion field in `vscode/microsoft-kiota/package.json`.
+1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Release -r <rid> -o ./vscode/npm-package/.kiotabin/<versionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and versionInPackage is the Version field in `vscode/npm-package/package.json`.
+1. in `vscode/npm-package` run `npm i && npm run build`.
 1. in `vscode/microsoft-kiota` run `code . && npm i`
 1. in the code instance that was opened at step 2, just press f5
 
@@ -39,7 +40,7 @@ At this point you have the code extension installed, but it needs the kiota exec
 
 Refer to step 1 from the "debugging" section. The major difference will be the output path:
 
-`~/.vscode/extensions/ms-graph.kiota-<versionInPackage.json>/.kiotabin/<kiotaVersionInPackage.json>/<rid>/`
+`~/.vscode/extensions/ms-graph.kiota-<versionInPackage.json>/.kiotabin/<versionInPackage.json>/<rid>/`
 
 Where kiotaVersionInPackage is the kiotaVersion field and versionInPackage is the version field in package.json.
 

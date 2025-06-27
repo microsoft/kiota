@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Settings;
 

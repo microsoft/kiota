@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Writers;
 
 namespace Kiota.Builder.OpenApiExtensions;
 

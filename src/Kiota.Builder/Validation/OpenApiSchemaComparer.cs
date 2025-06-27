@@ -4,8 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Validation;
 
@@ -134,8 +133,11 @@ internal class OpenApiDiscriminatorComparer : IEqualityComparer<OpenApiDiscrimin
         return x.PropertyName.EqualsIgnoreCase(y.PropertyName) && GetOrderedRequests(x.Mapping).SequenceEqual(GetOrderedRequests(y.Mapping), mappingComparer);
     }
     private static readonly IOrderedEnumerable<KeyValuePair<string, string>> defaultOrderedDictionary = new Dictionary<string, string>(0).OrderBy(x => x.Key, StringComparer.Ordinal);
-    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, string>? mappings) =>
-    mappings?.OrderBy(x => x.Key, StringComparer.Ordinal) ?? defaultOrderedDictionary;
+    private static IOrderedEnumerable<KeyValuePair<string, string>> GetOrderedRequests(IDictionary<string, OpenApiSchemaReference>? mappings) =>
+    mappings?.Where(static x => !string.IsNullOrEmpty(x.Value.Reference.Id))
+            .Select(static x => KeyValuePair.Create(x.Key, x.Value.Reference.Id!))
+            .OrderBy(x => x.Key, StringComparer.Ordinal) ??
+    defaultOrderedDictionary;
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] OpenApiDiscriminator obj)
     {

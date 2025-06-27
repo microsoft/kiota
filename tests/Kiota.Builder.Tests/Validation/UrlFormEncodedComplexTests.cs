@@ -2,11 +2,12 @@
 using System.Text;
 using System.Threading.Tasks;
 using Kiota.Builder.Validation;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Validation;
+
 public class UrlFormEncodedComplexTests
 {
     [Fact]

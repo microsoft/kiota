@@ -670,6 +670,33 @@ public class CSharpLanguageRefinerTests
         Assert.Equal("Date", method.ReturnType.Name);
     }
     [Fact]
+    public async Task ReplacesDateOnlyByNativeTypeInNestedClassAsync()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.Model
+        }).First();
+        var nestedModel = model.AddInnerClass(new CodeClass
+        {
+            Name = "nestedModel",
+            Kind = CodeClassKind.Model
+        }).First();
+        var propertyInNestedModel = nestedModel.AddProperty(new CodeProperty
+        {
+            Name = "nestedModelProperty",
+            Type = new CodeType
+            {
+                Name = "DateOnly",
+                IsExternal = true// this is external from the Kiota abstractions
+            },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        Assert.NotEmpty(model.StartBlock.Usings); // using is added to outer class.
+        Assert.Empty(nestedModel.StartBlock.Usings); // using is not added to nested model
+        Assert.Equal("Date", propertyInNestedModel.Type.Name);
+    }
+    [Fact]
     public async Task ReplacesTimeOnlyByNativeTypeAsync()
     {
         var model = root.AddClass(new CodeClass

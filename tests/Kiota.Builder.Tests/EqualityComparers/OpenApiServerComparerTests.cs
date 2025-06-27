@@ -1,5 +1,5 @@
 ﻿using Kiota.Builder.EqualityComparers;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.EqualityComparers;

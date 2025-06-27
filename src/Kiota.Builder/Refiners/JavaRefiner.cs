@@ -10,6 +10,7 @@ using Kiota.Builder.Writers.Java;
 using Microsoft.Kiota.Abstractions;
 
 namespace Kiota.Builder.Refiners;
+
 public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public JavaRefiner(GenerationConfiguration configuration) : base(configuration) { }
@@ -334,7 +335,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentProperty.DefaultValue = "new HashMap<>()";
         }
         currentProperty.Type.Name = currentProperty.Type.Name.ToFirstCharacterUpperCase();
-        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, currentProperty.Type);
+        CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, true, currentProperty.Type);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
@@ -370,7 +371,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         else if (currentMethod.IsOfKind(CodeMethodKind.Factory) && currentMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParam)
             parseNodeParam.Type.Name = parseNodeParam.Type.Name[1..];
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, currentMethod.Parameters
+        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, true, currentMethod.Parameters
                                                 .Select(static x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());

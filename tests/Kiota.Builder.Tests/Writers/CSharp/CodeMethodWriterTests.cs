@@ -522,6 +522,34 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyForEnum()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "testEnum", IsExternal = true, TypeDefinition = new CodeEnum() { Name = "TestEnum" } };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetContentFromEnum", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void WritesRequestGeneratorBodyForUntypedNode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = new CodeType { Name = "UntypedNode", IsExternal = true };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetContentFromParsable", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyForCollection()
     {
         setup();
@@ -596,6 +624,72 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
         Assert.Contains("return result", result);
         AssertExtensions.Before("GetStringValue() is string stringValueValue", "GetCollectionOfObjectValues<ComplexType2>", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionPrimitiveTypes()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "string",
+        };
+        var cType2 = new CodeType
+        {
+            Name = "double",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.OriginalComposedType.AddType(cType2);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "DoubleValue",
+            Type = cType2,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "StringValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<double?>()?.AsList() is List<double?> doubleValue", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

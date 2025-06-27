@@ -1,7 +1,7 @@
 ﻿using System;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Plugins;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Plugins;
