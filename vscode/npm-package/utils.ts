@@ -1,4 +1,6 @@
-import { KiotaLogEntry, MaturityLevel, DependencyType, LogLevel } from "./types";
+import { DependencyType, KiotaLogEntry, LogLevel, MaturityLevel } from "./types";
+
+const SpecVersionMessageLog = "Processing OpenAPI document version:";
 
 export function getLogEntriesForLevel(logEntries: KiotaLogEntry[], ...levels: LogLevel[]): KiotaLogEntry[] {
   return logEntries.filter((entry) => levels.indexOf(entry.level) !== -1);
@@ -45,4 +47,16 @@ export function checkForSuccess(results: KiotaLogEntry[]) {
     }
   }
   return false;
+}
+
+export function checkDocumentVersion(results: KiotaLogEntry[]) {
+  var documentVersion = "";
+  for (const result of results) {
+    if (result && result.message) {
+      if (result.message.includes(SpecVersionMessageLog)) {
+        documentVersion = result.message.split(SpecVersionMessageLog)[1].trim();
+      }
+    }
+  }
+  return documentVersion;
 }
