@@ -613,9 +613,9 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
-              - task: NodeTool@0
+              - task: UseNode@1
                 inputs:
-                  versionSpec: "20.x"
+                  version: "22.x"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
@@ -729,9 +729,9 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
-              - task: NodeTool@0
+              - task: UseNode@1
                 inputs:
-                  versionSpec: "20.x"
+                  version: "22.x"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
@@ -782,9 +782,9 @@ extends:
             dependsOn:
               - github_release
             steps:
-              - task: NodeTool@0
+              - task: UseNode@1
                 inputs:
-                  versionSpec: "18.x"
+                  version: "22.x"
               - pwsh: npm i -g @vscode/vsce
               - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
