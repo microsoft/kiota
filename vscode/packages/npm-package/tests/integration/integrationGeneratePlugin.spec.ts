@@ -18,7 +18,7 @@ async function loadJSON(filename: string) {
 describe("GeneratePlugin", () => {
 
   test('generatePlugin_withoutWorkspaceAddOperationForExisting', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const outputPath = './.tests_output';
     const pluginName = 'withoutWorkspaceAddOperationForExisting';
 
@@ -70,7 +70,7 @@ describe("GeneratePlugin", () => {
   });
 
   test('generatePlugin_withWorkspaceAddOperationForExisting', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const outputPath = './.tests_output';
     const pluginName = 'withWorkspaceAddOperationForExisting';
 
@@ -121,7 +121,7 @@ describe("GeneratePlugin", () => {
   });
 
   test('generatePlugin_Simple', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const outputPath = './.tests_output';
 
     const pluginType = KiotaPluginType.ApiPlugin;
@@ -157,7 +157,7 @@ describe("GeneratePlugin", () => {
   });
 
   test('generatePlugin_withAdaptiveCardExtension', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithAdaptiveCardExtension.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithAdaptiveCardExtension.yaml';
     const outputPath = './.tests_output';
 
     const pluginType = KiotaPluginType.ApiPlugin;
@@ -243,7 +243,7 @@ describe("GeneratePlugin", () => {
   });
 
   test('generatePlugin_withSecurity', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithSecurity.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithSecurity.yaml';
     const outputPath = './.tests_output';
     const pluginName = 'withsecurity';
 
@@ -293,7 +293,7 @@ describe("GeneratePlugin", () => {
 
   
   test('generatePlugin_withAuthAndExistingRefId', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
     const outputPath = './.tests_output';
     const pluginName = 'withrefidandsecurity';
 
@@ -345,7 +345,7 @@ describe("GeneratePlugin", () => {
   });
 
   test('generatePlugin_withExplicitAuthTypeAndRefId', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
     const outputPath = './.tests_output';
     const pluginName = 'withrefidandsecurity2';
 
