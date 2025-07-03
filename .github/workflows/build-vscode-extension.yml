@@ -154,6 +154,12 @@ jobs:
         working-directory: vscode
 
       - run: |
+          npm i
+          npm run build
+        working-directory: vscode/packages/
+        name: "Package - ${{ matrix.builds.id }}"
+        if: matrix.builds.id == 'vscode'
+      - run: |
           npm i -g @vscode/vsce
           vsce package
         working-directory: vscode/packages/${{ matrix.builds.path }}
