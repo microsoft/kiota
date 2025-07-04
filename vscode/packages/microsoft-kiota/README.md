@@ -9,25 +9,26 @@ Using kiota you can:
 
 1. Search for API descriptions.
 2. Filter and select the API endpoints you need by slicing only required endpoints from a rather bulky OpenAPI Description
-3. Generate models and a chained method API surface in the language of your choice. Supported languages can be viewed at https://github.com/microsoft/kiota/tree/main?tab=readme-ov-file#supported-languages
+3. Generate models and a chained method API surface in the language of your choice. Supported languages can be viewed at <https://github.com/microsoft/kiota/tree/main?tab=readme-ov-file#supported-languages>
 4. Call the OpenAPI described API with the new client generated in step 3 above.
 5. Generate API plugin manifests that can be easily integrated into Microsoft Copilot. **New**
 6. Generate [API manifests](https://datatracker.ietf.org/doc/draft-miller-api-manifest/). **New**
 
 All that in a matter of seconds.
 
-## Kiota extension for Visual Studio Code 
+## Kiota extension for Visual Studio Code
 
-This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension adds a rich UI for the Kiota experience. The features include all of Kiota capabilities such as search for API descriptions, filtering and generating API clients and more! 
+This [Visual Studio Code](https://code.visualstudio.com/) (VS Code) extension adds a rich UI for the Kiota experience. The features include all of Kiota capabilities such as search for API descriptions, filtering and generating API clients and more!
 
 ## Kiota extension installation
+
 1. In VS Code, navigate to `Extensions`.
-<img width="482" alt="Navigate to Extensions on VS Code" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/Navigate%20to%20Extensions%20on%20VS%20Code.png">
+<img width="482" alt="Navigate to Extensions on VS Code" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/Navigate%20to%20Extensions%20on%20VS%20Code.png">
 
 2. Search for 'kiota'
 3. Click on Install.
 
-You can also install the extension package from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-graph.kiota). 
+You can also install the extension package from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-graph.kiota).
 
 ## Getting started
 
@@ -35,17 +36,17 @@ Once the extension is installed, you will be able to see the commands available 
 
 You can kick start the process by using the add file icons as appears below or using command pallete with the command "Add API description"
 
-<img width="482" alt="Use the add file icon" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/SearchOrBrowseOptions.png">
+<img width="482" alt="Use the add file icon" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/SearchOrBrowseOptions.png">
 
 The notification bar will also notify you of ongoing background processes e.g when searching for an api using a keyword
 
-<img width="482" alt="vscode extension search notification" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/searchingNotification.png">
+<img width="482" alt="vscode extension search notification" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/searchingNotification.png">
 
 The search results will be displayed as below once the search is complete
 
-<img width="482" alt="vscode extension search results" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/searchResults.png">
+<img width="482" alt="vscode extension search results" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/searchResults.png">
 
-Select the OpenAPI description you are interested in and you will be presented with the Kiota OpenAPI Explorer containing all the available endpoints 
+Select the OpenAPI description you are interested in and you will be presented with the Kiota OpenAPI Explorer containing all the available endpoints
 
 <img width="482" alt="Kiota OpenAPI explorer" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/endpointSelectionandTheGenerateIcon.png">
 
@@ -71,7 +72,6 @@ You can also access the same feature later by using the contextual option on the
 
 Enjoy the benefits of the workspace once the migration is complete.
 
-
 ## Extension Settings
 
 1. Navigate to extensions using the UI or (ctrl+shift+x) or (cmd+shift+x) for mac users
@@ -82,6 +82,7 @@ Enjoy the benefits of the workspace once the migration is complete.
 6. Feel free to leave the settings as is or customize them for even better control.
 
 ## Contributions
+
 There are many ways in which you can participate in the project, for example:
 
 - [Download our latest builds](https://github.com/microsoft/kiota/releases).
@@ -93,6 +94,7 @@ See our contributions guidelines in the [CONTRIBUTING.md](https://github.com/mic
 Further guidelines are also available in the page [SUPPORT.md](https://github.com/microsoft/kiota/blob/main/SUPPORT.md)
 
 ## Reporting security issues
+
 Check out our [SECURITY.md](https://github.com/microsoft/kiota/blob/main/SECURITY.md) page for details.
 
 ## Telemetry

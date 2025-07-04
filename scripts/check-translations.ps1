@@ -1,6 +1,6 @@
 # Step 1: Find all instances of vscode.l10n.t() and extract the strings from .ts and .tsx files
 $withParamsPattern = 'vscode\.l10n\.t\(["''`](.+?)["''`],'
-Get-ChildItem -Path vscode/microsoft-kiota/src -Recurse -Include *.ts, *.tsx |
+Get-ChildItem -Path vscode/packages/microsoft-kiota/src -Recurse -Include *.ts, *.tsx |
 Select-String -Pattern $withParamsPattern |
 ForEach-Object { $_.Matches.Groups[1].Value } |
 Sort-Object |
@@ -8,7 +8,7 @@ Get-Unique |
 Out-File -FilePath "strings_with_params.txt"
 
 $withoutParamsPattern = 'vscode\.l10n\.t\(["' + "`'" + '`]([^"' + "`'" + '`]+)["' + "`'" + '`]\)'
-Get-ChildItem -Path vscode/microsoft-kiota/src -Recurse -Include *.ts, *.tsx |
+Get-ChildItem -Path vscode/packages/microsoft-kiota/src -Recurse -Include *.ts, *.tsx |
 Select-String -Pattern $withoutParamsPattern |
 ForEach-Object { $_.Matches.Groups[1].Value } |
 Sort-Object |
@@ -22,7 +22,7 @@ Out-File -FilePath "strings.txt"
 
 # Step 2: Check translation files in the l10n folder
 $results = @()
-foreach ($file in Get-ChildItem -Path "vscode/microsoft-kiota/l10n" -Filter bundle.l10n.*.json -Recurse) {
+foreach ($file in Get-ChildItem -Path "vscode/packages/microsoft-kiota/l10n" -Filter bundle.l10n.*.json -Recurse) {
   $translations = Get-Content $file.FullName | 
   Select-String -Pattern '"[^"]+"' | 
   ForEach-Object { $_.Matches.Groups[0].Value.Trim('"') } | 

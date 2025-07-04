@@ -2,7 +2,7 @@ import { getLanguageInformationForDescription, getLanguageInformationInternal } 
 
 describe("Language Information", () => {
   test('should return language information for a description when successful', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
     const actual = await getLanguageInformationForDescription({ clearCache: false, descriptionUrl: descriptionUrl });
     expect(actual).toBeDefined();
 

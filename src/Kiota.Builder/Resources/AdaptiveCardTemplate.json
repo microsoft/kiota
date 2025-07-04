@@ -21,7 +21,7 @@
               "items": [
                 {
                   "type": "Image",
-                  "url": "https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/images/logo.png?raw=true",
+                  "url": "https://github.com/microsoft/kiota/blob/main/vscode/packages/microsoft-kiota/images/logo.png?raw=true",
                   "altText": "Kiota logo",
                   "size": "medium",
                   "style": "person"

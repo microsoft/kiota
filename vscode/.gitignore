@@ -1,3 +1,8 @@
 node_modules/
 .kiota
 .kiotabin
+!packages/**/*
+packages/*/node_modules/
+packages/*/dist/
+packages/npm-package/.kiotabin/
+packages/npm-package/.kiota/

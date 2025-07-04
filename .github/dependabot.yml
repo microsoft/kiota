@@ -87,7 +87,7 @@ updates:
         patterns:
           - "*eslint*"
   - package-ecosystem: npm
-    directory: "/vscode/microsoft-kiota"
+    directory: "/vscode"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -101,7 +101,7 @@ updates:
       interval: weekly
       day: wednesday
     ignore:
-      - dependency-name: '*'
+      - dependency-name: "*"
         update-types:
           - version-update:semver-major
           - version-update:semver-minor

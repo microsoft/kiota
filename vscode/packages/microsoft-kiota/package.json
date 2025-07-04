@@ -504,6 +504,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
+    "build": "npm run compile",
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
@@ -515,7 +516,7 @@
     "test:coverage": "npm run pretest && test --coverage"
   },
   "dependencies": {
-    "@microsoft/kiota": "^1.0.0",
+    "@microsoft/kiota": "^1.25.1",
     "@vscode/extension-telemetry": "^1.0.0",
     "@vscode/l10n": "^0.0.18"
   },
