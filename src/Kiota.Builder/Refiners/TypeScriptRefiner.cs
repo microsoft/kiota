@@ -898,6 +898,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = $"{ModelSerializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
 
+
         var deserializerFunction = new CodeFunction(deserializerMethod)
         {
             Name = $"{ModelDeserializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
@@ -923,6 +924,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             DefaultValue = "{}",
             Type = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
+            Documentation = new CodeDocumentation
+            {
+                DescriptionTemplate = codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer ?
+                                            "The instance to deserialize into." :
+                                            "The instance to serialize from.",
+            },
         });
 
         if (modelInterface.Parent is not null)
