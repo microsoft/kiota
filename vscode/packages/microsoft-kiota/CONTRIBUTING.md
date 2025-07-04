@@ -9,8 +9,6 @@ To get started, you'll need to have the following tools installed:
 - [.NET SDK 9.0](https://get.dot.net/9)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-
-
 ## Building the project
 
 ```sh
@@ -54,7 +52,8 @@ dotnet run -c Release --project src/kiota/kiota.csproj -- <arguments you would p
 ```
 
 ### Debugging the Kiota Extension
-See [Debugging the Extension](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/debugging.md)
+
+See [Debugging the Extension](https://github.com/microsoft/kiota/blob/main/vscode/packages/microsoft-kiota/debugging.md)
 
 ## Contributing Code
 

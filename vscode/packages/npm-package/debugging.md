@@ -15,16 +15,16 @@ First, publish the Kiota project in **debug** mode to a target location.
 The following example uses Windows and version `1.25.1` which is the latest version at the time of writing. You can change the version number as needed based on the version in the `package.json` file.
 
 ```sh
-dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Debug -r win-x64 -o ./vscode/npm-package/.kiotabin/1.25.1/win-x64/
+dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Debug -r win-x64 -o ./vscode/packages/npm-package/.kiotabin/1.25.1/win-x64/
 ```
 
-This command will create a folder in `vscode/npm-package/.kiotabin/1.25.1/win-x64/` with the Kiota executable that will be used for the integration tests.
+This command will create a folder in `vscode/packages/npm-package/.kiotabin/1.25.1/win-x64/` with the Kiota executable that will be used for the integration tests.
 
 ## 2. Run the Npm Package
 
 Run the npm package to start the Kiota process. You can do this, for example, by running an integration test with a breakpoint set after the process is created but before the remote method is invoked.
 
-e.g. add a breakpoint in the `vscode/npm-package/lib/generatePlugin.ts` file, in the `generatePlugin` function, right after the first variable assignment. 
+e.g. add a breakpoint in the `vscode/packages/npm-package/lib/generatePlugin.ts` file, in the `generatePlugin` function, right after the first variable assignment. 
 
 >**Note:** The Kiota process is started by the npm package, and it will run in the background. You need to ensure that the process is running before you can attach the debugger to it. 
 Once the breakpoint is hit, you can proceed to the next step.

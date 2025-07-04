@@ -3,7 +3,6 @@
 'use strict';
 
 const path = require('path');
-const isCI = process.env.CI === 'true'; // Check if we are in a CI environment
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -34,9 +33,6 @@ const extensionConfig = {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.js'],
     symlinks: true,
-    alias: isCI ? {
-      '@microsoft/kiota': path.resolve(__dirname, '../npm-package'),
-    } : {},
   },
   module: {
     rules: [

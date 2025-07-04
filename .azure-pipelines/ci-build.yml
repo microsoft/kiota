@@ -12,7 +12,7 @@ trigger:
         "serialization/**",
         "http/**",
         "**.md",
-        ".vscode/**",
+        ".vscode/packages/**",
         "**.svg",
       ]
   tags:
@@ -613,14 +613,14 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
-              - task: NodeTool@0
+              - task: UseNode@1
                 inputs:
-                  versionSpec: "20.x"
+                  version: "22.x"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
               - script: npm i -g @vscode/vsce rimraf
                 displayName: "Install Global dependencies"
@@ -635,11 +635,11 @@ extends:
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: vsce package --pre-release
                 displayName: "Package VSCode extension as pre-release"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
                 condition: eq(variables['isPrerelease'], 'true')
               - script: vsce package
                 displayName: "Package VSCode extension as release"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
                 condition: eq(variables['isPrerelease'], 'false')
               - pwsh: |
                   $extensionFiles = Get-ChildItem -Filter *.vsix -Recurse
@@ -650,14 +650,14 @@ extends:
                   $extensionFileName = $extensionFiles[0].BaseName
                   Write-Output "##vso[task.setvariable variable=extensionFileName;isOutput=true]$extensionFileName"
                 displayName: "Get extension file name"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
                 name: getExtensionFileName
               - script: vsce generate-manifest -i $(getExtensionFileName.extensionFileName).vsix -o $(getExtensionFileName.extensionFileName).manifest
                 displayName: "Generate extension manifest"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
               - script: cp $(getExtensionFileName.extensionFileName).manifest $(getExtensionFileName.extensionFileName).signature.p7s
                 displayName: "Prepare manifest for signing"
-                workingDirectory: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
               - task: EsrpCodeSigning@5
                 inputs:
                   ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
@@ -666,7 +666,7 @@ extends:
                   AuthAKVName: "akv-prod-eastus"
                   AuthCertName: "ReferenceLibraryPrivateCert"
                   AuthSignCertName: "ReferencePackagePublisherCertificate"
-                  FolderPath: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                  FolderPath: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
                   UseMinimatch: true
                   Pattern: '**\*.signature.p7s'
                   signConfigType: inlineSignParams
@@ -689,7 +689,7 @@ extends:
                 displayName: Prepare staging folder for upload
                 inputs:
                   targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
-                  sourceFolder: $(Build.SourcesDirectory)/vscode/microsoft-kiota
+                  sourceFolder: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
                   contents: |
                     *.vsix
                     *.manifest
@@ -729,14 +729,14 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
-              - task: NodeTool@0
+              - task: UseNode@1
                 inputs:
-                  versionSpec: "20.x"
+                  version: "22.x"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update NPM package version-number"
               - script: |
                   npm i -g rimraf
@@ -751,7 +751,7 @@ extends:
                 displayName: Prepare staging folder for upload
                 inputs:
                   targetFolder: $(Build.ArtifactStagingDirectory)/npm-package
-                  sourceFolder: $(Build.SourcesDirectory)/vscode/npm-package
+                  sourceFolder: $(Build.SourcesDirectory)/vscode/packages/npm-package
                   contents: |
                     *.tgz
               - task: 1ES.PublishPipelineArtifact@1
@@ -782,9 +782,9 @@ extends:
             dependsOn:
               - github_release
             steps:
-              - task: NodeTool@0
+              - task: UseNode@1
                 inputs:
-                  versionSpec: "18.x"
+                  version: "22.x"
               - pwsh: npm i -g @vscode/vsce
               - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"

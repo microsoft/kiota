@@ -19,7 +19,7 @@ function flattenKiotaTree(tree: KiotaOpenApiNode): KiotaOpenApiNode[] {
 
 describe("getKiotaTree", () => {
   test('testGetKiotaTree_from_valid_File', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -32,7 +32,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withSecurity', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithSecurity.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithSecurity.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -122,7 +122,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withMultipleSecurity', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithMultipleSecurity.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithMultipleSecurity.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -232,7 +232,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withMultipleSecurityAndVariables', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithMultipleSecurityAndVariables.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithMultipleSecurityAndVariables.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -342,7 +342,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withReferenceIdExtension', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithRefIdExtension.yaml';
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
     expect(actual).toBeDefined();
     expect(existsEqualOrGreaterThanLevelLogs(actual?.logs, LogLevel.warning)).toBeFalsy();
@@ -365,7 +365,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withoutBasicInfoInOneOperation', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithoutBasicInfoInOneOperation.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithoutBasicInfoInOneOperation.yaml';
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false, includeKiotaValidationRules: true });
 
     expect(actual).toBeDefined();
@@ -390,7 +390,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withOverriddenServer', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithOverriddenServer.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithOverriddenServer.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -420,7 +420,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withAdaptiveCard', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithAdaptiveCardExtension.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithAdaptiveCardExtension.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -437,7 +437,7 @@ describe("getKiotaTree", () => {
   });
   
   test('testGetKiotaTree_withNoServer_withKiotaValidationRules', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithNoServer.yml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithNoServer.yml';
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false, includeKiotaValidationRules: true });
 
     expect(actual).toBeDefined();
@@ -455,7 +455,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_withNoServer_withoutKiotaValidationRules', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/ModelWithNoServer.yml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/ModelWithNoServer.yml';
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
     expect(actual).toBeDefined();
@@ -472,7 +472,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_fromV2_0', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/SwaggerPetStore.json';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/SwaggerPetStore.json';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -482,7 +482,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_fromV3_0', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
@@ -492,7 +492,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_fromV3_1', async () => {
-    const descriptionUrl = '../../tests/Kiota.Builder.IntegrationTests/SimpleModelOpenApi3_1.yaml';
+    const descriptionUrl = '../../../tests/Kiota.Builder.IntegrationTests/SimpleModelOpenApi3_1.yaml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 
