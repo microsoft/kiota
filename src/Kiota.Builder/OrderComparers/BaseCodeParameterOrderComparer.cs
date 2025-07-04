@@ -2,6 +2,7 @@
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.OrderComparers;
+
 public class BaseCodeParameterOrderComparer : BaseStringComparisonComparer<CodeParameter>
 {
     public override int Compare(CodeParameter? x, CodeParameter? y)
@@ -34,7 +35,8 @@ public class BaseCodeParameterOrderComparer : BaseStringComparisonComparer<CodeP
             CodeParameterKind.SetterValue => 10,
             CodeParameterKind.ParseNode => 11,
             CodeParameterKind.Custom => 12,
-            _ => 13,
+            CodeParameterKind.SerializingDerivedType => 13,
+            _ => 14,
         };
     }
     private const int OptionalWeight = 10000;
