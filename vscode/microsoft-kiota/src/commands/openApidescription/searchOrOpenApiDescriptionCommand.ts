@@ -27,8 +27,10 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
 
   public async execute(searchParams: Partial<IntegrationParams>): Promise<void> {
     // set deeplink params if exists
+    let validatedParams: Partial<IntegrationParams> = {};
     if (Object.keys(searchParams).length > 0) {
       let [params, errorsArray] = validateDeepLinkQueryParams(searchParams);
+      validatedParams = params;
       setDeepLinkParams(params);
       const reporter = new TelemetryReporter(this.context.extension.packageJSON.telemetryInstrumentationKey);
       reporter.sendTelemetryEvent("DeepLinked searchOrOpenApiDescription", {
@@ -51,20 +53,28 @@ export class SearchOrOpenApiDescriptionCommand extends Command {
       }
     }
 
-    const config = await searchSteps(x => vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      cancellable: false,
-      title: vscode.l10n.t("Searching...")
-    }, async (progress, _) => {
-      const settings = getExtensionSettings(extensionId);
-      try {
-        return await searchDescription({ searchTerm: x, clearCache: settings.clearCache });
-      } catch (err) {
-        const error = err as Error;
-        vscode.window.showErrorMessage(error.message);
-        return undefined;
-      }
-    }));
+    let config: { descriptionPath?: string } = {};
+    
+    // Check if descriptionurl is provided in validated params, if so skip search steps
+    if (validatedParams.descriptionurl && validatedParams.descriptionurl.trim() !== '') {
+      config.descriptionPath = validatedParams.descriptionurl;
+    } else {
+      // Only call searchSteps if no descriptionurl is provided
+      config = await searchSteps(x => vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        cancellable: false,
+        title: vscode.l10n.t("Searching...")
+      }, async (progress, _) => {
+        const settings = getExtensionSettings(extensionId);
+        try {
+          return await searchDescription({ searchTerm: x, clearCache: settings.clearCache });
+        } catch (err) {
+          const error = err as Error;
+          vscode.window.showErrorMessage(error.message);
+          return undefined;
+        }
+      }));
+    }
 
     if (config.descriptionPath) {
       try {
