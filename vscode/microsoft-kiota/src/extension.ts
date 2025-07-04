@@ -12,6 +12,7 @@ import { displayGenerationResults } from './commands/generate/generation-util';
 import { checkForLockFileAndPrompt } from "./commands/migrate/migrateFromLockFile.util";
 import { MigrateFromLockFileCommand } from './commands/migrate/migrateFromLockFileCommand';
 import { SearchOrOpenApiDescriptionCommand } from './commands/openApidescription/searchOrOpenApiDescriptionCommand';
+import { LoadOpenApiDescriptionFromFileCommand } from './commands/openApidescription/loadOpenApiDescriptionFromFileCommand';
 import { AddAllToSelectedEndpointsCommand } from './commands/openApiTreeView/addAllToSelectedEndpointsCommand';
 import { AddToSelectedEndpointsCommand } from './commands/openApiTreeView/addToSelectedEndpointsCommand';
 import { FilterDescriptionCommand } from './commands/openApiTreeView/filterDescriptionCommand';
@@ -75,6 +76,7 @@ export async function activate(
   const openDocumentationPageCommand = new OpenDocumentationPageCommand();
   const editPathsCommand = new EditPathsCommand(openApiTreeProvider, context);
   const searchOrOpenApiDescriptionCommand = new SearchOrOpenApiDescriptionCommand(openApiTreeProvider, context);
+  const loadOpenApiDescriptionFromFileCommand = new LoadOpenApiDescriptionFromFileCommand(openApiTreeProvider, context);
   const generateClientCommand = new GenerateClientCommand(openApiTreeProvider, context, dependenciesInfoProvider, setWorkspaceGenerationContext, kiotaOutputChannel);
   const regenerateCommand = new RegenerateCommand(context, openApiTreeProvider, kiotaOutputChannel);
   const regenerateButtonCommand = new RegenerateButtonCommand(context, openApiTreeProvider, kiotaOutputChannel);
@@ -116,6 +118,9 @@ export async function activate(
     }),
     registerCommandWithTelemetry(reporter, searchOrOpenApiDescriptionCommand.getName(),
       async (searchParams: Partial<IntegrationParams> = {}) => await searchOrOpenApiDescriptionCommand.execute(searchParams)
+    ),
+    registerCommandWithTelemetry(reporter, loadOpenApiDescriptionFromFileCommand.getName(),
+      async (fileUri: vscode.Uri) => await loadOpenApiDescriptionFromFileCommand.execute(fileUri)
     ),
     registerCommandWithTelemetry(reporter, closeDescriptionCommand.getName(), async () => await closeDescriptionCommand.execute()),
     registerCommandWithTelemetry(reporter, filterDescriptionCommand.getName(), async () => await filterDescriptionCommand.execute()),
