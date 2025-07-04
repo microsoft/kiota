@@ -399,9 +399,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
         writer.StartBlock($"if ({param.Name.ToFirstCharacterLowerCase()}) {{");
-        if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
+        if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits &&
+            codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.SerializingDerivedType) is CodeParameter serializingDerivedTypeParam)
         {
-            writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()})");
+            writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
         }
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
@@ -412,6 +413,19 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
         writer.CloseBlock();
+    }
+    private static CodeProperty? FindDiscriminatorPropertyBySerializationName(CodeInterface codeInterface, string serializationName)
+    {
+        if (string.IsNullOrEmpty(serializationName)) return null;
+        if (codeInterface.Properties.FirstOrDefault(prop => prop.WireName.EqualsIgnoreCase(serializationName)) is { } discriminatorProperty)
+            return discriminatorProperty;
+        if (codeInterface.StartBlock.Implements.Any())
+            return codeInterface.StartBlock.Implements
+                .Select(x => x.TypeDefinition)
+                .OfType<CodeInterface>()
+                .Select(x => FindDiscriminatorPropertyBySerializationName(x, serializationName))
+                .FirstOrDefault(x => x is not null);
+        return null;
     }
 
     private static bool IsCollectionOfEnum(CodeProperty property)

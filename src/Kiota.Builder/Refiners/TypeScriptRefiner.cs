@@ -897,7 +897,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             Name = $"{ModelSerializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
-
+        serializerMethod.AddParameter(new CodeParameter
+        {
+            Name = "isSerializingDerivedType",
+            DefaultValue = "false",
+            Type = new CodeType { Name = "boolean", IsExternal = true, IsNullable = false },
+            Kind = CodeParameterKind.SerializingDerivedType,
+            Documentation = new CodeDocumentation
+            {
+                DescriptionTemplate = "A boolean indicating whether the serialization is for a derived type.",
+            },
+            Optional = true,
+        });
 
         var deserializerFunction = new CodeFunction(deserializerMethod)
         {
