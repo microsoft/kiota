@@ -4,6 +4,7 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConventionService>
 {
     public CodePropertyWriter(TypeScriptConventionService conventionService) : base(conventionService) { }
@@ -13,6 +14,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType)
             return;
+
+        if (codeElement.Kind is CodePropertyKind.AdditionalData && codeElement.Parent is CodeInterface)
+        {
+            // additional data is already defined in the parent interface, no need to redefine it
+            return;
+        }
         var returnType = GetTypescriptTypeString(codeElement.Type, codeElement, inlineComposedTypeString: true);
         var isFlagEnum = codeElement.Type is CodeType { TypeDefinition: CodeEnum { Flags: true } }
                          && !codeElement.Type.IsCollection;//collection of flagged enums are not supported/don't make sense
@@ -35,7 +42,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
                 writer.WriteLine($"get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType};");
                 break;
             case CodePropertyKind.QueryParameter:
-            case CodePropertyKind.AdditionalData:
                 writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
                 break;
             default:
