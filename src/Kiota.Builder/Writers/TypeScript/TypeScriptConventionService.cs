@@ -9,6 +9,7 @@ using static Kiota.Builder.CodeDOM.CodeTypeBase;
 using static Kiota.Builder.Refiners.TypeScriptRefiner;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class TypeScriptConventionService : CommonLanguageConventionService
 {
 #pragma warning disable CA1707 // Remove the underscores
@@ -111,7 +112,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
                 => $" | null = {parameter.DefaultValue}",
-            (false, CodeParameterKind.DeserializationTarget, false) => $" = {parameter.DefaultValue}",
+            (false, CodeParameterKind.DeserializationTarget or CodeParameterKind.SerializingDerivedType, false) => $" = {parameter.DefaultValue}",
             (false, _, false) => $" = {parameter.DefaultValue} as {paramType}",
             _ => string.Empty,
         };

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
+
 public enum CodeParameterKind
 {
     Custom,
@@ -56,6 +57,12 @@ public enum CodeParameterKind
     /// When the deserialization method is replaced as a function, this is the parameter representing instance we're deserializing into.
     /// </summary>
     DeserializationTarget,
+    /// <summary>
+    /// A parameter representing the derived type to be used for serialization when the type is a discriminator value.
+    /// This is used to ensure derived properties are serialized correctly when the type is a discriminator value and we're using the base type serialization method.
+    /// This is only used for languages that use static functions for the serialization as opposed to instance methods since the OOP inheritance correctly handles that case.
+    /// </summary>
+    SerializingDerivedType,
 }
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement, IDeprecableElement
