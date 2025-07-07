@@ -897,6 +897,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             Name = $"{ModelSerializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
+        serializerMethod.AddParameter(new CodeParameter
+        {
+            Name = "isSerializingDerivedType",
+            DefaultValue = "false",
+            Type = new CodeType { Name = "boolean", IsExternal = true, IsNullable = false },
+            Kind = CodeParameterKind.SerializingDerivedType,
+            Documentation = new CodeDocumentation
+            {
+                DescriptionTemplate = "A boolean indicating whether the serialization is for a derived type.",
+            },
+            Optional = true,
+        });
 
         var deserializerFunction = new CodeFunction(deserializerMethod)
         {
@@ -923,6 +935,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             DefaultValue = "{}",
             Type = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
+            Documentation = new CodeDocumentation
+            {
+                DescriptionTemplate = codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer ?
+                                            "The instance to deserialize into." :
+                                            "The instance to serialize from.",
+            },
         });
 
         if (modelInterface.Parent is not null)
