@@ -1496,7 +1496,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
             parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass modelReturnClass)
         {
-            var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
+            var (modelSerializerFunction, modelDeserializerFunction) = GetSerializationFunctionsForNamespace(modelReturnClass);
             if (modelDeserializerFunction.Parent is not null)
             {
                 parsableFactoryFunction.AddUsing(new CodeUsing
@@ -1506,6 +1506,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     {
                         Name = modelDeserializerFunction.Name,
                         TypeDefinition = modelDeserializerFunction
+                    },
+                });
+            }
+            if (modelSerializerFunction.Parent is not null)
+            {
+                parsableFactoryFunction.AddUsing(new CodeUsing
+                {
+                    Name = modelSerializerFunction.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = modelSerializerFunction.Name,
+                        TypeDefinition = modelSerializerFunction
                     },
                 });
             }
