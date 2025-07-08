@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncKeyedLock;
+using BinkyLabs.OpenApi.Overlays;
 using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -96,7 +98,7 @@ internal class OpenApiDocumentDownloadService
         return (input, isDescriptionFromWorkspaceCopy);
     }
 
-    internal async Task<ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<Microsoft.OpenApi.Reader.ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -137,7 +139,52 @@ internal class OpenApiDocumentDownloadService
         {
             // couldn't parse the URL, it's probably a local file
         }
+
         var readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (config.Overlays.Count != 0)
+        {
+            // TODO : handle multiple Overlays
+            var overlay = config.Overlays.First();
+            var overlaysSettings = new OverlayReaderSettings
+            {
+                OpenApiSettings = settings
+            };
+
+            var readOverlayResult = await OverlayDocument.LoadFromUrlAsync(overlay, settings: overlaysSettings, token: cancellationToken).ConfigureAwait(false);
+
+
+            if (readOverlayResult?.Document is not null && settings.BaseUrl is not null)
+            {
+                var readOverlayAppliedResult = await readOverlayResult.Document.ApplyToDocumentStreamAsync(input, settings.BaseUrl, null, overlaysSettings, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (readOverlayResult is not null)
+                {
+                    if (readOverlayResult.Diagnostic is not null)
+                    {
+                        var diagnostics = new OpenApiDiagnostic()
+                        {
+                            Errors = readOverlayResult.Diagnostic.Errors,
+                            Warnings = readOverlayResult.Diagnostic.Warnings,
+                        };
+
+                        if (readResult.Diagnostic is not null)
+                        {
+                            diagnostics.AppendDiagnostic(readResult.Diagnostic);
+                        }
+                        else
+                        {
+                            readResult.Diagnostic = diagnostics;
+                        }
+                    }
+
+                    readResult.Document = readOverlayAppliedResult.Item1;
+                }
+            }
+        }
+
+
         stopwatch.Stop();
         if (generatingMode && readResult.Diagnostic?.Warnings is { Count: > 0 })
             foreach (var warning in readResult.Diagnostic.Warnings)

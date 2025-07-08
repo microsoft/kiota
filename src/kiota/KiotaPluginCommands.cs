@@ -70,6 +70,15 @@ public static class KiotaPluginCommands
         noWorkspaceOption.AddAlias("--nw");
         return noWorkspaceOption;
     }
+    internal static Option<List<string>> GetOverlaysOption()
+    {
+        var overlaysOption = new Option<List<string>>("--overlays", "Enable Overlays for the plugin.")
+        {
+            IsRequired = false,
+        };
+        overlaysOption.AddAlias("--ov");
+        return overlaysOption;
+    }
     public static Command GetAddCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -83,6 +92,7 @@ public static class KiotaPluginCommands
         var pluginType = GetPluginTypeOption();
         var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
         var pluginAuthRefIdOption = GetPluginAuthenticationReferenceIdOption();
+        var overlaysOption = KiotaHost.GetOverlaysOption();
         var command = new Command("add", "Adds a new plugin to the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -95,7 +105,7 @@ public static class KiotaPluginCommands
             pluginAuthTypeOption,
             pluginAuthRefIdOption,
             noWorkspaceOption,
-            //TODO overlay when we have support for it in OAI.net
+            overlaysOption
         };
         command.AddValidator(commandResult =>
             {
@@ -114,6 +124,7 @@ public static class KiotaPluginCommands
             SkipGenerationOption = skipGenerationOption,
             LogLevelOption = logLevelOption,
             NoWorkspaceOption = noWorkspaceOption,
+            OverlaysOption = overlaysOption,
         };
         return command;
     }
@@ -128,6 +139,7 @@ public static class KiotaPluginCommands
         var pluginTypes = GetPluginTypeOption(false);
         var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
         var pluginAuthRefIdOption = GetPluginAuthenticationReferenceIdOption();
+        var overlaysOption = KiotaHost.GetOverlaysOption();
         var command = new Command("edit", "Edits a plugin configuration and updates the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -139,7 +151,7 @@ public static class KiotaPluginCommands
             pluginTypes,
             pluginAuthTypeOption,
             pluginAuthRefIdOption,
-            //TODO overlay when we have support for it in OAI.net
+            overlaysOption
         };
         command.AddValidator(commandResult =>
             {
@@ -156,6 +168,7 @@ public static class KiotaPluginCommands
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
             SkipGenerationOption = skipGenerationOption,
+            OverlaysOption = overlaysOption,
             LogLevelOption = logLevelOption,
         };
         return command;

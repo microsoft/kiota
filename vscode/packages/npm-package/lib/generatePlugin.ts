@@ -6,21 +6,22 @@ import { KiotaPluginType, GeneratePluginResult } from "../types";
 import * as path from "path";
 
 export interface PluginGenerationOptions {
-  descriptionPath: string;
-  outputPath: string;
-  pluginName: string;
-  operation: ConsumerOperation;
-  workingDirectory: string;
+    descriptionPath: string;
+    outputPath: string;
+    pluginName: string;
+    operation: ConsumerOperation;
+    workingDirectory: string;
 
-  pluginType?: KiotaPluginType;
-  includePatterns?: string[];
-  excludePatterns?: string[];
-  clearCache?: boolean;
-  cleanOutput?: boolean;
-  disabledValidationRules?: string[];
-  noWorkspace?: boolean;
-  pluginAuthType?: PluginAuthType | null;
-  pluginAuthRefid?: string;
+    pluginType?: KiotaPluginType;
+    includePatterns?: string[];
+    excludePatterns?: string[];
+    clearCache?: boolean;
+    cleanOutput?: boolean;
+    disabledValidationRules?: string[];
+    noWorkspace?: boolean;
+    pluginAuthType?: PluginAuthType | null;
+    pluginAuthRefid?: string;
+    overlays?: string[];
 }
 
 /**
@@ -41,6 +42,7 @@ export interface PluginGenerationOptions {
  * @param {boolean} [pluginGenerationOptions.noWorkspace] - Whether to generate without a workspace.
  * @param {PluginAuthType | null} [pluginGenerationOptions.pluginAuthType] - The authentication type for the plugin, if any.
  * @param {string} [pluginGenerationOptions.pluginAuthRefid] - The reference ID for the plugin authentication, if any.
+ * @param {string[]} [pluginGenerationOptions.overlays] - List of overlays to use in the generation process.
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
  * @throws {Error} If an error occurs during the generation process.
  *
@@ -49,50 +51,51 @@ export interface PluginGenerationOptions {
  */
 export async function generatePlugin(pluginGenerationOptions: PluginGenerationOptions
 ): Promise<GeneratePluginResult | undefined> {
-  const pluginType = pluginGenerationOptions.pluginType ?? KiotaPluginType.ApiPlugin;
-  const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
-    const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
-      "GeneratePlugin"
-    );
-    return await connection.sendRequest(
-      request,
-      {
-        openAPIFilePath: pluginGenerationOptions.descriptionPath,
-        outputPath: pluginGenerationOptions.outputPath,
-        operation: pluginGenerationOptions.operation,
-        clientClassName: pluginGenerationOptions.pluginName,
+    const pluginType = pluginGenerationOptions.pluginType ?? KiotaPluginType.ApiPlugin;
+    const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
+        const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
+            "GeneratePlugin"
+        );
+        return await connection.sendRequest(
+            request,
+            {
+                openAPIFilePath: pluginGenerationOptions.descriptionPath,
+                outputPath: pluginGenerationOptions.outputPath,
+                operation: pluginGenerationOptions.operation,
+                clientClassName: pluginGenerationOptions.pluginName,
 
-        pluginTypes: [pluginType],
-        cleanOutput: pluginGenerationOptions.cleanOutput ?? false,
-        clearCache: pluginGenerationOptions.clearCache ?? false,
-        disabledValidationRules: pluginGenerationOptions.disabledValidationRules ?? [],
-        excludePatterns: pluginGenerationOptions.excludePatterns ?? [],
-        includePatterns: pluginGenerationOptions.includePatterns ?? [],
-        noWorkspace: pluginGenerationOptions.noWorkspace ?? null,
-        pluginAuthType: pluginGenerationOptions.pluginAuthType ?? null,
-        pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid ?? '',
-      } as GenerationConfiguration,
-    );
-  }, pluginGenerationOptions.workingDirectory);
+                pluginTypes: [pluginType],
+                cleanOutput: pluginGenerationOptions.cleanOutput ?? false,
+                clearCache: pluginGenerationOptions.clearCache ?? false,
+                disabledValidationRules: pluginGenerationOptions.disabledValidationRules ?? [],
+                excludePatterns: pluginGenerationOptions.excludePatterns ?? [],
+                includePatterns: pluginGenerationOptions.includePatterns ?? [],
+                noWorkspace: pluginGenerationOptions.noWorkspace ?? null,
+                pluginAuthType: pluginGenerationOptions.pluginAuthType ?? null,
+                pluginAuthRefid: pluginGenerationOptions.pluginAuthRefid ?? '',
+                overlays: pluginGenerationOptions.overlays ?? [],
+            } as GenerationConfiguration,
+        );
+    }, pluginGenerationOptions.workingDirectory);
 
-  if (result instanceof Error) {
-    throw result;
-  }
+    if (result instanceof Error) {
+        throw result;
+    }
 
-  if (result) {
-    const outputPath = pluginGenerationOptions.outputPath;
-    const pluginName = pluginGenerationOptions.pluginName;
-    const pathOfSpec = path.join(outputPath, `${pluginName.toLowerCase()}-openapi.yml`);
-    const plugingTypeName = KiotaPluginType[pluginType];
-    const pathPluginManifest = path.join(outputPath, `${pluginName.toLowerCase()}-${plugingTypeName.toLowerCase()}.json`);
-    return {
-      aiPlugin: pathPluginManifest,
-      openAPISpec: pathOfSpec, 
-      isSuccess: checkForSuccess(result as KiotaLogEntry[]),
-      logs: result
-    };
-  }
+    if (result) {
+        const outputPath = pluginGenerationOptions.outputPath;
+        const pluginName = pluginGenerationOptions.pluginName;
+        const pathOfSpec = path.join(outputPath, `${pluginName.toLowerCase()}-openapi.yml`);
+        const plugingTypeName = KiotaPluginType[pluginType];
+        const pathPluginManifest = path.join(outputPath, `${pluginName.toLowerCase()}-${plugingTypeName.toLowerCase()}.json`);
+        return {
+            aiPlugin: pathPluginManifest,
+            openAPISpec: pathOfSpec,
+            isSuccess: checkForSuccess(result as KiotaLogEntry[]),
+            logs: result
+        };
+    }
 
-  return undefined;
+    return undefined;
 
 };

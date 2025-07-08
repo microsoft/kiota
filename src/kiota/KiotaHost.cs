@@ -433,6 +433,12 @@ public static partial class KiotaHost
         structuredMimeTypesOption.AddAlias("-m");
         return structuredMimeTypesOption;
     }
+    internal static Option<List<string>> GetOverlaysOption()
+    {
+        var overlaysOption = new Option<List<string>>("--overlays", "Enable overlays for models");
+        overlaysOption.AddAlias("--ov");
+        return overlaysOption;
+    }
     private static Command GetGenerateCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
@@ -484,6 +490,8 @@ public static partial class KiotaHost
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
+        var overlaysOption = GetOverlaysOption();
+
         var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
 
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
@@ -507,6 +515,7 @@ public static partial class KiotaHost
             dvrOption,
             clearCacheOption,
             disableSSLValidationOption,
+            overlaysOption
         };
         command.Handler = new KiotaGenerateCommandHandler
         {
@@ -530,6 +539,7 @@ public static partial class KiotaHost
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
             DisableSSLValidationOption = disableSSLValidationOption,
+            OverlaysOption = overlaysOption,
         };
         return command;
     }

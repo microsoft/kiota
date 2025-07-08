@@ -61,6 +61,10 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> OverlaysOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -77,6 +81,9 @@ internal class EditHandler : BaseKiotaCommandHandler
         string? className0 = context.ParseResult.GetValueForOption(ClassOption);
         List<string>? includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
+        List<string>? overlays = context.ParseResult.GetValueForOption(OverlaysOption);
+
+
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
@@ -135,8 +142,16 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (pluginTypes is { Count: > 0 })
                     Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+                if (overlays is { Count: > 0 })
+                    Configuration.Generation.Overlays = overlays
+                                                                            .Select(static x => x.TrimQuotes())
+                                                                            .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+
                 Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
                 Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
+
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);
                 var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);

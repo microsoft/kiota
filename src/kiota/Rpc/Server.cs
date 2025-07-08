@@ -152,7 +152,7 @@ internal partial class Server : IServer
             return indexingNormalizationRegex().Replace(name, "{}");
         return name;
     }
-    public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, ConsumerOperation operation, CancellationToken cancellationToken)
+    public async Task<List<LogEntry>> GenerateAsync(string openAPIFilePath, string outputPath, GenerationLanguage language, string[] includePatterns, string[] excludePatterns, string clientClassName, string clientNamespaceName, bool usesBackingStore, bool cleanOutput, bool clearCache, bool excludeBackwardCompatible, string[] disabledValidationRules, string[] serializers, string[] deserializers, string[] structuredMimeTypes, bool includeAdditionalData, string[] overlays, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var logger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -167,6 +167,7 @@ internal partial class Server : IServer
         configuration.ExcludeBackwardCompatible = excludeBackwardCompatible;
         configuration.IncludeAdditionalData = includeAdditionalData;
         configuration.Operation = operation;
+
         if (disabledValidationRules is { Length: > 0 })
             configuration.DisabledValidationRules = disabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (serializers is { Length: > 0 })
@@ -175,6 +176,8 @@ internal partial class Server : IServer
             configuration.Deserializers = deserializers.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (structuredMimeTypes is { Length: > 0 })
             configuration.StructuredMimeTypes = new(structuredMimeTypes);
+        if (overlays is { Length: > 0 })
+            configuration.Overlays = new(overlays);
         if (IsConfigPreviewEnabled.Value)
         {
             configuration.Serializers.Clear();
@@ -200,7 +203,7 @@ internal partial class Server : IServer
     }
     public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns,
         string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules,
-        bool? noWorkspace, PluginAuthType? pluginAuthType, string? pluginAuthRefid, ConsumerOperation operation, CancellationToken cancellationToken)
+        bool? noWorkspace, PluginAuthType? pluginAuthType, string? pluginAuthRefid, string[] overlays, ConsumerOperation operation, CancellationToken cancellationToken)
     {
         var globalLogger = new ForwardedLogger<KiotaBuilder>();
         var configuration = Configuration.Generation;
@@ -221,6 +224,13 @@ internal partial class Server : IServer
             configuration.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns is { Length: > 0 })
             configuration.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (overlays is { Length: > 0 })
+            Configuration.Generation.Overlays = overlays
+                                                    .Select(static x => x.TrimQuotes())
+                                                    .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
         configuration.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.OutputPath));
         if (!string.IsNullOrEmpty(pluginAuthRefid) && pluginAuthType != null)

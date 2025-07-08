@@ -46,6 +46,7 @@ public static class KiotaClientCommands
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
+        var overlaysOption = KiotaHost.GetOverlaysOption();
 
         var command = new Command("add", "Adds a new client to the Kiota configuration"){
             descriptionOption,
@@ -63,6 +64,7 @@ public static class KiotaClientCommands
             excludePatterns,
             dvrOption,
             skipGenerationOption,
+            overlaysOption
         };
         command.Handler = new AddHandler
         {
@@ -81,6 +83,7 @@ public static class KiotaClientCommands
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
+            OverlaysOption = overlaysOption
         };
 
         return command;
@@ -120,6 +123,7 @@ public static class KiotaClientCommands
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
+        var overlaysOption = KiotaHost.GetOverlaysOption();
 
         var command = new Command("edit", "Edits a client from the Kiota configuration") {
             descriptionOption,
@@ -137,6 +141,7 @@ public static class KiotaClientCommands
             excludePatterns,
             dvrOption,
             skipGenerationOption,
+            overlaysOption
         };
         command.Handler = new EditHandler
         {
@@ -155,6 +160,7 @@ public static class KiotaClientCommands
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
+            OverlaysOption = overlaysOption
         };
         return command;
     }
