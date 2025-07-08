@@ -55,7 +55,6 @@ let extensionSettings = {
     disableValidationRules: [],
     structuredMimeTypes: [],
     languagesSerializationConfiguration: {
-        [KiotaGenerationLanguage.CLI]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.CSharp]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Go]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Java]: { serializers: [], deserializers: [] },

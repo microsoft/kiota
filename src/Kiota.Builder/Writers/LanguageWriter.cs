@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
-using Kiota.Builder.Writers.Cli;
 using Kiota.Builder.Writers.CSharp;
 using Kiota.Builder.Writers.Dart;
 using Kiota.Builder.Writers.Go;
@@ -191,7 +190,6 @@ public abstract class LanguageWriter
             GenerationLanguage.PHP => new PhpWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
-            GenerationLanguage.CLI => new CliWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Swift => new SwiftWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Dart => new DartWriter(outputPath, clientNamespaceName),
             GenerationLanguage.HTTP => new HttpWriter(outputPath, clientNamespaceName),

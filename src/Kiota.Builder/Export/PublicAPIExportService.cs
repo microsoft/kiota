@@ -124,7 +124,6 @@ internal class PublicApiExportService
             GenerationLanguage.Go => new GoConventionService(),
             GenerationLanguage.Swift => new SwiftConventionService(generationConfiguration.ClientNamespaceName),
             GenerationLanguage.Ruby => new RubyConventionService(),
-            GenerationLanguage.CLI => new CSharpConventionService(),
             GenerationLanguage.Dart => new DartConventionService(),
             _ => throw new ArgumentOutOfRangeException(nameof(generationConfiguration), generationConfiguration.Language, null)
         };

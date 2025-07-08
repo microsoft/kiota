@@ -226,10 +226,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                                                 .Select(x => x.Type)
                                                 .Union(new[] { currentMethod.ReturnType })
                                                 .ToArray());
-        CorrectCoreTypes(currentMethod.Parent as CodeClass, DateTypesReplacements, true, currentMethod.PathQueryAndHeaderParameters
-                                                .Select(x => x.Type)
-                                                .Union(new[] { currentMethod.ReturnType })
-                                                .ToArray());
     }
     protected static void CorrectIndexerType(CodeIndexer currentIndexer)
     {

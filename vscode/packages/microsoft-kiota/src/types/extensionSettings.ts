@@ -11,7 +11,6 @@ export function getExtensionSettings(extensionId: string): ExtensionSettings {
         disableValidationRules: getStringArrayConfiguration(extensionId, "generate.disableValidationRules"),
         structuredMimeTypes: getStringArrayConfiguration(extensionId, "generate.structuredMimeTypes"),
         languagesSerializationConfiguration: {
-            [KiotaGenerationLanguage.CLI]: getLanguageSerializationConfiguration(extensionId, "CSharp"),
             [KiotaGenerationLanguage.CSharp]: getLanguageSerializationConfiguration(extensionId, "CSharp"),
             [KiotaGenerationLanguage.Go]: getLanguageSerializationConfiguration(extensionId, "Go"),
             [KiotaGenerationLanguage.Java]: getLanguageSerializationConfiguration(extensionId, "Java"),

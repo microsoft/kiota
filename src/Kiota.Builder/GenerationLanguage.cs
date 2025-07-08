@@ -1,4 +1,5 @@
 ﻿namespace Kiota.Builder;
+
 public enum GenerationLanguage
 {
     CSharp,
@@ -9,7 +10,6 @@ public enum GenerationLanguage
     Go,
     Swift,
     Ruby,
-    CLI,
     Dart,
     HTTP
 }
