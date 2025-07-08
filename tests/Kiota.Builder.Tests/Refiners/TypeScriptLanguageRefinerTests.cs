@@ -83,9 +83,11 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, graphNS);
         var propertyFactoryMethod = subNs.FindChildByName<CodeFunction>("createPropertyModelFromDiscriminatorValue");
         var deserializerFunction = graphNS.FindChildByName<CodeFunction>("DeserializeIntoModel");
+        var serializerFunction = graphNS.FindChildByName<CodeFunction>("SerializeModel");
 
         Assert.NotNull(propertyFactoryMethod);
         Assert.NotNull(deserializerFunction);
+        Assert.NotNull(serializerFunction);
         Assert.Contains(deserializerFunction.Usings, x => x.Declaration?.TypeDefinition == propertyFactoryMethod);
     }
     [Fact]
