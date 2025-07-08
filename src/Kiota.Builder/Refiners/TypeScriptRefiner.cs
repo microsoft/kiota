@@ -1525,15 +1525,14 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
                 if (mappedType.Value is not
-                    { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass }
-                    || codeNamespace.FindChildByName<CodeFunction>(
-                            $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is not
-                            { } deserializer)
+                    { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass })
                 {
                     continue;
                 }
 
-                if (deserializer.Parent is not null)
+                if (codeNamespace.FindChildByName<CodeFunction>(
+                            $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is
+                    { } deserializer && deserializer.Parent is not null)
                 {
                     parsableFactoryFunction.AddUsing(new CodeUsing
                     {
@@ -1542,6 +1541,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         {
                             Name = deserializer.Name,
                             TypeDefinition = deserializer
+                        },
+                    });
+                }
+                if (codeNamespace.FindChildByName<CodeFunction>(
+                            $"{ModelSerializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is
+                    { } serializer && serializer.Parent is not null)
+                {
+                    parsableFactoryFunction.AddUsing(new CodeUsing
+                    {
+                        Name = serializer.Parent.Name,
+                        Declaration = new CodeType
+                        {
+                            Name = serializer.Name,
+                            TypeDefinition = serializer
                         },
                     });
                 }
