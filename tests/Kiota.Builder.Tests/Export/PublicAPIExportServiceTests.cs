@@ -75,6 +75,7 @@ components:
     private static readonly Dictionary<GenerationLanguage, Action<HashSet<string>>> Validators = new()
     {
         { GenerationLanguage.CSharp, ValidateExportCSharp },
+        { GenerationLanguage.CSharp13, ValidateExportCSharp },
         { GenerationLanguage.Go, ValidateExportGo },
         { GenerationLanguage.Python, ValidateExportPython },
         { GenerationLanguage.TypeScript, ValidateExportTypeScript },
@@ -84,6 +85,7 @@ components:
 
     [Theory]
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.CSharp13)]
     [InlineData(GenerationLanguage.Go)]
     [InlineData(GenerationLanguage.Python)]
     [InlineData(GenerationLanguage.TypeScript)]

@@ -1304,7 +1304,7 @@ public partial class KiotaBuilder
         {
             var suffix = $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}Response";
             var modelType = CreateModelDeclarations(currentNode, schema, operation, parentClass, suffix);
-            if (modelType is not null && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
+            if (modelType is not null && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.CSharp13 or GenerationLanguage.Go && modelType.Name.EndsWith(suffix, StringComparison.Ordinal))
             { //TODO remove for v2
                 var obsoleteTypeName = modelType.Name[..^suffix.Length] + "Response";
                 if (modelType is CodeType codeType &&
@@ -2606,7 +2606,7 @@ public partial class KiotaBuilder
 
         if (!parameterClass.ContainsPropertyWithWireName(prop.WireName))
         {
-            if (addBackwardCompatibleParameter && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.Go)
+            if (addBackwardCompatibleParameter && config.IncludeBackwardCompatible && config.Language is GenerationLanguage.CSharp or GenerationLanguage.CSharp13 or GenerationLanguage.Go)
             { //TODO remove for v2
                 var modernProp = (CodeProperty)prop.Clone();
                 modernProp.Name = $"{prop.Name}As{modernProp.Type.Name.ToFirstCharacterUpperCase()}";

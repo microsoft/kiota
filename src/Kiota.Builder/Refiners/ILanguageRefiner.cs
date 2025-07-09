@@ -14,6 +14,7 @@ public interface ILanguageRefiner
         switch (config.Language)
         {
             case GenerationLanguage.CSharp:
+            case GenerationLanguage.CSharp13:
                 await new CSharpRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.TypeScript:
