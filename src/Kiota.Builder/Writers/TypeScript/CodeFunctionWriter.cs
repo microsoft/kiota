@@ -421,7 +421,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             {
                 var mappedType = mapping.Value;
                 writer.StartBlock($"case \"{mapping.Key}\":");
-                writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType)}(writer, {param.Name.ToFirstCharacterLowerCase()} as {conventions.GetTypeString(mappedType, codeElement, false)}, true);");
+                writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType)}(writer, {param.Name.ToFirstCharacterLowerCase()}, true);");
                 writer.CloseBlock("break;");
             }
             writer.CloseBlock();
