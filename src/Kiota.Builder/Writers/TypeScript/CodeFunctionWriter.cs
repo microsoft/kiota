@@ -402,7 +402,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"if (!{param.Name.ToFirstCharacterLowerCase()} || {serializingDerivedTypeParam.Name}) {{ return; }}");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
-            writer.WriteLine($"serialize{inherits.TypeDefinition!.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
+            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}(writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
         }
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
@@ -421,7 +421,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             {
                 var mappedType = mapping.Value;
                 writer.StartBlock($"case \"{mapping.Key}\":");
-                writer.WriteLine($"serialize{mappedType.Name.ToFirstCharacterUpperCase()}(writer, {param.Name.ToFirstCharacterLowerCase()} as {mappedType.Name.ToFirstCharacterUpperCase()}, true);");
+                writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType)}(writer, {param.Name.ToFirstCharacterLowerCase()}, true);");
                 writer.CloseBlock("break;");
             }
             writer.CloseBlock();

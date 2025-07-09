@@ -501,7 +501,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("switch (parentClass.odataType) {", result);
         Assert.Contains("case \"ns.childclass\":", result);
-        Assert.Contains("serializeChildClass(writer, parentClass as ChildClass, true);", result);
+        Assert.Contains("serializeChildClass(writer, parentClass, true);", result);
     }
 
     [Fact]
