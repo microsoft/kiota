@@ -8,8 +8,6 @@ describe("Language Information", () => {
 
     const actualCSharp = actual!.CSharp;
     expect(actualCSharp).toBeDefined();
-    const actualCLI = actual!.CLI;
-    expect(actualCLI).toBeDefined();
     const actualJava = actual!.Java;
     expect(actualJava).toBeDefined();
     const actualMissingLanguage = actual!.MissingLanguage;
@@ -22,8 +20,6 @@ describe("Language Information", () => {
 
     const actualCSharp = actual!.CSharp;
     expect(actualCSharp).toBeDefined();
-    const actualCLI = actual!.CLI;
-    expect(actualCLI).toBeDefined();
     const actualJava = actual!.Java;
     expect(actualJava).toBeDefined();
     const actualMissingLanguage = actual!.MissingLanguage;
