@@ -17,7 +17,6 @@ export function getExtensionSettings(extensionId: string): ExtensionSettings {
             [KiotaGenerationLanguage.PHP]: getLanguageSerializationConfiguration(extensionId, "PHP"),
             [KiotaGenerationLanguage.Python]: getLanguageSerializationConfiguration(extensionId, "Python"),
             [KiotaGenerationLanguage.Ruby]: getLanguageSerializationConfiguration(extensionId, "Ruby"),
-            [KiotaGenerationLanguage.Swift]: getLanguageSerializationConfiguration(extensionId, "Swift"),
             [KiotaGenerationLanguage.TypeScript]: getLanguageSerializationConfiguration(extensionId, "TypeScript"),
             [KiotaGenerationLanguage.Dart]: getLanguageSerializationConfiguration(extensionId, "Dart"),
             [KiotaGenerationLanguage.HTTP]: getLanguageSerializationConfiguration(extensionId, "HTTP"),

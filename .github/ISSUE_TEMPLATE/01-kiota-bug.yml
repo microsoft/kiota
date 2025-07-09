@@ -37,7 +37,6 @@ body:
       multiple: false
       options:
         - Csharp
-        - CLI
         - Go
         - Java
         - PHP
@@ -45,7 +44,6 @@ body:
         - Python
         - Ruby
         - TypeScript
-        - Swift
         - Dart
     validations:
       required: false

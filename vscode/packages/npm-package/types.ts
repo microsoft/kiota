@@ -12,13 +12,11 @@ export enum KiotaGenerationLanguage {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   Go = 5,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  Swift = 6,
+  Ruby = 6,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  Ruby = 7,
+  Dart = 7,
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  Dart = 8,
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  HTTP = 9,
+  HTTP = 8,
 }
 
 export enum KiotaPluginType {
@@ -158,8 +156,6 @@ export function generationLanguageToString(
       return "Python";
     case KiotaGenerationLanguage.Go:
       return "Go";
-    case KiotaGenerationLanguage.Swift:
-      return "Swift";
     case KiotaGenerationLanguage.Ruby:
       return "Ruby";
     case KiotaGenerationLanguage.Dart:
@@ -178,7 +174,6 @@ export const allGenerationLanguages = [
   KiotaGenerationLanguage.PHP,
   KiotaGenerationLanguage.Python,
   KiotaGenerationLanguage.Ruby,
-  KiotaGenerationLanguage.Swift,
   KiotaGenerationLanguage.TypeScript,
   KiotaGenerationLanguage.Dart,
   KiotaGenerationLanguage.HTTP,
