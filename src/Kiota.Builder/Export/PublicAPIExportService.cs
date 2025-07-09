@@ -14,7 +14,6 @@ using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
-using Kiota.Builder.Writers.Swift;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Export;
@@ -122,7 +121,6 @@ internal class PublicApiExportService
             GenerationLanguage.PHP => new PhpConventionService(),
             GenerationLanguage.Python => new PythonConventionService(),
             GenerationLanguage.Go => new GoConventionService(),
-            GenerationLanguage.Swift => new SwiftConventionService(generationConfiguration.ClientNamespaceName),
             GenerationLanguage.Ruby => new RubyConventionService(),
             GenerationLanguage.Dart => new DartConventionService(),
             _ => throw new ArgumentOutOfRangeException(nameof(generationConfiguration), generationConfiguration.Language, null)

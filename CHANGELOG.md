@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed incomplete Swift generation.
 - Removed CLI generation ability. [microsoft/kiota-cli-commons#248](https://github.com/microsoft/kiota-cli-commons/issues/248)
 - Fixed a bug where union of primitive types collection would not compile in dotnet. [#6635](https://github.com/microsoft/kiota/issues/6635)
 - Fixes generation of usings/imports in where Date Types are placed in a nested class. [#6286](https://github.com/microsoft/kiota/issues/6286)

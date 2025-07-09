@@ -61,7 +61,6 @@ let extensionSettings = {
         [KiotaGenerationLanguage.PHP]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Python]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Ruby]: { serializers: [], deserializers: [] },
-        [KiotaGenerationLanguage.Swift]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.TypeScript]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.Dart]: { serializers: [], deserializers: [] },
         [KiotaGenerationLanguage.HTTP]: { serializers: [], deserializers: [] },

@@ -8,7 +8,6 @@ public enum GenerationLanguage
     PHP,
     Python,
     Go,
-    Swift,
     Ruby,
     Dart,
     HTTP
