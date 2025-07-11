@@ -1485,8 +1485,6 @@ public partial class KiotaBuilder
                 (_, false) => config.StructuredMimeTypes.GetAcceptedTypes(operation.Responses!.Values.Where(static x => x.Content is not null).SelectMany(static x => x.Content!).Where(x => schemaReferenceComparer.Equals(schema, x.Value.Schema)).Select(static x => x.Key)),
             };
             generatorMethod.AddAcceptedResponsesTypes(mediaTypes);
-            if (config.Language == GenerationLanguage.CLI)
-                SetPathAndQueryParameters(generatorMethod, currentNode, operation);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
             parentClass.AddMethod(generatorMethod);
             logger.LogTrace("Creating method {Name} of {Type}", generatorMethod.Name, generatorMethod.ReturnType);
@@ -1497,46 +1495,6 @@ public partial class KiotaBuilder
         }
     }
     private static readonly OpenApiSchemaReferenceComparer schemaReferenceComparer = new();
-    private static readonly Func<IOpenApiParameter, CodeParameter?> GetCodeParameterFromApiParameter = x =>
-    {
-        if (x.Name?.SanitizeParameterNameForCodeSymbols() is not string codeName) return null;
-        return new CodeParameter
-        {
-            Name = codeName,
-            SerializationName = codeName.Equals(x.Name, StringComparison.Ordinal) ? string.Empty : x.Name,
-            Type = x.Schema is null ? GetDefaultQueryParameterType() : GetQueryParameterType(x.Schema),
-            Documentation = new()
-            {
-                DescriptionTemplate = x.Description.CleanupDescription(),
-            },
-            Kind = x.In switch
-            {
-                ParameterLocation.Query => CodeParameterKind.QueryParameter,
-                ParameterLocation.Header => CodeParameterKind.Headers,
-                ParameterLocation.Path => CodeParameterKind.Path,
-                _ => throw new NotSupportedException($"No matching parameter kind is supported for parameters in {x.In}"),
-            },
-            Optional = !x.Required
-        };
-    };
-    private static readonly Func<IOpenApiParameter, bool> ParametersFilter = x => x.In == ParameterLocation.Path || x.In == ParameterLocation.Query || x.In == ParameterLocation.Header;
-    private static void SetPathAndQueryParameters(CodeMethod target, OpenApiUrlTreeNode currentNode, OpenApiOperation operation)
-    {
-        var pathAndQueryParameters = currentNode
-            .PathItems[Constants.DefaultOpenApiLabel]
-            .Parameters
-            ?.Where(ParametersFilter)
-            .Select(GetCodeParameterFromApiParameter)
-            .OfType<CodeParameter>()
-            .Union(operation
-                    .Parameters
-                    ?.Where(ParametersFilter)
-                    .Select(GetCodeParameterFromApiParameter)
-                    .OfType<CodeParameter>() ??
-                    [])
-            .ToArray() ?? [];
-        target.AddPathQueryOrHeaderParameter(pathAndQueryParameters);
-    }
 
     private static void AddRequestConfigurationProperties(CodeClass? parameterClass, CodeClass requestConfigClass)
     {
