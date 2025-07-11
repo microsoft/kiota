@@ -436,7 +436,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains($"serialize{inheritedClass.Name.ToFirstCharacterUpperCase()}(writer, parentClass)", result);
+        Assert.Contains($"serialize{inheritedClass.Name.ToFirstCharacterUpperCase()}(writer, parentClass, isSerializingDerivedType)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
@@ -461,8 +461,47 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("writeCollectionOfObjectValues", result);
         Assert.Contains("serializeSomeComplexType", result);
         Assert.Contains("writeEnumValue", result);
-        Assert.Contains($"writer.writeAdditionalData", result);
+        Assert.Contains("writer.writeAdditionalData", result);
+        Assert.Contains($"if (!{parentClass.Name.ToFirstCharacterLowerCase()} || isSerializingDerivedType) {{ return; }}", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task WritesSerializerBodyWithDiscriminatorAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.childclass", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "childClass", true),
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "odataType",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+            SerializationName = "@odata.type",
+        });
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.Contains("switch (parentClass.odataType) {", result);
+        Assert.Contains("case \"ns.childclass\":", result);
+        Assert.Contains("serializeChildClass(writer, parentClass, true);", result);
     }
 
     [Fact]
@@ -976,6 +1015,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 TypeDefinition = targetInterface,
             }
         });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "isDerivedSerialization",
+            Type = new CodeType
+            {
+                Name = "boolean",
+            },
+            Kind = CodeParameterKind.SerializingDerivedType,
+        });
         var function = new CodeFunction(method);
         root.TryAddCodeFile("foo", function);
         writer.Write(function);
@@ -1011,6 +1059,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 TypeDefinition = targetInterface,
             }
         });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "isDerivedSerialization",
+            Type = new CodeType
+            {
+                Name = "boolean",
+            },
+            Kind = CodeParameterKind.SerializingDerivedType,
+        });
         method.ReturnType.IsNullable = false;
         var function = new CodeFunction(method);
         root.TryAddCodeFile("foo", function);
@@ -1044,6 +1101,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
             {
                 TypeDefinition = targetInterface,
             }
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "isDerivedSerialization",
+            Type = new CodeType
+            {
+                Name = "boolean",
+            },
+            Kind = CodeParameterKind.SerializingDerivedType,
         });
         method.IsAsync = false;
         var function = new CodeFunction(method);
@@ -1080,6 +1146,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 TypeDefinition = targetInterface,
             }
         });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "isDerivedSerialization",
+            Type = new CodeType
+            {
+                Name = "boolean",
+            },
+            Kind = CodeParameterKind.SerializingDerivedType,
+        });
         var function = new CodeFunction(method);
         root.TryAddCodeFile("foo", function);
         writer.Write(function);
@@ -1114,6 +1189,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 TypeDefinition = targetInterface,
             }
         });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "isDerivedSerialization",
+            Type = new CodeType
+            {
+                Name = "boolean",
+            },
+            Kind = CodeParameterKind.SerializingDerivedType,
+        });
         var function = new CodeFunction(method);
         root.TryAddCodeFile("foo", function);
         writer.Write(function);
@@ -1147,6 +1231,15 @@ public sealed class CodeFunctionWriterTests : IDisposable
             {
                 TypeDefinition = targetInterface,
             }
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "isDerivedSerialization",
+            Type = new CodeType
+            {
+                Name = "boolean",
+            },
+            Kind = CodeParameterKind.SerializingDerivedType,
         });
         var function = new CodeFunction(method);
         root.TryAddCodeFile("foo", function);

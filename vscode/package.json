@@ -7,35 +7,33 @@
     "type": "git"
   },
   "scripts": {
-    "lint": "lerna run lint",
-    "build": "npm run build -w npm-package",
-    "test:vscode": "lerna run build && lerna run test --scope=kiota",
-    "test:vscode:coverage": "lerna run build && lerna run test:coverage --scope=kiota",
-    "test:package": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test --scope=\"@microsoft/kiota\"",
-    "test:package:coverage": "lerna run clean --scope=\"@microsoft/kiota\" && lerna run test:coverage --scope=\"@microsoft/kiota\"",
+    "lint": "npm run lint --w=\"@microsoft/kiota\" && npm run lint --w=kiota",
+    "build": "npm run build --w=\"@microsoft/kiota\" && npm run build --w=kiota",
+    "test:vscode": "npm run build && npm run test --w=kiota",
+    "test:vscode:coverage": "npm run build && npm run test:coverage --w=kiota",
+    "test:package": "npm run build --w=\"@microsoft/kiota\" && npm run test --w=\"@microsoft/kiota\"",
+    "test:package:coverage": "npm run build --w=\"@microsoft/kiota\" && npm run test:coverage --w=\"@microsoft/kiota\"",
     "test": "npm run test:package && npm run test:vscode",
     "test:coverage": "npm run test:package:coverage && npm run test:vscode:coverage",
-    "package:vscode": "lerna run package --scope=kiota",
-    "package:package": "lerna run package --scope=@microsoft/kiota"
+    "package:vscode": "npm run package --w=kiota",
+    "package:package": "npm run package --w=@microsoft/kiota"
   },
   "keywords": [
     "Kiota"
   ],
   "author": "Microsoft",
   "devDependencies": {
-    "@stylistic/eslint-plugin-ts": "^4.0.1",
-    "@types/node": "^22.13.4",
-    "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@stylistic/eslint-plugin-ts": "^4.4.1",
+    "@types/node": "^24.0.13",
+    "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.29.0",
-    "eslint": "^9.20.1",
-    "glob": "^11.0.1",
-    "lerna": "^8.2.0",
+    "eslint": "^9.30.1",
+    "glob": "^11.0.3",
     "typemoq": "^2.1.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "workspaces": [
-    "microsoft-kiota",
-    "npm-package"
+    "packages/npm-package",
+    "packages/microsoft-kiota"
   ]
 }

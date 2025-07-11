@@ -897,6 +897,18 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             Name = $"{ModelSerializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
+        serializerMethod.AddParameter(new CodeParameter
+        {
+            Name = "isSerializingDerivedType",
+            DefaultValue = "false",
+            Type = new CodeType { Name = "boolean", IsExternal = true, IsNullable = false },
+            Kind = CodeParameterKind.SerializingDerivedType,
+            Documentation = new CodeDocumentation
+            {
+                DescriptionTemplate = "A boolean indicating whether the serialization is for a derived type.",
+            },
+            Optional = true,
+        });
 
         var deserializerFunction = new CodeFunction(deserializerMethod)
         {
@@ -923,6 +935,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             DefaultValue = "{}",
             Type = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
             Kind = CodeParameterKind.DeserializationTarget,
+            Documentation = new CodeDocumentation
+            {
+                DescriptionTemplate = codeFunction.OriginalLocalMethod.Kind is CodeMethodKind.Deserializer ?
+                                            "The instance to deserialize into." :
+                                            "The instance to serialize from.",
+            },
         });
 
         if (modelInterface.Parent is not null)
@@ -1478,7 +1496,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (codeElement is CodeFunction parsableFactoryFunction && parsableFactoryFunction.OriginalLocalMethod.IsOfKind(CodeMethodKind.Factory) &&
             parsableFactoryFunction.OriginalLocalMethod?.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass modelReturnClass)
         {
-            var modelDeserializerFunction = GetSerializationFunctionsForNamespace(modelReturnClass).Item2;
+            var (modelSerializerFunction, modelDeserializerFunction) = GetSerializationFunctionsForNamespace(modelReturnClass);
             if (modelDeserializerFunction.Parent is not null)
             {
                 parsableFactoryFunction.AddUsing(new CodeUsing
@@ -1491,19 +1509,30 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     },
                 });
             }
+            if (modelSerializerFunction.Parent is not null)
+            {
+                parsableFactoryFunction.AddUsing(new CodeUsing
+                {
+                    Name = modelSerializerFunction.Parent.Name,
+                    Declaration = new CodeType
+                    {
+                        Name = modelSerializerFunction.Name,
+                        TypeDefinition = modelSerializerFunction
+                    },
+                });
+            }
 
             foreach (var mappedType in parsableFactoryFunction.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
                 if (mappedType.Value is not
-                    { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass }
-                    || codeNamespace.FindChildByName<CodeFunction>(
-                            $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is not
-                            { } deserializer)
+                    { TypeDefinition: CodeClass { Parent: CodeNamespace codeNamespace } mappedClass })
                 {
                     continue;
                 }
 
-                if (deserializer.Parent is not null)
+                if (codeNamespace.FindChildByName<CodeFunction>(
+                            $"{ModelDeserializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is
+                    { } deserializer && deserializer.Parent is not null)
                 {
                     parsableFactoryFunction.AddUsing(new CodeUsing
                     {
@@ -1512,6 +1541,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                         {
                             Name = deserializer.Name,
                             TypeDefinition = deserializer
+                        },
+                    });
+                }
+                if (codeNamespace.FindChildByName<CodeFunction>(
+                            $"{ModelSerializerPrefix}{mappedClass.Name.ToFirstCharacterUpperCase()}") is
+                    { } serializer && serializer.Parent is not null)
+                {
+                    parsableFactoryFunction.AddUsing(new CodeUsing
+                    {
+                        Name = serializer.Parent.Name,
+                        Declaration = new CodeType
+                        {
+                            Name = serializer.Name,
+                            TypeDefinition = serializer
                         },
                     });
                 }

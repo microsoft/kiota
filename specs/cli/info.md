@@ -1,6 +1,6 @@
 # info
 
-## Description 
+## Description
 
 Show languages and runtime dependencies information.
 
@@ -8,7 +8,7 @@ Show languages and runtime dependencies information.
 
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
-| `--openapi \| -d` | Yes | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. | Yes, without its value |
+| `--openapi \| -d` | Yes | <https://aka.ms/graph/v1.0/openapi.yaml> | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. | Yes, without its value |
 | `--language \| -l` | No | csharp | The target language for the generated code files or for the information. | Yes |
 | `--clear-cache \| --cc` | No | true | Clears any cached data for the current command. Defaults to `False`. | Yes |
 | `--log-level \| --ll` | No | Critical | The log level to use when logging messages to the main output. Options available: Critical, Debug, Error, Information, None, Trace & Warning. Defaults to `Warning`. | Yes |
@@ -30,7 +30,6 @@ Java        Preview
 PHP         Stable
 Python      Stable
 Ruby        Experimental
-Swift       Experimental
 TypeScript  Experimental
 ```
 

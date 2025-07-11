@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Kiota.Builder.IntegrationTests;
+
 public sealed class GenerateSample : IDisposable
 {
     public void Dispose()
@@ -167,7 +168,7 @@ public sealed class GenerateSample : IDisposable
         var fullText = "";
         foreach (var file in Directory.GetFiles(OutputPath, "*.*", SearchOption.AllDirectories))
         {
-            fullText += File.ReadAllText(file);
+            fullText += await File.ReadAllTextAsync(file);
         }
 
         Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));
@@ -181,7 +182,6 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.Python)]
     [InlineData(GenerationLanguage.Ruby)]
     // [InlineData(GenerationLanguage.TypeScript)] // TODO: the "getQueryParameter" is added to the interface V1RequestBuilderGetQueryParameters but is not getting written because removed by ReplaceRequestConfigurationsQueryParamsWithInterfaces in the refiner
-    // [InlineData(GenerationLanguage.Swift)] // TODO: incomplete
     [Theory]
     public async Task GeneratesUritemplateHintsAsync(GenerationLanguage language)
     {

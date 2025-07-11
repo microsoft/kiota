@@ -7,7 +7,7 @@ param (
 )
 
 
-Push-Location ./vscode/microsoft-kiota
+Push-Location ./vscode/packages/microsoft-kiota
 
 # Install all dependencies
 npm i

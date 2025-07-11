@@ -20,8 +20,6 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 10
-
-
   - package-ecosystem: nuget
     directory: "/it/csharp"
     schedule:
@@ -31,7 +29,6 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
-
   - package-ecosystem: gomod
     directory: "/it/go"
     schedule:
@@ -41,7 +38,6 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
-
   - package-ecosystem: composer
     directory: "/it/php"
     schedule:
@@ -51,7 +47,6 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
-
   - package-ecosystem: pip
     directory: "/it/python"
     schedule:
@@ -61,7 +56,6 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
-
   - package-ecosystem: bundler
     directory: "/it/ruby"
     schedule:
@@ -71,7 +65,6 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
-
   - package-ecosystem: maven
     directory: "/it/java"
     schedule:
@@ -81,7 +74,6 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
-
   - package-ecosystem: npm
     directory: "/it/typescript"
     schedule:
@@ -94,9 +86,8 @@ updates:
       eslint:
         patterns:
           - "*eslint*"
-
   - package-ecosystem: npm
-    directory: "/vscode/microsoft-kiota"
+    directory: "/vscode"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -104,3 +95,13 @@ updates:
       eslint:
         patterns:
           - "*eslint*"
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor

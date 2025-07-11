@@ -178,34 +178,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     }
 
     /// <summary>
-    /// The combination of the path, query and header parameters for the current URL.
-    /// Only use this property if the language you are generating for doesn't support fluent API style (e.g. CLI)
-    /// </summary>
-    public IEnumerable<CodeParameter> PathQueryAndHeaderParameters
-    {
-        get => pathQueryAndHeaderParameters.Values;
-    }
-    private readonly Dictionary<string, CodeParameter> pathQueryAndHeaderParameters = new(StringComparer.OrdinalIgnoreCase);
-    public void AddPathQueryOrHeaderParameter(params CodeParameter[] parameters)
-    {
-        if (parameters == null || parameters.Length == 0) return;
-        foreach (var parameter in parameters.OrderByDescending(static x => x.Kind)) //guarantees that path parameters are added first and other are deduplicated
-        {
-            EnsureElementsAreChildren(parameter);
-            if (!pathQueryAndHeaderParameters.TryAdd(parameter.Name, parameter))
-            {
-                if (parameter.IsOfKind(CodeParameterKind.QueryParameter))
-                    parameter.Name += "-query";
-                else if (parameter.IsOfKind(CodeParameterKind.Headers))
-                    parameter.Name += "-header";
-                else
-                    continue;
-                pathQueryAndHeaderParameters.Add(parameter.Name, parameter);
-            }
-
-        }
-    }
-    /// <summary>
     /// The property this method accesses to when it's a getter or setter.
     /// </summary>
     public CodeProperty? AccessedProperty
