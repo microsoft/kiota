@@ -626,9 +626,12 @@ extends:
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: |
-                  npm install
+                  npm ci
                   npm list
                 displayName: "Install vscode dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm i @microsoft/kiota@$(artifactVersion)$(versionSuffix) -w packages/microsoft-kiota
+                displayName: "Install current Kiota as a dependency"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: npm run build
                 displayName: "build npm package"
