@@ -24,7 +24,7 @@ jobs:
         run: dotnet restore kiota.sln
       - name: Check formatting
         run: dotnet format --verify-no-changes
-      - run: scripts/get-version-from-csproj.ps1
+      - run: scripts/get-version-from-csproj.ps1 -isGHA $true
         name: "Get Kiota's version-number from .csproj"
         id: get_version
         shell: pwsh
