@@ -17,6 +17,28 @@ public class InstallTests
     {
         _outputHelper = outputHelper ?? throw new ArgumentNullException(nameof(outputHelper));
     }
+    private string FindFileFromWildCard(string path)
+    {
+        if (path.Contains('*'))
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (directory != null && Directory.Exists(directory.Replace("*", "")))
+            {
+                // Get the highest version directory  
+                var dirs = Directory.GetDirectories(directory.Replace("*", ""));
+                if (dirs.Length > 0)
+                {
+                    var exactPath = Path.Combine(dirs[^1], Path.GetFileName(path));
+                    if (File.Exists(exactPath))
+                    {
+                        _outputHelper.WriteLine($"Found {Path.GetFileName(path)} at {exactPath}");
+                        return exactPath;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     [Fact]
     public void Install_Creates_Working_Bin_Command()
@@ -116,11 +138,22 @@ public class InstallTests
                // Add from npm global prefix  
                Path.Combine(Environment.GetEnvironmentVariable("APPDATA") ?? "", "npm", $"{fileName}{commandExtension}"),  
                // Try npm global installation path  
-               Path.Combine(Environment.GetEnvironmentVariable("APPDATA") ?? "", "npm", "node_modules", "npm", "bin", $"{fileName}{commandExtension}")
+               Path.Combine(Environment.GetEnvironmentVariable("APPDATA") ?? "", "npm", "node_modules", "npm", "bin", $"{fileName}{commandExtension}"),
+               // Check nvm installation if available
+               Path.Combine(Environment.GetEnvironmentVariable("NVM_HOME") ?? "", "*", $"{fileName}{commandExtension}"),
+
            };
 
             foreach (var path in possiblePaths)
             {
+                // Handle wildcard paths (for nvm)  
+                if (FindFileFromWildCard(path) is string foundPath && !string.IsNullOrEmpty(foundPath))
+                {
+                    _outputHelper.WriteLine($"Found {fileName} at {foundPath}");
+                    fileName = foundPath;
+                    break;
+                }
+
                 if (File.Exists(path))
                 {
                     _outputHelper.WriteLine($"Found {fileName} at {path}");
@@ -144,25 +177,11 @@ public class InstallTests
             foreach (var path in possiblePaths)
             {
                 // Handle wildcard paths (for nvm)  
-                if (path.Contains("*"))
+                if (FindFileFromWildCard(path) is string foundPath && !string.IsNullOrEmpty(foundPath))
                 {
-                    var directory = Path.GetDirectoryName(path);
-                    if (directory != null && Directory.Exists(directory.Replace("*", "")))
-                    {
-                        // Get the highest version directory  
-                        var dirs = Directory.GetDirectories(directory.Replace("*", ""));
-                        if (dirs.Length > 0)
-                        {
-                            var exactPath = Path.Combine(dirs[^1], Path.GetFileName(path));
-                            if (File.Exists(exactPath))
-                            {
-                                _outputHelper.WriteLine($"Found {fileName} at {exactPath}");
-                                fileName = exactPath;
-                                break;
-                            }
-                        }
-                    }
-                    continue;
+                    _outputHelper.WriteLine($"Found {fileName} at {foundPath}");
+                    fileName = foundPath;
+                    break;
                 }
 
                 if (File.Exists(path))
