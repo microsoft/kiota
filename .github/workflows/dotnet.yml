@@ -16,6 +16,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.x
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Check formatting
@@ -39,7 +43,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm, ubuntu-24.04-arm]
+        os:
+          [
+            ubuntu-latest,
+            macos-latest,
+            windows-latest,
+            windows-11-arm,
+            ubuntu-24.04-arm,
+          ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
