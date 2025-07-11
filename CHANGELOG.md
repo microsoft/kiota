@@ -13,10 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.28.0] - 2025-07-11
+
+### Added
+
+### Changed
+
+- Removed incomplete Swift generation.
+- Removed CLI generation ability. [microsoft/kiota-cli-commons#248](https://github.com/microsoft/kiota-cli-commons/issues/248)
 - Fixed a bug where union of primitive types collection would not compile in dotnet. [#6635](https://github.com/microsoft/kiota/issues/6635)
 - Fixes generation of usings/imports in where Date Types are placed in a nested class. [#6286](https://github.com/microsoft/kiota/issues/6286)
 - Python: Set a default value for non-nullable array fields. [#6350](https://github.com/microsoft/kiota/issues/6350)
 - Fixed a bug causing an error in generation of requests which have an enum or an UntypedNode as body. [microsoft/kiota-dotnet#537](https://github.com/microsoft/kiota-dotnet/issues/537)
+- Removed redundant additional data property definition in TypeScript.
+- Fixed a bug where the value parameter for serialization/deserialization in TypeScript methods would be missing a doc comment.
+- Fixed a bug where serializing a base type in TypeScript would lead to missing properties from the derived type. [#6511](https://github.com/microsoft/kiota/issues/6511)
 
 ## [1.27.0] - 2025-06-11
 
@@ -1664,3 +1675,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

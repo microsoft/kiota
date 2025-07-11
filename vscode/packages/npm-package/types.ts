@@ -12,16 +12,12 @@ export enum KiotaGenerationLanguage {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Go = 5,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Swift = 6,
+    Ruby = 6,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Ruby = 7,
+    Dart = 7,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    CLI = 8,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    Dart = 9,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    HTTP = 10,
-};
+    HTTP = 8,
+}
 
 export enum KiotaPluginType {
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -30,7 +26,7 @@ export enum KiotaPluginType {
     ApiManifest = 1,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ApiPlugin = 2,
-};
+}
 
 export interface KiotaLogEntry {
     level: LogLevel;
@@ -51,13 +47,13 @@ export interface SecurityRequirementObject {
 }
 
 export interface KiotaOpenApiNode {
-    segment: string,
-    path: string,
-    children: KiotaOpenApiNode[],
-    operationId?: string,
-    summary?: string,
-    description?: string,
-    selected?: boolean,
+    segment: string;
+    path: string;
+    children: KiotaOpenApiNode[];
+    operationId?: string;
+    summary?: string;
+    description?: string;
+    selected?: boolean;
     isOperation?: boolean;
     documentationUrl?: string;
     clientNameOrPluginName?: string;
@@ -84,7 +80,8 @@ export interface KiotaShowConfiguration extends CacheClearableConfiguration {
     includeKiotaValidationRules: boolean;
 }
 
-export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConfiguration {
+export interface KiotaGetManifestDetailsConfiguration
+    extends CacheClearableConfiguration {
     manifestPath: string;
     apiIdentifier: string;
 }
@@ -140,10 +137,12 @@ export enum ConsumerOperation {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     Remove,
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    Generate
+    Generate,
 }
 
-export function generationLanguageToString(language: KiotaGenerationLanguage): string {
+export function generationLanguageToString(
+    language: KiotaGenerationLanguage
+): string {
     switch (language) {
         case KiotaGenerationLanguage.CSharp:
             return "CSharp";
@@ -157,12 +156,8 @@ export function generationLanguageToString(language: KiotaGenerationLanguage): s
             return "Python";
         case KiotaGenerationLanguage.Go:
             return "Go";
-        case KiotaGenerationLanguage.Swift:
-            return "Swift";
         case KiotaGenerationLanguage.Ruby:
             return "Ruby";
-        case KiotaGenerationLanguage.CLI:
-            return "CLI";
         case KiotaGenerationLanguage.Dart:
             return "Dart";
         case KiotaGenerationLanguage.HTTP:
@@ -179,8 +174,6 @@ export const allGenerationLanguages = [
     KiotaGenerationLanguage.PHP,
     KiotaGenerationLanguage.Python,
     KiotaGenerationLanguage.Ruby,
-    KiotaGenerationLanguage.CLI,
-    KiotaGenerationLanguage.Swift,
     KiotaGenerationLanguage.TypeScript,
     KiotaGenerationLanguage.Dart,
     KiotaGenerationLanguage.HTTP,
@@ -262,7 +255,7 @@ export interface GenerationConfiguration {
     usesBackingStore: boolean;
     pluginTypes: KiotaPluginType[];
     operation: ConsumerOperation;
-    noWorkspace?: boolean,
+    noWorkspace?: boolean;
     pluginAuthRefid?: string;
     pluginAuthType?: PluginAuthType | null;
     overlays?: string[];
@@ -270,7 +263,7 @@ export interface GenerationConfiguration {
 
 export enum PluginAuthType {
     oAuthPluginVault = "OAuthPluginVault",
-    apiKeyPluginVault = "ApiKeyPluginVault"
+    apiKeyPluginVault = "ApiKeyPluginVault",
 }
 
 export interface WorkspaceObjectProperties {
@@ -292,11 +285,13 @@ export interface ClientObjectProperties extends WorkspaceObjectProperties {
 
 export interface PluginObjectProperties extends WorkspaceObjectProperties {
     types: string[];
-    authType?: PluginAuthType,
+    authType?: PluginAuthType;
     authReferenceId?: string;
 }
 
-export type ClientOrPluginProperties = ClientObjectProperties | PluginObjectProperties;
+export type ClientOrPluginProperties =
+    | ClientObjectProperties
+    | PluginObjectProperties;
 
 export interface LanguagesInformation {
     [key: string]: LanguageInformation;
@@ -306,8 +301,7 @@ export interface KiotaResult extends KiotaLoggedResult {
     isSuccess: boolean;
 }
 
-export interface ValidateOpenApiResult extends KiotaLoggedResult {
-}
+export interface ValidateOpenApiResult extends KiotaLoggedResult { }
 
 export interface GeneratePluginResult extends KiotaResult {
     aiPlugin: string;
@@ -328,7 +322,7 @@ export interface PluginFunction {
 }
 
 export interface PluginAuth {
-    type: string;  // None, OAuthPluginVault, ApiKeyPluginVault
+    type: string; // None, OAuthPluginVault, ApiKeyPluginVault
     reference_id?: string;
 }
 
@@ -349,21 +343,21 @@ export interface AuthReferenceId {
 }
 
 export interface HttpSecurityScheme extends AuthReferenceId {
-    type: 'http';
+    type: "http";
     description?: string;
     scheme: string;
     bearerFormat?: string;
 }
 
 export interface ApiKeySecurityScheme extends AuthReferenceId {
-    type: 'apiKey';
+    type: "apiKey";
     description?: string;
     name: string;
     in: string;
 }
 
 export interface OAuth2SecurityScheme extends AuthReferenceId {
-    type: 'oauth2';
+    type: "oauth2";
     description?: string;
     flows: {
         implicit?: {
@@ -391,7 +385,7 @@ export interface OAuth2SecurityScheme extends AuthReferenceId {
 }
 
 export interface OpenIdSecurityScheme extends AuthReferenceId {
-    type: 'openIdConnect';
+    type: "openIdConnect";
     description?: string;
     openIdConnectUrl: string;
 }

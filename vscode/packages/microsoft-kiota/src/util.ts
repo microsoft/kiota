@@ -104,12 +104,8 @@ export function parseGenerationLanguage(value: string): KiotaGenerationLanguage 
           return KiotaGenerationLanguage.Python;
       case "go":
           return KiotaGenerationLanguage.Go;
-      case "swift":
-          return KiotaGenerationLanguage.Swift;
       case "ruby":
           return KiotaGenerationLanguage.Ruby;
-      case "cli":
-          return KiotaGenerationLanguage.CLI;
       case "dart":
           return KiotaGenerationLanguage.Dart;
       default:

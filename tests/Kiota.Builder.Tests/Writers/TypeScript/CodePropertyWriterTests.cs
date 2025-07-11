@@ -7,6 +7,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
+
 public sealed class CodePropertyWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -134,5 +135,14 @@ public sealed class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains($"{PropertyName}?: ArrayBuffer | null", result);
+    }
+    [Fact]
+    public void DoesNodeEmitAdditionalDataPropertyOnInterfaces()
+    {
+
+        property.Kind = CodePropertyKind.AdditionalData;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Empty(result);
     }
 }
