@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -41,9 +43,26 @@ public class InstallTests
             _outputHelper.WriteLine("Checking if npm pack process exited successfully.");
             Assert.Equal(0, npmPackProcess.exitCode);
 
+            // get package version from the package.json
+            var packageJsonPath = Path.Combine(projectDir, "package.json");
+            _outputHelper.WriteLine($"Reading package.json from {packageJsonPath}");
+            var packageJson = File.ReadAllText(packageJsonPath);
+            var packageVersion = JsonNode.Parse(packageJson).AsObject().TryGetPropertyValue("version", out var versionNode) ? versionNode.GetValue<string>() : null;
+            _outputHelper.WriteLine($"Found package version: {packageVersion}");
+
             // Copy package.json from Assets folder to test directory
             var assetsDir = Path.Combine(AppContext.BaseDirectory, "../../../Assets");
-            File.Copy(Path.Combine(assetsDir, "package.json"), Path.Combine(testDir, "package.json"));
+            var packageJsonTestPath = Path.Combine(testDir, "package.json");
+            File.Copy(Path.Combine(assetsDir, "package.json"), packageJsonTestPath);
+
+            // Update package.json with the correct version
+            _outputHelper.WriteLine($"Updating package.json at {packageJsonTestPath} with version {packageVersion}");
+            var packageJsonTest = File.ReadAllText(packageJsonTestPath);
+            var packageJsonNode = JsonNode.Parse(packageJsonTest).AsObject();
+            var dependencies = packageJsonNode["dependencies"].AsObject();
+            dependencies["kiota"] = $"file:./microsoft-kiota-{packageVersion}.tgz"; // Set the kiota dependency to the version from the packed tarball
+            var serializedPackageJson = packageJsonNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(packageJsonTestPath, serializedPackageJson);
 
             // Run npm install in the test directory
             var npmProcess = RunProcess("npm", "install", testDir);
