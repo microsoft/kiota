@@ -33,7 +33,7 @@ jobs:
       - run: |
           $runtimeFilePath = "./vscode/packages/npm-package/runtime.json"
           # decrease the minor version by 1 to avoid issues with binaries that are not published
-          $versionParts = ${{ steps.get_version.outputs.version }}.Split('.')
+          $versionParts = "${{ steps.get_version.outputs.version }}".Split('.')
           $versionParts[1] = [int]$versionParts[1] - 1
           $versionParts = $versionParts -join '.'
           $runtimeJson = Get-Content $runtimeFilePath | ConvertFrom-Json
