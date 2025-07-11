@@ -152,7 +152,7 @@ internal class OpenApiDocumentDownloadService
                 OpenApiSettings = settings
             };
 
-            var cachingProvider = new OverlayCachingProvider(HttpClient, Logger)
+            var cachingProvider = new DocumentCachingProvider(HttpClient, Logger)
             {
                 ClearCache = config.ClearCache,
             };
@@ -164,8 +164,6 @@ internal class OpenApiDocumentDownloadService
             }
             else if (Uri.TryCreate(overlay, UriKind.Relative, out var relativeUri))
             {
-                // Optionally resolve relative URIs against a base URI if needed
-                // overlayUri = new Uri(baseUri, relativeUri);
                 overlayUri = relativeUri;
             }
 
@@ -179,9 +177,9 @@ internal class OpenApiDocumentDownloadService
             if (overlayUri.IsAbsoluteUri && overlayUri.Scheme is "http" or "https")
             {
                 var fileName = overlay is string name && !string.IsNullOrEmpty(name) ? name : "overlay.yml";
-                var inputO = await cachingProvider.GetOverlayAsync(overlayUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var inputOverlay = await cachingProvider.GetDocumentAsync(overlayUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                readOverlayResult = await OverlayDocument.LoadFromStreamAsync(inputO, null, overlaysSettings, cancellationToken).ConfigureAwait(false);
+                readOverlayResult = await OverlayDocument.LoadFromStreamAsync(inputOverlay, null, overlaysSettings, cancellationToken).ConfigureAwait(false);
             }
             else
             {
