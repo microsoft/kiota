@@ -35,7 +35,7 @@ public class InstallTests
         try
         {
             // Pack the project using npm
-            var projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../vscode/npm-package"));
+            var projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../vscode/packages/npm-package"));
             _outputHelper.WriteLine($"Running pack in {projectDir}");
             var npmPackProcess = RunProcess("npm", $"pack --pack-destination {testDir}", projectDir);
             _outputHelper.WriteLine("Checking if npm pack process exited successfully.");
