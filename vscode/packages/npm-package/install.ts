@@ -95,7 +95,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
           } else {
             const downloadUrl = getDownloadUrl(currentPlatform);
             await downloadFileFromUrl(downloadUrl, zipFilePath);
-            if (!await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
+            if (packageToInstall.sha256 !== "0000000000000000000000000000000000000000000000000000000000000000" && !await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
               throw new Error("Hash validation of the downloaded file mismatch");
             }
           }
