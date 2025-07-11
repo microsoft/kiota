@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiota.NPM.IntegrationTests"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NPMProjects", "NPMProjects", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "npm-package", "vscode\npm-package\npm-package.esproj", "{C6BFB632-723D-238A-EA11-44E78644612E}"
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "npm-package", "vscode\packages\npm-package\npm-package.esproj", "{C6BFB632-723D-238A-EA11-44E78644612E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{099BEFDC-D101-4DB6-B028-E24376B6DC50}"
 	ProjectSection(SolutionItems) = preProject
