@@ -82,7 +82,7 @@ public class InstallTests
             var packageJsonTest = File.ReadAllText(packageJsonTestPath);
             var packageJsonNode = JsonNode.Parse(packageJsonTest).AsObject();
             var dependencies = packageJsonNode["dependencies"].AsObject();
-            dependencies["kiota"] = $"file:./microsoft-kiota-{packageVersion}.tgz"; // Set the kiota dependency to the version from the packed tarball
+            dependencies["@microsoft/kiota"] = $"file:./microsoft-kiota-{packageVersion}.tgz"; // Set the kiota dependency to the version from the packed tarball
             var serializedPackageJson = packageJsonNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(packageJsonTestPath, serializedPackageJson);
 
