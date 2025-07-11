@@ -11,6 +11,7 @@ npm install @microsoft/kiota
 ```
 
 ## Usage
+The following JS/TS functions are made available.
 
 Once installed, you can use the available functions to generate and interact with Kiota clients.
 Below is a reference for each function, including parameters and return values.

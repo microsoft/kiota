@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for calling kiota as npx command. [#6642](https://github.com/microsoft/kiota/issues/6642)
+
 ### Changed
 
 ## [1.28.0] - 2025-07-11
@@ -1675,4 +1677,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
