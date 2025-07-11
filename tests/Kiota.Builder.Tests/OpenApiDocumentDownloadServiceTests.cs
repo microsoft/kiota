@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -36,6 +37,229 @@ paths:
     }
 
     [Fact]
+    public async Task GetDocumentFromStreamAsyncTest_WithOverlaysYamlInConfigWithRelativePath()
+    {
+        // Assert
+        var yaml = """
+        overlay: "1.0.0"
+        info:
+          title: "Test Overlay"
+          version: "2.0.0"
+        actions:
+          - target: "$.info"
+            update: 
+                title: "Updated Title"
+                description: "Updated Description"
+        """;
+
+
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+
+        var overlaysPath = Path.GetRandomFileName() + "overlays.yaml";
+        await File.WriteAllTextAsync(overlaysPath, yaml);
+
+        var generationConfig = new GenerationConfiguration
+        {
+            Overlays = new HashSet<string>() {
+                overlaysPath
+            }
+        };
+
+        //Act
+        using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+
+
+        // Assert
+        Assert.NotNull(document);
+        Assert.Equal("Updated Title", document.Info.Title);
+        Assert.Equal("Updated Description", document.Info.Description);
+
+        // Clean up
+        if (Directory.Exists(overlaysPath))
+            Directory.Delete(overlaysPath, true);
+    }
+
+    [Fact]
+    public async Task GetDocumentFromStreamAsyncTest_WithOverlaysYamlInConfigAbsolutePath()
+    {
+        // Assert
+        var yaml = """
+        overlay: "1.0.0"
+        info:
+          title: "Test Overlay"
+          version: "2.0.0"
+        actions:
+          - target: "$.info"
+            update: 
+                title: "Updated Title"
+                description: "Updated Description"
+        """;
+
+
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var overlaysPath = Path.Combine(workingDirectory) + "overlays.yaml";
+        await File.WriteAllTextAsync(overlaysPath, yaml);
+
+        var generationConfig = new GenerationConfiguration
+        {
+            Overlays = new HashSet<string>() {
+               overlaysPath
+            }
+        };
+
+        //Act
+        using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+
+
+        // Assert
+        Assert.NotNull(document);
+        Assert.Equal("Updated Title", document.Info.Title);
+        Assert.Equal("Updated Description", document.Info.Description);
+
+        // Clean up
+        if (Directory.Exists(workingDirectory))
+            Directory.Delete(workingDirectory, true);
+    }
+
+    [Fact]
+    public async Task GetDocumentFromStreamAsyncTest_WithInvalidUpdatePropertyInOverlays()
+    {
+        // Assert
+        var json = """
+        overlay: "1.0.0"
+        info:
+          title: "Test Overlay"
+          version: "2.0.0"
+        actions:
+          - target: "$.info"
+            update: 
+                randomProperty: "Updated RandomProperty"
+                description: "Updated Description"
+        """;
+
+
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var overlaysPath = Path.Combine(workingDirectory) + "overlays.yaml";
+        await File.WriteAllTextAsync(overlaysPath, json);
+
+        var generationConfig = new GenerationConfiguration
+        {
+            Overlays = new HashSet<string>() {
+                overlaysPath
+            }
+        };
+
+        //Act
+        using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+
+
+        // Assert
+        Assert.NotNull(document);
+        Assert.Equal("Updated Description", document.Info.Description);
+        var diagError = fakeLogger.LogEntries
+            .Where(l => l.message.StartsWith("OpenAPI error:"));
+        Assert.Single(diagError);
+
+        // Clean up
+        if (Directory.Exists(workingDirectory))
+            Directory.Delete(workingDirectory, true);
+    }
+
+    [Fact]
+    public async Task GetDocumentFromStreamAsyncTest_WithOverlaysJsonInConfig()
+    {
+        var json =
+        """
+        {
+            "openapi": "3.1.0",
+            "info": {
+                "title": "Test Overlay",
+                "version": "2.0.0",
+                "description": "Description API"
+            },
+            "paths": {
+                "/test": {
+                    "get": {
+                        "summary": "Test endpoint",
+                        "responses": {
+                            "200": {
+                                "description": "OK"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """;
+
+        // Assert
+        var jsonOverlays = """
+        {
+            "overlay": "1.0.0",
+            "info": {
+                "title": "Test Overlay",
+                "version": "2.0.0"
+            },
+            "extends": "x-extends",
+            "actions": [
+                {
+                "target": "$.info",
+                    "update": {
+                     "title": "Updated Title YES"
+                    }
+                },
+                {
+                    "target": "$.info.description",
+                    "remove": true
+                }
+            ],
+         
+        }
+        """;
+
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var overlaysPath = Path.Combine(workingDirectory) + "overlays.yaml";
+        await File.WriteAllTextAsync(overlaysPath, jsonOverlays);
+
+        var generationConfig = new GenerationConfiguration
+        {
+            Overlays = new HashSet<string>() {
+                overlaysPath
+            }
+        };
+
+        //Act
+        using var inputDocumentStream = CreateMemoryStreamFromString(json);
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+
+
+        // Assert
+        Assert.NotNull(document);
+        Assert.Equal("Updated Title YES", document.Info.Title);
+        Assert.Null(document.Info.Description);
+
+        // Clean up
+        if (Directory.Exists(workingDirectory))
+            Directory.Delete(workingDirectory, true);
+    }
+
+    [Fact]
     public async Task GetDocumentFromStreamAsyncTest_IncludeKiotaValidationRulesInConfig()
     {
         var generationConfig = new GenerationConfiguration
@@ -55,6 +279,7 @@ paths:
             .Where(l => l.message.StartsWith("OpenAPI warning: #/ - A servers entry (v3) or host + basePath + schemes properties (v2) was not present in the OpenAPI description"));
         Assert.Single(logEntryForNoServerRule);
     }
+
 
     [Fact]
     public async Task GetDocumentFromStreamAsyncTest_No_IncludeKiotaValidationRulesInConfig()
