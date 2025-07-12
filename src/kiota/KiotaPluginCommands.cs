@@ -70,15 +70,6 @@ public static class KiotaPluginCommands
         noWorkspaceOption.AddAlias("--nw");
         return noWorkspaceOption;
     }
-    internal static Option<List<string>> GetOverlaysOption()
-    {
-        var overlaysOption = new Option<List<string>>("--overlays", "Enable Overlays for the plugin.")
-        {
-            IsRequired = false,
-        };
-        overlaysOption.AddAlias("--ov");
-        return overlaysOption;
-    }
     public static Command GetAddCommand()
     {
         var defaultConfiguration = new GenerationConfiguration();
