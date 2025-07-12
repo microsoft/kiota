@@ -31,7 +31,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             if (nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && parameter.Type.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
                 writer.WriteLine($"if(string.IsNullOrEmpty({parameterName})) throw new ArgumentNullException(nameof({parameterName}));");
             else
-                writer.WriteLine($"_ = {parameterName} ?? throw new ArgumentNullException(nameof({parameterName}));");
+                writer.WriteLine($"if(ReferenceEquals({parameterName}, null)) throw new ArgumentNullException(nameof({parameterName}));");
         }
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
         writer.CloseBlock();
