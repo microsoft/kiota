@@ -186,7 +186,7 @@ public class GenerationConfiguration : ICloneable
             DisableSSLValidation = DisableSSLValidation,
             ExportPublicApi = ExportPublicApi,
             PluginAuthInformation = PluginAuthInformation,
-            Overlays = Overlays
+            Overlays = new (Overlays, StringComparer.OrdinalIgnoreCase),
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
