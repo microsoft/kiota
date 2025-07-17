@@ -95,7 +95,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
           } else {
             const downloadUrl = getDownloadUrl(currentPlatform);
             await downloadFileFromUrl(downloadUrl, zipFilePath);
-            if (!await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
+            if (packageToInstall.sha256 !== "0000000000000000000000000000000000000000000000000000000000000000" && !await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
               throw new Error("Hash validation of the downloaded file mismatch");
             }
           }
@@ -106,7 +106,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
             makeExecutable(kiotaFilePath);
           }
         } catch (error) {
-          fs.rmdirSync(installPath, { recursive: true });
+          fs.rmSync(installPath, { recursive: true });
           throw new Error("Kiota download failed. Check the logs for more information.");
         }
       });

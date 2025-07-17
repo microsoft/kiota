@@ -1,6 +1,7 @@
 node_modules/
 .kiota
 .kiotabin
+*.tgz
 !packages/**/*
 packages/*/node_modules/
 packages/*/dist/

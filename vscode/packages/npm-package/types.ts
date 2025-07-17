@@ -34,11 +34,16 @@ export interface KiotaLogEntry {
 }
 
 export enum OpenApiAuthType {
-  None = 0,
-  ApiKey = 1,
-  Http = 2,
-  OAuth2 = 3,
-  OpenIdConnect = 4,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    None = 0,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    ApiKey = 1,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    Http = 2,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    OAuth2 = 3,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    OpenIdConnect = 4,
 }
 
 // key is the security scheme name, value is array of scopes
@@ -309,7 +314,9 @@ export interface GeneratePluginResult extends KiotaResult {
 
 export interface PluginManifestResult extends KiotaResult {
   isValid: boolean;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   schema_version: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   name_for_human: string;
   functions: PluginFunction[];
   runtime: PluginRuntime[];
@@ -328,6 +335,7 @@ export interface PluginAuth {
 export interface PluginRuntime {
   type: string;
   auth: PluginAuth;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   run_for_functions: string[];
 }
 

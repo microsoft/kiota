@@ -1,4 +1,4 @@
-import stylisticTs from '@stylistic/eslint-plugin-ts';
+import stylisticTs from '@stylistic/eslint-plugin';
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 

@@ -16,11 +16,34 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.x
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Check formatting
         run: dotnet format --verify-no-changes
+      - run: |
+          scripts/get-version-from-csproj.ps1 -isGHA $true -csprojPath "$PWD/src/kiota/kiota.csproj"
+        name: "Get Kiota's version-number from .csproj"
+        id: get_version
+        shell: pwsh
+
+      - run: |
+          $runtimeFilePath = "./vscode/packages/npm-package/runtime.json"
+          # decrease the minor version by 1 to avoid issues with binaries that are not published
+          $versionParts = "${{ steps.get_version.outputs.version }}".Split('.')
+          $versionParts[1] = [int]$versionParts[1] - 1
+          $versionParts = $versionParts -join '.'
+          $runtimeJson = Get-Content $runtimeFilePath | ConvertFrom-Json
+          $runtimeJson.kiotaVersion = $versionParts
+          $runtimeJson | ConvertTo-Json | Set-Content $runtimeFilePath
+        shell: pwsh
+        name: "Update runtime.json with Kiota's version for install unit test"
       - name: Build
+        env:
+          SKIP_POSTINSTALL: "true"
         run: dotnet build kiota.sln --no-restore
       - name: Test
         run: dotnet test kiota.sln --no-build --verbosity normal --collect:"XPlat Code Coverage"
@@ -37,7 +60,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm, ubuntu-24.04-arm]
+        os:
+          [
+            ubuntu-latest,
+            macos-latest,
+            windows-latest,
+            windows-11-arm,
+            ubuntu-24.04-arm,
+          ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

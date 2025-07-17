@@ -92,6 +92,8 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
+        env:
+          SKIP_POSTINSTALL: "true"
         run: dotnet build --no-restore -c Release
 
       - name: Perform CodeQL Analysis

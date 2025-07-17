@@ -63,6 +63,8 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
+        env:
+          SKIP_POSTINSTALL: "true"
         run: npm install
         working-directory: vscode
 
@@ -145,6 +147,8 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
+        env:
+          SKIP_POSTINSTALL: "true"
         run: npm install
         working-directory: vscode
 
