@@ -30,7 +30,7 @@ lazy-object-proxy==1.11.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==1.16.1
+mypy==1.17.0
 
 mypy-extensions==1.1.0 ; python_version >= '3.5'
 
@@ -78,7 +78,7 @@ attrs==25.3.0 ; python_version >= '3.7'
 
 azure-core==1.35.0 ; python_version >= '3.7'
 
-azure-identity==1.23.0
+azure-identity==1.23.1
 
 cffi==1.17.1
 
