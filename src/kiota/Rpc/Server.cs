@@ -227,9 +227,7 @@ internal partial class Server : IServer
 
         if (overlays is { Length: > 0 })
             Configuration.Generation.Overlays = overlays
-                                                    .Select(static x => x.TrimQuotes())
-                                                    .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                                    .Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         configuration.OpenAPIFilePath = GetAbsolutePath(configuration.OpenAPIFilePath);
         configuration.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(configuration.OutputPath));

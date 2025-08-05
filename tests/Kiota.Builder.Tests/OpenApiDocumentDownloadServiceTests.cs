@@ -56,7 +56,7 @@ paths:
         var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
 
 
-        var overlaysPath = Path.GetRandomFileName() + "overlays.yaml";
+        var overlaysPath = Path.Combine(Path.GetRandomFileName(), "overlays.yaml");
         await File.WriteAllTextAsync(overlaysPath, yaml);
 
         var generationConfig = new GenerationConfiguration
@@ -78,8 +78,8 @@ paths:
         Assert.Equal("Updated Description", document.Info.Description);
 
         // Clean up
-        if (Directory.Exists(overlaysPath))
-            Directory.Delete(overlaysPath, true);
+        if (File.Exists(overlaysPath))
+            File.Delete(overlaysPath);
     }
 
     [Fact]
@@ -125,8 +125,8 @@ paths:
         Assert.Equal("Updated Description", document.Info.Description);
 
         // Clean up
-        if (Directory.Exists(workingDirectory))
-            Directory.Delete(workingDirectory, true);
+        if (File.Exists(overlaysPath))
+            File.Delete(overlaysPath);
     }
 
     [Fact]
@@ -174,8 +174,8 @@ paths:
         Assert.Single(diagError);
 
         // Clean up
-        if (Directory.Exists(workingDirectory))
-            Directory.Delete(workingDirectory, true);
+        if (File.Exists(overlaysPath))
+            File.Delete(overlaysPath);
     }
 
     [Fact]
