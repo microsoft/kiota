@@ -21,7 +21,7 @@
     "@es-exec/esbuild-plugin-start": "^0.0.5",
     "@stylistic/eslint-plugin-ts": "^4.4.1",
     "@types/node": "^24.1.0",
-    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.32.1",
     "esbuild": "^0.25.8",
     "eslint": "^9.32.0",
