@@ -1107,7 +1107,7 @@ public partial class KiotaBuilder
         var type = parameter switch
         {
             null => DefaultIndexerParameterType,
-            _ => GetPrimitiveType(parameter.Schema),
+            _ => GetPathParameterType(parameter.Schema),
         } ?? DefaultIndexerParameterType;
         type.IsNullable = false;
         var segment = currentNode.DeduplicatedSegment();
@@ -1253,6 +1253,55 @@ public partial class KiotaBuilder
             (_, _) => null,
         };
     }
+    
+    private CodeTypeBase? GetPathParameterType(IOpenApiSchema? typeSchema)
+    {
+        // Check if it's a union type with mixed primitives (anyOf or oneOf) first
+        if (typeSchema != null && (typeSchema.AnyOf?.Count > 0 || typeSchema.OneOf?.Count > 0))
+        {
+            var schemas = typeSchema.AnyOf ?? typeSchema.OneOf;
+            if (schemas != null)
+            {
+                var primitiveTypes = new List<CodeType>();
+                
+                foreach (var schema in schemas)
+                {
+                    if (GetPrimitiveType(schema) is CodeType schemaType)
+                    {
+                        primitiveTypes.Add(schemaType);
+                    }
+                }
+                
+                // If we found multiple primitive types, create a union type
+                if (primitiveTypes.Count > 1)
+                {
+                    var unionType = new CodeUnionType
+                    {
+                        Name = "PathParameterUnion"
+                    };
+                    
+                    foreach (var primitiveType in primitiveTypes)
+                    {
+                        if (!unionType.ContainsType(primitiveType))
+                        {
+                            unionType.AddType(primitiveType);
+                        }
+                    }
+                    
+                    return unionType;
+                }
+                // If we only found one primitive type, return it
+                else if (primitiveTypes.Count == 1)
+                {
+                    return primitiveTypes[0];
+                }
+            }
+        }
+        
+        // Fall back to regular primitive type handling
+        return GetPrimitiveType(typeSchema);
+    }
+    
     private const string RequestBodyPlainTextContentType = "text/plain";
     private const string RequestBodyOctetStreamContentType = "application/octet-stream";
     private const string DefaultResponseIndicator = "default";
