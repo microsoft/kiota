@@ -1257,44 +1257,32 @@ public partial class KiotaBuilder
     private CodeTypeBase? GetPathParameterType(IOpenApiSchema? typeSchema)
     {
         // Check if it's a union type with mixed primitives (anyOf or oneOf) first
-        if (typeSchema != null && (typeSchema.AnyOf?.Count > 0 || typeSchema.OneOf?.Count > 0))
+        if (typeSchema != null && (typeSchema.AnyOf ?? typeSchema.OneOf) is { Count : > 0 } schemas)
         {
-            var schemas = typeSchema.AnyOf ?? typeSchema.OneOf;
-            if (schemas != null)
+            var primitiveTypes = schemas.Select(static s => GetPrimitiveType(s)).OfType<CodeType>().ToArray();
+            
+            // If we found multiple primitive types, create a union type
+            if (primitiveTypes.Length > 1)
             {
-                var primitiveTypes = new List<CodeType>();
-                
-                foreach (var schema in schemas)
+                var unionType = new CodeUnionType
                 {
-                    if (GetPrimitiveType(schema) is CodeType schemaType)
+                    Name = "PathParameterUnion"
+                };
+                
+                foreach (var primitiveType in primitiveTypes)
+                {
+                    if (!unionType.ContainsType(primitiveType))
                     {
-                        primitiveTypes.Add(schemaType);
+                        unionType.AddType(primitiveType);
                     }
                 }
                 
-                // If we found multiple primitive types, create a union type
-                if (primitiveTypes.Count > 1)
-                {
-                    var unionType = new CodeUnionType
-                    {
-                        Name = "PathParameterUnion"
-                    };
-                    
-                    foreach (var primitiveType in primitiveTypes)
-                    {
-                        if (!unionType.ContainsType(primitiveType))
-                        {
-                            unionType.AddType(primitiveType);
-                        }
-                    }
-                    
-                    return unionType;
-                }
-                // If we only found one primitive type, return it
-                else if (primitiveTypes.Count == 1)
-                {
-                    return primitiveTypes[0];
-                }
+                return unionType;
+            }
+            // If we only found one primitive type, return it
+            else if (primitiveTypes.Length == 1)
+            {
+                return primitiveTypes[0];
             }
         }
         
