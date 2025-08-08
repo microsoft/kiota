@@ -1107,7 +1107,7 @@ public partial class KiotaBuilder
         var type = parameter switch
         {
             null => DefaultIndexerParameterType,
-            _ => GetPrimitiveType(parameter.Schema),
+            _ => GetPathParameterType(parameter.Schema),
         } ?? DefaultIndexerParameterType;
         type.IsNullable = false;
         var segment = currentNode.DeduplicatedSegment();
@@ -1253,6 +1253,43 @@ public partial class KiotaBuilder
             (_, _) => null,
         };
     }
+    
+    private CodeTypeBase? GetPathParameterType(IOpenApiSchema? typeSchema)
+    {
+        // Check if it's a union type with mixed primitives (anyOf or oneOf) first
+        if (typeSchema != null && (typeSchema.AnyOf ?? typeSchema.OneOf) is { Count : > 0 } schemas)
+        {
+            var primitiveTypes = schemas.Select(static s => GetPrimitiveType(s)).OfType<CodeType>().ToArray();
+            
+            // If we found multiple primitive types, create a union type
+            if (primitiveTypes.Length > 1)
+            {
+                var unionType = new CodeUnionType
+                {
+                    Name = "PathParameterUnion"
+                };
+                
+                foreach (var primitiveType in primitiveTypes)
+                {
+                    if (!unionType.ContainsType(primitiveType))
+                    {
+                        unionType.AddType(primitiveType);
+                    }
+                }
+                
+                return unionType;
+            }
+            // If we only found one primitive type, return it
+            else if (primitiveTypes.Length == 1)
+            {
+                return primitiveTypes[0];
+            }
+        }
+        
+        // Fall back to regular primitive type handling
+        return GetPrimitiveType(typeSchema);
+    }
+    
     private const string RequestBodyPlainTextContentType = "text/plain";
     private const string RequestBodyOctetStreamContentType = "application/octet-stream";
     private const string DefaultResponseIndicator = "default";
