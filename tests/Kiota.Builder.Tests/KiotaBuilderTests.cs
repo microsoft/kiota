@@ -6687,7 +6687,7 @@ components:
         var actorsItemRequestBuilder = actorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("actorItemRequestBuilder");
         Assert.Equal(actorsCollectionIndexer.ReturnType.Name, actorsItemRequestBuilder.Name);
     }
-    
+
     [Fact]
     public async Task IndexerSupportsUnionOfPrimitiveTypesForPathParametersAsync()
     {
@@ -6740,23 +6740,23 @@ components:
         var keysCollectionRequestBuilder = keysCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("keysRequestBuilder");
         var keysCollectionIndexer = keysCollectionRequestBuilder.Indexer;
         Assert.NotNull(keysCollectionIndexer);
-        
+
         // Check that the indexer parameter type is a union type containing both string and integer
         var parameterType = keysCollectionIndexer.IndexParameter.Type;
         Assert.IsType<CodeUnionType>(parameterType);
         var unionType = (CodeUnionType)keysCollectionIndexer.IndexParameter.Type;
         Assert.Equal(2, unionType.Types.Count());
-        
+
         // Verify both types are present in the union
         Assert.Contains(unionType.Types, t => t.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(unionType.Types, t => t.Name.Equals("integer", StringComparison.OrdinalIgnoreCase));
-        
+
         // Verify description
         Assert.Equal("Either the ID or the fingerprint of an existing SSH key.", keysCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate);
         Assert.False(keysCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(keysCollectionIndexer.Deprecation.IsDeprecated);
     }
-    
+
     [Fact]
     public async Task IndexerSupportsUnionOfPrimitiveTypesForPathParametersWithOneOfAsync()
     {
@@ -6809,23 +6809,23 @@ components:
         var keysCollectionRequestBuilder = keysCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("keysRequestBuilder");
         var keysCollectionIndexer = keysCollectionRequestBuilder.Indexer;
         Assert.NotNull(keysCollectionIndexer);
-        
+
         // Check that the indexer parameter type is a union type containing both string and integer
         var parameterType = keysCollectionIndexer.IndexParameter.Type;
         Assert.IsType<CodeUnionType>(parameterType);
         var unionType = (CodeUnionType)keysCollectionIndexer.IndexParameter.Type;
         Assert.Equal(2, unionType.Types.Count());
-        
+
         // Verify both types are present in the union
         Assert.Contains(unionType.Types, t => t.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(unionType.Types, t => t.Name.Equals("integer", StringComparison.OrdinalIgnoreCase));
-        
+
         // Verify description
         Assert.Equal("Either the ID or the fingerprint of an existing SSH key.", keysCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate);
         Assert.False(keysCollectionIndexer.IndexParameter.Type.IsNullable);
         Assert.False(keysCollectionIndexer.Deprecation.IsDeprecated);
     }
-    
+
     [Fact]
     public async Task MapsBooleanEnumToBooleanTypeAsync()
     {
