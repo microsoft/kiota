@@ -2548,7 +2548,7 @@ public partial class KiotaBuilder
     }
     private void AddPropertyForQueryParameter(OpenApiUrlTreeNode node, NetHttpMethod operationType, IOpenApiParameter parameter, CodeClass parameterClass)
     {
-        CodeType? resultType = default;
+        CodeTypeBase? resultType = default;
         var addBackwardCompatibleParameter = false;
 
         if (parameter.Schema is not null && (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum())))
@@ -2573,6 +2573,19 @@ public partial class KiotaBuilder
                 addBackwardCompatibleParameter = true;
             }
         }
+
+        // Handle union types (oneOf/anyOf) for query parameters
+        if (resultType is null && parameter.Schema is not null && 
+            (parameter.Schema.IsInclusiveUnion() || parameter.Schema.IsExclusiveUnion()) && 
+            string.IsNullOrEmpty(parameter.Schema.Format) && 
+            !parameter.Schema.IsODataPrimitiveType())
+        {
+            var codeNamespace = parameterClass.GetImmediateParentOfType<CodeNamespace>();
+            var typeNameForInlineSchema = $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
+            var unionTypeResult = CreateModelDeclarations(node, parameter.Schema, null, codeNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema);
+            resultType = unionTypeResult;
+        }
+
         resultType ??= GetPrimitiveType(parameter.Schema) ?? new CodeType()
         {
             // since its a query parameter default to string if there is no schema
@@ -2629,17 +2642,6 @@ public partial class KiotaBuilder
             IsExternal = true,
             Name = "string",
         };
-    }
-    private static CodeType GetQueryParameterType(IOpenApiSchema schema)
-    {
-        var paramType = GetPrimitiveType(schema) ?? new()
-        {
-            IsExternal = true,
-            Name = schema.Items is not null && (schema.Items.Type & ~JsonSchemaType.Null)?.ToIdentifiers().FirstOrDefault() is string name ? name : "null",
-        };
-
-        paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
-        return paramType;
     }
 
     private void CleanUpInternalState()
