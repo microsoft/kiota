@@ -50,7 +50,7 @@ jobs:
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: generator
           path: publish
@@ -100,12 +100,12 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         if: startsWith(matrix.description, './') != true
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: description
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: generator
           path: publish
