@@ -1942,7 +1942,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("int? sampleParam", result);
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
-        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+        Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
     }
 
     [Fact]
@@ -2020,7 +2020,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("string? sampleParam = \"\"", result);
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
-        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+        Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
     }
     [Fact]
     public void WritesDeprecationInformation()
