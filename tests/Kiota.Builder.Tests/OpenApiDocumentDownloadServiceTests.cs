@@ -12,6 +12,7 @@ namespace Kiota.Builder.Tests.OpenApiExtensions;
 public sealed class OpenApiDocumentDownloadServiceTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();
+    private readonly string TempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     private const string DocumentContentWithNoServer = @"openapi: 3.0.0
 info:
   title: Graph Users
@@ -34,6 +35,10 @@ paths:
     public void Dispose()
     {
         _httpClient.Dispose();
+        if (Directory.Exists(TempDirectory))
+        {
+            Directory.Delete(TempDirectory, true);
+        }
     }
 
     [Fact]
@@ -55,9 +60,9 @@ paths:
 
         var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
 
-
-        var overlaysPath = Path.Combine(Path.GetRandomFileName(), "overlays.yaml");
-        await File.WriteAllTextAsync(overlaysPath, yaml);
+        Directory.CreateDirectory(TempDirectory);
+        var overlaysPath = Path.Combine(TempDirectory, Path.GetRandomFileName() + "overlays.yaml");
+        await File.WriteAllTextAsync(overlaysPath, yaml).ConfigureAwait(false);
 
         var generationConfig = new GenerationConfiguration
         {
@@ -76,10 +81,6 @@ paths:
         Assert.NotNull(document);
         Assert.Equal("Updated Title", document.Info.Title);
         Assert.Equal("Updated Description", document.Info.Description);
-
-        // Clean up
-        if (File.Exists(overlaysPath))
-            File.Delete(overlaysPath);
     }
 
     [Fact]
@@ -102,8 +103,8 @@ paths:
         var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
 
 
-        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var overlaysPath = Path.Combine(workingDirectory) + "overlays.yaml";
+        Directory.CreateDirectory(TempDirectory);
+        var overlaysPath = Path.Combine(TempDirectory, Path.GetRandomFileName() + "overlays.yaml");
         await File.WriteAllTextAsync(overlaysPath, yaml);
 
         var generationConfig = new GenerationConfiguration
@@ -123,10 +124,6 @@ paths:
         Assert.NotNull(document);
         Assert.Equal("Updated Title", document.Info.Title);
         Assert.Equal("Updated Description", document.Info.Description);
-
-        // Clean up
-        if (File.Exists(overlaysPath))
-            File.Delete(overlaysPath);
     }
 
     [Fact]
@@ -149,8 +146,8 @@ paths:
         var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
 
 
-        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var overlaysPath = Path.Combine(workingDirectory) + "overlays.yaml";
+        Directory.CreateDirectory(TempDirectory);
+        var overlaysPath = Path.Combine(TempDirectory, Path.GetRandomFileName() + "overlays.yaml");
         await File.WriteAllTextAsync(overlaysPath, json);
 
         var generationConfig = new GenerationConfiguration
@@ -172,10 +169,6 @@ paths:
         var diagError = fakeLogger.LogEntries
             .Where(l => l.message.StartsWith("OpenAPI error:"));
         Assert.Single(diagError);
-
-        // Clean up
-        if (File.Exists(overlaysPath))
-            File.Delete(overlaysPath);
     }
 
     [Fact]
@@ -232,8 +225,8 @@ paths:
 
         var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
 
-        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var overlaysPath = Path.Combine(workingDirectory) + "overlays.yaml";
+        Directory.CreateDirectory(TempDirectory);
+        var overlaysPath = Path.Combine(TempDirectory, Path.GetRandomFileName() + "overlays.yaml");
         await File.WriteAllTextAsync(overlaysPath, jsonOverlays);
 
         var generationConfig = new GenerationConfiguration
@@ -248,15 +241,10 @@ paths:
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
         var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
 
-
         // Assert
         Assert.NotNull(document);
         Assert.Equal("Updated Title YES", document.Info.Title);
         Assert.Null(document.Info.Description);
-
-        // Clean up
-        if (Directory.Exists(workingDirectory))
-            Directory.Delete(workingDirectory, true);
     }
 
     [Fact]

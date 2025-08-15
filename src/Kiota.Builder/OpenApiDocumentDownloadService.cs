@@ -141,11 +141,18 @@ internal class OpenApiDocumentDownloadService
             // couldn't parse the URL, it's probably a local file
         }
 
-        Microsoft.OpenApi.Reader.ReadResult readResult = new Microsoft.OpenApi.Reader.ReadResult() { };
+        Microsoft.OpenApi.Reader.ReadResult readResult = new Microsoft.OpenApi.Reader.ReadResult()
+        {
+            Diagnostic = new OpenApiDiagnostic()
+            {
+                Errors = [],
+                Warnings = [],
+            }
+        };
+
         if (config.Overlays.Count != 0)
         {
-            // TODO : handle multiple Overlays
-            var overlay = config.Overlays.First();
+
             var overlaysSettings = new OverlayReaderSettings
             {
                 OpenApiSettings = settings
@@ -156,50 +163,56 @@ internal class OpenApiDocumentDownloadService
                 ClearCache = config.ClearCache,
             };
 
-            Uri? overlayUri = null;
-            if (Uri.TryCreate(overlay, UriKind.Absolute, out var absoluteUri))
+            OverlayDocument? overlayCombined = null;
+            foreach (var overlay in config.Overlays)
             {
-                overlayUri = absoluteUri;
+                Uri? overlayUri = null;
+                if (Uri.TryCreate(overlay, UriKind.Absolute, out var absoluteUri))
+                {
+                    overlayUri = absoluteUri;
+                }
+                else if (Uri.TryCreate(overlay, UriKind.Relative, out var relativeUri))
+                {
+                    overlayUri = relativeUri;
+                }
+
+                if (overlayUri is null)
+                {
+                    throw new InvalidOperationException($"The overlay '{overlay}' is not a valid URI.");
+                }
+
+                BinkyLabs.OpenApi.Overlays.ReadResult? overlayToCombineResult = null;
+                if (overlayUri.IsAbsoluteUri && overlayUri.Scheme is "http" or "https")
+                {
+                    var fileName = overlay is string name && !string.IsNullOrEmpty(name) ? name : "overlay.yml";
+                    var inputOverlay = await cachingProvider.GetDocumentAsync(overlayUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    overlayToCombineResult = await OverlayDocument.LoadFromStreamAsync(inputOverlay, null, overlaysSettings, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    overlayToCombineResult = await OverlayDocument.LoadFromUrlAsync(overlay, overlaysSettings, cancellationToken).ConfigureAwait(false);
+                }
+
+                if (overlayToCombineResult is null || overlayToCombineResult.Document is null)
+                {
+                    throw new InvalidOperationException($"Could not read the overlay document at {overlayUri}. Please ensure the overlay is valid and accessible.");
+                }
+
+                if (overlayToCombineResult.Diagnostic is not null)
+                {
+                    readResult.Diagnostic.Errors.AddRange(overlayToCombineResult.Diagnostic.Errors ?? []);
+                    readResult.Diagnostic.Warnings.AddRange(overlayToCombineResult.Diagnostic.Warnings ?? []);
+                }
+
+                overlayCombined = overlayCombined is null
+                    ? overlayToCombineResult.Document
+                    : overlayCombined.CombineWith(overlayToCombineResult.Document);
             }
-            else if (Uri.TryCreate(overlay, UriKind.Relative, out var relativeUri))
+
+            if (overlayCombined is not null)
             {
-                overlayUri = relativeUri;
-            }
-
-            if (overlayUri is null)
-            {
-                throw new InvalidOperationException($"The overlay '{overlay}' is not a valid URI.");
-            }
-
-            BinkyLabs.OpenApi.Overlays.ReadResult? readOverlayResult = null;
-
-            if (overlayUri.IsAbsoluteUri && overlayUri.Scheme is "http" or "https")
-            {
-                var fileName = overlay is string name && !string.IsNullOrEmpty(name) ? name : "overlay.yml";
-                var inputOverlay = await cachingProvider.GetDocumentAsync(overlayUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                readOverlayResult = await OverlayDocument.LoadFromStreamAsync(inputOverlay, null, overlaysSettings, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                readOverlayResult = await OverlayDocument.LoadFromUrlAsync(overlay, overlaysSettings, cancellationToken).ConfigureAwait(false);
-
-            }
-
-            if (readOverlayResult is null)
-            {
-                throw new InvalidOperationException($"Could not read the overlay document at {overlayUri}. Please ensure the URI is valid and accessible.");
-            }
-
-            readResult.Diagnostic = new OpenApiDiagnostic()
-            {
-                Errors = readOverlayResult.Diagnostic?.Errors ?? [],
-                Warnings = readOverlayResult.Diagnostic?.Warnings ?? [],
-            };
-
-            if (readOverlayResult.Document is not null)
-            {
-                var (document, overlaysDiagnostics, documentDiagnostics) = await readOverlayResult.Document.ApplyToDocumentStreamAsync(input, settings.BaseUrl ?? new Uri("file://" + rawUri), null, overlaysSettings, cancellationToken: cancellationToken)
+                var (document, overlaysDiagnostics, documentDiagnostics) = await overlayCombined.ApplyToDocumentStreamAsync(input, settings.BaseUrl ?? new Uri("file://" + rawUri), null, overlaysSettings, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
                 readResult.Diagnostic.Errors.AddRange(documentDiagnostics?.Errors ?? []);
