@@ -76,7 +76,6 @@ paths:
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
         var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
 
-
         // Assert
         Assert.NotNull(document);
         Assert.Equal("Updated Title", document.Info.Title);
