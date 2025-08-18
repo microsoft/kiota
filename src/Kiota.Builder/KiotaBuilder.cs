@@ -1207,11 +1207,11 @@ public partial class KiotaBuilder
         !string.IsNullOrEmpty(stringDefaultValue) &&
         !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
         {
-            if (propertySchema.Type == JsonSchemaType.Integer && int.TryParse(stringDefaultValue, out var intValue))
+            if ((propertySchema.Type & ~JsonSchemaType.Null) == JsonSchemaType.Integer && int.TryParse(stringDefaultValue, out var intValue))
                 prop.DefaultValue = intValue.ToString(CultureInfo.InvariantCulture);
-            else if (propertySchema.Type == JsonSchemaType.Number && double.TryParse(stringDefaultValue, out var doubleValue))
+            else if ((propertySchema.Type & ~JsonSchemaType.Null) == JsonSchemaType.Number && double.TryParse(stringDefaultValue, out var doubleValue))
                 prop.DefaultValue = doubleValue.ToString(CultureInfo.InvariantCulture);
-            else if (propertySchema.Type == JsonSchemaType.Boolean && bool.TryParse(stringDefaultValue, out var boolValue))
+            else if ((propertySchema.Type & ~JsonSchemaType.Null) == JsonSchemaType.Boolean && bool.TryParse(stringDefaultValue, out var boolValue))
                 prop.DefaultValue = boolValue.ToString().ToLowerInvariant();
             else
                 prop.DefaultValue = $"\"{stringDefaultValue}\"";

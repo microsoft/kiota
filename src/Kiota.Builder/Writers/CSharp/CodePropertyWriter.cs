@@ -42,7 +42,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         {
             if (codeElement.Type is CodeType propertyCodeType && propertyCodeType.TypeDefinition is CodeEnum enumDefinition)
             {
-                var enumTypeName = conventions.GetTypeString(codeElement.Type, codeElement).TrimEnd('?');
+                var enumTypeName = conventions.GetTypeString(codeElement.Type, codeElement, true, false);
                 var enumValue = codeElement.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase();
                 defaultValue = $" = {enumTypeName}.{enumValue};";
             }
