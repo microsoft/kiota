@@ -83,6 +83,60 @@ paths:
     }
 
     [Fact]
+    public async Task GetDocumentFromStreamAsyncTest_With2OverlaysYamlInConfigWithRelativePath()
+    {
+        // Assert
+        var yaml = """
+        overlay: "1.0.0"
+        info:
+          title: "Test Overlay"
+          version: "2.0.0"
+        actions:
+          - target: "$.info"
+            update: 
+                title: "Updated Title"
+        """;
+
+        var yaml2 = """
+        overlay: "1.0.0"
+        info:
+          title: "Test Overlay"
+          version: "2.0.0"
+        actions:
+          - target: "$.info"
+            update: 
+                description: "Updated Description"
+        """;
+
+
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+        Directory.CreateDirectory(TempDirectory);
+        var overlaysPath = Path.Combine(TempDirectory, Path.GetRandomFileName() + "overlays.yaml");
+        var overlaysPath2 = Path.Combine(TempDirectory, Path.GetRandomFileName() + "overlays.yaml");
+        await File.WriteAllTextAsync(overlaysPath, yaml);
+        await File.WriteAllTextAsync(overlaysPath2, yaml2);
+
+        var generationConfig = new GenerationConfiguration
+        {
+            Overlays = new HashSet<string>() {
+                overlaysPath,
+                overlaysPath2
+            }
+        };
+
+        //Act
+        using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+
+        // Assert
+        Assert.NotNull(document);
+        Assert.Equal("Updated Title", document.Info.Title);
+        Assert.Equal("Updated Description", document.Info.Description);
+    }
+
+    [Fact]
     public async Task GetDocumentFromStreamAsyncTest_WithOverlaysYamlInConfigAbsolutePath()
     {
         // Assert
