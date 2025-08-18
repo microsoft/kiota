@@ -1201,12 +1201,21 @@ public partial class KiotaBuilder
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
             prop.SerializationName = childIdentifier;
-        if (kind == CodePropertyKind.Custom &&
-            propertySchema?.Default is JsonValue stringDefaultJsonValue &&
-            stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
-            !string.IsNullOrEmpty(stringDefaultValue) &&
-            !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
-            prop.DefaultValue = $"\"{stringDefaultValue}\"";
+        if ((kind == CodePropertyKind.Custom || kind == CodePropertyKind.QueryParameter) &&
+        propertySchema?.Default is JsonValue defaultJsonValue &&
+        defaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
+        !string.IsNullOrEmpty(stringDefaultValue) &&
+        !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
+        {
+            if (propertySchema.Type == JsonSchemaType.Integer && int.TryParse(stringDefaultValue, out var intValue))
+                prop.DefaultValue = intValue.ToString(CultureInfo.InvariantCulture);
+            else if (propertySchema.Type == JsonSchemaType.Number && double.TryParse(stringDefaultValue, out var doubleValue))
+                prop.DefaultValue = doubleValue.ToString(CultureInfo.InvariantCulture);
+            else if (propertySchema.Type == JsonSchemaType.Boolean && bool.TryParse(stringDefaultValue, out var boolValue))
+                prop.DefaultValue = boolValue.ToString().ToLowerInvariant();
+            else
+                prop.DefaultValue = $"\"{stringDefaultValue}\"";
+        }
 
         if (existingType == null)
         {

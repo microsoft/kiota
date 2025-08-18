@@ -38,6 +38,19 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var setterAccessModifier = codeElement.ReadOnly && codeElement.Access > AccessModifier.Private ? "private " : string.Empty;
         var simpleBody = $"get; {setterAccessModifier}set;";
         var defaultValue = string.Empty;
+        if (!string.IsNullOrEmpty(codeElement.DefaultValue))
+        {
+            if (codeElement.Type is CodeType propertyCodeType && propertyCodeType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                var enumTypeName = conventions.GetTypeString(codeElement.Type, codeElement).TrimEnd('?');
+                var enumValue = codeElement.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase();
+                defaultValue = $" = {enumTypeName}.{enumValue};";
+            }
+            else
+            {
+                defaultValue = $" = {codeElement.DefaultValue};";
+            }
+        }
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:

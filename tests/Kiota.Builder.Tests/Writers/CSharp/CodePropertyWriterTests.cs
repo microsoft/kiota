@@ -88,6 +88,99 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("get; set;", result);
     }
     [Fact]
+    public void WritesCustomPropertyWithDefaultValue()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        property.DefaultValue = $"new {TypeName}()";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"{TypeName} {PropertyName}", result);
+        Assert.Contains("get; set;", result);
+        Assert.Contains($" = new {TypeName}()", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultEnumValue()
+    {
+        var enumProperty = new CodeProperty
+        {
+            Name = "EnumProperty",
+            Type = new CodeType
+            {
+                Name = "SomeEnum",
+                TypeDefinition = rootNamespace.AddEnum(new CodeEnum
+                {
+                    Name = "SomeEnum"
+                }).First()
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "EnumValue2",
+        };
+        parentClass.AddProperty(enumProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        writer.Write(enumProperty);
+        var result = tw.ToString();
+        Assert.Contains("SomeEnum? EnumProperty { get; set; } = global::defaultNamespace.SomeEnum.EnumValue2;", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultIntValue()
+    {
+        var integerProperty = new CodeProperty
+        {
+            Name = "IntegerProperty",
+            Type = new CodeType
+            {
+                Name = "Int32"
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "3",
+        };
+        parentClass.AddProperty(integerProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        writer.Write(integerProperty);
+        var result = tw.ToString();
+        Assert.Contains("Int32? IntegerProperty { get; set; } = 3;", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultStringValue()
+    {
+        var stringProperty = new CodeProperty
+        {
+            Name = "StringProperty",
+            Type = new CodeType
+            {
+                Name = "String"
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "\"SomeString\"",
+        };
+        parentClass.AddProperty(stringProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        writer.Write(stringProperty);
+        var result = tw.ToString();
+        Assert.Contains("public String? StringProperty { get; set; } = \"SomeString\";", result);
+    }
+    [Fact]
     public void WritesPrivateSetter()
     {
         property.Kind = CodePropertyKind.Custom;
