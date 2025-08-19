@@ -103,7 +103,7 @@ public class CodePropertyWriterTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
-        Assert.Contains("private ?array $additionalData = null;", result);
+        Assert.Contains("private ?array $additionalData = [];", result);
         Assert.Contains("@var array<string, mixed>|null", result);
     }
 
@@ -267,5 +267,87 @@ public class CodePropertyWriterTests
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
         Assert.DoesNotContain("/*/*", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultEnumValue()
+    {
+        var enumProperty = new CodeProperty
+        {
+            Name = "EnumProperty",
+            Type = new CodeType
+            {
+                Name = "SomeEnum",
+                TypeDefinition = new CodeEnum
+                {
+                    Name = "SomeEnum"
+                }
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "EnumValue2",
+        };
+        parentClass.AddProperty(enumProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        propertyWriter.WriteCodeElement(enumProperty, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("SomeEnum $enumProperty = SomeEnum::EnumValue2;", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultIntValue()
+    {
+        var integerProperty = new CodeProperty
+        {
+            Name = "IntegerProperty",
+            Type = new CodeType
+            {
+                Name = "int"
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "3",
+        };
+        parentClass.AddProperty(integerProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        propertyWriter.WriteCodeElement(integerProperty, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("Int $integerProperty = 3;", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultStringValue()
+    {
+        var stringProperty = new CodeProperty
+        {
+            Name = "StringProperty",
+            Type = new CodeType
+            {
+                Name = "str"
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "\"SomeString\"",
+        };
+        parentClass.AddProperty(stringProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        propertyWriter.WriteCodeElement(stringProperty, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("Str $stringProperty = \"SomeString\";", result);
     }
 }
