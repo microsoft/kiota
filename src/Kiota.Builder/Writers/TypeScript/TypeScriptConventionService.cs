@@ -167,6 +167,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     * @param targetElement The target element
     * @returns The composed type string representation 
     */
+
     private static string GetComposedTypeTypeString(CodeComposedTypeBase composedType, CodeElement targetElement, string collectionSuffix, bool includeCollectionInformation = true)
     {
         if (!composedType.Types.Any())
@@ -345,6 +346,14 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     internal static CodeFunction? GetFactoryMethod(CodeInterface definitionClass, string factoryMethodName)
     {
         return definitionClass.GetImmediateParentOfType<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
+    }
+
+    public override string GetPropertyName(string originalName)
+    {
+        if (originalName.StartsWith("__"))
+            return originalName; // Don't transform property names starting with double underscore
+
+        return base.GetPropertyName(originalName); // fallback to default
     }
 
     public string GetDeserializationMethodName(CodeTypeBase codeType, CodeElement targetElement, bool? IsCollection = null)
