@@ -85,7 +85,7 @@ public class StringExtensionsTests
         Assert.Equal("Toto", "toto".NormalizeNameSpaceName("-"));
         Assert.Equal("Microsoft_Graph_Message_Content", "microsoft.Graph.Message.Content".NormalizeNameSpaceName("_"));
     }
-    [InlineData("\" !#$%&'()*+,./:;<=>?@[]\\^`{}|~-", "plus")]
+    [InlineData("\" !#$%&'()*+,./:;<=>?@[]^`{}|~-", "plus")]
     [InlineData("unchanged", "unchanged")]
     [InlineData("@odata.changed", "OdataChanged")]
     [InlineData("specialLast@", "specialLast")]
@@ -98,6 +98,9 @@ public class StringExtensionsTests
     [InlineData("-1-", "minus_1")]
     [InlineData("-1-1", "minus_11")]
     [InlineData("-", "minus")]
+    [InlineData("\\", "Slash")]
+    [InlineData("Param\\", "ParamSlash")]
+    [InlineData("Param\\RequestBuilder", "ParamSlashRequestBuilder")]
     [Theory]
     public void CleansUpSymbolNames(string input, string expected)
     {
