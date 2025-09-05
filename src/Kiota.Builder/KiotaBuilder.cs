@@ -1871,6 +1871,12 @@ public partial class KiotaBuilder
     }
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false)
     {
+        // ???
+        if (schema is null)
+        {
+            return new CodeType { Name = UntypedNodeName, IsExternal = true };
+        }
+        
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
         {
             true => (GetShortestNamespace(parentElement.GetImmediateParentOfType<CodeNamespace>(), schema), response, string.Empty), // referenced schema
