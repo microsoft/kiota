@@ -6687,6 +6687,145 @@ components:
         var actorsItemRequestBuilder = actorsItemRequestBuilderNamespace.FindChildByName<CodeClass>("actorItemRequestBuilder");
         Assert.Equal(actorsCollectionIndexer.ReturnType.Name, actorsItemRequestBuilder.Name);
     }
+
+    [Fact]
+    public async Task IndexerSupportsUnionOfPrimitiveTypesForPathParametersAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
+info:
+  title: Test API with Union Path Parameters
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /keys/{ssh_key_identifier}:
+    get:
+      parameters:
+        - name: ssh_key_identifier
+          in: path
+          required: true
+          description: Either the ID or the fingerprint of an existing SSH key.
+          schema:
+            anyOf:
+              - type: string
+              - type: integer
+          example: 512189
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKey'
+components:
+  schemas:
+    SSHKey:
+      type: object
+      properties:
+        id:
+          type: integer
+        fingerprint:
+          type: string
+        key:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var keysCollectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.keys");
+        Assert.NotNull(keysCollectionRequestBuilderNamespace);
+        var keysCollectionRequestBuilder = keysCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("keysRequestBuilder");
+        var keysCollectionIndexer = keysCollectionRequestBuilder.Indexer;
+        Assert.NotNull(keysCollectionIndexer);
+
+        // Check that the indexer parameter type is a union type containing both string and integer
+        var parameterType = keysCollectionIndexer.IndexParameter.Type;
+        Assert.IsType<CodeUnionType>(parameterType);
+        var unionType = (CodeUnionType)keysCollectionIndexer.IndexParameter.Type;
+        Assert.Equal(2, unionType.Types.Count());
+
+        // Verify both types are present in the union
+        Assert.Contains(unionType.Types, t => t.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(unionType.Types, t => t.Name.Equals("integer", StringComparison.OrdinalIgnoreCase));
+
+        // Verify description
+        Assert.Equal("Either the ID or the fingerprint of an existing SSH key.", keysCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate);
+        Assert.False(keysCollectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(keysCollectionIndexer.Deprecation.IsDeprecated);
+    }
+
+    [Fact]
+    public async Task IndexerSupportsUnionOfPrimitiveTypesForPathParametersWithOneOfAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.0
+info:
+  title: Test API with OneOf Path Parameters
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /keys/{ssh_key_identifier}:
+    get:
+      parameters:
+        - name: ssh_key_identifier
+          in: path
+          required: true
+          description: Either the ID or the fingerprint of an existing SSH key.
+          schema:
+            oneOf:
+              - type: string
+              - type: integer
+          example: 512189
+      responses:
+        200:
+          description: Success!
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHKey'
+components:
+  schemas:
+    SSHKey:
+      type: object
+      properties:
+        id:
+          type: integer
+        fingerprint:
+          type: string
+        key:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var keysCollectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.keys");
+        Assert.NotNull(keysCollectionRequestBuilderNamespace);
+        var keysCollectionRequestBuilder = keysCollectionRequestBuilderNamespace.FindChildByName<CodeClass>("keysRequestBuilder");
+        var keysCollectionIndexer = keysCollectionRequestBuilder.Indexer;
+        Assert.NotNull(keysCollectionIndexer);
+
+        // Check that the indexer parameter type is a union type containing both string and integer
+        var parameterType = keysCollectionIndexer.IndexParameter.Type;
+        Assert.IsType<CodeUnionType>(parameterType);
+        var unionType = (CodeUnionType)keysCollectionIndexer.IndexParameter.Type;
+        Assert.Equal(2, unionType.Types.Count());
+
+        // Verify both types are present in the union
+        Assert.Contains(unionType.Types, t => t.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(unionType.Types, t => t.Name.Equals("integer", StringComparison.OrdinalIgnoreCase));
+
+        // Verify description
+        Assert.Equal("Either the ID or the fingerprint of an existing SSH key.", keysCollectionIndexer.IndexParameter.Documentation.DescriptionTemplate);
+        Assert.False(keysCollectionIndexer.IndexParameter.Type.IsNullable);
+        Assert.False(keysCollectionIndexer.Deprecation.IsDeprecated);
+    }
+
     [Fact]
     public async Task MapsBooleanEnumToBooleanTypeAsync()
     {
