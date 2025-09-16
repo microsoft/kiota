@@ -82,7 +82,7 @@ public sealed class CodeEnumWriterTests : IDisposable
     }
 
     [Theory]
-    [InlineData("\\", "BackSlash")]
+    [InlineData("\\", "Slash")]
     [InlineData("?", "QuestionMark")]
     [InlineData("$", "Dollar")]
     [InlineData("~", "Tilde")]

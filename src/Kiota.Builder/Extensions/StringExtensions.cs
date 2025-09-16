@@ -266,6 +266,11 @@ public static partial class StringExtensions
             result = result.Replace("+", "_plus_", StringComparison.OrdinalIgnoreCase);
         }
 
+        if (result.Contains('\\', StringComparison.OrdinalIgnoreCase))
+        {
+            result = result.Replace(@"\", "Slash", StringComparison.OrdinalIgnoreCase);
+        }
+
         return result;
     }
     /// <summary>

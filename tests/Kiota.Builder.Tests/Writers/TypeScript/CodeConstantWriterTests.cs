@@ -477,6 +477,33 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("403: createError403FromDiscriminatorValue as ParsableFactory<Parsable>", result);
     }
     [Fact]
+    public void WritesRequestsMetadataWithCorrectUriTemplate()
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "firstAndWrongUriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{+baseurl}/foo/"
+        });
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "parentClassUriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{+baseurl}/foo"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("uriTemplate: ParentClassUriTemplate", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesIndexer()
     {
         AddRequestProperties();
