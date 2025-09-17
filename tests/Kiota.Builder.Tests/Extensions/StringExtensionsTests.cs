@@ -98,7 +98,7 @@ public class StringExtensionsTests
     [InlineData("-1-", "minus_1")]
     [InlineData("-1-1", "minus_11")]
     [InlineData("-", "minus")]
-    [InlineData("@", "at")]
+    [InlineData("@", "At")]
     [Theory]
     public void CleansUpSymbolNames(string input, string expected)
     {
