@@ -246,6 +246,7 @@ public static partial class StringExtensions
         {'>', "GreaterThan"},
         {'?', "QuestionMark"},
         {'~', "Tilde" },
+        {'@', "At"}
     };
 
     /// <summary>
