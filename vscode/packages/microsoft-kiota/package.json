@@ -7,7 +7,7 @@
   "telemetryInstrumentationKey": "1b2ee3d8-9aae-4adc-8832-fcf257233e91",
   "icon": "images/logo.png",
   "engines": {
-    "vscode": "^1.102.0"
+    "vscode": "^1.103.0"
   },
   "license": "MIT",
   "categories": [
@@ -524,13 +524,13 @@
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
     "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.102.0",
+    "@types/vscode": "^1.103.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.4.1",
-    "chai": "^5.2.1",
-    "mocha": "^11.1.0",
+    "chai": "^6.0.1",
+    "mocha": "^11.7.2",
     "sinon": "^21.0.0",
-    "webpack": "^5.101.0",
+    "webpack": "^5.101.3",
     "webpack-cli": "^6.0.1"
   }
 }

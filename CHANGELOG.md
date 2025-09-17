@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where Java code generation fails due to creation of an invalid object property name derived from the '@' symbol. [#6688](https://github.com/microsoft/kiota/issues/6688)
+- Fixes a bug where invalid C# code is generated when API path contains an underscore [#6698](https://github.com/microsoft/kiota/issues/6698)
+- Fixed a bug where union of integer and boolean types collection would not compile in dotnet. [#6834](https://github.com/microsoft/kiota/issues/6834)
 
 ## [1.28.0] - 2025-07-11
 

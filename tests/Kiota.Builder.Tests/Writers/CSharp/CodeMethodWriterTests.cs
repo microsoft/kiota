@@ -652,8 +652,26 @@ public sealed class CodeMethodWriterTests : IDisposable
             Name = "double",
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
         };
+        var cType3 = new CodeType
+        {
+            Name = "integer",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
+        var cType4 = new CodeType
+        {
+            Name = "boolean",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+        };
         unionTypeWrapper.OriginalComposedType.AddType(cType1);
         unionTypeWrapper.OriginalComposedType.AddType(cType2);
+        unionTypeWrapper.OriginalComposedType.AddType(cType3);
+        unionTypeWrapper.OriginalComposedType.AddType(cType4);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "StringValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
         unionTypeWrapper.AddProperty(new CodeProperty
         {
             Name = "DoubleValue",
@@ -662,8 +680,14 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         unionTypeWrapper.AddProperty(new CodeProperty
         {
-            Name = "StringValue",
-            Type = cType1,
+            Name = "IntegerValue",
+            Type = cType3,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "BooleanValue",
+            Type = cType4,
             Kind = CodePropertyKind.Custom
         });
 
@@ -690,6 +714,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<double?>()?.AsList() is List<double?> doubleValue", result);
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<int?>()?.AsList() is List<int?> integerValue", result);
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<bool?>()?.AsList() is List<bool?> booleanValue", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -1942,7 +1968,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("int? sampleParam", result);
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
-        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+        Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
     }
 
     [Fact]
@@ -2020,7 +2046,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("string? sampleParam = \"\"", result);
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
-        Assert.Contains("_ = ra ?? throw new ArgumentNullException(nameof(ra));", result);
+        Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
     }
     [Fact]
     public void WritesDeprecationInformation()
