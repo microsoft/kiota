@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for new properties in `OpenApiAiAdaptiveCardExtension`: `subtitle`, `thumbnailUrl`, and `informationProtectionLabel` to align with the updated `CardResponseSemanticProperties` interface.
+
 ### Changed
 
 - Fixed a bug where Java code generation fails due to creation of an invalid object property name derived from the '@' symbol. [#6688](https://github.com/microsoft/kiota/issues/6688)
