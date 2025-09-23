@@ -2,7 +2,6 @@ using System.IO;
 using System.Text.Json.Nodes;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
-using Microsoft.OpenApi.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
