@@ -2567,6 +2567,72 @@ paths:
         Assert.Throws<ArgumentException>(() => PluginsGenerationService.GetFirstPartialFileName(string.Empty));
     }
 
+    [Fact]
+    public async Task GeneratesManifestWithoutEmptyCapabilitiesAsync()
+    {
+        var simpleDescriptionContent =
+"""
+openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+  description: test description
+servers:
+  - url: http://localhost/
+paths:
+  /test:
+    get:
+      operationId: getTest
+      summary: Get test data
+      description: description for test path
+      x-ai-capabilities: {}
+      responses:
+        '200':
+          description: test
+""";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "testPlugin",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+
+        var manifestPaths = await pluginsGenerationService.GenerateManifestAsync();
+
+        // Verify the manifest was generated
+        var apiPluginPath = manifestPaths[PluginType.APIPlugin];
+        Assert.True(File.Exists(apiPluginPath));
+
+        // Read and validate the manifest content
+        var manifestContent = await File.ReadAllTextAsync(apiPluginPath);
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Single(resultingManifest.Document.Functions); // One function should be generated
+        
+        // Verify that the function does not have a capabilities property when it's empty
+        var function = resultingManifest.Document.Functions[0];
+        Assert.Equal("getTest", function.Name);
+        Assert.Null(function.Capabilities); // Capabilities should be null for empty x-ai-capabilities
+
+        // Also verify the JSON doesn't contain "capabilities": {}
+        Assert.DoesNotContain("\"capabilities\":", manifestContent);
+    }
+
     #endregion
 }
 

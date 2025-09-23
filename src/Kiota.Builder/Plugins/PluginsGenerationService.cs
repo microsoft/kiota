@@ -1136,6 +1136,7 @@ public partial class PluginsGenerationService
             capabilitiesExtension is OpenApiAiCapabilitiesExtension capabilities)
         {
             var functionCapabilities = new FunctionCapabilities();
+            bool hasContent = false;
 
             // Set ResponseSemantics
             if (capabilities.ResponseSemantics is not null)
@@ -1163,6 +1164,7 @@ public partial class PluginsGenerationService
                 }
                 responseSemantics.OAuthCardPath = capabilities.ResponseSemantics.OauthCardPath;
                 functionCapabilities.ResponseSemantics = responseSemantics;
+                hasContent = true;
             }
 
             // Set Confirmation
@@ -1175,6 +1177,7 @@ public partial class PluginsGenerationService
                     Body = capabilities.Confirmation.Body,
                 };
                 functionCapabilities.Confirmation = confirmation;
+                hasContent = true;
             }
 
             // Set SecurityInfo
@@ -1185,8 +1188,11 @@ public partial class PluginsGenerationService
                     DataHandling = capabilities.SecurityInfo.DataHandling,
                 };
                 functionCapabilities.SecurityInfo = securityInfo;
+                hasContent = true;
             }
-            return functionCapabilities;
+
+            // Only return the capabilities object if it actually has content
+            return hasContent ? functionCapabilities : null;
         }
 
         return null;

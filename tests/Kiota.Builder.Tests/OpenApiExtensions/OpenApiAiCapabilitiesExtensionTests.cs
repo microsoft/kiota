@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
+using Microsoft.OpenApi.Writers;
 using Moq;
 using Xunit;
 
@@ -235,5 +236,44 @@ components:
         Assert.Contains("data_handling", result);
         Assert.Contains("some data handling", result);
 
+    }
+
+    [Fact]
+    public void WritesNothingForEmptyCapabilities()
+    {
+        var value = new OpenApiAiCapabilitiesExtension
+        {
+            ResponseSemantics = null,
+            Confirmation = null,
+            SecurityInfo = null
+        };
+        using var sWriter = new StringWriter();
+        OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
+
+        value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
+        var result = sWriter.ToString();
+
+        // When all properties are null, nothing should be written
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
+    public void WritesNothingForCapabilitiesWithEmptyNestedObjects()
+    {
+        var value = new OpenApiAiCapabilitiesExtension
+        {
+            ResponseSemantics = new ExtensionResponseSemantics { DataPath = string.Empty },
+            Confirmation = new ExtensionConfirmation(),
+            SecurityInfo = new ExtensionSecurityInfo()
+        };
+        using var sWriter = new StringWriter();
+        OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
+
+        value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
+        var result = sWriter.ToString();
+
+        // Should write the object structure even if nested objects are empty
+        // since the properties are not null
+        Assert.NotEqual(string.Empty, result);
     }
 }
