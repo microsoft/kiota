@@ -39,6 +39,7 @@ on:
       ]
   schedule:
     - cron: "20 9 * * 5"
+  merge_group:
 
 permissions:
   contents: read #those permissions are required to run the codeql analysis
