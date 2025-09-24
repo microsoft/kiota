@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json.Nodes;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
@@ -20,7 +20,7 @@ public sealed class OpenApiLogoExtensionTest
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(oaiValueRepresentation));
         var oaiValue = JsonNode.Parse(stream);
         var value = OpenApiLogoExtension.Parse(oaiValue);
-        
+
         Assert.NotNull(value);
         Assert.Equal("https://example.com/logo.png", value.Url);
     }
@@ -37,7 +37,7 @@ public sealed class OpenApiLogoExtensionTest
 
         value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
         var result = sWriter.ToString();
-        
+
         Assert.Equal("{\"url\":\"https://example.com/logo.png\"}", result);
     }
 

@@ -2620,10 +2620,10 @@ paths:
         var manifestContent = await File.ReadAllTextAsync(apiPluginPath);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
-        
+
         Assert.NotNull(resultingManifest.Document);
         Assert.Single(resultingManifest.Document.Functions); // One function should be generated
-        
+
         // Verify that the function does not have a capabilities property when it's empty
         var function = resultingManifest.Document.Functions[0];
         Assert.Equal("getTest", function.Name);
