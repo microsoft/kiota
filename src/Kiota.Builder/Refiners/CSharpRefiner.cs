@@ -107,7 +107,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 AbstractionsNamespaceName
             );
             AddConstructorsForDefaultValues(generatedCode, false);
-            AddMessageConstructorForErrorClasses(generatedCode);
+            AddConstructorsForErrorClasses(generatedCode);
             AddMessageFactoryMethodForErrorClasses(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
@@ -271,53 +271,44 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, SetTypeAccessModifiers);
     }
 
-    private static void AddMessageConstructorForErrorClasses(CodeElement currentElement)
+    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
     {
-        if (currentElement is CodeClass codeClass &&
-            codeClass.IsErrorDefinition &&
-            !codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase))))
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
         {
-            codeClass.AddMethod(new CodeMethod
+            // Add parameterless constructor if not already present
+            if (!codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
             {
-                Name = "constructor",
-                Kind = CodeMethodKind.Constructor,
-                IsAsync = false,
-                IsStatic = false,
-                Documentation = new(new() {
-                    {"TypeName", new CodeType {
-                        IsExternal = false,
-                        TypeDefinition = codeClass,
-                    }}
-                })
-                {
-                    DescriptionTemplate = "Instantiates a new {TypeName} with the specified error message.",
-                },
-                Access = AccessModifier.Public,
-                ReturnType = new CodeType { Name = "void", IsExternal = true },
-                Parent = codeClass,
-            });
+                codeClass.AddMethod(CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values."));
+            }
 
-            // Add message parameter
-            codeClass.Methods.Last().AddParameter(new CodeParameter
+            // Add message constructor if not already present
+            if (!codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase))))
             {
-                Name = "message",
-                Type = new CodeType { Name = "string", IsExternal = true },
-                Optional = false,
-                Documentation = new()
+                var messageConstructor = codeClass.AddMethod(CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.")).Single();
+
+                // Add message parameter
+                messageConstructor.AddParameter(new CodeParameter
                 {
-                    DescriptionTemplate = "The error message"
-                }
-            });
+                    Name = "message",
+                    Type = new CodeType { Name = "string", IsExternal = true },
+                    Optional = false,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "The error message"
+                    }
+                });
+            }
         }
-        CrawlTree(currentElement, AddMessageConstructorForErrorClasses);
+        CrawlTree(currentElement, AddConstructorsForErrorClasses);
     }
 
     private static void AddMessageFactoryMethodForErrorClasses(CodeElement currentElement)
     {
         if (currentElement is CodeClass codeClass &&
-            codeClass.IsErrorDefinition)
+            codeClass.IsErrorDefinition &&
+            !codeClass.Methods.Any(m => m.Name == "CreateFromDiscriminatorValueWithMessage"))
         {
-            codeClass.AddMethod(new CodeMethod
+            var method = codeClass.AddMethod(new CodeMethod
             {
                 Name = "CreateFromDiscriminatorValueWithMessage",
                 Kind = CodeMethodKind.Factory,
@@ -339,15 +330,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                     TypeDefinition = codeClass,
                 },
                 Parent = codeClass,
-            });
-
-            var method = codeClass.Methods.Last();
+            }).Single();
 
             // Add parseNode parameter
             method.AddParameter(new CodeParameter
             {
                 Name = "parseNode",
                 Type = new CodeType { Name = "IParseNode", IsExternal = true },
+                Kind = CodeParameterKind.ParseNode,
                 Optional = false,
                 Documentation = new()
                 {
