@@ -107,6 +107,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 AbstractionsNamespaceName
             );
             AddConstructorsForDefaultValues(generatedCode, false);
+            AddMessageConstructorForErrorClasses(generatedCode);
+            AddMessageFactoryMethodForErrorClasses(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "IParseNode"
@@ -267,5 +269,104 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
 
         CrawlTree(currentElement, SetTypeAccessModifiers);
+    }
+
+    private static void AddMessageConstructorForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass &&
+            codeClass.IsErrorDefinition &&
+            !codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase))))
+        {
+            codeClass.AddMethod(new CodeMethod
+            {
+                Name = "constructor",
+                Kind = CodeMethodKind.Constructor,
+                IsAsync = false,
+                IsStatic = false,
+                Documentation = new(new() {
+                    {"TypeName", new CodeType {
+                        IsExternal = false,
+                        TypeDefinition = codeClass,
+                    }}
+                })
+                {
+                    DescriptionTemplate = "Instantiates a new {TypeName} with the specified error message.",
+                },
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType { Name = "void", IsExternal = true },
+                Parent = codeClass,
+            });
+
+            // Add message parameter
+            codeClass.Methods.Last().AddParameter(new CodeParameter
+            {
+                Name = "message",
+                Type = new CodeType { Name = "string", IsExternal = true },
+                Optional = false,
+                Documentation = new()
+                {
+                    DescriptionTemplate = "The error message"
+                }
+            });
+        }
+        CrawlTree(currentElement, AddMessageConstructorForErrorClasses);
+    }
+
+    private static void AddMessageFactoryMethodForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass &&
+            codeClass.IsErrorDefinition)
+        {
+            codeClass.AddMethod(new CodeMethod
+            {
+                Name = "CreateFromDiscriminatorValueWithMessage",
+                Kind = CodeMethodKind.Factory,
+                IsAsync = false,
+                IsStatic = true,
+                Documentation = new(new() {
+                    {"TypeName", new CodeType {
+                        IsExternal = false,
+                        TypeDefinition = codeClass,
+                    }}
+                })
+                {
+                    DescriptionTemplate = "Creates a new instance of the appropriate class based on discriminator value with a custom error message.",
+                },
+                Access = AccessModifier.Public,
+                ReturnType = new CodeType
+                {
+                    Name = codeClass.Name,
+                    TypeDefinition = codeClass,
+                },
+                Parent = codeClass,
+            });
+
+            var method = codeClass.Methods.Last();
+
+            // Add parseNode parameter
+            method.AddParameter(new CodeParameter
+            {
+                Name = "parseNode",
+                Type = new CodeType { Name = "IParseNode", IsExternal = true },
+                Optional = false,
+                Documentation = new()
+                {
+                    DescriptionTemplate = "The parse node to use to read the discriminator value and create the object"
+                }
+            });
+
+            // Add message parameter
+            method.AddParameter(new CodeParameter
+            {
+                Name = "message",
+                Type = new CodeType { Name = "string", IsExternal = true },
+                Optional = false,
+                Documentation = new()
+                {
+                    DescriptionTemplate = "The error message to set on the created object"
+                }
+            });
+        }
+        CrawlTree(currentElement, AddMessageFactoryMethodForErrorClasses);
     }
 }
