@@ -4,16 +4,11 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      [
-        "vscode/**",
-      ]
+    paths-ignore: ["vscode/**"]
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      [
-        "!vscode/**",
-      ]
+    paths: ["!vscode/**"]
+  merge_group:
 
 permissions:
   contents: read
