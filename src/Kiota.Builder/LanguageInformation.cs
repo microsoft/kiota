@@ -85,11 +85,6 @@ public record LanguageInformation : IOpenApiSerializable
         }
         return extension;
     }
-
-    public override bool Equals(object obj)
-    {
-        return Equals(obj as LanguageInformation);
-    }
 }
 public record LanguageDependency : IOpenApiSerializable
 {
@@ -134,11 +129,6 @@ public record LanguageDependency : IOpenApiSerializable
             extension.DependencyType = parsedTypeValue;
         }
         return extension;
-    }
-
-    public override bool Equals(object obj)
-    {
-        return Equals(obj as LanguageDependency);
     }
 }
 
