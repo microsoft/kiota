@@ -138,4 +138,24 @@ components:
         var result = sWriter.ToString();
         Assert.Equal("{\"data_path\":\"$.items\",\"file\":\"path_to_file\",\"title\":\"title\",\"url\":\"https://example.com\"}", result);
     }
+
+    [Fact]
+    public void WritesNothingForEmptyAdaptiveCard()
+    {
+        var value = new OpenApiAiAdaptiveCardExtension
+        {
+            DataPath = null,
+            File = null,
+            Title = null,
+            Url = null
+        };
+        using var sWriter = new StringWriter();
+        OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
+
+        value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
+        var result = sWriter.ToString();
+
+        // When required properties are null/empty, nothing should be written
+        Assert.Equal(string.Empty, result);
+    }
 }
