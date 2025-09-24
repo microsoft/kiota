@@ -123,4 +123,86 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("List<", result);
         Assert.DoesNotContain("EnumSet", result);
     }
+    [Fact]
+    public void WritesQueryParameterWithDefaultEnumValue()
+    {
+        var enumProperty = new CodeProperty
+        {
+            Name = "EnumProperty",
+            Type = new CodeType
+            {
+                Name = "SomeEnum",
+                TypeDefinition = new CodeEnum
+                {
+                    Name = "SomeEnum"
+                }
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "EnumValue2",
+        };
+        parentClass.AddProperty(enumProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        writer.Write(enumProperty);
+        var result = tw.ToString();
+        Assert.Contains("SomeEnum EnumProperty = SomeEnum.EnumValue2;", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultIntValue()
+    {
+        var integerProperty = new CodeProperty
+        {
+            Name = "IntegerProperty",
+            Type = new CodeType
+            {
+                Name = "Integer"
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "3",
+        };
+        parentClass.AddProperty(integerProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        writer.Write(integerProperty);
+        var result = tw.ToString();
+        Assert.Contains("Integer IntegerProperty = 3;", result);
+    }
+    [Fact]
+    public void WritesQueryParameterWithDefaultStringValue()
+    {
+        var stringProperty = new CodeProperty
+        {
+            Name = "StringProperty",
+            Type = new CodeType
+            {
+                Name = "String"
+            },
+            Kind = CodePropertyKind.QueryParameter,
+            DefaultValue = "\"SomeString\"",
+        };
+        parentClass.AddProperty(stringProperty, new()
+        {
+            Name = "queryParameter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "QueryParameter",
+            },
+        });
+        writer.Write(stringProperty);
+        var result = tw.ToString();
+        Assert.Contains("String StringProperty = \"SomeString\";", result);
+    }
 }
