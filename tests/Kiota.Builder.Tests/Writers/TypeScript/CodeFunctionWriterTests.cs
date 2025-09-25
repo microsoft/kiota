@@ -1717,5 +1717,86 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"property\": n => { model.property = n.getByteArrayValue(); }", result, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void WritesErrorMessageAssignmentWithStatusCodeWhenNoPrimary()
+    {
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            IsErrorDefinition = true,
+            Kind = CodeClassKind.Model,
+        }).First();
+
+        // Create associated interface (required for TypeScript)
+        var errorInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "Error4XXInterface",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = errorClass
+        }).First();
+
+        // Add the same property to both class and interface
+        var codeProperty = new CodeProperty
+        {
+            Name = "code",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string" },
+        };
+        errorClass.AddProperty(codeProperty);
+        errorInterface.AddProperty(new CodeProperty
+        {
+            Name = "code",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string" },
+        });
+
+        // Link class to interface
+        errorClass.AssociatedInterface = errorInterface;
+
+        // No primary error message property added - this should trigger our fallback
+
+        // Create deserializer method manually (like the refiner would)
+        var deserializerMethod = errorClass.AddMethod(new CodeMethod
+        {
+            Name = "deserializeIntoError4XX",
+            Kind = CodeMethodKind.Deserializer,
+            IsStatic = true,
+            ReturnType = new CodeType
+            {
+                Name = "Record<string, (node: ParseNode) => void>",
+            },
+        }).First();
+
+        deserializerMethod.AddParameter(new CodeParameter
+        {
+            Name = "error4XX",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType
+            {
+                Name = "Error4XXInterface",
+                TypeDefinition = errorInterface,
+            },
+        });
+
+        var function = new CodeFunction(deserializerMethod);
+        root.TryAddCodeFile("error4XX", function);
+        writer.Write(function);
+        var result = tw.ToString();
+
+        // The result should contain deserializer properties and the error message assignment
+        Assert.Contains("error4XX.code = n.getStringValue()", result); // Basic property assignment should exist
+
+        // The error message assignment should be generated because this is an error definition without primary message
+        // It should contain our enhancement that includes the status code
+        var expectedErrorMessage = "error4XX.message = `${error4XX.responseStatusCode}: ${super.message ?? \"\"}`";
+        Assert.Contains(expectedErrorMessage, result);
+
+        // Verify the error message assignment appears exactly once
+        var occurrences = result.Split(new[] { expectedErrorMessage }, StringSplitOptions.None).Length - 1;
+        Assert.Equal(1, occurrences);
+
+        Assert.Contains("deserializeIntoError4XX", result);
+    }
 }
 
