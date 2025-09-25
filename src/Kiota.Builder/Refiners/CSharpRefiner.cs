@@ -278,13 +278,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             // Add parameterless constructor if not already present
             if (!codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
             {
-                codeClass.AddMethod(CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values."));
+                var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
+                codeClass.AddMethod(parameterlessConstructor);
             }
 
             // Add message constructor if not already present
             if (!codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase))))
             {
-                var messageConstructor = codeClass.AddMethod(CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.")).Single();
+                var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
 
                 // Add message parameter
                 messageConstructor.AddParameter(new CodeParameter
@@ -297,6 +298,8 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                         DescriptionTemplate = "The error message"
                     }
                 });
+
+                codeClass.AddMethod(messageConstructor);
             }
         }
         CrawlTree(currentElement, AddConstructorsForErrorClasses);
