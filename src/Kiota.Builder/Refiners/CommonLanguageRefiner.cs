@@ -243,26 +243,35 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             currentClass.Properties.Any(static x => !string.IsNullOrEmpty(x.DefaultValue)) ||
             addIfInherited && DoesAnyParentHaveAPropertyWithDefaultValue(currentClass)) &&
             !currentClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.ClientConstructor)))
-            currentClass.AddMethod(new CodeMethod
-            {
-                Name = "constructor",
-                Kind = CodeMethodKind.Constructor,
-                ReturnType = new CodeType
-                {
-                    Name = "void"
-                },
-                IsAsync = false,
-                Documentation = new(new() {
-                    { "TypeName", new CodeType() {
-                        IsExternal = false,
-                        TypeDefinition = current,
-                    }}
-                })
-                {
-                    DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
-                },
-            });
+            currentClass.AddMethod(CreateConstructor(currentClass, "Instantiates a new {TypeName} and sets the default values."));
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
+    }
+
+    protected static CodeMethod CreateConstructor(CodeClass parentClass, string descriptionTemplate, AccessModifier access = AccessModifier.Public)
+    {
+        return new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+                IsExternal = true
+            },
+            IsAsync = false,
+            IsStatic = false,
+            Access = access,
+            Documentation = new(new() {
+                { "TypeName", new CodeType() {
+                    IsExternal = false,
+                    TypeDefinition = parentClass,
+                }}
+            })
+            {
+                DescriptionTemplate = descriptionTemplate,
+            },
+            Parent = parentClass,
+        };
     }
 
     protected static void ReplaceReservedModelTypes(CodeElement current, IReservedNamesProvider provider, Func<string, string> replacement) =>
