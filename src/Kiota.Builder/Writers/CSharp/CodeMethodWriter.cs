@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
 {
     public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)
@@ -629,18 +630,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     return $" : base({urlTemplateProperty.DefaultValue}{thirdParameterName})";
                 }
             }
-            // For error classes with message constructor, pass the message to base constructor
-            else if (parentClass.IsErrorDefinition &&
-                     currentMethod.Parameters.Any(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase) &&
-                                                       p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)))
-            {
-                return " : base(message)";
-            }
             return " : base()";
+        }
+        // For error classes with message constructor, pass the message to base constructor
+        else if (isConstructor && parentClass.IsErrorDefinition &&
+                 currentMethod.Parameters.Any(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase) &&
+                                                   p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)))
+        {
+            return " : base(message)";
         }
 
         return string.Empty;
     }
+
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
