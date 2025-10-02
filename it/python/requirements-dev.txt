@@ -24,7 +24,7 @@ importlib-metadata==6.8.0 ; python_version >= '3.7'
 
 iniconfig==2.1.0 ; python_version >= '3.7'
 
-isort==6.0.1
+isort==6.1.0
 
 lazy-object-proxy==1.12.0 ; python_version >= '3.7'
 
@@ -70,7 +70,7 @@ aiohttp==3.12.15 ; python_version >= '3.6'
 
 aiosignal==1.4.0 ; python_version >= '3.7'
 
-anyio==4.10.0 ; python_version >= '3.7'
+anyio==4.11.0 ; python_version >= '3.7'
 
 async-timeout==5.0.1 ; python_version >= '3.6'
 
@@ -82,7 +82,7 @@ azure-identity==1.25.0
 
 cffi==2.0.0
 
-cryptography==46.0.1 ; python_version >= '3.7'
+cryptography==46.0.2 ; python_version >= '3.7'
 
 frozenlist==1.7.0 ; python_version >= '3.7'
 
