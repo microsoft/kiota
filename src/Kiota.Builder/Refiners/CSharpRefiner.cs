@@ -271,6 +271,21 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, SetTypeAccessModifiers);
     }
 
+    private static CodeParameter CreateErrorMessageParameter(string descriptionTemplate = "The error message")
+    {
+        return new CodeParameter
+        {
+            Name = "message",
+            Type = new CodeType { Name = "string", IsExternal = true },
+            Kind = CodeParameterKind.ErrorMessage,
+            Optional = false,
+            Documentation = new()
+            {
+                DescriptionTemplate = descriptionTemplate
+            }
+        };
+    }
+
     private static void AddConstructorsForErrorClasses(CodeElement currentElement)
     {
         if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
@@ -286,19 +301,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => "string".Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase))))
             {
                 var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
-
-                // Add message parameter
-                messageConstructor.AddParameter(new CodeParameter
-                {
-                    Name = "message",
-                    Type = new CodeType { Name = "string", IsExternal = true },
-                    Optional = false,
-                    Documentation = new()
-                    {
-                        DescriptionTemplate = "The error message"
-                    }
-                });
-
+                messageConstructor.AddParameter(CreateErrorMessageParameter());
                 codeClass.AddMethod(messageConstructor);
             }
         }
@@ -307,14 +310,15 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     private static void AddMessageFactoryMethodForErrorClasses(CodeElement currentElement)
     {
+        const string MethodName = "CreateFromDiscriminatorValueWithMessage";
         if (currentElement is CodeClass codeClass &&
             codeClass.IsErrorDefinition &&
-            !codeClass.Methods.Any(m => m.Name == "CreateFromDiscriminatorValueWithMessage"))
+            !codeClass.Methods.Any(m => m.Name == MethodName))
         {
             var method = codeClass.AddMethod(new CodeMethod
             {
-                Name = "CreateFromDiscriminatorValueWithMessage",
-                Kind = CodeMethodKind.Factory,
+                Name = MethodName,
+                Kind = CodeMethodKind.FactoryWithErrorMessage,
                 IsAsync = false,
                 IsStatic = true,
                 Documentation = new(new() {
@@ -349,16 +353,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
 
             // Add message parameter
-            method.AddParameter(new CodeParameter
-            {
-                Name = "message",
-                Type = new CodeType { Name = "string", IsExternal = true },
-                Optional = false,
-                Documentation = new()
-                {
-                    DescriptionTemplate = "The error message to set on the created object"
-                }
-            });
+            method.AddParameter(CreateErrorMessageParameter("The error message to set on the created object"));
         }
         CrawlTree(currentElement, AddMessageFactoryMethodForErrorClasses);
     }

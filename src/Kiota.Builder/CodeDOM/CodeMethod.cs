@@ -42,7 +42,11 @@ public enum CodeMethodKind
     /// <summary>
     /// The override for the error message for the error/exception type.
     /// </summary>
-    ErrorMessageOverride
+    ErrorMessageOverride,
+    /// <summary>
+    /// Factory method for error classes that accepts an error message parameter.
+    /// </summary>
+    FactoryWithErrorMessage,
 }
 public enum HttpMethod
 {

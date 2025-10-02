@@ -204,14 +204,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
-        else if (codeElement.Name == "CreateFromDiscriminatorValueWithMessage" && parentClass.IsErrorDefinition)
+        else if (codeElement.IsOfKind(CodeMethodKind.FactoryWithErrorMessage))
         {
-            // Special case: CreateFromDiscriminatorValueWithMessage for error classes
-            var messageParam = codeElement.Parameters.FirstOrDefault(p => p.Name == "message");
-            if (messageParam != null)
-                writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
-            else
-                writer.WriteLine($"return new {parentClass.GetFullName()}();");
+            var messageParam = codeElement.Parameters.FirstOrDefault(p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+            writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
         }
         else
             writer.WriteLine($"return new {parentClass.GetFullName()}();");
@@ -411,10 +407,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                var errorClass = errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition as CodeClass;
                 var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
-
-                if (errorClass?.IsErrorDefinition == true)
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true } errorClass)
                 {
                     var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
                     var statusCodeAndDescription = !string.IsNullOrEmpty(errorDescription)
@@ -634,8 +628,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
         // For error classes with message constructor, pass the message to base constructor
         else if (isConstructor && parentClass.IsErrorDefinition &&
-                 currentMethod.Parameters.Any(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase) &&
-                                                   p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)))
+                 currentMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
         {
             return " : base(message)";
         }

@@ -1023,8 +1023,7 @@ public class CSharpLanguageRefinerTests
 
         // Then
         var messageFactoryMethod = errorClass.Methods
-            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Factory) &&
-                                m.Name.Equals("CreateFromDiscriminatorValueWithMessage", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
 
         Assert.NotNull(messageFactoryMethod);
         Assert.Equal(2, messageFactoryMethod.Parameters.Count());
