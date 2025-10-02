@@ -276,14 +276,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
         {
             // Add parameterless constructor if not already present
-            if (!codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
             {
                 var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
                 codeClass.AddMethod(parameterlessConstructor);
             }
 
             // Add message constructor if not already present
-            if (!codeClass.Methods.Any(x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase))))
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => "string".Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase))))
             {
                 var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
 

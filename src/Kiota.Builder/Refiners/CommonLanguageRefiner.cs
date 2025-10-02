@@ -270,7 +270,6 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             {
                 DescriptionTemplate = descriptionTemplate,
             },
-            Parent = parentClass,
         };
     }
 

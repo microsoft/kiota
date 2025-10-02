@@ -274,7 +274,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     {
         get
         {
-            return errorDescriptions.OrderBy(static x => x.Key);
+            return errorDescriptions.OrderBy(static x => x.Key, StringComparer.Ordinal);
         }
     }
     public bool HasErrorMappingCode(string code)
@@ -316,7 +316,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = new(errorMappings),
-            errorDescriptions = new(errorDescriptions),
+            errorDescriptions = new(errorDescriptions, StringComparer.Ordinal),
             AcceptedResponseTypes = new List<string>(AcceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
