@@ -1248,6 +1248,18 @@ public partial class PluginsGenerationService
             }
         }
 
+        // Don't create capabilities for operations that have empty x-ai-capabilities
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(OpenApiAiCapabilitiesExtension.Name, out var capabilitiesExtension) &&
+            capabilitiesExtension is OpenApiAiCapabilitiesExtension capabilities &&
+            capabilities.ResponseSemantics == null &&
+            capabilities.Confirmation == null &&
+            capabilities.SecurityInfo == null)
+        {
+            // If the capabilities extension exists but has no content, don't create response semantics
+            return null;
+        }
+
         string functionName = openApiOperation.OperationId;
         string fileName = $"{functionName}.json";
         string staticTemplateJson = $"{{\"file\": \"./adaptiveCards/{fileName}\"}}";
