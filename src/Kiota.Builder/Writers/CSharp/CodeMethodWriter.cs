@@ -405,21 +405,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             errorMappingVarName = "errorMapping";
             writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, ParsableFactory<IParsable>>");
             writer.StartBlock();
-            foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
+            foreach (var errorMapping in codeElement.ErrorMappings)
             {
+                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass codeClass)) continue;
                 var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
-                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true } errorClass)
-                {
-                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
-                    var statusCodeAndDescription = !string.IsNullOrEmpty(errorDescription)
-                        ? $"{errorMapping.Key} {errorDescription}"
-                        : errorMapping.Key;
-                    writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", (parseNode) => {typeName}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{statusCodeAndDescription}\") }},");
-                }
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+
+                if (!string.IsNullOrEmpty(errorDescription) && codeClass.IsErrorDefinition)
+                    writer.WriteLine($"{{ \"{errorKey}\", (parseNode) => {typeName}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription}\") }},");
                 else
-                {
-                    writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {typeName}.CreateFromDiscriminatorValue }},");
-                }
+                    writer.WriteLine($"{{ \"{errorKey}\", {typeName}.CreateFromDiscriminatorValue }},");
             }
             writer.CloseBlock("};");
         }

@@ -1005,7 +1005,7 @@ public class CSharpLanguageRefinerTests
         // Then
         var messageConstructor = regularClass.Methods
             .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) &&
-                                m.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && p.Name.Equals("message", StringComparison.OrdinalIgnoreCase)));
+                                m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
 
         Assert.Null(messageConstructor);
     }
@@ -1030,12 +1030,14 @@ public class CSharpLanguageRefinerTests
         Assert.NotNull(messageFactoryMethod);
         Assert.Equal(2, messageFactoryMethod.Parameters.Count());
 
-        var parseNodeParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.Name.Equals("parseNode", StringComparison.OrdinalIgnoreCase));
+        var parseNodeParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.IsOfKind(CodeParameterKind.ParseNode));
         Assert.NotNull(parseNodeParam);
+        Assert.Equal("parseNode", parseNodeParam.Name);
         Assert.Equal("IParseNode", parseNodeParam.Type.Name);
 
-        var messageParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase));
+        var messageParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.IsOfKind(CodeParameterKind.ErrorMessage));
         Assert.NotNull(messageParam);
+        Assert.Equal("message", messageParam.Name);
         Assert.Equal("string", messageParam.Type.Name);
 
         Assert.True(messageFactoryMethod.IsStatic);

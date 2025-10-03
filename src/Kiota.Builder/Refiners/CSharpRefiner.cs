@@ -313,7 +313,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         const string MethodName = "CreateFromDiscriminatorValueWithMessage";
         if (currentElement is CodeClass codeClass &&
             codeClass.IsErrorDefinition &&
-            !codeClass.Methods.Any(m => m.Name == MethodName))
+            !codeClass.Methods.Any(m => m.Name.Equals(MethodName, StringComparison.Ordinal)))
         {
             var method = codeClass.AddMethod(new CodeMethod
             {

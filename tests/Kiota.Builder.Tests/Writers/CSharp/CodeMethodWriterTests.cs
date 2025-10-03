@@ -2124,8 +2124,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("var requestInfo", result);
         Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
-        Assert.Contains("{ \"4XX\", (parseNode) => Error4XX.CreateFromDiscriminatorValueWithMessage(parseNode, \"4XX Client Error\") }", result);
-        Assert.Contains("{ \"401\", (parseNode) => Error401.CreateFromDiscriminatorValueWithMessage(parseNode, \"401 Unauthorized\") }", result);
+        Assert.Contains("{ \"4XX\", (parseNode) => Error4XX.CreateFromDiscriminatorValueWithMessage(parseNode, \"Client Error\") }", result);
+        Assert.Contains("{ \"401\", (parseNode) => Error401.CreateFromDiscriminatorValueWithMessage(parseNode, \"Unauthorized\") }", result);
         Assert.Contains("send", result.ToLower());
     }
 }
