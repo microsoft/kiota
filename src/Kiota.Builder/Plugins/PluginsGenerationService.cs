@@ -993,7 +993,7 @@ public partial class PluginsGenerationService
                     Capabilities = GetFunctionCapabilitiesFromOperation(operation, configuration, logger),
 
                 });
-                
+
                 // Don't create conversation starters for operations that have empty x-ai-capabilities
                 var hasEmptyCapabilities = operation.Extensions is not null &&
                     operation.Extensions.TryGetValue(OpenApiAiCapabilitiesExtension.Name, out var capExt) &&
@@ -1001,7 +1001,7 @@ public partial class PluginsGenerationService
                     cap.ResponseSemantics == null &&
                     cap.Confirmation == null &&
                     cap.SecurityInfo == null;
-                
+
                 if (!hasEmptyCapabilities)
                 {
                     conversationStarters.Add(new ConversationStarter
