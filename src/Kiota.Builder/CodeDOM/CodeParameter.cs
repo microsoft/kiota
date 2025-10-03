@@ -63,6 +63,10 @@ public enum CodeParameterKind
     /// This is only used for languages that use static functions for the serialization as opposed to instance methods since the OOP inheritance correctly handles that case.
     /// </summary>
     SerializingDerivedType,
+    /// <summary>
+    /// Error message parameter for error/exception class constructors and factory methods.
+    /// </summary>
+    ErrorMessage,
 }
 
 public class CodeParameter : CodeTerminalWithKind<CodeParameterKind>, ICloneable, IDocumentedElement, IDeprecableElement
