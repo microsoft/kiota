@@ -993,10 +993,22 @@ public partial class PluginsGenerationService
                     Capabilities = GetFunctionCapabilitiesFromOperation(operation, configuration, logger),
 
                 });
-                conversationStarters.Add(new ConversationStarter
+                
+                // Don't create conversation starters for operations that have empty x-ai-capabilities
+                var hasEmptyCapabilities = operation.Extensions is not null &&
+                    operation.Extensions.TryGetValue(OpenApiAiCapabilitiesExtension.Name, out var capExt) &&
+                    capExt is OpenApiAiCapabilitiesExtension cap &&
+                    cap.ResponseSemantics == null &&
+                    cap.Confirmation == null &&
+                    cap.SecurityInfo == null;
+                
+                if (!hasEmptyCapabilities)
                 {
-                    Text = !string.IsNullOrEmpty(summary) ? summary : description
-                });
+                    conversationStarters.Add(new ConversationStarter
+                    {
+                        Text = !string.IsNullOrEmpty(summary) ? summary : description
+                    });
+                }
 
             }
         }
