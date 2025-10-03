@@ -1878,7 +1878,8 @@ paths:
                             Name = "scope",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             }
                         }
@@ -6824,15 +6825,19 @@ paths:
                 ["users/{id}/manager"] = new OpenApiPathItem
                 {
                     Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "id",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             },
-                            Extensions = new Dictionary<string, IOpenApiExtension> (){
-                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
+                            Extensions = new Dictionary<string, IOpenApiExtension>()
+                            {
+                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension
+                                {
                                     IsReserved = true
                                 }
                             }
@@ -6898,15 +6903,19 @@ paths:
                 ["users/{id}/manager"] = new OpenApiPathItem
                 {
                     Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "id",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             },
-                            Extensions = new Dictionary<string, IOpenApiExtension>() {
-                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
+                            Extensions = new Dictionary<string, IOpenApiExtension>()
+                            {
+                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension
+                                {
                                     IsReserved = false
                                 }
                             }

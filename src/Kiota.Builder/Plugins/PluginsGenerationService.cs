@@ -993,10 +993,22 @@ public partial class PluginsGenerationService
                     Capabilities = GetFunctionCapabilitiesFromOperation(operation, configuration, logger),
 
                 });
-                conversationStarters.Add(new ConversationStarter
+
+                // Don't create conversation starters for operations that have empty x-ai-capabilities
+                var hasEmptyCapabilities = operation.Extensions is not null &&
+                    operation.Extensions.TryGetValue(OpenApiAiCapabilitiesExtension.Name, out var capExt) &&
+                    capExt is OpenApiAiCapabilitiesExtension cap &&
+                    cap.ResponseSemantics == null &&
+                    cap.Confirmation == null &&
+                    cap.SecurityInfo == null;
+
+                if (!hasEmptyCapabilities)
                 {
-                    Text = !string.IsNullOrEmpty(summary) ? summary : description
-                });
+                    conversationStarters.Add(new ConversationStarter
+                    {
+                        Text = !string.IsNullOrEmpty(summary) ? summary : description
+                    });
+                }
 
             }
         }
@@ -1136,6 +1148,7 @@ public partial class PluginsGenerationService
             capabilitiesExtension is OpenApiAiCapabilitiesExtension capabilities)
         {
             var functionCapabilities = new FunctionCapabilities();
+            bool hasContent = false;
 
             // Set ResponseSemantics
             if (capabilities.ResponseSemantics is not null)
@@ -1163,6 +1176,7 @@ public partial class PluginsGenerationService
                 }
                 responseSemantics.OAuthCardPath = capabilities.ResponseSemantics.OauthCardPath;
                 functionCapabilities.ResponseSemantics = responseSemantics;
+                hasContent = true;
             }
 
             // Set Confirmation
@@ -1175,6 +1189,7 @@ public partial class PluginsGenerationService
                     Body = capabilities.Confirmation.Body,
                 };
                 functionCapabilities.Confirmation = confirmation;
+                hasContent = true;
             }
 
             // Set SecurityInfo
@@ -1185,8 +1200,11 @@ public partial class PluginsGenerationService
                     DataHandling = capabilities.SecurityInfo.DataHandling,
                 };
                 functionCapabilities.SecurityInfo = securityInfo;
+                hasContent = true;
             }
-            return functionCapabilities;
+
+            // Only return the capabilities object if it actually has content
+            return hasContent ? functionCapabilities : null;
         }
 
         return null;
@@ -1240,6 +1258,18 @@ public partial class PluginsGenerationService
             {
                 return null;
             }
+        }
+
+        // Don't create capabilities for operations that have empty x-ai-capabilities
+        if (openApiOperation.Extensions is not null &&
+            openApiOperation.Extensions.TryGetValue(OpenApiAiCapabilitiesExtension.Name, out var capabilitiesExtension) &&
+            capabilitiesExtension is OpenApiAiCapabilitiesExtension capabilities &&
+            capabilities.ResponseSemantics == null &&
+            capabilities.Confirmation == null &&
+            capabilities.SecurityInfo == null)
+        {
+            // If the capabilities extension exists but has no content, don't create response semantics
+            return null;
         }
 
         string functionName = openApiOperation.OperationId;
