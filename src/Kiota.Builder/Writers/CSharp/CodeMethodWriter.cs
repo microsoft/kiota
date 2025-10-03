@@ -206,7 +206,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (codeElement.IsOfKind(CodeMethodKind.FactoryWithErrorMessage))
         {
-            var messageParam = codeElement.Parameters.FirstOrDefault(p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+            var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
             writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
         }
         else
@@ -628,7 +628,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
         // For error classes with message constructor, pass the message to base constructor
         else if (isConstructor && parentClass.IsErrorDefinition &&
-                 currentMethod.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+                 currentMethod.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
         {
             return " : base(message)";
         }

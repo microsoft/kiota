@@ -341,26 +341,23 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         EnsureElementsAreChildren(methodParameters);
         methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));
     }
-    public void AddErrorMapping(string errorCode, CodeTypeBase type)
+    public void AddErrorMapping(string errorCode, CodeTypeBase type, string? description = null)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrEmpty(errorCode);
-        errorMappings.TryAdd(errorCode, type);
-    }
-
-    public void AddErrorMapping(string errorCode, CodeTypeBase type, string description)
-    {
-        ArgumentNullException.ThrowIfNull(type);
-        ArgumentException.ThrowIfNullOrEmpty(errorCode);
-        errorMappings.TryAdd(errorCode, type);
-        if (!string.IsNullOrEmpty(description))
+        if (errorMappings.TryAdd(errorCode, type) && !string.IsNullOrEmpty(description))
+        {
             errorDescriptions.TryAdd(errorCode, description);
+        }
     }
 
     public string? GetErrorDescription(string errorCode)
     {
         ArgumentException.ThrowIfNullOrEmpty(errorCode);
-        errorDescriptions.TryGetValue(errorCode, out var description);
-        return description;
+        if (errorMappings.ContainsKey(errorCode) && errorDescriptions.TryGetValue(errorCode, out var description))
+        {
+            return description;
+        }
+        return null;
     }
 }

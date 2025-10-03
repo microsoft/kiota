@@ -298,7 +298,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
 
             // Add message constructor if not already present
-            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => "string".Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase))))
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
             {
                 var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
                 messageConstructor.AddParameter(CreateErrorMessageParameter());

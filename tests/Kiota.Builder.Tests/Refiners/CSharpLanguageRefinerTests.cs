@@ -978,13 +978,15 @@ public class CSharpLanguageRefinerTests
         // Then
         var messageConstructor = errorClass.Methods
             .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) &&
-                                m.Parameters.Any(p => p.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase) && p.Name.Equals("message", StringComparison.OrdinalIgnoreCase)));
+                                m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
 
         Assert.NotNull(messageConstructor);
         Assert.Single(messageConstructor.Parameters);
-        Assert.Equal("message", messageConstructor.Parameters.First().Name);
-        Assert.Equal("string", messageConstructor.Parameters.First().Type.Name);
-        Assert.False(messageConstructor.Parameters.First().Optional);
+        var parameter = messageConstructor.Parameters.First();
+        Assert.Equal("message", parameter.Name);
+        Assert.Equal("string", parameter.Type.Name);
+        Assert.False(parameter.Optional);
+        Assert.Equal(CodeParameterKind.ErrorMessage, parameter.Kind);
     }
 
     [Fact]
