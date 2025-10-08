@@ -25,14 +25,14 @@ will include only the endpoints that matches `--include-path` and `--exclude-pat
 
 #### API Plugin
 
-For `apiplugin`, the generated plugin will be named `{plugin-name}-apiplugin.json` and will follow the [schema](https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json).
+For `apiplugin`, the generated plugin will be named `{plugin-name}-apiplugin.json` and will follow the [schema](https://aka.ms/json-schemas/copilot-extensions/v2.3/plugin.schema.json).
 
 Requiring fields default as the following:
 
 | API Plugin field | Default value |
 | -- | -- |
-| $schema | `https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json` |
-| schema_version | `v2.1` |
+| $schema | `https://aka.ms/json-schemas/copilot-extensions/v2.3/plugin.schema.json` |
+| schema_version | `v2.3` |
 | name_for_human | Defaults to the OpenAPI document title. |
 | name_for_model | Defaults to the OpenAPI document title. |
 | description_for_human | Defaults to the description from the OpenAPI document.  If the description is not available, it defaults to `Description for {name_for_human}`. |
@@ -126,8 +126,8 @@ _The resulting API Plugin named `github-apiplugin.json` will look like this:_
 
 ```jsonc
 {
-  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
-  "schema_version": "v2.1",
+  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.3/plugin.schema.json",
+  "schema_version": "v2.3",
   "name_for_human": "GitHub v3 REST API",
   "description_for_human": "GitHub\u0026apos;s v3 REST API.",
   "description_for_model": "GitHub\u0026apos;s v3 REST API.",
