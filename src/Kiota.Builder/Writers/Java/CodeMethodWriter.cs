@@ -105,7 +105,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         }
         else
         {
-            writer.WriteLine("return super.getMessage();");
+            writer.WriteLine("return getResponseStatusCode() + \": \" + super.getMessage();");
         }
     }
     private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
