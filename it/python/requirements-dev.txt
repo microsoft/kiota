@@ -40,7 +40,7 @@ platformdirs==4.4.0 ; python_version >= '3.7'
 
 pluggy==1.6.0 ; python_version >= '3.7'
 
-pylint==3.3.8
+pylint==3.3.9
 
 pytest==8.4.2
 
