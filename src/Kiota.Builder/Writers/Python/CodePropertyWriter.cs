@@ -65,7 +65,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                     writer.WriteLine("return ''");
                 }
                 else
-                    writer.WriteLine("return super().message");
+                    writer.WriteLine("return f'{self.response_status_code}: {super().message}'");
                 writer.DecreaseIndent();
                 break;
         }
