@@ -45,9 +45,10 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteStartObject();
+        // Only write the object if there's actual content to write
         if (ResponseSemantics != null || Confirmation != null || SecurityInfo != null)
         {
+            writer.WriteStartObject();
 
             if (ResponseSemantics is not null)
             {
@@ -64,8 +65,9 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
                 writer.WritePropertyName(nameof(SecurityInfo).ToFirstCharacterLowerCase().ToSnakeCase());
                 WriteSecurityInfo(writer, SecurityInfo);
             }
+
+            writer.WriteEndObject();
         }
-        writer.WriteEndObject();
     }
 
     private static ExtensionConfirmation ParseConfirmation(JsonObject source)

@@ -330,30 +330,36 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "id",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             }
                         },
-                        new OpenApiParameter {
-                            Name = "filter",
-                            In = ParameterLocation.Query,
-                            Required = false,
-                            Schema = new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        },
-                        new OpenApiParameter {
-                            Name = "apikey",
-                            In = ParameterLocation.Query,
-                            Required = true,
-                            Schema = new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        }
+                new OpenApiParameter
+                {
+                    Name = "filter",
+                    In = ParameterLocation.Query,
+                    Required = false,
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                new OpenApiParameter
+                {
+                    Name = "apikey",
+                    In = ParameterLocation.Query,
+                    Required = true,
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String
+                    }
+                }
             ],
             Operations = new Dictionary<HttpMethod, OpenApiOperation> {
                 { HttpMethod.Get, new() {
@@ -418,29 +424,35 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "id",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             }
                         },
-                        new OpenApiParameter {
-                            Name = "filter",
-                            In = ParameterLocation.Query,
-                            Required = false,
-                            Schema = new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        },
-                        new OpenApiParameter {
-                            Name = "apikey",
-                            In = ParameterLocation.Query,
-                            Schema = new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        }
+                new OpenApiParameter
+                {
+                    Name = "filter",
+                    In = ParameterLocation.Query,
+                    Required = false,
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                new OpenApiParameter
+                {
+                    Name = "apikey",
+                    In = ParameterLocation.Query,
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String
+                    }
+                }
             ],
             Operations = new Dictionary<HttpMethod, OpenApiOperation> {
                 { HttpMethod.Get, new() {
@@ -503,30 +515,36 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
         {
             Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "id",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             }
                         },
-                        new OpenApiParameter {
-                            Name = "filter",
-                            In = ParameterLocation.Query,
-                            Required = true,
-                            Schema = new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        },
-                        new OpenApiParameter {
-                            Name = "apikey",
-                            Required = true,
-                            In = ParameterLocation.Query,
-                            Schema = new OpenApiSchema {
-                                Type = JsonSchemaType.String
-                            }
-                        }
+                new OpenApiParameter
+                {
+                    Name = "filter",
+                    In = ParameterLocation.Query,
+                    Required = true,
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                new OpenApiParameter
+                {
+                    Name = "apikey",
+                    Required = true,
+                    In = ParameterLocation.Query,
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String
+                    }
+                }
             ],
             Operations = new Dictionary<HttpMethod, OpenApiOperation> {
                 { HttpMethod.Get, new() {
@@ -782,11 +800,13 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 ["users/{foo}/careerAdvisor/{id}"] = new OpenApiPathItem
                 {
                     Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "foo",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             }
                         },
@@ -814,11 +834,13 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                 ["users/{id}/careerAdvisor"] = new OpenApiPathItem
                 {
                     Parameters = [
-                        new OpenApiParameter {
+                        new OpenApiParameter
+                        {
                             Name = "id",
                             In = ParameterLocation.Path,
                             Required = true,
-                            Schema = new OpenApiSchema {
+                            Schema = new OpenApiSchema
+                            {
                                 Type = JsonSchemaType.String
                             }
                         },
@@ -850,11 +872,13 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                         [HttpMethod.Get] = new OpenApiOperation
                         {
                             Parameters = [
-                                new OpenApiParameter {
+                                new OpenApiParameter
+                                {
                                     Name = "user-id",
                                     In = ParameterLocation.Path,
                                     Required = true,
-                                    Schema = new OpenApiSchema {
+                                    Schema = new OpenApiSchema
+                                    {
                                         Type = JsonSchemaType.String
                                     }
                                 },
