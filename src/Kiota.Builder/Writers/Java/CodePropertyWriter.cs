@@ -1,5 +1,6 @@
 ﻿using System;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java;
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConventionService>
@@ -18,6 +19,19 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                             string.Empty;
         conventions.WriteLongDescription(codeElement, writer, [returnRemark]);
         var defaultValue = string.Empty;
+        if (!string.IsNullOrEmpty(codeElement.DefaultValue))
+        {
+            if (codeElement.Type is CodeType propertyCodeType && propertyCodeType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                var enumTypeName = conventions.GetTypeString(codeElement.Type, codeElement);
+                var enumValue = codeElement.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase();
+                defaultValue = $" = {enumTypeName}.{enumValue}";
+            }
+            else
+            {
+                defaultValue = $" = {codeElement.DefaultValue}";
+            }
+        }
         conventions.WriteDeprecatedAnnotation(codeElement, writer);
         switch (codeElement.Kind)
         {
