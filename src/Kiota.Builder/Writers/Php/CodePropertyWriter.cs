@@ -24,7 +24,21 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
                 break;
             default:
                 WritePropertyDocComment(codeElement, writer);
-                writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{propertyType} ${propertyName}{(codeElement.Type.IsNullable ? " = null" : string.Empty)};");
+                var defaultValue = codeElement.Type.IsNullable ? " = null" : string.Empty;
+                if (!string.IsNullOrEmpty(codeElement.DefaultValue))
+                {
+                    if (codeElement.Type is CodeType propertyCodeType && propertyCodeType.TypeDefinition is CodeEnum enumDefinition)
+                    {
+                        var enumTypeName = conventions.GetTypeString(codeElement.Type, codeElement);
+                        var enumValue = codeElement.DefaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase();
+                        defaultValue = $" = {enumTypeName}::{enumValue}";
+                    }
+                    else
+                    {
+                        defaultValue = $" = {codeElement.DefaultValue}";
+                    }
+                }
+                writer.WriteLine($"{propertyAccess} {(codeElement.Type.IsNullable ? "?" : string.Empty)}{propertyType} ${propertyName}{defaultValue};");
                 break;
         }
         writer.WriteLine("");
