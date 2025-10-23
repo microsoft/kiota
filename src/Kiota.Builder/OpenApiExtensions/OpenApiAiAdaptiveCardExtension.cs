@@ -63,9 +63,10 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteStartObject();
+        // Only write the object if there's actual content to write
         if (!string.IsNullOrEmpty(DataPath) && !string.IsNullOrEmpty(File) && !string.IsNullOrEmpty(Title))
         {
+            writer.WriteStartObject();
             writer.WritePropertyName(nameof(DataPath).ToFirstCharacterLowerCase().ToSnakeCase());
             writer.WriteValue(DataPath);
             writer.WritePropertyName(nameof(File).ToFirstCharacterLowerCase());
@@ -77,7 +78,7 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
                 writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
                 writer.WriteValue(Url);
             }
+            writer.WriteEndObject();
         }
-        writer.WriteEndObject();
     }
 }

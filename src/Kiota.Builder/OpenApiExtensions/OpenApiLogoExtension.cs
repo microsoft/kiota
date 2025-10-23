@@ -29,12 +29,13 @@ public class OpenApiLogoExtension : IOpenApiExtension
     public void Write(IOpenApiWriter writer, OpenApiSpecVersion specVersion)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        writer.WriteStartObject();
+        // Only write the object if there's actual content to write
         if (!string.IsNullOrEmpty(Url))
         {
+            writer.WriteStartObject();
             writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
             writer.WriteValue(Url);
+            writer.WriteEndObject();
         }
-        writer.WriteEndObject();
     }
 }

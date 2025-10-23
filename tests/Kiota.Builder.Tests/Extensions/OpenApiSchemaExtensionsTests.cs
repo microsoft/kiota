@@ -198,8 +198,8 @@ public class OpenApiSchemaExtensionsTests
         {
             AnyOf = [
                         new OpenApiSchemaReference("microsoft.graph.entity"),
-                        new OpenApiSchemaReference("microsoft.graph.user"),
-                    ]
+                new OpenApiSchemaReference("microsoft.graph.user"),
+            ]
         };
         var names = schema.GetSchemaNames();
         Assert.Contains("entity", names);
@@ -233,8 +233,8 @@ public class OpenApiSchemaExtensionsTests
         {
             OneOf = [
                         new OpenApiSchemaReference("microsoft.graph.entity"),
-                        new OpenApiSchemaReference("microsoft.graph.user"),
-                    ]
+                new OpenApiSchemaReference("microsoft.graph.user"),
+            ]
         };
         var names = schema.GetSchemaNames();
         Assert.Contains("entity", names);
@@ -315,7 +315,8 @@ public class OpenApiSchemaExtensionsTests
         var schema = new OpenApiSchema
         {
             AllOf = [
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     AllOf = [
                         new OpenApiSchemaReference("microsoft.graph.entity"),
                         new OpenApiSchemaReference("microsoft.graph.user")
@@ -388,9 +389,11 @@ public class OpenApiSchemaExtensionsTests
         {
             AllOf = [
                 new OpenApiSchemaReference("microsoft.graph.entity"),
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["firstName"] = new OpenApiSchema()
                     }
                 }
@@ -441,15 +444,19 @@ public class OpenApiSchemaExtensionsTests
         schema = new OpenApiSchema
         {
             AllOf = [
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["id"] = new OpenApiSchema()
                     }
                 },
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["firstName"] = new OpenApiSchema()
                     }
                 }
@@ -461,9 +468,11 @@ public class OpenApiSchemaExtensionsTests
         schema = new OpenApiSchema
         {
             AllOf = [
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["id"] = new OpenApiSchema()
                     }
                 }
@@ -503,15 +512,19 @@ public class OpenApiSchemaExtensionsTests
             Description = "description",
             Deprecated = true,
             AllOf = [
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["id"] = new OpenApiSchema()
                     }
                 },
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["firstName"] = new OpenApiSchema()
                     }
                 }
@@ -533,25 +546,32 @@ public class OpenApiSchemaExtensionsTests
             Description = "description",
             Deprecated = true,
             AllOf = [
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>() {
+                    Properties = new Dictionary<string, IOpenApiSchema>()
+                    {
                         ["id"] = new OpenApiSchema()
                     }
                 },
-                new OpenApiSchema() {
+                new OpenApiSchema()
+                {
                     Type = JsonSchemaType.Object,
                     AllOf = [
-                        new OpenApiSchema() {
+                        new OpenApiSchema()
+                        {
                             Type = JsonSchemaType.Object,
-                            Properties = new Dictionary<string, IOpenApiSchema>() {
+                            Properties = new Dictionary<string, IOpenApiSchema>()
+                            {
                                 ["firstName"] = new OpenApiSchema(),
                                 ["lastName"] = new OpenApiSchema()
                             }
                         },
-                        new OpenApiSchema() {
+                        new OpenApiSchema()
+                        {
                             Type = JsonSchemaType.Object,
-                            Properties = new Dictionary<string, IOpenApiSchema>() {
+                            Properties = new Dictionary<string, IOpenApiSchema>()
+                            {
                                 ["lastName"] = new OpenApiSchema()
                             }
                         },
@@ -947,11 +967,11 @@ public class OpenApiSchemaExtensionsTests
         Enum =
             [
             "low",
-            "medium",
-            "high",
-            "hidden",
-            "none",
-            "unknownFutureValue"
+                "medium",
+                "high",
+                "hidden",
+                "none",
+                "unknownFutureValue"
         ],
         Type = JsonSchemaType.String
     };
