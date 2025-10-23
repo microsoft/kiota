@@ -58,8 +58,8 @@ _The resulting API Plugin named `github-apiplugin.json` will look like this:_
 
 ```jsonc
 {
-  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
-  "schema_version": "v2.1",
+  "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.3/plugin.schema.json",
+  "schema_version": "v2.3",
   "name_for_human": "GitHub v3 REST API",
   "description_for_human": "GitHub\u0026apos;s v3 REST API.",
   "description_for_model": "GitHub\u0026apos;s v3 REST API.",
