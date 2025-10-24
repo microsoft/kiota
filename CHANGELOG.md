@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.29.0] - 2025-10-23
+
+### Added
+
 - Added support for new properties in `OpenApiAiAdaptiveCardExtension`: `subtitle`, `thumbnailUrl`, and `informationProtectionLabel` to align with the updated `CardResponseSemanticProperties` interface. [#6934](https://github.com/microsoft/kiota/issues/6934)
 
 ### Changed
@@ -1683,4 +1689,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
