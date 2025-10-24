@@ -865,13 +865,13 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration, TreeNode, openApiDocumentPath, Logger);
+        var (runtimes, functions, _) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration, TreeNode, openApiDocumentPath, Logger);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
         {
-            Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
-            SchemaVersion = "v2.1",
+            Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.3/schema.json",
+            SchemaVersion = "v2.3",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
@@ -892,16 +892,6 @@ public partial class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
         };
 
-        if (conversationStarters.Length > 0)
-            pluginManifestDocument.Capabilities = new Capabilities
-            {
-                ConversationStarters = conversationStarters.Where(static x => !string.IsNullOrEmpty(x.Text))
-                                            .Select(static x => new ConversationStarter
-                                            {
-                                                Text = x.Text?.Length < 50 ? x.Text : x.Text?[..50]
-                                            })
-                                            .ToList()
-            };
         return pluginManifestDocument;
     }
 

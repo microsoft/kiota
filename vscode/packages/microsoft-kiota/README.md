@@ -48,11 +48,11 @@ The search results will be displayed as below once the search is complete
 
 Select the OpenAPI description you are interested in and you will be presented with the Kiota OpenAPI Explorer containing all the available endpoints
 
-<img width="482" alt="Kiota OpenAPI explorer" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/endpointSelectionandTheGenerateIcon.png">
+<img width="482" alt="Kiota OpenAPI explorer" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/endpointSelectionandTheGenerateIcon.png">
 
 Select the endpoints to include in your API client as above and click the `generate` icon. Kiota extension will display with the options to generate either client, plugin or other.
 
-<img width="482" alt="kiota vscode generate options" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/SelectGenerationOption.png">
+<img width="482" alt="kiota vscode generate options" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/SelectGenerationOption.png">
 
 Finally, the notification bar at the bottom right will display "Generation Completed Successfully" once the generation is done. Click on your vscode file explorer to see the generated outputs in the current workspace if default selection was your output directory choice or navigate to selected folder to see the output.
 
@@ -60,15 +60,15 @@ Finally, the notification bar at the bottom right will display "Generation Compl
 
 The latest version of the Kiota extension has been improved to using a workspace instead of a lock file to facilitate having multiple clients, plugins, or manifests within the same workspace. The workspace.json file also provides an opportunity to edit, or regenerate the outputs conveniently.
 
-<img width="482" alt="Working with the extension's workspace" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/GenerationMultipleClientsSameWorkspace.png">
+<img width="482" alt="Working with the extension's workspace" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/GenerationMultipleClientsSameWorkspace.png">
 
 If you previously generated a client that had a lock file, kiota prompts you to migrate to using the workspace once you open the previously generated folder containing a lock file. You can choose to migrate immediately or ask to be reminded later.
 
-<img width="482" alt="Notification to Migrate to extension's workspace" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/MigratePromptOnOpeningFolder.png">
+<img width="482" alt="Notification to Migrate to extension's workspace" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages/microsoft-kiota/images/samples/MigratePromptOnOpeningFolder.png">
 
 You can also access the same feature later by using the contextual option on the lock file, by right-clicking on the lock file and selecting the option to migrate.
 
-<img width="482" alt="Contextual Migrate option on right-clicking on lockfile" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/microsoft-kiota/images/samples/ContextualMigrateLockToWorkspace.png">
+<img width="482" alt="Contextual Migrate option on right-clicking on lockfile" src="https://raw.githubusercontent.com/microsoft/kiota/main/vscode/packages//microsoft-kiota/images/samples/ContextualMigrateLockToWorkspace.png">
 
 Enjoy the benefits of the workspace once the migration is complete.
 
@@ -88,9 +88,9 @@ There are many ways in which you can participate in the project, for example:
 - [Download our latest builds](https://github.com/microsoft/kiota/releases).
 - [Submit bugs and feature requests](https://github.com/microsoft/kiota/issues), and help us verify as they are checked in
 - Review [source code changes](https://github.com/microsoft/kiota/pulls)
-- Review the [documentation](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/README.md) and make pull requests for anything from typos to new content
+- Review the [documentation](https://github.com/microsoft/kiota/blob/main/vscode/packages/microsoft-kiota/README.md) and make pull requests for anything from typos to new content
 
-See our contributions guidelines in the [CONTRIBUTING.md](https://github.com/microsoft/kiota/blob/main/vscode/microsoft-kiota/CONTRIBUTING.md) page for more information.
+See our contributions guidelines in the [CONTRIBUTING.md](https://github.com/microsoft/kiota/blob/main/vscode/packages/microsoft-kiota/CONTRIBUTING.md) page for more information.
 Further guidelines are also available in the page [SUPPORT.md](https://github.com/microsoft/kiota/blob/main/SUPPORT.md)
 
 ## Reporting security issues

@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
@@ -15,9 +16,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 9.x
       - name: Restore dependencies
@@ -49,8 +50,8 @@ jobs:
           - "apisguru::github.com:api.github.com"
           - "apisguru::apis.guru"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
         with:
           name: generator
           path: publish
@@ -101,23 +102,23 @@ jobs:
           - "apisguru::apis.guru"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         if: startsWith(matrix.description, './') != true
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: description
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: generator
           path: publish
       - run: chmod a+x ./publish/kiota
       # Common dependency needed to run MockServer
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: "17"
           distribution: "temurin"
@@ -125,17 +126,17 @@ jobs:
 
       - name: Setup .NET
         if: matrix.language == 'csharp'
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 9.x
       - name: Setup Go
         if: matrix.language == 'go'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "^1.24"
       - name: Setup Typescript
         if: matrix.language == 'typescript'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
       - name: Setup Ruby
@@ -152,7 +153,7 @@ jobs:
           coverage: xdebug
       - name: Setup Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Setup Dart

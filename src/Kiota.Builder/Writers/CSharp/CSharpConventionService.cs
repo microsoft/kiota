@@ -14,7 +14,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stream";
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => "/// ";
-    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "bool", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date", "Time", "sbyte", "byte" };
+    private static readonly HashSet<string> NullableTypes = new(StringComparer.OrdinalIgnoreCase) { "int", "integer", "bool", "boolean", "float", "double", "decimal", "long", "Guid", "DateTimeOffset", "TimeSpan", "Date", "Time", "sbyte", "byte" };
     public const char NullableMarker = '?';
     public static string NullableMarkerAsString => "?";
     public override string ParseNodeInterfaceName => "IParseNode";
