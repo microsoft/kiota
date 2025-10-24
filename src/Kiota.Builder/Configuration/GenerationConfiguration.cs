@@ -150,6 +150,8 @@ public class GenerationConfiguration : ICloneable
         get; set;
     }
 
+    public HashSet<string> Overlays { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+
     public int MaxDegreeOfParallelism { get; set; } = -1;
     public object Clone()
     {
@@ -184,6 +186,7 @@ public class GenerationConfiguration : ICloneable
             DisableSSLValidation = DisableSSLValidation,
             ExportPublicApi = ExportPublicApi,
             PluginAuthInformation = PluginAuthInformation,
+            Overlays = new(Overlays, StringComparer.OrdinalIgnoreCase),
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();
