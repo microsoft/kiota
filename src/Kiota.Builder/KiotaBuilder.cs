@@ -1203,6 +1203,7 @@ public partial class KiotaBuilder
             prop.SerializationName = childIdentifier;
         if (kind == CodePropertyKind.Custom &&
             propertySchema?.Default is JsonValue stringDefaultJsonValue &&
+            !stringDefaultJsonValue.IsJsonNullSentinel() &&
             stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
             !string.IsNullOrEmpty(stringDefaultValue) &&
             !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))

@@ -6873,6 +6873,84 @@ paths:
         Assert.Equal("{+baseurl}/users/{+id}/manager", managerUrlTemplate.DefaultValue.Trim('"'));
     }
     [Fact]
+    public void JsonNullSentinelIsNotDefaultValue()
+    {
+        // Given
+        var userSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                {
+                    "displayName", new OpenApiSchema {
+                        Type = JsonSchemaType.String,
+                        Default = JsonNullSentinel.JsonNull
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["users/{id}/manager"] = new OpenApiPathItem
+                {
+                    Parameters = [
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            },
+                            Extensions = new Dictionary<string, IOpenApiExtension> (){
+                                ["x-ms-reserved-parameter"] = new OpenApiReservedParameterExtension {
+                                    IsReserved = true
+                                }
+                            }
+                        }
+                    ],
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("microsoft.graph.user")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+        };
+        document.AddComponent("microsoft.graph.user", userSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        // When
+        var userModel = codeModel.FindChildByName<CodeClass>("User");
+        // Then
+        Assert.NotNull(userModel);
+        var displayNameProperty = userModel.FindChildByName<CodeProperty>("DisplayName", false);
+        Assert.NotNull(displayNameProperty);
+        Assert.Empty(displayNameProperty?.DefaultValue);
+    }
+    [Fact]
     public void DoesNotAddReservedPathParameterSymbol()
     {
         var userSchema = new OpenApiSchema
