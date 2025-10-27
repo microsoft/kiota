@@ -80,6 +80,10 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> OverlaysOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -101,6 +105,8 @@ internal class EditHandler : BaseKiotaCommandHandler
         List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         List<string>? disabledValidationRules = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
+        List<string>? overlays = context.ParseResult.GetValueForOption(OverlaysOption);
+
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
@@ -159,6 +165,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible.Value;
                 if (includeAdditionalData.HasValue)
                     Configuration.Generation.IncludeAdditionalData = includeAdditionalData.Value;
+
                 AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
                 AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
                 AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
@@ -175,6 +182,14 @@ internal class EditHandler : BaseKiotaCommandHandler
                 if (structuredMimeTypes is { Count: > 0 })
                     Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                                     .Select(static x => x.TrimQuotes()));
+
+                if (overlays is { Count: > 0 })
+                    Configuration.Generation.Overlays = overlays.Select(static x => x.TrimQuotes())
+                                                                .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+
+
 
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);

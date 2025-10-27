@@ -98,6 +98,11 @@ public class KiotaLock
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// The overlays used for this client.
+    /// </summary>
+    public HashSet<string> Overlays { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
 #pragma warning restore CA2227
     /// <summary>
     /// Updates the passed configuration with the values from the lock file.
@@ -123,6 +128,7 @@ public class KiotaLock
         config.OpenAPIFilePath = DescriptionLocation;
         config.DisabledValidationRules = DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.DisableSSLValidation = DisableSSLValidation;
+        config.Overlays = Overlays;
     }
     /// <summary>
     /// Initializes a new instance of the <see cref="KiotaLock"/> class.
@@ -152,5 +158,6 @@ public class KiotaLock
         DescriptionLocation = config.OpenAPIFilePath;
         DisabledValidationRules = config.DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         DisableSSLValidation = config.DisableSSLValidation;
+        Overlays = config.Overlays;
     }
 }

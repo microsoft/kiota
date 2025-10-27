@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncKeyedLock;
+using BinkyLabs.OpenApi.Overlays;
+using BinkyLabs.OpenApi.Overlays.Reader;
 using Kiota.Builder.Caching;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -96,7 +99,7 @@ internal class OpenApiDocumentDownloadService
         return (input, isDescriptionFromWorkspaceCopy);
     }
 
-    internal async Task<ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
+    internal async Task<Microsoft.OpenApi.Reader.ReadResult?> GetDocumentWithResultFromStreamAsync(Stream input, GenerationConfiguration config, bool generating = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -122,9 +125,9 @@ internal class OpenApiDocumentDownloadService
         if (addPluginsExtensions)
             settings.AddPluginsExtensions();// Add all extensions for plugins
 
+        var rawUri = config.OpenAPIFilePath.TrimEnd(KiotaBuilder.ForwardSlash);
         try
         {
-            var rawUri = config.OpenAPIFilePath.TrimEnd(KiotaBuilder.ForwardSlash);
             var lastSlashIndex = rawUri.LastIndexOf(KiotaBuilder.ForwardSlash);
             if (lastSlashIndex < 0)
                 lastSlashIndex = rawUri.Length - 1;
@@ -137,7 +140,95 @@ internal class OpenApiDocumentDownloadService
         {
             // couldn't parse the URL, it's probably a local file
         }
-        var readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        Microsoft.OpenApi.Reader.ReadResult readResult = new Microsoft.OpenApi.Reader.ReadResult()
+        {
+            Diagnostic = new OpenApiDiagnostic()
+            {
+                Errors = [],
+                Warnings = [],
+            }
+        };
+
+        if (config.Overlays.Count != 0)
+        {
+
+            var overlaysSettings = new OverlayReaderSettings
+            {
+                OpenApiSettings = settings
+            };
+
+            var cachingProvider = new DocumentCachingProvider(HttpClient, Logger)
+            {
+                ClearCache = config.ClearCache,
+            };
+
+            OverlayDocument? overlayCombined = null;
+            foreach (var overlay in config.Overlays)
+            {
+                Uri? overlayUri = null;
+                if (Uri.TryCreate(overlay, UriKind.Absolute, out var absoluteUri))
+                {
+                    overlayUri = absoluteUri;
+                }
+                else if (Uri.TryCreate(overlay, UriKind.Relative, out var relativeUri))
+                {
+                    overlayUri = relativeUri;
+                }
+
+                if (overlayUri is null)
+                {
+                    throw new InvalidOperationException($"The overlay '{overlay}' is not a valid URI.");
+                }
+
+                BinkyLabs.OpenApi.Overlays.ReadResult? overlayToCombineResult = null;
+                if (overlayUri.IsAbsoluteUri && overlayUri.Scheme is "http" or "https")
+                {
+                    var fileName = overlay is string name && !string.IsNullOrEmpty(name) ? name : "overlay.yml";
+                    var inputOverlay = await cachingProvider.GetDocumentAsync(overlayUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    overlayToCombineResult = await OverlayDocument.LoadFromStreamAsync(inputOverlay, null, overlaysSettings, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    overlayToCombineResult = await OverlayDocument.LoadFromUrlAsync(overlay, overlaysSettings, cancellationToken).ConfigureAwait(false);
+                }
+
+                if (overlayToCombineResult is null || overlayToCombineResult.Document is null)
+                {
+                    throw new InvalidOperationException($"Could not read the overlay document at {overlayUri}. Please ensure the overlay is valid and accessible.");
+                }
+
+                if (overlayToCombineResult.Diagnostic is not null)
+                {
+                    readResult.Diagnostic.Errors.AddRange(overlayToCombineResult.Diagnostic.Errors ?? []);
+                    readResult.Diagnostic.Warnings.AddRange(overlayToCombineResult.Diagnostic.Warnings ?? []);
+                }
+
+                overlayCombined = overlayCombined is null
+                    ? overlayToCombineResult.Document
+                    : overlayCombined.CombineWith(overlayToCombineResult.Document);
+            }
+
+            if (overlayCombined is not null)
+            {
+                var (document, overlaysDiagnostics, documentDiagnostics) = await overlayCombined.ApplyToDocumentStreamAsync(input, settings.BaseUrl ?? new Uri("file://" + rawUri), null, overlaysSettings, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+                readResult.Diagnostic.Errors.AddRange(documentDiagnostics?.Errors ?? []);
+                readResult.Diagnostic.Warnings.AddRange(documentDiagnostics?.Warnings ?? []);
+                readResult.Diagnostic.Errors.AddRange(overlaysDiagnostics?.Errors ?? []);
+                readResult.Diagnostic.Warnings.AddRange(overlaysDiagnostics?.Warnings ?? []);
+
+                readResult.Document = document;
+            }
+        }
+        else
+        {
+            readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+
         stopwatch.Stop();
         if (generatingMode && readResult.Diagnostic?.Warnings is { Count: > 0 })
             foreach (var warning in readResult.Diagnostic.Warnings)

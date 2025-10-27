@@ -66,6 +66,11 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> OverlaysOption
+    {
+        get; init;
+    }
+
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -82,6 +87,8 @@ internal class AddHandler : BaseKiotaCommandHandler
         string? className = context.ParseResult.GetValueForOption(ClassOption);
         List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
+        List<string>? overlays0 = context.ParseResult.GetValueForOption(OverlaysOption);
+
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
@@ -108,6 +115,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.SkipGeneration = skipGeneration;
         Configuration.Generation.NoWorkspace = noWorkspace;
         Configuration.Generation.Operation = ConsumerOperation.Add;
+
         if (pluginTypes is { Count: > 0 })
             Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId))
@@ -116,6 +124,14 @@ internal class AddHandler : BaseKiotaCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns0 is { Count: > 0 })
             Configuration.Generation.ExcludePatterns = excludePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (overlays0 is { Count: > 0 })
+            Configuration.Generation.Overlays = overlays0
+                                                    .Select(static x => x.TrimQuotes())
+                                                    .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);

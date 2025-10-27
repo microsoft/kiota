@@ -5,25 +5,27 @@ import connectToKiota from "../connect";
 import { KiotaGenerationLanguage, KiotaResult } from "../types";
 
 export interface ClientGenerationOptions {
-  openAPIFilePath: string;
-  clientClassName: string;
-  clientNamespaceName: string;
-  language: KiotaGenerationLanguage;
-  outputPath: string;
-  operation: ConsumerOperation;
-  workingDirectory: string;
+    openAPIFilePath: string;
+    clientClassName: string;
+    clientNamespaceName: string;
+    language: KiotaGenerationLanguage;
+    outputPath: string;
+    operation: ConsumerOperation;
+    workingDirectory: string;
 
-  deserializers?: string[];
-  disabledValidationRules?: string[];
-  excludeBackwardCompatible?: boolean;
-  excludePatterns?: string[];
-  includeAdditionalData?: boolean;
-  includePatterns?: string[];
-  clearCache?: boolean;
-  cleanOutput?: boolean;
-  serializers?: string[];
-  structuredMimeTypes?: string[];
-  usesBackingStore?: boolean;
+    deserializers?: string[];
+    disabledValidationRules?: string[];
+    excludeBackwardCompatible?: boolean;
+    excludePatterns?: string[];
+    includeAdditionalData?: boolean;
+    includePatterns?: string[];
+    clearCache?: boolean;
+    cleanOutput?: boolean;
+    serializers?: string[];
+    structuredMimeTypes?: string[];
+    usesBackingStore?: boolean;
+    overlays?: string[];
+
 }
 
 /**
@@ -50,52 +52,54 @@ export interface ClientGenerationOptions {
  * @param {string[]} [clientGenerationOptions.serializers] - The list of serializers to use.
  * @param {string[]} [clientGenerationOptions.structuredMimeTypes] - The list of structured MIME types to support.
  * @param {boolean} [clientGenerationOptions.usesBackingStore] - Whether the generated client uses a backing store.
-
+ * @param {string[]} [clientGenerationOptions.overlays] - Whether the generated client uses overlays.
+ * 
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
  * @throws {Error} If an error occurs during the client generation process.
  */
 export async function generateClient(clientGenerationOptions: ClientGenerationOptions): Promise<KiotaResult | undefined> {
-  const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
-    const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
-      "Generate"
-    );
+    const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
+        const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
+            "Generate"
+        );
 
-    return await connection.sendRequest(
-      request,
-      {
-        openAPIFilePath: clientGenerationOptions.openAPIFilePath,
-        clientClassName: clientGenerationOptions.clientClassName,
-        clientNamespaceName: clientGenerationOptions.clientNamespaceName,
-        language: clientGenerationOptions.language,
-        outputPath: clientGenerationOptions.outputPath,
-        operation: clientGenerationOptions.operation,
+        return await connection.sendRequest(
+            request,
+            {
+                openAPIFilePath: clientGenerationOptions.openAPIFilePath,
+                clientClassName: clientGenerationOptions.clientClassName,
+                clientNamespaceName: clientGenerationOptions.clientNamespaceName,
+                language: clientGenerationOptions.language,
+                outputPath: clientGenerationOptions.outputPath,
+                operation: clientGenerationOptions.operation,
 
-        deserializers: clientGenerationOptions.deserializers ?? [],
-        disabledValidationRules: clientGenerationOptions.disabledValidationRules ?? [],
-        excludeBackwardCompatible: clientGenerationOptions.excludeBackwardCompatible ?? false,
-        excludePatterns: clientGenerationOptions.excludePatterns ?? [],
-        includeAdditionalData: clientGenerationOptions.includeAdditionalData ?? false,
-        cleanOutput: clientGenerationOptions.cleanOutput ?? false,
-        clearCache: clientGenerationOptions.clearCache ?? false,
-        includePatterns: clientGenerationOptions.includePatterns ?? [],
-        serializers: clientGenerationOptions.serializers ?? [],
-        structuredMimeTypes: clientGenerationOptions.structuredMimeTypes ?? [],
-        usesBackingStore: clientGenerationOptions.usesBackingStore ?? false,
-      } as GenerationConfiguration,
-    );
-  }, clientGenerationOptions.workingDirectory);
+                deserializers: clientGenerationOptions.deserializers ?? [],
+                disabledValidationRules: clientGenerationOptions.disabledValidationRules ?? [],
+                excludeBackwardCompatible: clientGenerationOptions.excludeBackwardCompatible ?? false,
+                excludePatterns: clientGenerationOptions.excludePatterns ?? [],
+                includeAdditionalData: clientGenerationOptions.includeAdditionalData ?? false,
+                cleanOutput: clientGenerationOptions.cleanOutput ?? false,
+                clearCache: clientGenerationOptions.clearCache ?? false,
+                includePatterns: clientGenerationOptions.includePatterns ?? [],
+                serializers: clientGenerationOptions.serializers ?? [],
+                structuredMimeTypes: clientGenerationOptions.structuredMimeTypes ?? [],
+                usesBackingStore: clientGenerationOptions.usesBackingStore ?? false,
+                overlays: clientGenerationOptions.overlays ?? [],
+            } as GenerationConfiguration,
+        );
+    }, clientGenerationOptions.workingDirectory);
 
-  if (result instanceof Error) {
-    throw result;
-  }
+    if (result instanceof Error) {
+        throw result;
+    }
 
-  if (result) {
-    return {
-      isSuccess: checkForSuccess(result as KiotaLogEntry[]),
-      logs: result
-    };
-  }
+    if (result) {
+        return {
+            isSuccess: checkForSuccess(result as KiotaLogEntry[]),
+            logs: result
+        };
+    }
 
-  return undefined;
+    return undefined;
 };
 

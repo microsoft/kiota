@@ -73,6 +73,11 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+
+    public required Option<List<string>> OverlaysOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -97,6 +102,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
         List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
+        List<string>? overlays0 = context.ParseResult.GetValueForOption(OverlaysOption);
         bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
         List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
@@ -123,6 +129,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         List<string> excludePatterns = excludePatterns0.OrEmpty();
         List<string> disabledValidationRules = disabledValidationRules0.OrEmpty();
         List<string> structuredMimeTypes = structuredMimeTypes0.OrEmpty();
+        List<string> overlays = overlays0.OrEmpty();
         AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);
         AssignIfNotNullOrEmpty(openapi, (c, s) => c.OpenAPIFilePath = s);
         AssignIfNotNullOrEmpty(manifest, (c, s) => c.ApiManifestPath = s);
@@ -150,6 +157,12 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         if (structuredMimeTypes.Count != 0)
             Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                             .Select(static x => x.TrimQuotes()));
+
+        if (overlays.Count != 0)
+            Configuration.Generation.Overlays = overlays
+                                                        .Select(static x => x.TrimQuotes())
+                                                        .SelectMany(static x => x.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
