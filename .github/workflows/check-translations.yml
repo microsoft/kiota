@@ -27,7 +27,7 @@ jobs:
         shell: pwsh
 
       - name: Upload untranslated strings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: untranslated-strings
           path: ./untranslated_strings.html

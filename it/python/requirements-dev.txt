@@ -60,13 +60,13 @@ typing-extensions==4.15.0 ; python_version >= '3.7'
 
 urllib3==2.5.0 ; python_version >= '3.7'
 
-wrapt==1.17.3 ; python_version < '3.11'
+wrapt==2.0.0 ; python_version < '3.11'
 
 yapf==0.43.0
 
 zipp==3.23.0 ; python_version >= '3.7'
 
-aiohttp==3.13.0 ; python_version >= '3.6'
+aiohttp==3.13.1 ; python_version >= '3.6'
 
 aiosignal==1.4.0 ; python_version >= '3.7'
 
@@ -82,7 +82,7 @@ azure-identity==1.25.1
 
 cffi==2.0.0
 
-cryptography==46.0.2 ; python_version >= '3.7'
+cryptography==46.0.3 ; python_version >= '3.7'
 
 frozenlist==1.8.0 ; python_version >= '3.7'
 
