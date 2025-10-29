@@ -865,7 +865,7 @@ public partial class PluginsGenerationService
 
     private PluginManifestDocument GetManifestDocument(string openApiDocumentPath)
     {
-        var (runtimes, functions, conversationStarters) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration, TreeNode, openApiDocumentPath, Logger);
+        var (runtimes, functions, _) = GetRuntimesFunctionsAndConversationStartersFromTree(OAIDocument, Configuration, TreeNode, openApiDocumentPath, Logger);
         var descriptionForHuman = OAIDocument.Info?.Description is string d && !string.IsNullOrEmpty(d) ? d : $"Description for {OAIDocument.Info?.Title}";
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
@@ -892,16 +892,6 @@ public partial class PluginsGenerationService
             Functions = [.. functions.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)],
         };
 
-        if (conversationStarters.Length > 0)
-            pluginManifestDocument.Capabilities = new Capabilities
-            {
-                ConversationStarters = conversationStarters.Where(static x => !string.IsNullOrEmpty(x.Text))
-                                            .Select(static x => new ConversationStarter
-                                            {
-                                                Text = x.Text?.Length < 50 ? x.Text : x.Text?[..50]
-                                            })
-                                            .ToList()
-            };
         return pluginManifestDocument;
     }
 

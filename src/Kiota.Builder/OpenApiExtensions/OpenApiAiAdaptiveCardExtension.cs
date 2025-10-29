@@ -23,11 +23,25 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
         get; set;
     }
 
+    public string? Subtitle
+    {
+        get; set;
+    }
+
 #pragma warning disable CA1056 // URI-like properties should not be strings
 
     public string? Url
+    {
+        get; set;
+    }
+
+    public string? ThumbnailUrl
+    {
+        get; set;
+    }
 #pragma warning restore CA1056 // URI-like properties should not be strings
 
+    public string? InformationProtectionLabel
     {
         get; set;
     }
@@ -54,6 +68,18 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
         {
             extension.Url = urlStrValue;
         }
+        if (rawObject.TryGetPropertyValue(nameof(Subtitle).ToFirstCharacterLowerCase(), out var subtitle) && subtitle is JsonValue subtitleValue && subtitleValue.GetValueKind() is JsonValueKind.String && subtitleValue.TryGetValue<string>(out var subtitleStrValue))
+        {
+            extension.Subtitle = subtitleStrValue;
+        }
+        if (rawObject.TryGetPropertyValue(nameof(ThumbnailUrl).ToFirstCharacterLowerCase().ToSnakeCase(), out var thumbnailUrl) && thumbnailUrl is JsonValue thumbnailUrlValue && thumbnailUrlValue.GetValueKind() is JsonValueKind.String && thumbnailUrlValue.TryGetValue<string>(out var thumbnailUrlStrValue))
+        {
+            extension.ThumbnailUrl = thumbnailUrlStrValue;
+        }
+        if (rawObject.TryGetPropertyValue(nameof(InformationProtectionLabel).ToFirstCharacterLowerCase().ToSnakeCase(), out var informationProtectionLabel) && informationProtectionLabel is JsonValue informationProtectionLabelValue && informationProtectionLabelValue.GetValueKind() is JsonValueKind.String && informationProtectionLabelValue.TryGetValue<string>(out var informationProtectionLabelStrValue))
+        {
+            extension.InformationProtectionLabel = informationProtectionLabelStrValue;
+        }
         // We are supporting empty extension to avoid creating the template when emitting from typespec scenario
         if (string.IsNullOrEmpty(extension.DataPath) || string.IsNullOrEmpty(extension.File) || string.IsNullOrEmpty(extension.Title))
             return emptyExtension;
@@ -76,6 +102,21 @@ public class OpenApiAiAdaptiveCardExtension : IOpenApiExtension
             {
                 writer.WritePropertyName(nameof(Url).ToFirstCharacterLowerCase());
                 writer.WriteValue(Url);
+            }
+            if (!string.IsNullOrEmpty(Subtitle))
+            {
+                writer.WritePropertyName(nameof(Subtitle).ToFirstCharacterLowerCase());
+                writer.WriteValue(Subtitle);
+            }
+            if (!string.IsNullOrEmpty(ThumbnailUrl))
+            {
+                writer.WritePropertyName(nameof(ThumbnailUrl).ToFirstCharacterLowerCase().ToSnakeCase());
+                writer.WriteValue(ThumbnailUrl);
+            }
+            if (!string.IsNullOrEmpty(InformationProtectionLabel))
+            {
+                writer.WritePropertyName(nameof(InformationProtectionLabel).ToFirstCharacterLowerCase().ToSnakeCase());
+                writer.WriteValue(InformationProtectionLabel);
             }
         }
         writer.WriteEndObject();
