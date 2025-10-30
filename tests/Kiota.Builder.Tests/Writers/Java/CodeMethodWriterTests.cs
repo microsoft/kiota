@@ -2166,6 +2166,40 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesMessageOverrideWithStatusCodeWhenNoPrimary()
+    {
+        // Given
+        parentClass = root.AddClass(new CodeClass
+        {
+            Name = "parentClass",
+            IsErrorDefinition = true,
+            Kind = CodeClassKind.Model,
+        }).First();
+        // No primary error message property added
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType
+            {
+                Name = "String",
+                IsNullable = false,
+            },
+            IsAsync = false,
+            IsStatic = false,
+            Name = "getErrorMessage"
+        }).First();
+
+        // When
+        writer.Write(method);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("@Override", result);
+        Assert.Contains("String getErrorMessage() ", result);
+        Assert.Contains("return getResponseStatusCode() + \": \" + super.getMessage();", result);
+    }
+
+    [Fact]
     public void WritesRequestGeneratorAcceptHeaderQuotes()
     {
         setup();
