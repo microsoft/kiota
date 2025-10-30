@@ -239,7 +239,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
     {
-        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName}) {{");
+        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName()}) {{");
 
         foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {

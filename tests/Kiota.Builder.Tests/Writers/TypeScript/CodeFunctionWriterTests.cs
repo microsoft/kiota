@@ -29,7 +29,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
     private const string ReturnTypeName = "Somecustomtype";
     private readonly HttpClient _httpClient = new();
     private readonly List<string> _tempFiles = new();
-    private const string IndexFileName = "index";
 
     public CodeFunctionWriterTests()
     {
@@ -1677,6 +1676,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         Assert.Contains("\"property\": n => { parentClass.property = n.getCollectionOfObjectValues<ArrayOfObjects>(createArrayOfObjectsFromDiscriminatorValue) ?? n.getNumberValue() ?? n.getObjectValue<SingleObject>(createSingleObjectFromDiscriminatorValue) ?? n.getStringValue(); }", result);
     }
+
     [Fact]
     public void WritesByteArrayPropertyDeserialization()
     {
