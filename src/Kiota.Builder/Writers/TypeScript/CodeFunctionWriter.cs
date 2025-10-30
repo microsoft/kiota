@@ -17,7 +17,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private static List<CodeType> SortTypesByInheritance(IEnumerable<CodeType> types)
     {
         ArgumentNullException.ThrowIfNull(types);
-        
+
         var typesList = types.ToList();
         if (typesList.Count <= 1)
             return typesList;
@@ -57,7 +57,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                     continue;
 
                 // Check if there are any unprocessed types that derive from this type
-                var hasUnprocessedDerivedTypes = typesList.Any(t => 
+                var hasUnprocessedDerivedTypes = typesList.Any(t =>
                     !processed.Contains(t) && t != type && DerivesFrom(t, type));
 
                 // Add this type if no unprocessed derived types exist

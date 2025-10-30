@@ -1747,7 +1747,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // Create a model with a oneOf property containing both types
         var parentClass = TestHelper.CreateModelClass(root, "Container");
         var composedType = new CodeUnionType { Name = "DeviceUnion" };
-        
+
         // Add types in alphabetical order: Device comes before ManagedPrivilegedDevice
         // But ManagedPrivilegedDevice should be checked first because it's derived from Device
         composedType.AddType(
@@ -1776,7 +1776,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // This ensures proper deserialization when the derived type is received
         var managedDeviceIndex = result.IndexOf("createManagedPrivilegedDeviceFromDiscriminatorValue", StringComparison.Ordinal);
         var deviceIndex = result.IndexOf("createDeviceFromDiscriminatorValue", StringComparison.Ordinal);
-        
+
         Assert.True(managedDeviceIndex > 0, "Should contain ManagedPrivilegedDevice deserialization");
         Assert.True(deviceIndex > 0, "Should contain Device deserialization");
         Assert.True(managedDeviceIndex < deviceIndex, "ManagedPrivilegedDevice should appear before Device in the deserialization chain");
