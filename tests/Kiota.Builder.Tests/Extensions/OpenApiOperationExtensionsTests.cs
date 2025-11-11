@@ -18,8 +18,8 @@ public class OpenApiOperationExtensionsTests
         {
             Responses = new() {
                 { "200", new OpenApiResponse() {
-                    Content = new Dictionary<string, OpenApiMediaType> {
-                        {"application/json", new() {
+                    Content = new Dictionary<string, IOpenApiMediaType> {
+                        {"application/json", new OpenApiMediaType() {
                             Schema = new OpenApiSchema()
                         }}
                     }
@@ -30,8 +30,8 @@ public class OpenApiOperationExtensionsTests
         {
             Responses = new() {
                 { "400", new OpenApiResponse() {
-                    Content = new Dictionary<string, OpenApiMediaType> {
-                        {"application/json", new() {
+                    Content = new Dictionary<string, IOpenApiMediaType> {
+                        {"application/json", new OpenApiMediaType() {
                             Schema = new OpenApiSchema()
                         }}
                     }
@@ -42,8 +42,8 @@ public class OpenApiOperationExtensionsTests
         {
             Responses = new() {
                 { "200", new OpenApiResponse() {
-                    Content = new Dictionary<string, OpenApiMediaType> {
-                        {"application/invalid", new() {
+                    Content = new Dictionary<string, IOpenApiMediaType> {
+                        {"application/invalid", new OpenApiMediaType() {
                             Schema = new OpenApiSchema()
                         }}
                     }
@@ -58,7 +58,7 @@ public class OpenApiOperationExtensionsTests
     [Fact]
     public void Defensive()
     {
-        var source = new Dictionary<string, OpenApiMediaType>();
+        var source = new Dictionary<string, IOpenApiMediaType>();
         Assert.Empty(source.GetValidSchemas(new() { "application/json" }));
         Assert.Throws<ArgumentNullException>(() => source.GetValidSchemas(null));
     }

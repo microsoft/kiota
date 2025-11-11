@@ -8,8 +8,10 @@ namespace Kiota.Builder.Configuration;
 
 public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOpenApiSerializable, ICloneable
 {
-    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV31(writer);
-    public void SerializeAsV3(IOpenApiWriter writer) => SerializeAsV31(writer);
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV2(w));
+    public void SerializeAsV3(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV3(w));
+    public void SerializeAsV31(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV31(w));
+    public void SerializeAsV32(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV32(w));
     public static LanguagesInformation Parse(JsonObject jsonNode)
     {
         var extension = new LanguagesInformation();
@@ -29,7 +31,7 @@ public class LanguagesInformation : Dictionary<string, LanguageInformation>, IOp
         return result;
     }
 
-    public void SerializeAsV31(IOpenApiWriter writer)
+    private void SerializeInternal(IOpenApiWriter writer, Action<IOpenApiWriter, LanguageInformation> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();

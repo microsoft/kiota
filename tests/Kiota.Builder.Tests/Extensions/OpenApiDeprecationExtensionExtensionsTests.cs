@@ -135,7 +135,7 @@ public class OpenApiDeprecationExtensionExtensions
                 {
                     "200", new OpenApiResponse
                     {
-                        Content = new Dictionary<string, OpenApiMediaType>()
+                        Content = new Dictionary<string, IOpenApiMediaType>()
                         {
                             { "application/json", null
                             }
@@ -160,7 +160,7 @@ public class OpenApiDeprecationExtensionExtensions
                 {
                     "200", new OpenApiResponse
                     {
-                        Content = new Dictionary<string, OpenApiMediaType>()
+                        Content = new Dictionary<string, IOpenApiMediaType>()
                         {
                             { "application/json", new OpenApiMediaType
                                 {
@@ -215,7 +215,7 @@ public class OpenApiDeprecationExtensionExtensions
                 {
                     "200", new OpenApiResponse
                     {
-                        Content = new Dictionary<string, OpenApiMediaType>()
+                        Content = new Dictionary<string, IOpenApiMediaType>()
                         {
                             { "application/json", new OpenApiMediaType
                                 {
@@ -240,7 +240,7 @@ public class OpenApiDeprecationExtensionExtensions
             Deprecated = false,
             RequestBody = new OpenApiRequestBody
             {
-                Content = new Dictionary<string, OpenApiMediaType>()
+                Content = new Dictionary<string, IOpenApiMediaType>()
                 {
                     { "application/json", new OpenApiMediaType
                         {
@@ -275,7 +275,7 @@ public class OpenApiDeprecationExtensionExtensions
             Deprecated = false,
             RequestBody = new OpenApiRequestBody
             {
-                Content = new Dictionary<string, OpenApiMediaType>()
+                Content = new Dictionary<string, IOpenApiMediaType>()
                 {
                     { "application/json", null
                     }
@@ -310,7 +310,7 @@ public class OpenApiDeprecationExtensionExtensions
             Deprecated = false,
             RequestBody = new OpenApiRequestBody
             {
-                Content = new Dictionary<string, OpenApiMediaType>()
+                Content = new Dictionary<string, IOpenApiMediaType>()
                 {
                     { "application/json", new OpenApiMediaType
                         {
@@ -426,7 +426,7 @@ public class OpenApiDeprecationExtensionExtensions
         var parameter = new OpenApiParameter
         {
             Deprecated = false,
-            Content = new Dictionary<string, OpenApiMediaType>() {
+            Content = new Dictionary<string, IOpenApiMediaType>() {
                 { "application/json", new OpenApiMediaType()
                     {
                         Schema = new OpenApiSchema
@@ -472,7 +472,7 @@ public class OpenApiDeprecationExtensionExtensions
         var parameter = new OpenApiParameter
         {
             Deprecated = false,
-            Content = new Dictionary<string, OpenApiMediaType>() {
+            Content = new Dictionary<string, IOpenApiMediaType>() {
                 { "application/json", new OpenApiMediaType()
                     {
                         Schema = new OpenApiSchemaReference("schema", document)
