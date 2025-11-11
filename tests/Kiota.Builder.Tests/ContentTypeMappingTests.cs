@@ -96,7 +96,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                             {
                                 [statusCode] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         [contentType] = new OpenApiMediaType
                                         {
@@ -187,7 +187,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                         {
                             RequestBody = new OpenApiRequestBody
                             {
-                                Content = new Dictionary<string, OpenApiMediaType>()
+                                Content = new Dictionary<string, IOpenApiMediaType>()
                                 {
                                     [contentType] = new OpenApiMediaType
                                     {
@@ -275,7 +275,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                                         {
                                             Schema = new OpenApiSchemaReference("myobject"),
                                         }
-                                    }).ToDictionary(x => x.Key, x => x.value)
+                                    }).ToDictionary(x => x.Key, x => (IOpenApiMediaType)x.value)
                                 },
                             }
                         }
@@ -355,7 +355,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                                         {
                                             Schema = new OpenApiSchemaReference("myobject"),
                                         }
-                                    }).ToDictionary(x => x.Key, x => x.value)
+                                    }).ToDictionary(x => x.Key, x => (IOpenApiMediaType)x.value)
                                 },
                             }
                         }
@@ -432,7 +432,7 @@ public sealed class ContentTypeMappingTests : IDisposable
                                     {
                                         Schema = new OpenApiSchemaReference("myobject"),
                                     }
-                                }).ToDictionary(x => x.Key, x => x.value)
+                                }).ToDictionary(x => x.Key, x => (IOpenApiMediaType)x.value)
                             },
                         }
                     }

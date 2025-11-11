@@ -676,8 +676,8 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                         },
                         Responses = new OpenApiResponses() {
                             {"200", new OpenApiResponse() {
-                                Content = new Dictionary<string, OpenApiMediaType>() {
-                                    {"application/json", new() {
+                                Content = new Dictionary<string, IOpenApiMediaType>() {
+                                    {"application/json", new OpenApiMediaType() {
                                         Schema = new OpenApiSchema() {
                                             Type = JsonSchemaType.String
                                         }
@@ -726,10 +726,10 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 "200", new OpenApiResponse()
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         {
-                                            "application/json", new()
+                                            "application/json", new OpenApiMediaType()
                                             {
                                                 Schema = new OpenApiSchemaReference("microsoft.graph.json"),
                                             }
@@ -799,7 +799,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -831,7 +831,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -863,7 +863,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -950,7 +950,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -972,7 +972,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -1023,7 +1023,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {
@@ -1048,7 +1048,7 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
                             {
                                 ["200"] = new OpenApiResponse
                                 {
-                                    Content = new Dictionary<string, OpenApiMediaType>()
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
                                     {
                                         ["application/json"] = new OpenApiMediaType
                                         {

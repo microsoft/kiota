@@ -30,16 +30,18 @@ public record LanguageInformation : IOpenApiSerializable
 #pragma warning disable CA2227
     public HashSet<string> StructuredMimeTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 #pragma warning restore CA2227
-    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV31(writer);
-    public void SerializeAsV3(IOpenApiWriter writer) => SerializeAsV31(writer);
-    public void SerializeAsV31(IOpenApiWriter writer)
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV2(w));
+    public void SerializeAsV3(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV3(w));
+    public void SerializeAsV31(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV31(w));
+    public void SerializeAsV32(IOpenApiWriter writer) => SerializeInternal(writer, static (w, x) => x.SerializeAsV32(w));
+    public void SerializeInternal(IOpenApiWriter writer, Action<IOpenApiWriter, LanguageDependency> callback)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();
         writer.WriteProperty(nameof(MaturityLevel).ToFirstCharacterLowerCase(), MaturityLevel.ToString());
         writer.WriteProperty(nameof(SupportExperience).ToFirstCharacterLowerCase(), SupportExperience.ToString());
         writer.WriteProperty(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), DependencyInstallCommand);
-        writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, static (w, x) => x.SerializeAsV3(w));
+        writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, callback);
         writer.WriteProperty(nameof(ClientClassName).ToFirstCharacterLowerCase(), ClientClassName);
         writer.WriteProperty(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), ClientNamespaceName);
         writer.WriteOptionalCollection(nameof(StructuredMimeTypes).ToFirstCharacterLowerCase(), StructuredMimeTypes, static (w, x) => { if (!string.IsNullOrEmpty(x)) { w.WriteValue(x); } });
@@ -96,9 +98,11 @@ public record LanguageDependency : IOpenApiSerializable
         get; set;
     }
     private const string TypePropertyName = "type";
-    public void SerializeAsV2(IOpenApiWriter writer) => SerializeAsV31(writer);
-    public void SerializeAsV3(IOpenApiWriter writer) => SerializeAsV31(writer);
-    public void SerializeAsV31(IOpenApiWriter writer)
+    public void SerializeAsV2(IOpenApiWriter writer) => SerializeInternal(writer);
+    public void SerializeAsV3(IOpenApiWriter writer) => SerializeInternal(writer);
+    public void SerializeAsV31(IOpenApiWriter writer) => SerializeInternal(writer);
+    public void SerializeAsV32(IOpenApiWriter writer) => SerializeInternal(writer);
+    public void SerializeInternal(IOpenApiWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStartObject();

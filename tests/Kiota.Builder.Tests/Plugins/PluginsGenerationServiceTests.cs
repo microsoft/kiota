@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -424,7 +425,7 @@ components:
         string jsonString = "{\"file\":\"path_to_file\"}";
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
-        Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(staticTemplate.ToString()), JsonNode.Parse(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString())), "adaptive card present");
         Assert.Null(resultingManifest.Document.Functions[1].Capabilities);// no response semantics is added if no adaptive card
     }
 
@@ -533,7 +534,7 @@ components:
         string jsonString = $"{{\"file\": \"./adaptiveCards/{resultingManifest.Document.Functions[1].Name}.json\"}}";
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
-        Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate.ToString()); // adaptive card present
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(staticTemplate.ToString()), JsonNode.Parse(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate.ToString())), "adaptive card present");
 
         // validate presence of adaptive card
         var path = Path.Combine(outputDirectory, "adaptiveCards", $"{resultingManifest.Document.Functions[1].Name}.json");
