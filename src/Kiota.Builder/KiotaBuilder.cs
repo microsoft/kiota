@@ -1107,8 +1107,8 @@ public partial class KiotaBuilder
         var type = parameter switch
         {
             null => DefaultIndexerParameterType,
-            _ => GetPrimitiveType(parameter.Schema),
-        } ?? DefaultIndexerParameterType;
+            _ => GetEnumType(currentNode, parameter) ?? GetPrimitiveType(parameter.Schema) ?? DefaultIndexerParameterType,
+        };
         type.IsNullable = false;
         var segment = currentNode.DeduplicatedSegment();
         var result = new CodeParameter
@@ -1123,6 +1123,35 @@ public partial class KiotaBuilder
         };
         return result;
     }
+
+    private CodeType? GetEnumType(OpenApiUrlTreeNode currentNode, IOpenApiParameter parameter)
+    {
+        IOpenApiSchema? enumCandidateSchema = parameter.Schema;
+        // many specs wrap refs under allOf: [ { $ref: ... } ]
+        if (enumCandidateSchema?.AllOf is { Count: 1 } && enumCandidateSchema.AllOf.FirstOrDefault() is IOpenApiSchema singleAllOf)
+            enumCandidateSchema = singleAllOf;
+
+        if (enumCandidateSchema is null || modelsNamespace is null)
+        {
+            return default;
+        }
+
+        var targetNamespace = GetShortestNamespace(modelsNamespace, enumCandidateSchema);
+        var declarationName = enumCandidateSchema.GetSchemaName()?.CleanupSymbolName();
+        if (string.IsNullOrEmpty(declarationName))
+        {
+            return default;
+        }
+
+        var enumDeclaration = AddEnumDeclarationIfDoesntExist(currentNode, enumCandidateSchema, declarationName!, targetNamespace);
+        if (enumDeclaration is not null)
+        {
+            return new CodeType { Name = enumDeclaration.Name, TypeDefinition = enumDeclaration };
+        }
+
+        return default;
+    }
+
     private static IDictionary<string, IOpenApiPathItem> GetPathItems(OpenApiUrlTreeNode currentNode, bool validateIsParameterNode = true)
     {
         if ((!validateIsParameterNode || currentNode.IsParameter) && currentNode.PathItems.Count != 0)
@@ -2262,11 +2291,21 @@ public partial class KiotaBuilder
     }
     private IEnumerable<CodeElement> GetTypeDefinitionsInNamespace(CodeNamespace currentNamespace)
     {
-        var requestExecutors = GetAllNamespaces(currentNamespace)
-                            .SelectMany(static x => x.Classes)
-                            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
+        var requestBuilders = GetAllNamespaces(currentNamespace)
+            .SelectMany(static x => x.Classes)
+            .Where(static x => x.IsOfKind(CodeClassKind.RequestBuilder))
+            .ToArray();
+
+        var requestExecutors = requestBuilders
                             .SelectMany(static x => x.Methods)
                             .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+
+        var indexerParameterTypes = requestBuilders
+                            .Select(static rb => rb.Indexer?.IndexParameter.Type)
+                            .OfType<CodeTypeBase>()
+                            .SelectMany(static t => t.AllTypes)
+                            .ToArray();
+
         return requestExecutors.SelectMany(static x => x.ReturnType.AllTypes)
                         .Union(requestExecutors
                                 .SelectMany(static x => x.Parameters)
@@ -2278,6 +2317,8 @@ public partial class KiotaBuilder
                                 .OfType<CodeClass>()
                                 .Select(static x => x.Properties.FirstOrDefault(static y => y.Kind is CodePropertyKind.QueryParameters)?.Type)
                                 .OfType<CodeType>())
+                        // include the indexer parameter types so enums used there are not pruned as unused
+                        .Union(indexerParameterTypes)
                         .Union(requestExecutors.SelectMany(static x => x.ErrorMappings.SelectMany(static y => y.Value.AllTypes)))
                         .Where(static x => x.TypeDefinition != null)
                         .Select(static x => x.TypeDefinition!)
