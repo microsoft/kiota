@@ -204,6 +204,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
+        else if (codeElement.IsOfKind(CodeMethodKind.FactoryWithErrorMessage))
+        {
+            var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+            writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
+        }
         else
             writer.WriteLine($"return new {parentClass.GetFullName()}();");
     }
@@ -400,9 +405,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             errorMappingVarName = "errorMapping";
             writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, ParsableFactory<IParsable>>");
             writer.StartBlock();
-            foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
+            foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
+                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass codeClass)) continue;
+                var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+
+                if (!string.IsNullOrEmpty(errorDescription) && codeClass.IsErrorDefinition)
+                    writer.WriteLine($"{{ \"{errorKey}\", (parseNode) => {typeName}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription}\") }},");
+                else
+                    writer.WriteLine($"{{ \"{errorKey}\", {typeName}.CreateFromDiscriminatorValue }},");
             }
             writer.CloseBlock("};");
         }
@@ -609,9 +622,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             }
             return " : base()";
         }
+        // For error classes with message constructor, pass the message to base constructor
+        else if (isConstructor && parentClass.IsErrorDefinition &&
+                 currentMethod.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+        {
+            return " : base(message)";
+        }
 
         return string.Empty;
     }
+
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
