@@ -5,6 +5,7 @@ using Kiota.Builder.Writers.Java;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Java;
+
 public class JavaWriterTests
 {
     [Fact]

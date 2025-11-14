@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 namespace Kiota.Builder.Writers.Php;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionService>
 {
 

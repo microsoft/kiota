@@ -9,6 +9,7 @@ using Kiota.Builder.Writers.Python;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
+
 public sealed class CodeClassEndWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
