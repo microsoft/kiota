@@ -16,6 +16,7 @@ updates:
           - "OpenTelemetry.*"
           - "Azure.Monitor.OpenTelemetry.Exporter"
       MicrosoftExtensions:
+        patterns:
           - "Microsoft.Extensions.*"
   - package-ecosystem: github-actions
     directory: "/"
