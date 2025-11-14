@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers;
+
 internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
 {
     private readonly KeyValuePair<string, object?>[] _commonTags =

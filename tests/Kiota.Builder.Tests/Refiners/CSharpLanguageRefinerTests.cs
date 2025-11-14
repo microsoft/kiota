@@ -9,6 +9,7 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
+
 public class CSharpLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();

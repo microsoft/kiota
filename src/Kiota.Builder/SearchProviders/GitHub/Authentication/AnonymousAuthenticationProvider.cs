@@ -6,6 +6,7 @@ using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Builder.SearchProviders.GitHub.Authentication;
+
 public class AnonymousAuthenticationProvider : IAuthenticationProvider
 {
     public virtual Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)

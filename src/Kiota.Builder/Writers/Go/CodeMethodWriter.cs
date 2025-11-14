@@ -7,6 +7,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Go;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionService>
 {
     private readonly bool ExcludeBackwardCompatible;

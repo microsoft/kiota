@@ -4,6 +4,7 @@ using Kiota.Builder.Configuration;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Configuration;
+
 public class GenerationConfigurationTests
 {
     [Fact]

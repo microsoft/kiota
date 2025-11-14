@@ -5,6 +5,7 @@ using Kiota.Builder.Writers.Python;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
+
 public class PythonWriterTests
 {
     [Fact]

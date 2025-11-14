@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Logging;
+
 public class FileLogLogger : ILogger, IDisposable
 {
     private readonly string _logFileAbsolutePath = string.Empty;

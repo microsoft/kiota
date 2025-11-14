@@ -9,6 +9,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Refiners;
+
 public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration)
 {
     private const string BaseUrl = "BaseUrl";

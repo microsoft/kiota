@@ -1,6 +1,7 @@
 ﻿using System;
 
 namespace Kiota.Builder.CodeDOM;
+
 public class CodeIndexer : CodeTerminal, IDocumentedElement, IDeprecableElement, ICloneable
 {
 #nullable disable // exposing property is required

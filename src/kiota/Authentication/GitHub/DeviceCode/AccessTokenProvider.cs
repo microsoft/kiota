@@ -5,6 +5,7 @@ using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace kiota.Authentication.GitHub.DeviceCode;
+
 public class AccessTokenProvider : IAccessTokenProvider
 {
     public required Action<Uri, string> MessageCallback

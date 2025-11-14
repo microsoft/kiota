@@ -5,6 +5,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Ruby;
+
 public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventionService>
 {
     private const string RequireDirective = "require_relative";

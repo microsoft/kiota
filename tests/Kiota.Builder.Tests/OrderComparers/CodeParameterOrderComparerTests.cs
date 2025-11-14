@@ -11,6 +11,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OrderComparers;
+
 public class CodeParameterOrderComparerTests
 {
     [Fact]

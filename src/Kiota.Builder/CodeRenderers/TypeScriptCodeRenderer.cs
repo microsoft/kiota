@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.CodeRenderers;
+
 public class TypeScriptCodeRenderer : CodeRenderer
 {
     private CodeNamespace? modelsNamespace;

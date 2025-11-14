@@ -9,6 +9,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Tests;
+
 public sealed class KiotaHostTests : IDisposable
 {
     private readonly IConsole _console;
