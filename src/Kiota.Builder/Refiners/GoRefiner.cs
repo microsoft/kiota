@@ -108,6 +108,8 @@ public class GoRefiner : CommonLanguageRefiner
                                             !(currentProp.Parent is CodeClass parentClass &&
                                             parentClass.IsOfKind(CodeClassKind.QueryParameters, CodeClassKind.ParameterSet) &&
                                             currentProp.Access == AccessModifier.Public))); // Go reserved keywords are all lowercase and public properties are uppercased when we don't provide accessors (models)
+            // Replace reserved names in method parameters
+            ReplaceReservedParameterNames(generatedCode, new GoReservedNamesProvider(), x => $"{x}Escaped");
             ReplaceReservedExceptionPropertyNames(generatedCode, new GoExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             cancellationToken.ThrowIfCancellationRequested();
             AddPropertiesAndMethodTypesImports(
@@ -218,6 +220,24 @@ public class GoRefiner : CommonLanguageRefiner
             );
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Replaces reserved names in method parameters specifically, since they are not part of the regular tree traversal
+    /// </summary>
+    private static void ReplaceReservedParameterNames(CodeElement currentElement, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        if (currentElement is CodeMethod method)
+        {
+            foreach (var parameter in method.Parameters)
+            {
+                if (provider.ReservedNames.Contains(parameter.Name))
+                {
+                    parameter.Name = replacement(parameter.Name);
+                }
+            }
+        }
+        CrawlTree(currentElement, element => ReplaceReservedParameterNames(element, provider, replacement));
     }
 
     private void CorrectCyclicReference(CodeElement currentElement)
