@@ -1128,10 +1128,18 @@ public partial class KiotaBuilder
     private CodeType? GetEnumType(OpenApiUrlTreeNode currentNode, IOpenApiParameter parameter)
     {
         IOpenApiSchema? enumCandidateSchema = parameter.Schema;
-        // many specs wrap refs under allOf or nested empty entries: [ { $ref: ... } ]
-        enumCandidateSchema = enumCandidateSchema?.AllOf?
-                                    .FlattenSchemaIfRequired(static x => x.AllOf)
-                                    .FirstOrDefault() ?? enumCandidateSchema;
+        // Many specs wrap enum refs under allOf/anyOf/oneOf or nested empty entries: [ { $ref: ... } ]
+        if (enumCandidateSchema is not null)
+        {
+            var subsequentSchemas = enumCandidateSchema.GetSubsequentSchemas();
+            var flattened = subsequentSchemas
+                .FlattenSchemaIfRequired(x => x.GetSubsequentSchemas())
+                .ToList();
+            var candidates = flattened.Count != 0 ? flattened : [enumCandidateSchema];
+
+            // Prefer the actual enum-bearing subschema
+            enumCandidateSchema = candidates.FirstOrDefault(x => x.IsEnum()) ?? enumCandidateSchema;
+        }
 
         if (enumCandidateSchema is null || modelsNamespace is null)
         {
