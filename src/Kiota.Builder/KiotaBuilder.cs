@@ -1107,7 +1107,9 @@ public partial class KiotaBuilder
         var type = parameter switch
         {
             null => DefaultIndexerParameterType,
-            _ => GetEnumType(currentNode, parameter) ?? GetPrimitiveType(parameter.Schema) ?? DefaultIndexerParameterType,
+            not null when GetEnumType(currentNode, parameter) is {} enumType => enumType,
+            not null when GetPrimitiveType(parameter.Schema) is {} primitiveType => primitiveType,
+            _ => DefaultIndexerParameterType,
         };
         type.IsNullable = false;
         var segment = currentNode.DeduplicatedSegment();
