@@ -1344,5 +1344,49 @@ components:
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
         Assert.Equal(isImported, model.StartBlock.Usings.Any(static x => x.Declaration.Name.Equals("strconv", StringComparison.OrdinalIgnoreCase)));
     }
+    [Fact]
+    public async Task EscapesReservedKeywordsInMethodParametersAsync()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "Execute",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        // Add a parameter with a reserved keyword name
+        method.AddParameter(new CodeParameter
+        {
+            Name = "type",
+            Kind = CodeParameterKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "select",
+            Kind = CodeParameterKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        // Verify that reserved keyword parameters are escaped
+        Assert.Contains(method.Parameters, p => p.Name == "typeEscaped");
+        Assert.Contains(method.Parameters, p => p.Name == "selectEscaped");
+        Assert.DoesNotContain(method.Parameters, p => p.Name == "type");
+        Assert.DoesNotContain(method.Parameters, p => p.Name == "select");
+    }
     #endregion
 }
