@@ -1106,7 +1106,6 @@ public partial class KiotaBuilder
                         default;
         var type = parameter switch
         {
-            null => DefaultIndexerParameterType,
             not null when GetEnumType(currentNode, parameter) is {} enumType => enumType,
             not null when GetPrimitiveType(parameter.Schema) is {} primitiveType => primitiveType,
             _ => DefaultIndexerParameterType,
