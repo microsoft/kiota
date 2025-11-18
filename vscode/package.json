@@ -28,7 +28,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.39.1",
-    "glob": "^11.0.3",
+    "glob": "^11.1.0",
     "typemoq": "^2.1.0",
     "typescript": "^5.9.3"
   },
