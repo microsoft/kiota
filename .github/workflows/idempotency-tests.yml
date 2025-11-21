@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -50,7 +50,7 @@ jobs:
           - "apisguru::github.com:api.github.com"
           - "apisguru::apis.guru"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v6
         with:
           name: generator
@@ -97,7 +97,7 @@ jobs:
           - "apisguru::github.com:api.github.com"
           - "apisguru::apis.guru"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
