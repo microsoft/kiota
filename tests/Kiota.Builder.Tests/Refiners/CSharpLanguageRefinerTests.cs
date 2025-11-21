@@ -962,5 +962,87 @@ public class CSharpLanguageRefinerTests
         Assert.Equal(codeClass.Access, accessModifier);
         Assert.Equal(codeEnum.Access, accessModifier);
     }
+
+    [Fact]
+    public async Task AddsMessageConstructorToErrorClasses()
+    {
+        // Given
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Then
+        var messageConstructor = errorClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) &&
+                                m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
+
+        Assert.NotNull(messageConstructor);
+        Assert.Single(messageConstructor.Parameters);
+        var parameter = messageConstructor.Parameters.First();
+        Assert.Equal("message", parameter.Name);
+        Assert.Equal("string", parameter.Type.Name);
+        Assert.False(parameter.Optional);
+        Assert.Equal(CodeParameterKind.ErrorMessage, parameter.Kind);
+    }
+
+    [Fact]
+    public async Task DoesNotAddMessageConstructorToNonErrorClasses()
+    {
+        // Given
+        var regularClass = root.AddClass(new CodeClass
+        {
+            Name = "RegularModel",
+            IsErrorDefinition = false
+        }).First();
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Then
+        var messageConstructor = regularClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) &&
+                                m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
+
+        Assert.Null(messageConstructor);
+    }
+
+    [Fact]
+    public async Task AddsMessageFactoryMethodToErrorClasses()
+    {
+        // Given
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        // Then
+        var messageFactoryMethod = errorClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+
+        Assert.NotNull(messageFactoryMethod);
+        Assert.Equal(2, messageFactoryMethod.Parameters.Count());
+
+        var parseNodeParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.IsOfKind(CodeParameterKind.ParseNode));
+        Assert.NotNull(parseNodeParam);
+        Assert.Equal("parseNode", parseNodeParam.Name);
+        Assert.Equal("IParseNode", parseNodeParam.Type.Name);
+
+        var messageParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.IsOfKind(CodeParameterKind.ErrorMessage));
+        Assert.NotNull(messageParam);
+        Assert.Equal("message", messageParam.Name);
+        Assert.Equal("string", messageParam.Type.Name);
+
+        Assert.True(messageFactoryMethod.IsStatic);
+        Assert.Equal(AccessModifier.Public, messageFactoryMethod.Access);
+    }
     #endregion
 }
