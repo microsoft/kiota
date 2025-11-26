@@ -871,8 +871,8 @@ public partial class PluginsGenerationService
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
         {
-            Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.3/schema.json",
-            SchemaVersion = "v2.3",
+            Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.4/schema.json",
+            SchemaVersion = "v2.4",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,
