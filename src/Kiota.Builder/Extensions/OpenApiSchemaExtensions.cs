@@ -322,7 +322,7 @@ public static class OpenApiSchemaExtensions
         return schema.HasAnyProperty() ||
                 (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
                 (!ignoreArrays && schema.Items != null) ||
-                (!ignoreType && schema.Type is not null &&
+                (!ignoreType && schema.Type is not null and not JsonSchemaType.Null &&
                     ((ignoreNullableObjects && !schema.IsObjectType()) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||
