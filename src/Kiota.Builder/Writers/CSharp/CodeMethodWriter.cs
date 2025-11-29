@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.Writers.CSharp;
 
@@ -141,10 +142,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
+                    var readerReference = parseNodeParameter.Name.ToFirstCharacterLowerCase();
+                    var selfReference = $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()}";
+                    var deserializationMethodName = GetDeserializationMethodName(propertyType, codeElement);
                     var typeName = conventions.GetTypeString(propertyType, codeElement, true, (propertyType.TypeDefinition is CodeEnum || conventions.IsPrimitiveType(propertyType.Name)) && propertyType.CollectionKind is not CodeTypeBase.CodeTypeCollectionKind.None);
                     var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName})");
-                    writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                    if (propertyType.TypeDefinition is CodeType { TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
+                    {
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is int {valueVarName})");
+                        writer.WriteBlock(lines: $"{selfReference} = ({typeName}){valueVarName};");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is {typeName} {valueVarName})");
+                        writer.WriteBlock(lines: $"{selfReference} = {valueVarName};");
+                    }
                 }
             if (!includeElse)
                 includeElse = true;
@@ -162,10 +174,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             if (property.Type is CodeType propertyType)
             {
+                var readerReference = parseNodeParameter.Name.ToFirstCharacterLowerCase();
+                var selfReference = $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()}";
+                var deserializationMethodName = GetDeserializationMethodName(propertyType, codeElement);
                 var typeName = conventions.GetTypeString(propertyType, codeElement, true, propertyType.TypeDefinition is CodeEnum && propertyType.CollectionKind is not CodeTypeBase.CodeTypeCollectionKind.None);
                 var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
-                writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName})");
-                writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
+                if (propertyType.TypeDefinition is CodeType { TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
+                {
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is int {valueVarName})");
+                    writer.WriteBlock(lines: $"{selfReference} = ({typeName}){valueVarName};");
+                }
+                else
+                {
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is {typeName} {valueVarName})");
+                    writer.WriteBlock(lines: $"{selfReference} = {valueVarName};");
+                }
             }
             if (!includeElse)
                 includeElse = true;
@@ -349,7 +372,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name, StringComparer.Ordinal))
         {
-            writer.WriteLine($"{{ \"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            if (otherProp is {Type: CodeType { TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}} propertyType})
+            {
+                var typeName = conventions.GetTypeString(propertyType, codeElement, true, (propertyType.TypeDefinition is CodeEnum || conventions.IsPrimitiveType(propertyType.Name)) && propertyType.CollectionKind is not CodeTypeBase.CodeTypeCollectionKind.None);
+                writer.WriteLine($"{{ \"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = ({typeName}?) n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            }
+            else
+                writer.WriteLine($"{{ \"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
         writer.CloseBlock("};");
     }
@@ -370,7 +399,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
-                return $"GetEnumValue<{enumType.GetFullName()}>()";
+                if (enumType.BackingType is JsonSchemaType.Integer)
+                    return $"GetIntValue()";
+                else
+                    return $"GetEnumValue<{enumType.GetFullName()}>()";
         }
         return propertyType switch
         {
@@ -482,7 +514,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            if (otherProp.Type is CodeType{TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
+                writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", (int?){otherProp.Name.ToFirstCharacterUpperCase()});");
+            else
+                writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -494,8 +529,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
+            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null)");
-            writer.WriteBlock(lines: $"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
+            if (otherProp.Type is CodeType{TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
+                writer.WriteBlock(lines: $"writer.{serializationMethodName}(\"{otherProp.WireName}\", (int?){otherProp.Name.ToFirstCharacterUpperCase()});");
+            else
+                writer.WriteBlock(lines: $"writer.{serializationMethodName}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
             if (!includeElse)
                 includeElse = true;
         }
@@ -510,8 +549,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeBackwardComparer)
                                         .ThenBy(static x => x.Name))
         {
+            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({otherProp.Name.ToFirstCharacterUpperCase()} != null)");
-            writer.WriteBlock(lines: $"writer.{GetSerializationMethodName(otherProp.Type, method)}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
+            if (otherProp.Type is CodeType{TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
+                writer.WriteBlock(lines: $"writer.{serializationMethodName}(\"{otherProp.WireName}\", (int?){otherProp.Name.ToFirstCharacterUpperCase()});");
+            else
+                writer.WriteBlock(lines: $"writer.{serializationMethodName}(null, {otherProp.Name.ToFirstCharacterUpperCase()});");
             if (!includeElse)
                 includeElse = true;
         }
@@ -529,7 +572,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                 .Select(static x => x.Name.ToFirstCharacterUpperCase())
                                 .OrderBy(static x => x)
                                 .Aggregate(static (x, y) => $"{x}, {y}");
-            writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties.First().Type, method)}(null, {propertiesNames});");
+            var prop = complexProperties.First();
+            var serializationMethodName = GetSerializationMethodName(prop.Type, method);
+            if (prop.Type is CodeType{TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
+                writer.WriteLine($"writer.{serializationMethodName}(\"{prop.WireName}\", (int?){prop.Name.ToFirstCharacterUpperCase()});");
+            else
+                writer.WriteLine($"writer.{GetSerializationMethodName(complexProperties.First().Type, method)}(null, {propertiesNames});");
             if (includeElse)
             {
                 writer.CloseBlock();
@@ -678,7 +726,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 else
                     return $"WriteCollectionOfObjectValues<{propertyType}>";
             else if (currentType.TypeDefinition is CodeEnum enumType)
-                return $"WriteEnumValue<{enumType.GetFullName()}>";
+                if (enumType.BackingType is JsonSchemaType.Integer)
+                    return $"WriteIntValue";
+                else
+                    return $"WriteEnumValue<{enumType.GetFullName()}>";
 
         }
         return propertyType switch

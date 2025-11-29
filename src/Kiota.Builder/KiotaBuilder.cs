@@ -2021,6 +2021,7 @@ public partial class KiotaBuilder
                                         currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                 },
                 Deprecation = schema.GetDeprecationInformation(),
+                BackingType = schema.Type,
             };
             SetEnumOptions(schema, newEnum);
             return currentNamespace.AddEnum(newEnum).First();

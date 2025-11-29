@@ -353,8 +353,8 @@ public sealed class YamlToCSharpTests : IDisposable
                                                      {
                                                          return new Dictionary<string, Action<IParseNode>>
                                                          {
-                                                             { "notNullable", n => { NotNullable = n.GetEnumValue<global::ApiSdk.Models.ESample>(); } },
-                                                             { "nullable", n => { Nullable = n.GetEnumValue<global::ApiSdk.Models.ESample>(); } },
+                                                             { "notNullable", n => { NotNullable = (global::ApiSdk.Models.ESample?) n.GetIntValue(); } },
+                                                             { "nullable", n => { Nullable = (global::ApiSdk.Models.ESample?) n.GetIntValue(); } },
                                                          };
                                                      }
                                                      /// <summary>
@@ -364,8 +364,8 @@ public sealed class YamlToCSharpTests : IDisposable
                                                      public virtual void Serialize(ISerializationWriter writer)
                                                      {
                                                          if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
-                                                         writer.WriteEnumValue<global::ApiSdk.Models.ESample>("notNullable", NotNullable);
-                                                         writer.WriteEnumValue<global::ApiSdk.Models.ESample>("nullable", Nullable);
+                                                         writer.WriteIntValue("notNullable", (int?)NotNullable);
+                                                         writer.WriteIntValue("nullable", (int?)Nullable);
                                                          writer.WriteAdditionalData(AdditionalData);
                                                      }
                                                  }
@@ -376,9 +376,9 @@ public sealed class YamlToCSharpTests : IDisposable
 
 
     [Theory]
-    [InlineData(NullableObjectInOpenApi3, new[] {"Models/Sample.cs", NullableObjectInOpenApi3_Models_Sample})]
-    [InlineData(NullableEnumInOpenApi3, new[] {"Models/SampleEnum.cs", NullableEnumInOpenApi3_Models_SampleEnum})]
-    public async Task CreateOpenApiDocumentWithResultAsync_ReturnsDiagnostics(string input,
+    [InlineData("NullableObjectInOpenApi3", NullableObjectInOpenApi3, new[] {"Models/Sample.cs", NullableObjectInOpenApi3_Models_Sample})]
+    [InlineData("NullableEnumInOpenApi3", NullableEnumInOpenApi3, new[] {"Models/SampleEnum.cs", NullableEnumInOpenApi3_Models_SampleEnum})]
+    public async Task CreateOpenApiDocumentWithResultAsync_ReturnsDiagnostics(string description, string input,
         string[] expectedData)
     {
         if (expectedData.Length % 2 != 0)
