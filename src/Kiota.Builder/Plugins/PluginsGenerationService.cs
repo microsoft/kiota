@@ -607,9 +607,10 @@ public partial class PluginsGenerationService
 
     private sealed class ReplaceFirstSchemaByReference : OpenApiVisitorBase
     {
-        public override void Visit(OpenApiMediaType mediaType)
+        public override void Visit(IOpenApiMediaType mediaType)
         {
-            mediaType.Schema = GetFirstSchema(mediaType.Schema);
+            if (mediaType is OpenApiMediaType openApiMediaType)
+                openApiMediaType.Schema = GetFirstSchema(mediaType.Schema);
             base.Visit(mediaType);
         }
         public override void Visit(IOpenApiParameter parameter)
@@ -849,7 +850,7 @@ public partial class PluginsGenerationService
                     operation.Value.Responses["200"] = new OpenApiResponse
                     {
                         Description = "The request has succeeded.",
-                        Content = new Dictionary<string, OpenApiMediaType>
+                        Content = new Dictionary<string, IOpenApiMediaType>
                         {
                             ["text/plain"] = new OpenApiMediaType
                             {
@@ -870,8 +871,8 @@ public partial class PluginsGenerationService
         var manifestInfo = ExtractInfoFromDocument(OAIDocument.Info);
         var pluginManifestDocument = new PluginManifestDocument
         {
-            Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.3/schema.json",
-            SchemaVersion = "v2.3",
+            Schema = "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.4/schema.json",
+            SchemaVersion = "v2.4",
             NameForHuman = OAIDocument.Info?.Title.CleanupXMLString(),
             DescriptionForHuman = descriptionForHuman,
             DescriptionForModel = manifestInfo.DescriptionForModel ?? descriptionForHuman,

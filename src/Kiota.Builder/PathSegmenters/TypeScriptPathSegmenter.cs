@@ -6,6 +6,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
+
 public class TypeScriptPathSegmenter : CommonPathSegmenter
 {
     private CodeNamespace? modelsNamespace;

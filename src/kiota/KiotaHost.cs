@@ -10,6 +10,7 @@ using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace kiota;
+
 public static partial class KiotaHost
 {
     internal const string KiotaPreviewEnvironmentVariable = "KIOTA_CONFIG_PREVIEW";

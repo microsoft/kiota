@@ -2,6 +2,7 @@
 using Kiota.Builder.Configuration;
 
 namespace kiota.Rpc;
+
 internal interface IServer
 {
     LanguagesInformation Info();

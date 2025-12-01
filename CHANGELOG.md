@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for OpenAPI 3.2.0
 - golang: indent with tabs instead of spaces
 - golang: if there is only one return argument, omit the parentheses
 - golang: remove trailing spaces on comments
@@ -18,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: correctly indent case statements inside a switch
 
 ### Changed
+
+- Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
 
 ## [1.29.0] - 2025-10-23
 
@@ -61,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where migration from lock to workspace would fail because of stream management. [#6515](https://github.com/microsoft/kiota/issues/6515)
 - Fixed a bug where media types from error responses would be missing from the accept header. [#6572](https://github.com/microsoft/kiota/issues/6572)
 - Fixed a bug where serialization names for Dart were not correct [#6624](https://github.com/microsoft/kiota/issues/6624)
-- Fixed a bug where imports from __future__ would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
+- Fixed a bug where imports from **future** would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
 
 ## [1.26.1] - 2025-05-15
 
@@ -1695,5 +1698,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
-

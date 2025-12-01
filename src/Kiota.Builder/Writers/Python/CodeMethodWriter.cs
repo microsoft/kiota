@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
 {
     private readonly CodeUsingWriter _codeUsingWriter;

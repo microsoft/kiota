@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers;
+
 public abstract class CommonLanguageConventionService : ILanguageConventionService
 {
     public abstract string StreamTypeName

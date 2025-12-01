@@ -6,6 +6,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.SearchProviders.GitHub.Authentication;
+
 public class PatAuthenticationProviderTests
 {
     [Fact]

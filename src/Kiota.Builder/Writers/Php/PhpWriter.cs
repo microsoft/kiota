@@ -1,6 +1,7 @@
 ﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Php;
+
 public class PhpWriter : LanguageWriter
 {
     public PhpWriter(string rootPath, string clientNamespaceName, bool useBackingStore = false)

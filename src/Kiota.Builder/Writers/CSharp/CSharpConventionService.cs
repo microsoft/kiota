@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CSharpConventionService : CommonLanguageConventionService
 {
     public override string StreamTypeName => "stream";

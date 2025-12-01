@@ -3,6 +3,7 @@
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public class StringExtensionsTests
 {
     [Fact]
@@ -99,6 +100,10 @@ public class StringExtensionsTests
     [InlineData("-1-1", "minus_11")]
     [InlineData("-", "minus")]
     [InlineData("@", "At")]
+    [InlineData("_component", "component")]
+    [InlineData("__component", "component")]
+    [InlineData("a__b", "a__b")]
+    [InlineData("_", "Underscore")]
     [Theory]
     public void CleansUpSymbolNames(string input, string expected)
     {

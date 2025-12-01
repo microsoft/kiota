@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
+
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
 {
     public CodeEnumWriter(GoConventionService conventionService) : base(conventionService) { }

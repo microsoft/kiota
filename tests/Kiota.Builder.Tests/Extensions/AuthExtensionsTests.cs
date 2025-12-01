@@ -3,6 +3,7 @@ using Microsoft.DeclarativeAgents.Manifest;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public class AuthExtensionsTests
 {
     private class UnmanagedAuth : Auth

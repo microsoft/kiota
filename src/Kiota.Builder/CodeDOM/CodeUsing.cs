@@ -1,6 +1,7 @@
 ﻿using System;
 
 namespace Kiota.Builder.CodeDOM;
+
 public class CodeUsing : CodeElement, ICloneable
 {
     private CodeType? declaration;

@@ -8,6 +8,7 @@ using Kiota.Builder.Configuration;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
+
 public sealed class OpenApiDocumentDownloadServiceTests : IDisposable
 {
     private readonly HttpClient _httpClient = new();

@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Ruby;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionService>
 {
     public CodeMethodWriter(RubyConventionService conventionService) : base(conventionService)

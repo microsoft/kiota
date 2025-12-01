@@ -10,6 +10,79 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class CodeFunctionWriter(TypeScriptConventionService conventionService) : BaseElementWriter<CodeFunction, TypeScriptConventionService>(conventionService)
 {
+    /// <summary>
+    /// Sorts CodeType objects by inheritance hierarchy.
+    /// Derived classes come before their base classes to ensure proper deserialization.
+    /// </summary>
+    private static List<CodeType> SortTypesByInheritance(IEnumerable<CodeType> types)
+    {
+        ArgumentNullException.ThrowIfNull(types);
+
+        var typesList = types.ToList();
+        if (typesList.Count <= 1)
+            return typesList;
+
+        // Helper function to check if type1 derives from type2
+        bool DerivesFrom(CodeType type1, CodeType type2)
+        {
+            // Handle both CodeClass and CodeInterface (TypeScript uses interfaces)
+            if (type1.TypeDefinition is CodeClass class1 && type2.TypeDefinition is CodeClass class2)
+            {
+                return class1.DerivesFrom(class2);
+            }
+            else if (type1.TypeDefinition is CodeInterface interface1 && type2.TypeDefinition is CodeInterface interface2)
+            {
+                // For interfaces, check if interface1's OriginalClass derives from interface2's OriginalClass
+                if (interface1.OriginalClass != null && interface2.OriginalClass != null)
+                {
+                    return interface1.OriginalClass.DerivesFrom(interface2.OriginalClass);
+                }
+            }
+            return false;
+        }
+
+        // Sort by inheritance: derived classes before base classes
+        // Use a topological sort where we prioritize "leaf" classes (most derived)
+        var sorted = new List<CodeType>();
+        var processed = new HashSet<CodeType>();
+
+        // Keep processing until all types are sorted
+        while (processed.Count < typesList.Count)
+        {
+            var addedInThisIteration = false;
+
+            foreach (var type in typesList)
+            {
+                if (processed.Contains(type))
+                    continue;
+
+                // Check if there are any unprocessed types that derive from this type
+                var hasUnprocessedDerivedTypes = typesList.Any(t =>
+                    !processed.Contains(t) && t != type && DerivesFrom(t, type));
+
+                // Add this type if no unprocessed derived types exist
+                // This ensures derived classes are added before their base classes
+                if (!hasUnprocessedDerivedTypes)
+                {
+                    sorted.Add(type);
+                    processed.Add(type);
+                    addedInThisIteration = true;
+                }
+            }
+
+            // If we didn't add anything in this iteration, break to avoid infinite loop
+            // This handles cases where there are circular dependencies or no inheritance relationships
+            if (!addedInThisIteration)
+            {
+                // Add remaining types in their original order
+                sorted.AddRange(typesList.Where(t => !processed.Contains(t)));
+                break;
+            }
+        }
+
+        return sorted;
+    }
+
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
     private const string FactoryMethodReturnType = "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)";
 
@@ -166,7 +239,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
     {
-        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName}) {{");
+        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName()}) {{");
 
         foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {
@@ -651,7 +724,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else if (GetOriginalComposedType(otherProp.Type) is { } composedType)
         {
-            var expression = string.Join(" ?? ", composedType.Types.Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
+            var expression = string.Join(" ?? ", SortTypesByInheritance(composedType.Types).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
             writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {paramName}.{propName} = {expression};{suffix} }},");
         }
         else

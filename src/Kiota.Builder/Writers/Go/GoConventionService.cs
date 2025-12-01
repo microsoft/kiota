@@ -8,6 +8,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Go;
+
 public class GoConventionService : CommonLanguageConventionService
 {
     public override string StreamTypeName => "[]byte";
