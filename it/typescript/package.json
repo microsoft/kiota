@@ -39,7 +39,7 @@
     "@microsoft/kiota-serialization-json": "^1.0.0-preview.99",
     "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.99",
     "@microsoft/kiota-serialization-text": "^1.0.0-preview.99",
-    "express": "^5.1.0",
+    "express": "^5.2.0",
     "node-fetch": "^2.7.0"
   }
 }
