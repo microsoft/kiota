@@ -4,7 +4,7 @@ namespace Kiota.Builder.Writers.Go;
 
 public class GoWriter : LanguageWriter
 {
-    public GoWriter(string rootPath, string clientNamespaceName, bool excludeBackwardCompatible = false)
+    public GoWriter(string rootPath, string clientNamespaceName, bool excludeBackwardCompatible = false) : base("\t", 1)
     {
         PathSegmenter = new GoPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new GoConventionService();
