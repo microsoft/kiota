@@ -58,7 +58,7 @@ tomlkit==0.13.3 ; python_version >= '3.7'
 
 typing-extensions==4.15.0 ; python_version >= '3.7'
 
-urllib3==2.5.0 ; python_version >= '3.7'
+urllib3==2.6.0 ; python_version >= '3.7'
 
 wrapt==2.0.1 ; python_version < '3.11'
 
