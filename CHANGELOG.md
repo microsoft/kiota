@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
+- Fixed a bug where Go model interfaces would redundantly include GetBackingStore method when backing store was enabled, even though it's already defined in the composed BackedModel interface.
 
 ## [1.29.0] - 2025-10-23
 

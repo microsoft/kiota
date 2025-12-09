@@ -1388,5 +1388,49 @@ components:
         Assert.DoesNotContain(method.Parameters, p => p.Name == "type");
         Assert.DoesNotContain(method.Parameters, p => p.Name == "select");
     }
+    [Fact]
+    public async Task DoesNotIncludeBackingStoreMethodsInInterfacesAsync()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        
+        // The GoRefiner will automatically add getter/setter methods for properties
+        var backingStoreProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType
+            {
+                Name = "BackingStore",
+                IsExternal = true,
+            },
+        }).First();
+        
+        var customProperty = model.AddProperty(new CodeProperty
+        {
+            Name = "customProp",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            },
+        }).First();
+        
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
+        
+        var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
+        var inter = codeFile.GetChildElements(true).OfType<CodeInterface>().First();
+        
+        // The interface should have getter and setter for the custom property, but not for the backing store
+        Assert.DoesNotContain(inter.Methods, m => m.Name == "GetBackingStore");
+        Assert.DoesNotContain(inter.Methods, m => m.Name == "SetBackingStore");
+        Assert.Contains(inter.Methods, m => m.Name == "GetCustomProp");
+        Assert.Contains(inter.Methods, m => m.Name == "SetCustomProp");
+        Assert.Equal(2, inter.Methods.Count());
+    }
     #endregion
 }
