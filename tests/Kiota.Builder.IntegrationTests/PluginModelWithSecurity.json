@@ -1,6 +1,6 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
-  "schema_version": "v2.1",
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.4/schema.json",
+  "schema_version": "v2.4",
   "name_for_human": "Repair Service",
   "description_for_human": "Description for Repair Service",
   "description_for_model": "Description for Repair Service",

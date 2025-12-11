@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventionService>
 {
     public CodePropertyWriter(CSharpConventionService conventionService) : base(conventionService) { }

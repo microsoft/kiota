@@ -9,6 +9,7 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
+
 public sealed class CodeEnumWriterTests : IDisposable
 {
     private const string DefaultPath = "./";

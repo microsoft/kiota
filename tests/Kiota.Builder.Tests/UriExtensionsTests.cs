@@ -3,6 +3,7 @@ using Kiota.Builder.Extensions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
+
 public class UriExtensionsTests
 {
     [Fact]

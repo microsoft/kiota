@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Dart;
+
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
 {
     public CodeEnumWriter(DartConventionService conventionService) : base(conventionService) { }

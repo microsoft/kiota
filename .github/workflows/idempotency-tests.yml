@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
@@ -15,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -25,7 +26,7 @@ jobs:
       - name: Build
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net9.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: generator
           path: publish
@@ -49,8 +50,8 @@ jobs:
           - "apisguru::github.com:api.github.com"
           - "apisguru::apis.guru"
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
         with:
           name: generator
           path: publish
@@ -61,7 +62,7 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: it/openapi.yaml
@@ -96,16 +97,16 @@ jobs:
           - "apisguru::github.com:api.github.com"
           - "apisguru::apis.guru"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         if: startsWith(matrix.description, './') != true
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: description
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: generator
           path: publish
@@ -120,7 +121,7 @@ jobs:
         shell: pwsh
         run: ./it/compare-generation.ps1 -descriptionUrl "${{ steps.replace_url.outputs.DESCRIPTION_PATH }}" -descriptionKey ${{ matrix.description }}  -language "${{ matrix.language }}"
         continue-on-error: ${{ steps.check-suppressed.outputs.IS_SUPPRESSED == 'true' }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: idempotency-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}

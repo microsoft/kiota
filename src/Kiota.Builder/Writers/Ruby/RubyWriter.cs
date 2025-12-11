@@ -1,6 +1,7 @@
 ﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Ruby;
+
 public class RubyWriter : LanguageWriter
 {
     public RubyWriter(string rootPath, string clientNamespaceName)

@@ -1,6 +1,6 @@
 {
-    "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
-    "schema_version": "v2.1",
+    "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.4/plugin.schema.json",
+    "schema_version": "v2.4",
     "name_for_human": "Suno",
     "description_for_human": "Create any song you want based on a description",
     "description_for_model": "Suno is a tool that can generate songs based on a description. The user provides a description of the song they want to create, and Suno generates the song lyrics. Suno is a fun and creative way to create songs for any occasion.",

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 namespace kiota.Rpc;
+
 public class ForwardedLogger<T> : ILogger<T>
 {
     public List<LogEntry> LogEntries { get; } = new();

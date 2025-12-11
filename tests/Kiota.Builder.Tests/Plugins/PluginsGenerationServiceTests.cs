@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
@@ -130,9 +131,7 @@ paths:
         Assert.Equal($"{expectedPluginName.ToLower()}-openapi.yml", resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
         Assert.Contains("description for test path with id", resultingManifest.Document.Functions[1].Description);// Uses the operation description
-        Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
-        Assert.Contains("Summary for test path with id", resultingManifest.Document.Capabilities.ConversationStarters[1].Text);// Uses the operation summary
-        Assert.True(resultingManifest.Document.Capabilities.ConversationStarters[1].Text.Length <= 50);// Conversation starters are limited to 50 characters
+        Assert.Null(resultingManifest.Document.Capabilities?.ConversationStarters);// conversation starters should not be generated for API plugins
         Assert.Equal(expectedPluginName, resultingManifest.Document.Namespace);// namespace is cleaned up.
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
         Assert.Equal("test description we've created", resultingManifest.Document.DescriptionForHuman);// description is pulled from info   
@@ -276,7 +275,7 @@ components:
         Assert.NotNull(resultingManifest.Document);
         Assert.Equal(OpenApiFileName, resultingManifest.Document.Runtimes.OfType<OpenApiRuntime>().First().Spec.Url);
         Assert.Equal(2, resultingManifest.Document.Functions.Count);// all functions are generated despite missing operationIds
-        Assert.Equal(2, resultingManifest.Document.Capabilities.ConversationStarters.Count);// conversation starters are generated for each function
+        Assert.Null(resultingManifest.Document.Capabilities?.ConversationStarters);// conversation starters should not be generated for API plugins
         Assert.Empty(resultingManifest.Problems);// no problems are expected with names
 
         // Validate the original file.
@@ -426,7 +425,7 @@ components:
         string jsonString = "{\"file\":\"path_to_file\"}";
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
-        Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(staticTemplate.ToString()), JsonNode.Parse(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString())), "adaptive card present");
         Assert.Null(resultingManifest.Document.Functions[1].Capabilities);// no response semantics is added if no adaptive card
     }
 
@@ -535,7 +534,7 @@ components:
         string jsonString = $"{{\"file\": \"./adaptiveCards/{resultingManifest.Document.Functions[1].Name}.json\"}}";
         using JsonDocument doc = JsonDocument.Parse(jsonString);
         JsonElement staticTemplate = doc.RootElement.Clone();
-        Assert.Equal(staticTemplate.ToString(), resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate.ToString()); // adaptive card present
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(staticTemplate.ToString()), JsonNode.Parse(resultingManifest.Document.Functions[1].Capabilities.ResponseSemantics.StaticTemplate.ToString())), "adaptive card present");
 
         // validate presence of adaptive card
         var path = Path.Combine(outputDirectory, "adaptiveCards", $"{resultingManifest.Document.Functions[1].Name}.json");
@@ -939,7 +938,7 @@ components:
         Assert.Equal("test_WithId", resultingManifest.Document.Functions[1].Name);
         Assert.Equal("test_WithId_2", resultingManifest.Document.Functions[2].Name);
         Assert.Equal(2, resultingManifest.Document.Runtimes.Count);
-        Assert.Equal(3, resultingManifest.Document.Capabilities.ConversationStarters.Count);
+        Assert.Null(resultingManifest.Document.Capabilities?.ConversationStarters);// conversation starters should not be generated for API plugins
 
         // Check that every runtime has at least one function
         foreach (var runtime in resultingManifest.Document.Runtimes)

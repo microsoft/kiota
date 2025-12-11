@@ -5,6 +5,7 @@ using Kiota.Builder.Extensions;
 
 
 namespace Kiota.Builder.Writers.Python;
+
 public class CodeUsingWriter
 {
     private readonly PythonRelativeImportManager _relativeImportManager;

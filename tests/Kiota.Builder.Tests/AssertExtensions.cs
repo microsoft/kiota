@@ -4,6 +4,7 @@ using System.Linq;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
+
 public static class AssertExtensions
 {
     public static void CurlyBracesAreClosed(string generatedCode, int offset = 0)

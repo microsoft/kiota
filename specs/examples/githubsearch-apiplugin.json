@@ -1,6 +1,6 @@
 {
-    "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.1/plugin.schema.json",
-    "schema_version": "v2.1",
+    "$schema": "https://aka.ms/json-schemas/copilot-extensions/v2.4/plugin.schema.json",
+    "schema_version": "v2.4",
     "name_for_human": "GitHub v3 REST API",
     "description_for_human": "GitHub\u0026apos;s v3 REST API.",
     "description_for_model": "GitHub\u0026apos;s v3 REST API.",
