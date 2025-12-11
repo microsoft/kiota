@@ -4,6 +4,7 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
+
 public class TypeScriptRelativeImportManagerTests
 {
     private readonly CodeNamespace root;

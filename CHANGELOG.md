@@ -11,11 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for OpenAPI 3.2.0
+
 ### Changed
 
+- Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
+
+## [1.29.0] - 2025-10-23
+
+### Added
+
+- Added support for new properties in `OpenApiAiAdaptiveCardExtension`: `subtitle`, `thumbnailUrl`, and `informationProtectionLabel` to align with the updated `CardResponseSemanticProperties` interface. [#6934](https://github.com/microsoft/kiota/issues/6934)
+
+### Changed
+
+- Fixed a bug where API plugins were incorrectly generating conversation starters in their manifests. [#6946](https://github.com/microsoft/kiota/issues/6946)
 - Fixed a bug where Java code generation fails due to creation of an invalid object property name derived from the '@' symbol. [#6688](https://github.com/microsoft/kiota/issues/6688)
 - Fixes a bug where invalid C# code is generated when API path contains an underscore [#6698](https://github.com/microsoft/kiota/issues/6698)
 - Fixed a bug where union of integer and boolean types collection would not compile in dotnet. [#6834](https://github.com/microsoft/kiota/issues/6834)
+- Updated generated plugin manifest version from 2.1 to 2.3. [#6989](https://github.com/microsoft/kiota/pull/6989)
 
 ## [1.28.0] - 2025-07-11
 
@@ -1679,4 +1693,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-

@@ -6,6 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
+
 public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
 {
     public CodeEnumWriter(PhpConventionService conventionService) : base(conventionService) { }

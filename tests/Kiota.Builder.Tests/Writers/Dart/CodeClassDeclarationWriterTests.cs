@@ -8,6 +8,7 @@ using Kiota.Builder.Writers.Dart;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Dart;
+
 public sealed class CodeClassDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";

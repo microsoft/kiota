@@ -24,13 +24,13 @@
   "author": "Microsoft",
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.4.1",
-    "@types/node": "^24.5.2",
-    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@types/node": "^25.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.29.0",
-    "eslint": "^9.36.0",
-    "glob": "^11.0.3",
+    "eslint": "^9.39.1",
+    "glob": "^13.0.0",
     "typemoq": "^2.1.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "workspaces": [
     "packages/npm-package",

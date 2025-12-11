@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Ruby;
+
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, RubyConventionService>
 {
     private readonly RelativeImportManager relativeImportManager;

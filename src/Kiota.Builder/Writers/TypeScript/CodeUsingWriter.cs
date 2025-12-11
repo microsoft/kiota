@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class CodeUsingWriter
 {
     private readonly TypescriptRelativeImportManager _relativeImportManager;

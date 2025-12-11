@@ -4,16 +4,11 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      [
-        "vscode/**",
-      ]
+    paths-ignore: ["vscode/**"]
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      [
-        "!vscode/**",
-      ]
+    paths: ["!vscode/**"]
+  merge_group:
 
 permissions:
   contents: read
@@ -49,7 +44,7 @@ jobs:
         with:
           dotnet-version: |
             9.x
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages

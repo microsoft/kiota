@@ -9,6 +9,7 @@ using Kiota.Builder.Writers.CSharp;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
+
 public sealed class CodeClassEndWriterTests : IDisposable
 {
     private const string DefaultPath = "./";

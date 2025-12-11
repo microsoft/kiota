@@ -3,6 +3,7 @@ using System.IO;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
+
 public class KiotaGeneratedTests
 {
     [Fact]

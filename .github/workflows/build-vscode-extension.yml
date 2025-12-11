@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
 
 permissions:
   contents: read
@@ -39,9 +40,9 @@ jobs:
             os: macOS-latest
     runs-on: ${{ matrix.binaries.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 20.x
 
@@ -97,7 +98,7 @@ jobs:
 
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -106,7 +107,7 @@ jobs:
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.binaries.architecture }}
           path: vscode/packages/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }}
@@ -127,9 +128,9 @@ jobs:
             id: "package"
             item: "tgz"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 20.x
 
@@ -167,7 +168,7 @@ jobs:
         if: matrix.builds.id == 'vscode'
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.builds.name }}
           path: vscode/packages/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}

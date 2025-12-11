@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Kiota.Builder.Extensions;
+
 public static partial class StringExtensions
 {
     private const int MaxStackLimit = 1024;
@@ -184,6 +185,7 @@ public static partial class StringExtensions
 
         string result = NormalizeSymbolsBeforeCleanup(original);
 
+        result = result.TrimStart('_');
         result = propertyCleanupRegex().Replace(result,
                                 static x => x.Groups.Keys.Contains(CleanupGroupName) ?
                                                 x.Groups[CleanupGroupName].Value.ToFirstCharacterUpperCase() :
@@ -236,6 +238,7 @@ public static partial class StringExtensions
         {'+', "Plus"},
         {',', "Comma"},
         {'-', "Hyphen"},
+        {'_', "Underscore"},
         {'.', "Period"},
         {'/', "Slash"},
         {'\\', "BackSlash"},

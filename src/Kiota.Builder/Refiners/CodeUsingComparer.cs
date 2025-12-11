@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Refiners;
+
 public class CodeUsingComparer : IEqualityComparer<CodeUsing>
 {
     private readonly bool _compareOnDeclaration;

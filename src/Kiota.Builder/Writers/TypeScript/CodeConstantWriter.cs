@@ -5,6 +5,7 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConventionService>
 {
     public CodeConstantWriter(TypeScriptConventionService conventionService) : base(conventionService) { }

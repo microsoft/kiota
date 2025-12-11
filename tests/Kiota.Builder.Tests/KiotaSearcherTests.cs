@@ -10,6 +10,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
+
 public sealed class KiotaSearcherTests : IDisposable
 {
     private readonly HttpClient httpClient = new();

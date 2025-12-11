@@ -3,6 +3,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Java;
+
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
 {
     public CodeEnumWriter(JavaConventionService conventionService) : base(conventionService) { }
