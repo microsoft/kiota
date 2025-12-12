@@ -93,6 +93,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 break;
         }
         writer.CloseBlock();
+        writer.WriteLine(); // empty line after each func
     }
     private static void WriteErrorMethodOverride(CodeClass parentClass, LanguageWriter writer)
     {
@@ -109,7 +110,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, m.BaseRequestBuilder.{requestAdapterProperty.Name.ToFirstCharacterUpperCase()});");
+        writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}({rawUrlParameter.Name.ToFirstCharacterLowerCase()}, m.BaseRequestBuilder.{requestAdapterProperty.Name.ToFirstCharacterUpperCase()})");
     }
     private void WriteComposedTypeMarkerBody(LanguageWriter writer)
     {
@@ -163,7 +164,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
     {
-        writer.StartBlock($"switch *{DiscriminatorMappingVarName} {{");
+        writer.WriteLine($"switch *{DiscriminatorMappingVarName} {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
             writer.WriteLine($"case \"{mappedType.Key}\":");
@@ -171,7 +172,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, parentClass)}(), nil");
             writer.DecreaseIndent();
         }
-        writer.CloseBlock();
+        writer.WriteLine("}");
     }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
     {
@@ -438,9 +439,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
     private void WriteMethodPrototype(CodeMethod code, CodeElement parentBlock, LanguageWriter writer, string returnType, bool writePrototypeOnly)
     {
-        var returnTypeAsyncSuffix = code.IsAsync ? "error" : string.Empty;
-        if (!string.IsNullOrEmpty(returnType) && code.IsAsync)
-            returnTypeAsyncSuffix = $", {returnTypeAsyncSuffix}";
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
         var methodName = code.Kind switch
         {
@@ -455,7 +453,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, ParameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
         var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock }, parentBlock);
         var associatedTypePrefix = isConstructor || code.IsStatic || writePrototypeOnly ? string.Empty : $"(m {classType}) ";
-        var finalReturnType = isConstructor ? classType : $"{returnType}{returnTypeAsyncSuffix}";
+        var finalReturnType = isConstructor ? classType : returnType;
         var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor,
                                             CodeMethodKind.Constructor,
                                             CodeMethodKind.Getter,
@@ -470,11 +468,28 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                             CodeMethodKind.ErrorMessageOverride) || code.IsAsync ?
                                                 string.Empty :
                                                 "error";
-        if (!string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration))
-            finalReturnType += ", ";
-        var openingBracket = writePrototypeOnly ? string.Empty : " {";
         var funcPrefix = writePrototypeOnly ? string.Empty : "func ";
-        writer.WriteLine($"{funcPrefix}{associatedTypePrefix}{methodName}({parameters})({finalReturnType}{errorDeclaration}){openingBracket}");
+        var returnTypeString = (code, finalReturnType, errorDeclaration) switch
+        {
+            _ when code.IsAsync && !string.IsNullOrEmpty(finalReturnType) => $"({finalReturnType}, error)",
+            _ when !string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => $"({finalReturnType}, {errorDeclaration})",
+            _ when string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => errorDeclaration,
+            _ when !string.IsNullOrEmpty(finalReturnType) && string.IsNullOrEmpty(errorDeclaration) => finalReturnType,
+            _ => string.Empty
+        };
+        var openingBracket = (writePrototypeOnly, returnTypeString) switch
+        {
+            _ when writePrototypeOnly => string.Empty,
+            _ when string.IsNullOrEmpty(returnTypeString) => "{", // no leading space in this case
+            _ => " {",
+        };
+        var firstPart = $"{funcPrefix}{associatedTypePrefix}{methodName}({parameters})";
+        var finalString = (returnTypeString, openingBracket) switch
+        {
+            _ when string.IsNullOrEmpty(returnTypeString) && string.IsNullOrEmpty(openingBracket) => firstPart,
+            _ => $"{firstPart} {returnTypeString}{openingBracket}"
+        };
+        writer.WriteLine(finalString);
     }
     private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
@@ -491,8 +506,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
             writer.WriteBlock("if err != nil {", "}", "panic(err)");
             writer.WriteBlock("if val == nil {", "}",
-                $"var value = {codeElement.AccessedProperty.DefaultValue};",
-                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
+                $"var value = {codeElement.AccessedProperty.DefaultValue}",
+                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value)");
 
             writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
         }
@@ -524,7 +539,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine($"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
         }
         if (backingStoreParameter != null)
-            writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name});");
+            writer.WriteLine($"m.{requestAdapterPropertyName}.EnableBackingStore({backingStoreParameter.Name})");
     }
     private void WriteSerializationRegistration(HashSet<string> serializationModules, LanguageWriter writer, CodeClass parentClass, string methodName, string interfaceName)
     {
@@ -535,14 +550,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             {
                 var moduleImportSymbol = conventions.GetTypeString(new CodeType { Name = module, IsExternal = true }, parentClass, false, false);
                 moduleImportSymbol = moduleImportSymbol.Split('.').First();
-                writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{ return {moduleImportSymbol}.New{module}() }})");
+                writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"return {moduleImportSymbol}.New{module}()");
+                writer.DecreaseIndent();
+                writer.WriteLine("})");
             }
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
         if (inherits || parentClass.IsErrorDefinition)
         {
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
             writer.IncreaseIndent();
             var parentClassName = parentClass.StartBlock.Inherits!.Name.ToFirstCharacterUpperCase();
             var newMethodName = conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass);
@@ -558,14 +577,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             else
                 writer.WriteLine($"{parentClassName}: *{newMethodName}(),");
             writer.DecreaseIndent();
+            writer.CloseBlock(decreaseIndent: false);
         }
-        writer.CloseBlock(decreaseIndent: false);
+        else
+        {
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{}}");
+        }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue}");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -710,7 +733,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol)
     {
         if (property.Setter is null) return;
-        writer.StartBlock($"res[\"{property.WireName}\"] = func (n {parsableImportSymbol}) error {{");
+        writer.StartBlock($"res[\"{property.WireName}\"] = func(n {parsableImportSymbol}) error {{");
         var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
         var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
         writer.WriteLine($"val, err := n.{deserializationMethodName}");
@@ -796,7 +819,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (codeElement.ErrorMappings.Any())
         {
             errorMappingVarName = "errorMapping";
-            writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings {{");
+            writer.WriteLine($"{errorMappingVarName} := {conventions.AbstractionsHash}.ErrorMappings{{");
             writer.IncreaseIndent();
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
@@ -860,7 +883,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private static void WriteGeneratorMethodCall(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer, string prefix)
     {
         WriteMethodCall(codeElement, requestParams, parentClass, writer, CodeMethodKind.RequestGenerator, (name, paramsCall) =>
-            $"{prefix}m.{name}({paramsCall});"
+            $"{prefix}m.{name}({paramsCall})"
         );
     }
     private const string RequestInfoVarName = "requestInfo";
