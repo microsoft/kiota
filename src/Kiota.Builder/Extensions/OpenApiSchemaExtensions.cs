@@ -33,6 +33,8 @@ public static class OpenApiSchemaExtensions
         return schema switch
         {
             OpenApiSchemaReference reference => reference.Reference?.Id,
+            // Quickfix for https://github.com/microsoft/kiota/issues/6776 ToDo: Properly handle nullable types in accordance with OpenAPI 3.
+            OpenApiSchema {OneOf: [OpenApiSchema{Type: JsonSchemaType.Null}, OpenApiSchemaReference reference]} => reference.Reference?.Id,
             OpenApiSchema s when s.GetMergedSchemaOriginalReferenceId() is string originalReferenceId => originalReferenceId,
             _ => null,
         };
@@ -59,6 +61,8 @@ public static class OpenApiSchemaExtensions
         return schema switch
         {
             OpenApiSchemaReference => true,
+            // Quickfix for https://github.com/microsoft/kiota/issues/6776 ToDo: Properly handle nullable types in accordance with OpenAPI 3.
+            OpenApiSchema {OneOf: [OpenApiSchema{Type: JsonSchemaType.Null}, OpenApiSchemaReference reference]} => true,
             _ => false,
         };
     }
@@ -318,7 +322,7 @@ public static class OpenApiSchemaExtensions
         return schema.HasAnyProperty() ||
                 (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
                 (!ignoreArrays && schema.Items != null) ||
-                (!ignoreType && schema.Type is not null &&
+                (!ignoreType && schema.Type is not null and not JsonSchemaType.Null &&
                     ((ignoreNullableObjects && !schema.IsObjectType()) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||
