@@ -421,26 +421,4 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, AddConstructorsForErrorClasses);
     }
-
-    private static CodeMethod CreateConstructor(CodeClass codeClass, string descriptionTemplate)
-    {
-        return new CodeMethod
-        {
-            Name = "__init__",
-            Kind = CodeMethodKind.Constructor,
-            IsAsync = false,
-            IsStatic = false,
-            Documentation = new(new() {
-                {"TypeName", new CodeType {
-                    IsExternal = false,
-                    TypeDefinition = codeClass,
-                }}
-            })
-            {
-                DescriptionTemplate = descriptionTemplate,
-            },
-            Access = AccessModifier.Public,
-            ReturnType = new CodeType { Name = "None", IsExternal = true },
-        };
-    }
 }

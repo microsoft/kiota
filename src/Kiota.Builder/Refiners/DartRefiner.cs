@@ -200,28 +200,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, element => AddConstructorForErrorClass(element));
     }
 
-    private static CodeMethod CreateConstructor(CodeClass codeClass, string descriptionTemplate)
-    {
-        return new CodeMethod
-        {
-            Name = "constructor",
-            Kind = CodeMethodKind.Constructor,
-            IsAsync = false,
-            IsStatic = false,
-            Documentation = new(new() {
-                {"TypeName", new CodeType {
-                    IsExternal = false,
-                    TypeDefinition = codeClass,
-                }}
-            })
-            {
-                DescriptionTemplate = descriptionTemplate,
-            },
-            Access = AccessModifier.Public,
-            ReturnType = new CodeType { Name = "void", IsExternal = true },
-        };
-    }
-
     /// <summary> 
     /// Corrects common names so they can be used with Dart.
     /// This normally comes down to changing the first character to lower case.
