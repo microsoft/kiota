@@ -2558,4 +2558,255 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("MultiPartBody $body", result);
         Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"multipart/form-data\", $body);", result);
     }
+
+    [Fact]
+    public void WritesErrorMappingWithDescriptions()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+
+        // Add required properties for request executor
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType { Name = "RequestAdapter" }
+        });
+
+        // Create error classes
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        var error5XX = root.AddClass(new CodeClass
+        {
+            Name = "Error5XX",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        // Add error mappings with descriptions
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX }, "Client error response");
+        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX }, "Server error response");
+
+        AddRequestBodyParameters();
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+
+        // Check for enhanced error mapping with descriptions and PHP function syntax
+        Assert.Contains("$errorMappings = [", result);
+        Assert.Contains("'4XX' => function($parseNode) { return Error4XX::createFromDiscriminatorValueWithMessage($parseNode, 'Client error response'); }", result);
+        Assert.Contains("'5XX' => function($parseNode) { return Error5XX::createFromDiscriminatorValueWithMessage($parseNode, 'Server error response'); }", result);
+    }
+
+    [Fact]
+    public void WritesErrorMappingWithoutDescriptions()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+
+        // Add required properties for request executor
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType { Name = "RequestAdapter" }
+        });
+
+        // Create error classes without descriptions
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        // Add error mapping without description
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
+
+        AddRequestBodyParameters();
+        languageWriter.Write(method);
+        var result = stringWriter.ToString();
+
+        // Should use original factory method when no description is provided
+        Assert.Contains("$errorMappings = [", result);
+        Assert.Contains("'4XX' => [Error4XX::class, 'createFromDiscriminatorValue']", result);
+        Assert.DoesNotContain("createFromDiscriminatorValueWithMessage", result);
+    }
+
+    [Fact]
+    public void WritesFactoryMethodBodyForErrorClassWithMessage()
+    {
+        setup();
+
+        // Create an error class
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        // Create the factory method with message parameter
+        var factoryMethod = errorClass.AddMethod(new CodeMethod
+        {
+            Name = "createFromDiscriminatorValueWithMessage",
+            Kind = CodeMethodKind.FactoryWithErrorMessage,
+            ReturnType = new CodeType
+            {
+                Name = "SomeError",
+                TypeDefinition = errorClass,
+                IsNullable = true
+            },
+            IsStatic = true,
+        }).First();
+
+        // Add parseNode parameter
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+
+        // Add message parameter
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "message",
+            Kind = CodeParameterKind.ErrorMessage,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+
+        parentClass = errorClass; // Set parentClass for the test
+        languageWriter.Write(factoryMethod);
+        var result = stringWriter.ToString();
+
+        // Should call the constructor with message
+        Assert.Contains("return new SomeError($message);", result);
+    }
+
+    [Fact]
+    public void WritesFactoryMethodBodyForErrorClassWithoutMessage()
+    {
+        setup();
+
+        // Create an error class
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        // Create the factory method without message parameter
+        var factoryMethod = errorClass.AddMethod(new CodeMethod
+        {
+            Name = "createFromDiscriminatorValueWithMessage",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "SomeError",
+                TypeDefinition = errorClass,
+                IsNullable = true
+            },
+            IsStatic = true,
+        }).First();
+
+        // Add only parseNode parameter (no message parameter)
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+
+        parentClass = errorClass; // Set parentClass for the test
+        languageWriter.Write(factoryMethod);
+        var result = stringWriter.ToString();
+
+        // Should call the parameterless constructor
+        Assert.Contains("return new SomeError();", result);
+    }
+
+    [Fact]
+    public void DoesNotWriteSpecialFactoryMethodForNonErrorClasses()
+    {
+        setup();
+
+        // Create a regular class
+        var regularClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = false
+        }).First();
+
+        // Create the factory method
+        var factoryMethod = regularClass.AddMethod(new CodeMethod
+        {
+            Name = "createFromDiscriminatorValueWithMessage",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "SomeModel",
+                TypeDefinition = regularClass,
+                IsNullable = true
+            },
+            IsStatic = true,
+        }).First();
+
+        // Add parameters
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "message",
+            Kind = CodeParameterKind.RequestBodyContentType,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+
+        parentClass = regularClass;
+        languageWriter.Write(factoryMethod);
+        var result = stringWriter.ToString();
+
+        // Should not use special error handling for non-error classes
+        Assert.DoesNotContain("new SomeModel($message)", result);
+        // Should continue with normal factory method logic or use parameterless constructor
+        Assert.Contains("new SomeModel();", result);
+    }
 }

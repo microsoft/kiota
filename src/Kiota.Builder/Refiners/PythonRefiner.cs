@@ -99,6 +99,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "APIError",
                 $"{AbstractionsPackageName}.api_error"
             );
+            AddConstructorsForErrorClasses(generatedCode);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -390,4 +391,57 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                         },
                     })},
     };
+
+    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            // Add parameterless constructor if not already present
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
+            {
+                var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
+                codeClass.AddMethod(parameterlessConstructor);
+            }
+
+            // Add message constructor if not already present
+            var messageParameter = CreateErrorMessageParameter("str", optional: true, defaultValue: "None");
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            {
+                var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            TryAddErrorMessageFactoryMethod(codeClass,
+                "create_from_discriminator_value_with_message",
+                "ParseNode",
+                messageParameter,
+                parseNodeParameterName: "parse_node"
+            );
+        }
+        CrawlTree(currentElement, AddConstructorsForErrorClasses);
+    }
+
+    private static CodeMethod CreateConstructor(CodeClass codeClass, string descriptionTemplate)
+    {
+        return new CodeMethod
+        {
+            Name = "__init__",
+            Kind = CodeMethodKind.Constructor,
+            IsAsync = false,
+            IsStatic = false,
+            Documentation = new(new() {
+                {"TypeName", new CodeType {
+                    IsExternal = false,
+                    TypeDefinition = codeClass,
+                }}
+            })
+            {
+                DescriptionTemplate = descriptionTemplate,
+            },
+            Access = AccessModifier.Public,
+            ReturnType = new CodeType { Name = "None", IsExternal = true },
+            Parent = codeClass,
+        };
+    }
 }

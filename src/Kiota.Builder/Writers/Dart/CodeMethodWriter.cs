@@ -125,6 +125,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.Custom:
                 WriteCustomMethodBody(codeElement, parentClass, writer);
                 break;
@@ -230,6 +233,26 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     }
 
     private const string DiscriminatorMappingVarName = "mappingValue";
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.OfKind(CodeParameterKind.ErrorMessage);
+        if (messageParam != null)
+        {
+            if (parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+            {
+                writer.WriteLine($"return {parentClass.Name}(message: {messageParam.Name}, additionalData: {{}});");
+            }
+            else
+            {
+                writer.WriteLine($"return {parentClass.Name}(message: {messageParam.Name});");
+            }
+        }
+        else
+        {
+            writer.WriteLine($"return {parentClass.Name}();");
+        }
+    }
+
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
@@ -291,7 +314,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         if (parentClass.IsErrorDefinition)
         {
-            WriteErrorClassConstructor(parentClass, writer);
+            WriteErrorClassConstructor(parentClass, currentMethod, writer);
         }
         else
         {
@@ -344,12 +367,26 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private void WriteErrorClassConstructor(CodeClass parentClass, LanguageWriter writer)
+    private void WriteErrorClassConstructor(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
-        foreach (string prop in DartConventionService.ErrorClassProperties)
+        // Check if this constructor has a message parameter
+        var hasMessageParameter = currentMethod.Parameters.Any(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase) && p.Type.Name.Equals("String", StringComparison.OrdinalIgnoreCase));
+
+        // For error class inheritance, pass message to super if present
+        if (hasMessageParameter)
+        {
+            writer.WriteLine("super(message: message),");
+        }
+        else
+        {
+            writer.WriteLine("super(),");
+        }
+
+        foreach (string prop in DartConventionService.ErrorClassProperties.Where(p => !p.Equals("message", StringComparison.OrdinalIgnoreCase)))
         {
             writer.WriteLine($"super.{prop},");
         }
+
         if (!parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
             foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
@@ -489,7 +526,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             writer.StartBlock($"final {errorMappingVarName} = <String, ParsableFactory<Parsable>>{{");
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' :  {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.createFromDiscriminatorValue,");
+                var errorClass = errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition as CodeClass;
+                var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
+
+                if (errorClass?.IsErrorDefinition == true)
+                {
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    var statusCodeAndDescription = !string.IsNullOrEmpty(errorDescription)
+                        ? $"{errorMapping.Key} {errorDescription}"
+                        : errorMapping.Key;
+                    writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' : (parseNode) => {typeName}.createFromDiscriminatorValueWithMessage(parseNode, '{statusCodeAndDescription}'),");
+                }
+                else
+                {
+                    writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' :  {typeName}.createFromDiscriminatorValue,");
+                }
             }
             writer.CloseBlock("};");
         }

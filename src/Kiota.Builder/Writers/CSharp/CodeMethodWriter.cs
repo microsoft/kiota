@@ -95,6 +95,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
@@ -191,6 +194,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine($"return {ResultVarName};");
     }
     private const string DiscriminatorMappingVarName = "mappingValue";
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
+    }
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
@@ -204,11 +212,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
-        else if (codeElement.IsOfKind(CodeMethodKind.FactoryWithErrorMessage))
-        {
-            var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
-            writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
-        }
         else
             writer.WriteLine($"return new {parentClass.GetFullName()}();");
     }
@@ -573,7 +576,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
         conventions.WriteLongDescription(code, writer);
-        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase) && code.Kind is not CodeMethodKind.ClientConstructor or CodeMethodKind.Constructor)
+        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase) && code.Kind is not (CodeMethodKind.ClientConstructor or CodeMethodKind.Constructor))
             conventions.WriteAdditionalDescriptionItem($"<returns>A {conventions.GetTypeStringForDocumentation(code.ReturnType, code)}</returns>", writer);
         foreach (var paramWithDescription in code.Parameters
                                                 .Where(static x => x.Documentation.DescriptionAvailable)

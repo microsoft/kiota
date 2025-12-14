@@ -120,6 +120,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             case CodeMethodKind.Factory:
                 WriteFactoryMethod(codeElement, codeFile, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodForErrorClassWithMessage(codeElement, writer);
+                break;
             case CodeMethodKind.ClientConstructor:
                 WriteApiConstructorBody(parentFile, codeMethod, writer);
                 break;
@@ -330,6 +333,19 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (serializationModules != null)
             foreach (var module in serializationModules)
                 writer.WriteLine($"{objectName}.{methodName}({module}{(additionalParam != null && additionalParam.Length > 0 ? ", " + string.Join(", ", additionalParam) : string.Empty)});");
+    }
+
+    private void WriteFactoryMethodForErrorClassWithMessage(CodeFunction codeElement, LanguageWriter writer)
+    {
+        var messageParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage));
+        if (messageParam != null)
+        {
+            writer.WriteLine($"return new {codeElement.OriginalMethodParentClass.Name.ToFirstCharacterUpperCase()}({messageParam.Name});");
+        }
+        else
+        {
+            writer.WriteLine($"return new {codeElement.OriginalMethodParentClass.Name.ToFirstCharacterUpperCase()}();");
+        }
     }
 
     private void WriteFactoryMethod(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)

@@ -68,6 +68,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
             default:
@@ -84,6 +87,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
     private const string NodeVarName = "mapping_value_node";
+
+    private static void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new({messageParam.Name.ToSnakeCase()})");
+    }
+
     private static void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
@@ -272,7 +282,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine($"{errorMappingVarName} = Hash.new");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"{errorMappingVarName}[\"{errorMapping.Key.ToUpperInvariant()}\"] = {getDeserializationLambda(errorMapping.Value)}");
+                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass errorClass)) continue;
+                var typeName = errorMapping.Value.Name;
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+
+                if (!string.IsNullOrEmpty(errorDescription) && errorClass.IsErrorDefinition)
+                {
+                    writer.WriteLine($"{errorMappingVarName}[\"{errorKey}\"] = lambda {{|parse_node| {typeName}.create_from_discriminator_value_with_message(parse_node, \"{errorDescription}\")}}");
+                }
+                else
+                {
+                    writer.WriteLine($"{errorMappingVarName}[\"{errorKey}\"] = {getDeserializationLambda(errorMapping.Value)}");
+                }
             }
         }
         writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, {errorMappingVarName})");

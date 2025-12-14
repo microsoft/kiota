@@ -79,6 +79,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "MicrosoftKiotaAbstractions",
                 true
             );
+            AddConstructorsForErrorClasses(generatedCode);
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode,
                 [
@@ -335,5 +336,38 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder");
+    }
+
+    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            var messageParameter = CreateErrorMessageParameter("String", optional: true, defaultValue: "nil");
+            // Add initialize method (Ruby's constructor) with message parameter if not exists
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            {
+                var messageConstructor = new CodeMethod
+                {
+                    Name = "initialize",
+                    Kind = CodeMethodKind.Constructor,
+                    Access = AccessModifier.Public,
+                    IsAsync = false,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Instantiates a new {TypeName} with an optional error message."
+                    },
+                    ReturnType = new CodeType { Name = "void", IsExternal = true }
+                };
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            TryAddErrorMessageFactoryMethod(codeClass,
+                "create_from_discriminator_value_with_message",
+                "parse_node",
+                messageParameter: messageParameter
+            );
+        }
+        CrawlTree(currentElement, AddConstructorsForErrorClasses);
     }
 }

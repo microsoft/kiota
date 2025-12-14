@@ -84,6 +84,9 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             case CodeMethodKind.Factory when codeElement.IsOverload:
                 WriteFactoryOverloadMethod(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.ErrorMessageOverride:
                 WriteErrorMethodOverride(parentClass, writer);
                 break;
@@ -116,9 +119,16 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         writer.WriteLine($"return new {parentClass.Name}({rawUrlParameter.Name}, {requestAdapterProperty.Name});");
     }
     private const string ResultVarName = "result";
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return new {parentClass.Name}({messageParam.Name});");
+    }
+
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             writer.WriteLine($"final {parentClass.Name} {ResultVarName} = new {parentClass.Name}();");
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
@@ -325,6 +335,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
+        {
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
                 parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
@@ -339,6 +350,13 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             }
             else
                 writer.WriteLine("super();");
+        }
+        // For error classes with message constructor, pass the message to base constructor
+        else if (parentClass.IsErrorDefinition &&
+                 currentMethod.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+        {
+            writer.WriteLine("super(message);");
+        }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder,
                                                                         CodePropertyKind.PathParameters)
@@ -527,7 +545,15 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>();");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name}::{FactoryMethodName});");
+                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass codeClass)) continue;
+                var typeName = errorMapping.Value.Name;
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+
+                if (!string.IsNullOrEmpty(errorDescription) && codeClass.IsErrorDefinition)
+                    writer.WriteLine($"{errorMappingVarName}.put(\"{errorKey}\", (parseNode) -> {typeName}.createFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription}\"));");
+                else
+                    writer.WriteLine($"{errorMappingVarName}.put(\"{errorKey}\", {typeName}::{FactoryMethodName});");
             }
         }
         var factoryParameter = GetSendRequestFactoryParam(returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);

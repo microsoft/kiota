@@ -161,6 +161,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     CodePropertyKind.QueryParameter,
                 ],
                 static s => s.ToCamelCase(UnderscoreArray));
+            AddConstructorsForErrorClasses(generatedCode);
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
             GenerateEnumObjects(generatedCode);
             AliasUsingsWithSameSymbol(generatedCode);
@@ -1561,5 +1562,58 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
         CrawlTree(codeElement, AddDeserializerUsingToDiscriminatorFactory);
+    }
+
+    private static void AddConstructorsForErrorClasses(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            // Add parameterless constructor if not exists
+            if (!codeClass.Methods.Any(static m => m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any()))
+            {
+                var parameterlessConstructor = new CodeMethod
+                {
+                    Name = "constructor",
+                    Kind = CodeMethodKind.Constructor,
+                    Access = AccessModifier.Public,
+                    IsAsync = false,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Instantiates a new {TypeName}."
+                    },
+                    ReturnType = new CodeType { Name = "void", IsExternal = true }
+                };
+                codeClass.AddMethod(parameterlessConstructor);
+            }
+            var messageParameter = CreateErrorMessageParameter("string", optional: true);
+            // Add constructor with message parameter if not exists
+            if (!codeClass.Methods.Any(static m => m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            {
+                var messageConstructor = new CodeMethod
+                {
+                    Name = "constructor",
+                    Kind = CodeMethodKind.Constructor,
+                    Access = AccessModifier.Public,
+                    IsAsync = false,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Instantiates a new {TypeName} with an error message."
+                    },
+                    ReturnType = new CodeType { Name = "void", IsExternal = true }
+                };
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            TryAddErrorMessageFactoryMethod(
+               codeClass,
+               methodName: "createFromDiscriminatorValueWithMessage",
+               parseNodeTypeName: "ParseNode",
+               messageParameter: messageParameter,
+               returnTypeIsNullable: true,
+               setParent: false);
+        }
+
+        CrawlTree(codeElement, AddConstructorsForErrorClasses);
     }
 }

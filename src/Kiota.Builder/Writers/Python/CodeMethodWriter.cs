@@ -102,6 +102,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 writer.CloseBlock(string.Empty);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                writer.CloseBlock(string.Empty);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             case CodeMethodKind.RawUrlConstructor:
@@ -207,6 +211,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
         writer.WriteLine($"return {ResultVarName}");
     }
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return {parentClass.Name}(message)");
+    }
+
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
@@ -329,7 +339,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
-        if (inherits && !parentClass.IsOfKind(CodeClassKind.Model))
+        // For error classes with message constructor, pass the message to base constructor
+        if (parentClass.IsErrorDefinition &&
+            currentMethod.Parameters.Any(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase) &&
+                                             p.Type.Name.Equals("str", StringComparison.OrdinalIgnoreCase)))
+        {
+            writer.WriteLine("super().__init__(message)");
+        }
+        else if (inherits && !parentClass.IsOfKind(CodeClassKind.Model))
         {
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
@@ -358,6 +375,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             }
             else
                 writer.WriteLine("super().__init__()");
+        }
+        else if (parentClass.IsErrorDefinition)
+        {
+            // For error classes without message constructor, call super without arguments
+            writer.WriteLine("super().__init__()");
         }
         if (parentClass.IsOfKind(CodeClassKind.Model))
         {
@@ -553,7 +575,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     }
     private void WriteDeserializerBodyForInheritedModel(bool inherits, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-        _codeUsingWriter.WriteInternalImports(parentClass, writer);
         writer.StartBlock($"fields: dict[str, Callable[[Any], {NoneKeyword}]] = {{");
         foreach (var otherProp in parentClass
                                         .GetPropertiesOfKind(CodePropertyKind.Custom)
@@ -603,7 +624,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.StartBlock($"{errorMappingVarName}: dict[str, type[ParsableFactory]] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name},");
+                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass errorClass)) continue;
+                var typeName = errorMapping.Value.Name;
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+
+                if (!string.IsNullOrEmpty(errorDescription) && errorClass.IsErrorDefinition)
+                {
+                    writer.WriteLine($"\"{errorKey}\": lambda parse_node: {typeName}.create_from_discriminator_value_with_message(parse_node, \"{errorDescription}\"),");
+                }
+                else
+                {
+                    writer.WriteLine($"\"{errorKey}\": {typeName},");
+                }
             }
             writer.CloseBlock();
         }
