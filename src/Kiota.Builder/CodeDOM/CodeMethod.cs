@@ -354,10 +354,6 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public string? GetErrorDescription(string errorCode)
     {
         ArgumentException.ThrowIfNullOrEmpty(errorCode);
-        if (errorMappings.ContainsKey(errorCode) && errorDescriptions.TryGetValue(errorCode, out var description))
-        {
-            return description;
-        }
-        return null;
+        return errorDescriptions.TryGetValue(errorCode, out var description) ? description : null;
     }
 }

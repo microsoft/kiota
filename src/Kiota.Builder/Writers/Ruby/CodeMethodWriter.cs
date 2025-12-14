@@ -282,16 +282,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine($"{errorMappingVarName} = Hash.new");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass errorClass)) continue;
                 var typeName = errorMapping.Value.Name;
                 var errorKey = errorMapping.Key.ToUpperInvariant();
-                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
 
-                if (!string.IsNullOrEmpty(errorDescription) && errorClass.IsErrorDefinition)
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
                 {
-                    writer.WriteLine($"{errorMappingVarName}[\"{errorKey}\"] = lambda {{|parse_node| {typeName}.create_from_discriminator_value_with_message(parse_node, \"{errorDescription}\")}}");
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"{errorMappingVarName}[\"{errorKey}\"] = lambda {{|parse_node| {typeName}.create_from_discriminator_value_with_message(parse_node, \"{errorDescription.SanitizeDoubleQuote()}\")}}");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"{errorMappingVarName}[\"{errorKey}\"] = {getDeserializationLambda(errorMapping.Value)}");
+                    }
                 }
-                else
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
                 {
                     writer.WriteLine($"{errorMappingVarName}[\"{errorKey}\"] = {getDeserializationLambda(errorMapping.Value)}");
                 }

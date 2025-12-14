@@ -545,15 +545,25 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>();");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass codeClass)) continue;
                 var typeName = errorMapping.Value.Name;
                 var errorKey = errorMapping.Key.ToUpperInvariant();
-                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
 
-                if (!string.IsNullOrEmpty(errorDescription) && codeClass.IsErrorDefinition)
-                    writer.WriteLine($"{errorMappingVarName}.put(\"{errorKey}\", (parseNode) -> {typeName}.createFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription}\"));");
-                else
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
+                {
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"{errorMappingVarName}.put(\"{errorKey}\", (parseNode) -> {typeName}.createFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription.SanitizeDoubleQuote()}\"));");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"{errorMappingVarName}.put(\"{errorKey}\", {typeName}::{FactoryMethodName});");
+                    }
+                }
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
+                {
                     writer.WriteLine($"{errorMappingVarName}.put(\"{errorKey}\", {typeName}::{FactoryMethodName});");
+                }
             }
         }
         var factoryParameter = GetSendRequestFactoryParam(returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);

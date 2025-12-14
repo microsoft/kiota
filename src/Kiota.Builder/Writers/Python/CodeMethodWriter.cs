@@ -624,16 +624,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.StartBlock($"{errorMappingVarName}: dict[str, type[ParsableFactory]] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass errorClass)) continue;
                 var typeName = errorMapping.Value.Name;
                 var errorKey = errorMapping.Key.ToUpperInvariant();
-                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
 
-                if (!string.IsNullOrEmpty(errorDescription) && errorClass.IsErrorDefinition)
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
                 {
-                    writer.WriteLine($"\"{errorKey}\": lambda parse_node: {typeName}.create_from_discriminator_value_with_message(parse_node, \"{errorDescription}\"),");
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"\"{errorKey}\": lambda parse_node: {typeName}.create_from_discriminator_value_with_message(parse_node, \"{errorDescription.SanitizeDoubleQuote()}\"),");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"\"{errorKey}\": {typeName},");
+                    }
                 }
-                else
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
                 {
                     writer.WriteLine($"\"{errorKey}\": {typeName},");
                 }

@@ -526,14 +526,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             writer.StartBlock($"final {errorMappingVarName} = <String, ParsableFactory<Parsable>>{{");
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                var errorClass = errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition as CodeClass;
                 var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
 
-                if (errorClass?.IsErrorDefinition == true)
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
                 {
                     var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
                     var statusCodeAndDescription = !string.IsNullOrEmpty(errorDescription)
-                        ? $"{errorMapping.Key} {errorDescription}"
+                        ? $"{errorMapping.Key} {errorDescription}".SanitizeSingleQuote()
                         : errorMapping.Key;
                     writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' : (parseNode) => {typeName}.createFromDiscriminatorValueWithMessage(parseNode, '{statusCodeAndDescription}'),");
                 }

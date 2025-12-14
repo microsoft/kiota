@@ -410,15 +410,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock();
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass codeClass)) continue;
                 var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
                 var errorKey = errorMapping.Key.ToUpperInvariant();
-                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
 
-                if (!string.IsNullOrEmpty(errorDescription) && codeClass.IsErrorDefinition)
-                    writer.WriteLine($"{{ \"{errorKey}\", (parseNode) => {typeName}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription}\") }},");
-                else
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
+                {
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"{{ \"{errorKey}\", (parseNode) => {typeName}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription.SanitizeDoubleQuote()}\") }},");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"{{ \"{errorKey}\", {typeName}.CreateFromDiscriminatorValue }},");
+                    }
+                }
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
+                {
                     writer.WriteLine($"{{ \"{errorKey}\", {typeName}.CreateFromDiscriminatorValue }},");
+                }
             }
             writer.CloseBlock("};");
         }

@@ -780,15 +780,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.IncreaseIndent(2);
             errorMappings.ToList().ForEach(errorMapping =>
             {
-                if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass errorClass)) return;
                 var typeName = errorMapping.Value.Name.ToFirstCharacterUpperCase();
-                var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
 
-                if (!string.IsNullOrEmpty(errorDescription) && errorClass.IsErrorDefinition)
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
                 {
-                    writer.WriteLine($"'{errorMapping.Key}' => function($parseNode) {{ return {typeName}::createFromDiscriminatorValueWithMessage($parseNode, '{errorDescription}'); }},");
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"'{errorMapping.Key}' => function($parseNode) {{ return {typeName}::createFromDiscriminatorValueWithMessage($parseNode, '{errorDescription.SanitizeSingleQuote()}'); }},");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"'{errorMapping.Key}' => [{typeName}::class, '{CreateDiscriminatorMethodName}'],");
+                    }
                 }
-                else
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
                 {
                     writer.WriteLine($"'{errorMapping.Key}' => [{typeName}::class, '{CreateDiscriminatorMethodName}'],");
                 }
