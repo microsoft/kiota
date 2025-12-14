@@ -441,7 +441,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             },
             Access = AccessModifier.Public,
             ReturnType = new CodeType { Name = "None", IsExternal = true },
-            Parent = codeClass,
         };
     }
 }

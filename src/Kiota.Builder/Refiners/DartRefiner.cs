@@ -219,7 +219,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             },
             Access = AccessModifier.Public,
             ReturnType = new CodeType { Name = "void", IsExternal = true },
-            Parent = codeClass,
         };
     }
 

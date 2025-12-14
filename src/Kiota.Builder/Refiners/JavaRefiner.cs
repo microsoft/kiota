@@ -601,7 +601,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             },
             Access = AccessModifier.Public,
             ReturnType = new CodeType { Name = "void", IsExternal = true },
-            Parent = codeClass,
         };
     }
 }
