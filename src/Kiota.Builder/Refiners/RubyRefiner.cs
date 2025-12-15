@@ -79,7 +79,6 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "MicrosoftKiotaAbstractions",
                 true
             );
-            AddConstructorsForErrorClasses(generatedCode);
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             AddGetterAndSetterMethods(generatedCode,
                 [
@@ -98,6 +97,8 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true,
                 false,
                 [CodeClassKind.RequestConfiguration]);
+            // Add constructors for error classes AFTER default constructors are added
+            AddConstructorsForErrorClasses(generatedCode);
             ShortenLongNamespaceNames(generatedCode);
             if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
                 AddNamespaceModuleImports(parentOfClientNS, generatedCode);
@@ -343,9 +344,21 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
         {
             var messageParameter = CreateErrorMessageParameter("String", optional: true, defaultValue: "nil");
-            // Add initialize method (Ruby's constructor) with message parameter if not exists
-            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            // Ruby only allows one initialize method, so we modify the existing constructor to add an optional message parameter
+            var existingConstructor = codeClass.Methods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.Constructor));
+            if (existingConstructor != null)
             {
+                // Add message parameter to existing constructor if not already present
+                if (!existingConstructor.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+                {
+                    existingConstructor.AddParameter(messageParameter);
+                    // Update documentation to reflect the optional parameter
+                    existingConstructor.Documentation.DescriptionTemplate = "Instantiates a new {TypeName} with an optional error message.";
+                }
+            }
+            else
+            {
+                // If no constructor exists, create one with the message parameter
                 var messageConstructor = new CodeMethod
                 {
                     Name = "initialize",

@@ -771,7 +771,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
-        var closingparenthesis = (isConstructor && parentClass.IsErrorDefinition) ? string.Empty : ")";
+        var closingparenthesis = ")";
         // Constuctors (except for ClientConstructor) don't need a body but a closing statement
         if (HasEmptyConstructorBody(code, parentClass, isConstructor))
         {

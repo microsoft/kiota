@@ -99,7 +99,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "APIError",
                 $"{AbstractionsPackageName}.api_error"
             );
-            AddConstructorsForErrorClasses(generatedCode);
+            AddErrorMessageFactoryMethodsToPython(generatedCode);
             AddGetterAndSetterMethods(generatedCode,
                 new() {
                     CodePropertyKind.Custom,
@@ -111,6 +111,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 string.Empty,
                 string.Empty);
             AddConstructorsForDefaultValues(generatedCode, true);
+            RemoveConstructorsFromErrorClasses(generatedCode); // Remove constructors added to error classes
             var defaultConfiguration = new GenerationConfiguration();
             cancellationToken.ThrowIfCancellationRequested();
             ReplaceDefaultSerializationModules(
@@ -265,6 +266,20 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 
         CrawlTree(currentElement, CorrectCommonNames);
     }
+    private static void RemoveConstructorsFromErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            var constructorsToRemove = codeClass.Methods
+                .Where(static m => m.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor))
+                .ToList();
+            foreach (var constructor in constructorsToRemove)
+            {
+                codeClass.RemoveChildElement(constructor);
+            }
+        }
+        CrawlTree(currentElement, RemoveConstructorsFromErrorClasses);
+    }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
         block.Implements.Where(x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase)).ToList().ForEach(x => x.Name = x.Name[1..]); // skipping the I
@@ -392,33 +407,20 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                     })},
     };
 
-    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
+    private static void AddErrorMessageFactoryMethodsToPython(CodeElement currentElement)
     {
         if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
         {
-            // Add parameterless constructor if not already present
-            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
-            {
-                var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
-                codeClass.AddMethod(parameterlessConstructor);
-            }
+            var messageParameter = CreateErrorMessageParameter("str");
 
-            // Add message constructor if not already present
-            var messageParameter = CreateErrorMessageParameter("str", optional: true, defaultValue: "None");
-            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
-            {
-                var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
-                messageConstructor.AddParameter(messageParameter);
-                codeClass.AddMethod(messageConstructor);
-            }
-
-            TryAddErrorMessageFactoryMethod(codeClass,
-                "create_from_discriminator_value_with_message",
-                "ParseNode",
-                messageParameter,
+            TryAddErrorMessageFactoryMethod(
+                codeClass,
+                methodName: "create_from_discriminator_value_with_message",
+                parseNodeTypeName: "ParseNode",
+                messageParameter: messageParameter,
                 parseNodeParameterName: "parse_node"
             );
         }
-        CrawlTree(currentElement, AddConstructorsForErrorClasses);
+        CrawlTree(currentElement, AddErrorMessageFactoryMethodsToPython);
     }
 }
