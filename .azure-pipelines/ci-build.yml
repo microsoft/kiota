@@ -236,7 +236,7 @@ extends:
                 condition: eq(variables['isPrerelease'], 'true')
                 displayName: "build"
                 inputs:
-                  projects: '$(Build.SourcesDirectory)\kiota.sln'
+                  projects: '$(Build.SourcesDirectory)\kiota.slnx'
                   arguments: '--configuration $(BuildConfiguration) --no-incremental --version-suffix "$(versionSuffix)"'
 
               # Build the Product project
@@ -244,7 +244,7 @@ extends:
                 condition: eq(variables['isPrerelease'], 'false')
                 displayName: "build"
                 inputs:
-                  projects: '$(Build.SourcesDirectory)\kiota.sln'
+                  projects: '$(Build.SourcesDirectory)\kiota.slnx'
                   arguments: "--configuration $(BuildConfiguration) --no-incremental"
 
               # Run the Unit test
@@ -252,7 +252,7 @@ extends:
                 displayName: "test"
                 inputs:
                   command: test
-                  projects: '$(Build.SourcesDirectory)\kiota.sln'
+                  projects: '$(Build.SourcesDirectory)\kiota.slnx'
                   arguments: "--configuration $(BuildConfiguration) --no-build"
 
               - task: EsrpCodeSigning@5
