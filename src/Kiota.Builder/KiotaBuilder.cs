@@ -151,7 +151,9 @@ public partial class KiotaBuilder
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool, OpenApiDiagnostic?)> GetTreeNodeInternalAsync(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
+#pragma warning disable CA1873 // Avoid potentially expensive logging
         LogKiotaVersion(global::Kiota.Generated.KiotaVersion.Current());
+#pragma warning restore CA1873 // Avoid potentially expensive logging
         var stepId = 0;
         if (config.ShouldGetApiManifest)
         {
@@ -590,7 +592,9 @@ public partial class KiotaBuilder
             CleanUpInternalState();
             StopLogAndReset(stopwatch, nameof(CleanUpInternalState));
 
+#pragma warning disable CA1873 // Avoid potentially expensive logging
             LogCreatedSourceModel(stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
+#pragma warning restore CA1873 // Avoid potentially expensive logging
         }
 
         return rootNamespace;
@@ -2658,7 +2662,7 @@ public partial class KiotaBuilder
     [LoggerMessage(Level = LogLevel.Warning, Message = "Mapped type {TypeName} for {ParentName} using the fallback approach.")]
     private partial void LogMappedTypeUsingFallback(string typeName, string? parentName);
     [LoggerMessage(Level = LogLevel.Trace, Message = "Creating method {Name} of {Type}")]
-    private partial void LogCreatingMethod(string name, string type);
+    private partial void LogCreatingMethod(string name, string? type);
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not create method for {Operation} in {Path} because the schema was invalid")]
     private partial void LogCouldNotCreateMethod(Exception ex, string? operation, string? path);
     [LoggerMessage(Level = LogLevel.Information, Message = "Removing unused model {ModelName} as it is not referenced by the client API surface")]

@@ -433,7 +433,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                     {
                         if (!destinationPathItem.Operations.TryAdd(operation.Key, operation.Value))
                         {
-                            logger.LogWarning("Duplicate operation {Operation} in path {Path}", operation.Key, pathItem.Key);
+                            LogDuplicateOperation(logger, operation.Key, pathItem.Key);
                         }
                     }
                 }
@@ -452,11 +452,17 @@ public static partial class OpenApiUrlTreeNodeExtensions
                     {
                         if (!destinationPathItem.Extensions.TryAdd(extension.Key, extension.Value))
                         {
-                            logger.LogWarning("Duplicate extension {Extension} in path {Path}", extension.Key, pathItem.Key);
+                            LogDuplicateExtension(logger, extension.Key, pathItem.Key);
                         }
                     }
                 }
             }
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Duplicate operation {Operation} in path {Path}")]
+    private static partial void LogDuplicateOperation(ILogger logger, HttpMethod operation, string path);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Duplicate extension {Extension} in path {Path}")]
+    private static partial void LogDuplicateExtension(ILogger logger, string extension, string path);
 }
