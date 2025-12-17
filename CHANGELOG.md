@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for OpenAPI 3.2.0
+- golang: indent with tabs instead of spaces
+- golang: if there is only one return argument, omit the parentheses
+- golang: remove trailing spaces on comments
+- golang: fix import ordering
+- golang: correctly indent case statements inside a switch
 
 ### Changed
 
@@ -59,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where migration from lock to workspace would fail because of stream management. [#6515](https://github.com/microsoft/kiota/issues/6515)
 - Fixed a bug where media types from error responses would be missing from the accept header. [#6572](https://github.com/microsoft/kiota/issues/6572)
 - Fixed a bug where serialization names for Dart were not correct [#6624](https://github.com/microsoft/kiota/issues/6624)
-- Fixed a bug where imports from __future__ would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
+- Fixed a bug where imports from **future** would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
 
 ## [1.26.1] - 2025-05-15
 
@@ -201,7 +206,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Python error when a class inherits from a base class and implements an interface. [#5637](https://github.com/microsoft/kiota/issues/5637)
 - Fixed a bug where one/any schemas with single schema entries would be missing properties. [#5808](https://github.com/microsoft/kiota/issues/5808)
 - Fixed anyOf/oneOf generation in TypeScript. [5353](https://github.com/microsoft/kiota/issues/5353)
-- Fixed invalid code in Php caused by "*/*/" in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
+- Fixed invalid code in Php caused by `"*/*/"` in property description. [5635](https://github.com/microsoft/kiota/issues/5635)
 - Fixed a bug where discriminator property name lookup could end up in an infinite loop. [#5771](https://github.com/microsoft/kiota/issues/5771)
 - Fixed TypeScript generation error when generating usings from shaken serializers. [#5634](https://github.com/microsoft/kiota/issues/5634)
 - Multiple fixed and improvements in OpenAPI description generation for plugins. [#5806](https://github.com/microsoft/kiota/issues/5806)
@@ -342,7 +347,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added uri-form encoded serialization for PHP. [#2074](https://github.com/microsoft/kiota/issues/2074)
 - Added information message with base URL in the CLI experience. [#4635](https://github.com/microsoft/kiota/issues/4635)
 - Added optional parameter --disable-ssl-validation for generate, show, and download commands. [#4176](https://github.com/microsoft/kiota/issues/4176)
-- For *Debug* builds of kiota, the `--log-level` / `--ll` option is now observed if specified explicitly on the command line. It still defaults to `Debug` for *Debug* builds and `Warning` for *Release* builds. [#4739](https://github.com/microsoft/kiota/pull/4739)
+- For _Debug_ builds of kiota, the `--log-level` / `--ll` option is now observed if specified explicitly on the command line. It still defaults to `Debug` for _Debug_ builds and `Warning` for _Release_ builds. [#4739](https://github.com/microsoft/kiota/pull/4739)
 
 ### Changed
 
@@ -944,7 +949,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed unused generated import for PHP Generation.
 - Fixed a bug where long namespaces would make Ruby packaging fail.
 - Fixed a bug where classes with namespace names are generated outside namespace in Python. [#2188](https://github.com/microsoft/kiota/issues/2188)
-- Changed signature of escaped reserved names from {x}*escaped to {x}* in line with Python style guides.
+- Changed signature of escaped reserved names from `{x}*escaped` to `{x}*` in line with Python style guides.
 - Add null checks in generated Shell language code.
 - Fixed a bug where Go indexers would fail to pass the index parameter.
 - Fixed a bug where path segments with parameters could be missing words. [#2209](https://github.com/microsoft/kiota/issues/2209)
