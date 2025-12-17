@@ -20,11 +20,11 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.0.x
       - name: Restore dependencies
         run: dotnet restore kiota.sln
       - name: Build
-        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net9.0
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
       - uses: actions/upload-artifact@v6
         with:

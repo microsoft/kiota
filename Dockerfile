@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
+FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0 AS build-env
 ARG version_suffix
 WORKDIR /app
 
@@ -6,17 +6,17 @@ COPY ./src ./kiota/src
 COPY ./resources ./kiota/resources
 WORKDIR /app/kiota
 RUN if [ -z "$version_suffix" ]; then \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0; \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net10.0; \
     else \
-    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "$version_suffix"; \
+    dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net10.0 --version-suffix "$version_suffix"; \
     fi
 
 # Don't use the chiseled image without extras 
 # (see https://github.com/microsoft/kiota/issues/4600)
-FROM mcr.microsoft.com/dotnet/runtime:9.0-noble-chiseled-extra AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled-extra AS runtime
 WORKDIR /app
 
-COPY --from=build-env /app/kiota/src/kiota/bin/Release/net9.0 ./
+COPY --from=build-env /app/kiota/src/kiota/bin/Release/net10.0 ./
 
 VOLUME /app/output
 VOLUME /app/openapi.yaml
