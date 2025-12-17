@@ -20,7 +20,7 @@ using YamlDotNet.Serialization;
 
 namespace Kiota.Builder.SearchProviders.GitHub;
 
-public class GitHubSearchProvider : ISearchProvider
+public partial class GitHubSearchProvider : ISearchProvider
 {
     private readonly DocumentCachingProvider documentCachingProvider;
     private readonly ILogger _logger;
@@ -180,22 +180,30 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogUnableToFindInformation(fileName, org, repo);
         }
         catch (Exception ex) when (ex is YamlException || ex is JsonException)
         {
 #if DEBUG
-            _logger.LogError(ex, "Error while parsing the file {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogErrorParsingFileError(ex, fileName, org, repo);
 #else
-            _logger.LogInformation("Error while parsing the file {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogErrorParsingFileInformation(fileName, org, repo);
 #endif
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex, "Error while downloading the file {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogErrorParsingFileError(ex, fileName, org, repo);
         }
         return [];
     }
+    [LoggerMessage(Level = LogLevel.Information, Message = "Unable to find the file {FileName} in {Org}/{Repo}")]
+    private partial void LogUnableToFindInformation(string fileName, string org, string repo);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error while downloading the file {FileName} in {Org}/{Repo}")]
+    private partial void LogErrorDownloadingFileError(Exception ex, string fileName, string org, string repo);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Error while parsing the file {FileName} in {Org}/{Repo}")]
+    private partial void LogErrorParsingFileInformation(string fileName, string org, string repo);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error while parsing the file {FileName} in {Org}/{Repo}")]
+    private partial void LogErrorParsingFileError(Exception ex, string fileName, string org, string repo);
     private async Task GetUrlForRelativeDescriptionsAsync(List<IndexApiEntry> originalResults, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken)
     {
         var relativeUrlsResults = originalResults.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && !y.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)));
@@ -224,7 +232,7 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {FileName} in {Org}/{Repo}", originalUrl, org, repo);
+            LogUnableToFindInformation(originalUrl, org, repo);
         }
         return new Tuple<string, string?>(originalUrl, null);
     }
@@ -239,8 +247,8 @@ public class GitHubSearchProvider : ISearchProvider
             {
                 x.QueryParameters.Q = $"{term} topic:{topic} fork:true";
                 x.QueryParameters.Page = pageNumber;
-                _logger.LogTrace("Page {PageNumber}", x.QueryParameters.Page); // using the property is intentional to avoid trimming
-                _logger.LogTrace("Query: {Query}", x.QueryParameters.Q);
+                LogPageNumberTrace(x.QueryParameters.Page); // using the property is intentional to avoid trimming
+                LogQueryTrace(x.QueryParameters.Q);
             }, cancellationToken).ConfigureAwait(false);
             if (reposPage == null)
                 break;
@@ -251,4 +259,8 @@ public class GitHubSearchProvider : ISearchProvider
         } while (shouldContinue);
         return results;
     }
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Query: {Query}")]
+    private partial void LogQueryTrace(string query);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Page {PageNumber}")]
+    private partial void LogPageNumberTrace(int? pageNumber);
 }

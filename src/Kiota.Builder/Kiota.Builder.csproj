@@ -3,7 +3,7 @@
     <LangVersion>Latest</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <TargetFrameworks>net8.0;net9.0;</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0;</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
     <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>

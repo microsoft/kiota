@@ -18,7 +18,7 @@
       "group": "build",
       "args": [
         "build",
-        "${workspaceFolder}/kiota.sln",
+        "${workspaceFolder}/kiota.slnx",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -31,7 +31,7 @@
       "group": "test",
       "args": [
         "test",
-        "${workspaceFolder}/kiota.sln",
+        "${workspaceFolder}/kiota.slnx",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary",
         "--collect:\"XPlat Code Coverage\""
@@ -158,7 +158,7 @@
       "args": [
         "watch",
         "run",
-        "${workspaceFolder}/kiota.sln",
+        "${workspaceFolder}/kiota.slnx",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],

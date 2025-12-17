@@ -16,15 +16,15 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.0.x
       - name: Restore dependencies
-        run: dotnet restore kiota.sln
+        run: dotnet restore kiota.slnx
       - name: Check formatting
         run: dotnet format --verify-no-changes
       - name: Build
-        run: dotnet build kiota.sln --no-restore
+        run: dotnet build kiota.slnx --no-restore
       - name: Test
-        run: dotnet test kiota.sln --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test kiota.slnx --no-build --verbosity normal --collect:"XPlat Code Coverage"
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report
@@ -52,11 +52,11 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.0.x
       - name: Restore dependencies
-        run: dotnet restore kiota.sln
+        run: dotnet restore kiota.slnx
       - name: Publish ${{ matrix.os }}
-        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }} -f net9.0
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }} -f net10.0
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6

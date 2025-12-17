@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            9.x
+            10.0.x
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
@@ -64,5 +64,5 @@ jobs:
         run: |
           dotnet tool run dotnet-sonarscanner begin /k:"microsoft_kiota" /o:"microsoft" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="tests/**/coverage.opencover.xml"
           dotnet build
-          dotnet test kiota.sln --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+          dotnet test kiota.slnx --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
           dotnet tool run dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
