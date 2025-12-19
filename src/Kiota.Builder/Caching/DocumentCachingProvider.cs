@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Caching;
 
-public class DocumentCachingProvider
+public partial class DocumentCachingProvider
 {
     private static readonly ThreadLocal<HashAlgorithm> HashAlgorithm = new(SHA256.Create);
     public bool ClearCache
@@ -46,12 +46,12 @@ public class DocumentCachingProvider
             var lastModificationDate = File.GetLastWriteTime(target);
             if (lastModificationDate.Add(Duration) > DateTime.Now && !ClearCache)
             {
-                Logger.LogDebug("cache file {CacheFile} is up to date and clearCache is {ClearCache}, using it", target, ClearCache);
+                LogCacheFileUpToDate(target, ClearCache);
                 return File.OpenRead(target);
             }
             else
             {
-                Logger.LogDebug("cache file {CacheFile} is out of date, downloading from {Url}", target, documentUri);
+                LogCacheFileOutOfDate(target, documentUri);
                 try
                 {
                     File.Delete(target);
@@ -59,7 +59,7 @@ public class DocumentCachingProvider
                 catch (IOException ex)
                 {
                     couldNotDelete = true;
-                    Logger.LogWarning("could not delete cache file {CacheFile}, reason: {Reason}", target, ex.Message);
+                    LogCouldNotDeleteCache(target, ex.Message);
                 }
             }
         }
@@ -72,7 +72,7 @@ public class DocumentCachingProvider
     });
     private async Task<Stream> DownloadDocumentFromSourceAsync(Uri documentUri, string target, string? accept, CancellationToken token)
     {
-        Logger.LogDebug("cache file {CacheFile} not found, downloading from {Url}", target, documentUri);
+        LogCacheFileNotFound(target, documentUri);
         var directory = Path.GetDirectoryName(target);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
@@ -87,7 +87,9 @@ public class DocumentCachingProvider
             content = new MemoryStream();
             await responseMessage.Content.CopyToAsync(content, token).ConfigureAwait(false);
             if (documentUri.IsLoopback)
-                Logger.LogInformation("skipping cache write for URI {Uri} as it is a loopback address", documentUri);
+            {
+                LogSkippingCacheWrite(documentUri);
+            }
             else
             {
 #pragma warning disable CA2007
@@ -106,9 +108,27 @@ public class DocumentCachingProvider
         }
         catch (IOException ex)
         {
-            Logger.LogWarning("could not write to cache file {CacheFile}, reason: {Reason}", target, ex.Message);
+            LogCouldNotWriteCache(target, ex.Message);
             content.Position = 0;
             return content;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "cache file {CacheFile} is up to date and clearCache is {ClearCache}, using it")]
+    private partial void LogCacheFileUpToDate(string cacheFile, bool clearCache);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "cache file {CacheFile} is out of date, downloading from {Url}")]
+    private partial void LogCacheFileOutOfDate(string cacheFile, Uri url);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "could not delete cache file {CacheFile}, reason: {Reason}")]
+    private partial void LogCouldNotDeleteCache(string cacheFile, string reason);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "cache file {CacheFile} not found, downloading from {Url}")]
+    private partial void LogCacheFileNotFound(string cacheFile, Uri url);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "skipping cache write for URI {Uri} as it is a loopback address")]
+    private partial void LogSkippingCacheWrite(Uri uri);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "could not write to cache file {CacheFile}, reason: {Reason}")]
+    private partial void LogCouldNotWriteCache(string cacheFile, string reason);
 }

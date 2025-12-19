@@ -18,7 +18,7 @@ using Microsoft.OpenApi.Reader;
 
 namespace Kiota.Builder;
 
-internal class OpenApiDocumentDownloadService
+internal partial class OpenApiDocumentDownloadService
 {
     private readonly ILogger Logger;
     private readonly HttpClient HttpClient;
@@ -48,7 +48,7 @@ internal class OpenApiDocumentDownloadService
             workspaceManagementService is not null &&
             await workspaceManagementService.GetDescriptionCopyAsync(config.ClientClassName, inputPath, config.CleanOutput, cancellationToken).ConfigureAwait(false) is { } descriptionStream)
         {
-            Logger.LogInformation("loaded description from the workspace copy");
+            LogLoadedWorkspaceCopy();
             input = descriptionStream;
             isDescriptionFromWorkspaceCopy = true;
         }
@@ -62,7 +62,7 @@ internal class OpenApiDocumentDownloadService
                 var targetUri = APIsGuruSearchProvider.ChangeSourceUrlToGitHub(new Uri(inputPath)); // so updating existing clients doesn't break
                 var fileName = targetUri.GetFileName() is string name && !string.IsNullOrEmpty(name) ? name : "description.yml";
                 input = await cachingProvider.GetDocumentAsync(targetUri, "generation", fileName, cancellationToken: cancellationToken).ConfigureAwait(false);
-                Logger.LogInformation("loaded description from remote source");
+                LogLoadedRemoteSource();
             }
             catch (HttpRequestException ex)
             {
@@ -79,7 +79,7 @@ internal class OpenApiDocumentDownloadService
                 }
                 inMemoryStream.Position = 0;
                 input = inMemoryStream;
-                Logger.LogInformation("loaded description from local source");
+                LogLoadedLocalSource();
             }
             catch (Exception ex) when (ex is FileNotFoundException ||
                 ex is PathTooLongException ||
@@ -92,7 +92,7 @@ internal class OpenApiDocumentDownloadService
                 throw new InvalidOperationException($"Could not open the file at {inputPath}, reason: {ex.Message}", ex);
             }
         stopwatch.Stop();
-        Logger.LogTrace("{Timestamp}ms: Read OpenAPI file {File}", stopwatch.ElapsedMilliseconds, inputPath);
+        LogReadOpenApiFile(stopwatch.ElapsedMilliseconds, inputPath);
         return (input, isDescriptionFromWorkspaceCopy);
     }
 
@@ -100,7 +100,7 @@ internal class OpenApiDocumentDownloadService
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        Logger.LogTrace("Parsing OpenAPI file");
+        LogParsingOpenApi();
         var ruleSet = config.DisabledValidationRules.Contains(ValidationRuleSetExtensions.AllValidationRule) ?
                     ValidationRuleSet.GetEmptyRuleSet() :
                     ValidationRuleSet.GetDefaultRuleSet(); //workaround since validation rule set doesn't support clearing rules
@@ -141,18 +141,18 @@ internal class OpenApiDocumentDownloadService
         stopwatch.Stop();
         if (generatingMode && readResult.Diagnostic?.Warnings is { Count: > 0 })
             foreach (var warning in readResult.Diagnostic.Warnings)
-                Logger.LogWarning("OpenAPI warning: {Pointer} - {Warning}", warning.Pointer, warning.Message);
+                LogOpenApiWarning(warning.Pointer, warning.Message);
         if (readResult.Diagnostic?.Errors is { Count: > 0 })
         {
-            Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
+            LogParsedOpenApiWithErrors(stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
             foreach (var parsingError in readResult.Diagnostic.Errors)
             {
-                Logger.LogError("OpenAPI error: {Pointer} - {Message}", parsingError.Pointer, parsingError.Message);
+                LogOpenApiError(parsingError.Pointer, parsingError.Message);
             }
         }
         else
         {
-            Logger.LogTrace("{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.", stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
+            LogParsedOpenApiSuccessfully(stopwatch.ElapsedMilliseconds, readResult.Document?.Paths?.Count ?? 0);
         }
 
         return readResult;
@@ -163,4 +163,31 @@ internal class OpenApiDocumentDownloadService
         var result = await GetDocumentWithResultFromStreamAsync(input, config, generating, cancellationToken).ConfigureAwait(false);
         return result?.Document;
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "loaded description from the workspace copy")]
+    private partial void LogLoadedWorkspaceCopy();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "loaded description from remote source")]
+    private partial void LogLoadedRemoteSource();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "loaded description from local source")]
+    private partial void LogLoadedLocalSource();
+
+    [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Read OpenAPI file {File}")]
+    private partial void LogReadOpenApiFile(long timestamp, string file);
+
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Parsing OpenAPI file")]
+    private partial void LogParsingOpenApi();
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "OpenAPI warning: {Pointer} - {Warning}")]
+    private partial void LogOpenApiWarning(string? pointer, string warning);
+
+    [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Parsed OpenAPI with errors. {Count} paths found.")]
+    private partial void LogParsedOpenApiWithErrors(long timestamp, int count);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "OpenAPI error: {Pointer} - {Message}")]
+    private partial void LogOpenApiError(string? pointer, string message);
+
+    [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.")]
+    private partial void LogParsedOpenApiSuccessfully(long timestamp, int count);
 }

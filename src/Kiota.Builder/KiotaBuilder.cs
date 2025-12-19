@@ -76,7 +76,7 @@ public partial class KiotaBuilder
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
-            logger.LogInformation("Cleaning output directory {Path}", config.OutputPath);
+            LogCleaningOutputDirectory(config.OutputPath);
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
                 Directory.Delete(subDir, true);
@@ -110,7 +110,7 @@ public partial class KiotaBuilder
     {
         try
         {
-            logger.LogDebug("Api manifest path: {ApiManifestPath}", config.ApiManifestPath);
+            LogApiManifestPath(config.ApiManifestPath);
             var pathParts = config.ApiManifestPath.Split(manifestPathSeparator, StringSplitOptions.RemoveEmptyEntries);
             var manifestPath = pathParts[0];
             var apiIdentifier = pathParts.Length > 1 ? pathParts[1] : string.Empty;
@@ -145,13 +145,15 @@ public partial class KiotaBuilder
 #pragma warning restore CA1031
         {
             if (!skipErrorLog)
-                logger.LogCritical("error getting the API manifest: {ExceptionMessage}", ex.Message);
+                LogErrorGettingApiManifest(ex.Message);
             return null;
         }
     }
     private async Task<(int, OpenApiUrlTreeNode?, bool, OpenApiDiagnostic?)> GetTreeNodeInternalAsync(string inputPath, bool generating, Stopwatch sw, CancellationToken cancellationToken)
     {
-        logger.LogDebug("kiota version {Version}", Generated.KiotaVersion.Current());
+#pragma warning disable CA1873 // Avoid potentially expensive logging
+        LogKiotaVersion(global::Kiota.Generated.KiotaVersion.Current());
+#pragma warning restore CA1873 // Avoid potentially expensive logging
         var stepId = 0;
         if (config.ShouldGetApiManifest)
         {
@@ -349,7 +351,7 @@ public partial class KiotaBuilder
             }
             else
             {
-                logger.LogInformation("No changes detected, skipping generation");
+                LogNoChangesDetectedSkippingGeneration();
                 if (config.Operation is ConsumerOperation.Add or ConsumerOperation.Edit && config.SkipGeneration)
                 {
                     await FinalizeWorkspaceAsync(sw, stepId, openApiTree, inputPath, cancellationToken).ConfigureAwait(false);
@@ -476,7 +478,7 @@ public partial class KiotaBuilder
         }
 
         if (!doc.Paths.Any())
-            logger.LogWarning("No paths were found matching the provided patterns. Check your configuration.");
+            LogNoPathsFoundMatchingPatterns();
     }
     internal void SetApiRootUrl()
     {
@@ -485,16 +487,16 @@ public partial class KiotaBuilder
             config.ApiRootUrl = candidateUrl;
             if (!config.IsPluginConfiguration)
             {
-                logger.LogInformation("Client root URL set to {ApiRootUrl}", candidateUrl);
+                LogClientRootUrlSet(candidateUrl);
             }
         }
         else
-            logger.LogWarning("No server url found in the OpenAPI document. The base url will need to be set when using the client.");
+            LogNoServerUrlFound();
     }
     private void StopLogAndReset(Stopwatch sw, string prefix)
     {
         sw.Stop();
-        logger.LogDebug("{Prefix} {SwElapsed}", prefix, sw.Elapsed);
+        LogStopElapsed(prefix, sw.Elapsed);
         sw.Reset();
     }
     private bool isDescriptionFromWorkspaceCopy;
@@ -556,7 +558,7 @@ public partial class KiotaBuilder
         var node = OpenApiUrlTreeNode.Create(doc, Constants.DefaultOpenApiLabel);
         node.MergeIndexNodesAtSameLevel(logger);
         stopwatch.Stop();
-        logger.LogTrace("{Timestamp}ms: Created UriSpace tree", stopwatch.ElapsedMilliseconds);
+        LogCreatedUriSpaceTree(stopwatch.ElapsedMilliseconds);
         return node;
     }
     private CodeNamespace? rootNamespace;
@@ -590,7 +592,9 @@ public partial class KiotaBuilder
             CleanUpInternalState();
             StopLogAndReset(stopwatch, nameof(CleanUpInternalState));
 
-            logger.LogTrace("{Timestamp}ms: Created source model with {Count} classes", stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
+#pragma warning disable CA1873 // Avoid potentially expensive logging
+            LogCreatedSourceModel(stopwatch.ElapsedMilliseconds, codeNamespace.GetChildElements(true).Count());
+#pragma warning restore CA1873 // Avoid potentially expensive logging
         }
 
         return rootNamespace;
@@ -600,7 +604,7 @@ public partial class KiotaBuilder
     {
         if (openApiDocument is null)
         {
-            logger.LogWarning("OpenAPI document is null");
+            LogOpenApiDocumentIsNull();
             return;
         }
 
@@ -646,7 +650,7 @@ public partial class KiotaBuilder
         await ILanguageRefiner.RefineAsync(config, generatedCode, token).ConfigureAwait(false);
 
         stopwatch.Stop();
-        logger.LogDebug("{Timestamp}ms: Language refinement applied", stopwatch.ElapsedMilliseconds);
+        LogLanguageRefinementApplied(stopwatch.ElapsedMilliseconds);
     }
 
     /// <summary>
@@ -663,7 +667,7 @@ public partial class KiotaBuilder
         var codeRenderer = CodeRenderer.GetCodeRender(config);
         await codeRenderer.RenderCodeNamespaceToFilePerClassAsync(languageWriter, generatedCode, cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
-        logger.LogTrace("{Timestamp}ms: Files written to {Path}", stopwatch.ElapsedMilliseconds, config.OutputPath);
+        LogFilesWritten(stopwatch.ElapsedMilliseconds, config.OutputPath);
     }
     private const string RequestBuilderSuffix = "RequestBuilder";
     private const string ItemRequestBuilderSuffix = "ItemRequestBuilder";
@@ -706,7 +710,7 @@ public partial class KiotaBuilder
             }).First();
         }
 
-        logger.LogTrace("Creating class {Class}", codeClass.Name);
+        LogCreatingClass(codeClass.Name);
 
         // Add properties for children
         foreach (var child in currentNode.Children.Select(static x => x.Value))
@@ -729,7 +733,7 @@ public partial class KiotaBuilder
                 var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
                 if (prop is null)
                 {
-                    logger.LogWarning("Property {Prop} was not created as its type couldn't be determined", propIdentifier);
+                    LogPropertyTypeUndetermined(propIdentifier);
                     continue;
                 }
                 prop.Deprecation = currentNode.GetDeprecationInformation();
@@ -1029,7 +1033,7 @@ public partial class KiotaBuilder
 
         unmappedTypesWithNoName.ForEach(x =>
         {
-            logger.LogWarning("Type with empty name and parent {ParentName}", x.Parent?.Name);
+            LogTypeWithEmptyName(x.Parent?.Name);
         });
 
         var unmappedTypesWithName = unmappedTypes.Except(unmappedTypesWithNoName);
@@ -1067,7 +1071,7 @@ public partial class KiotaBuilder
                 foreach (var type in x)
                 {
                     type.TypeDefinition = definition;
-                    logger.LogWarning("Mapped type {TypeName} for {ParentName} using the fallback approach.", type.Name, type.Parent?.Name);
+                    LogMappedTypeUsingFallback(type.Name, type.Parent?.Name);
                 }
         });
     }
@@ -1181,7 +1185,7 @@ public partial class KiotaBuilder
     }
     private CodeIndexer[] CreateIndexer(string childIdentifier, string childType, CodeParameter parameter, OpenApiUrlTreeNode currentNode, OpenApiUrlTreeNode parentNode)
     {
-        logger.LogTrace("Creating indexer {Name}", childIdentifier);
+        LogCreatingIndexer(childIdentifier);
         var result = new List<CodeIndexer> { new() {
             Name = childIdentifier,
             Documentation = new()
@@ -1251,7 +1255,7 @@ public partial class KiotaBuilder
         if (existingType == null)
         {
             prop.Type.CollectionKind = propertySchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default;
-            logger.LogTrace("Creating property {Name} of {Type}", prop.Name, prop.Type.Name);
+            LogCreatingProperty(prop.Name, prop.Type.Name);
         }
         return prop;
     }
@@ -1335,7 +1339,7 @@ public partial class KiotaBuilder
                 executorMethod.AddErrorMapping(errorCode, errorType);
             }
             else
-                logger.LogWarning("Could not create error type for {Error} in {Operation}", errorCode, operation.OperationId);
+                LogCouldNotCreateErrorType(errorCode, operation.OperationId);
         }
     }
     private (CodeTypeBase?, CodeTypeBase?) GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, IOpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass, NetHttpMethod operationType)
@@ -1486,7 +1490,7 @@ public partial class KiotaBuilder
                 parentClass.RenameChildElement(executorMethod.Name, newName);
                 parentClass.AddMethod(additionalExecutorMethod);
             }
-            logger.LogTrace("Creating method {Name} of {Type}", executorMethod.Name, executorMethod.ReturnType);
+            LogCreatingMethod(executorMethod.Name, executorMethod.ReturnType?.Name);
 
             var generatorMethod = new CodeMethod
             {
@@ -1527,13 +1531,14 @@ public partial class KiotaBuilder
             generatorMethod.AddAcceptedResponsesTypes(mediaTypes);
             AddRequestBuilderMethodParameters(currentNode, operationType, operation, requestConfigClass, generatorMethod);
             parentClass.AddMethod(generatorMethod);
-            logger.LogTrace("Creating method {Name} of {Type}", generatorMethod.Name, generatorMethod.ReturnType);
         }
         catch (InvalidSchemaException ex)
         {
-            logger.LogWarning(ex, "Could not create method for {Operation} in {Path} because the schema was invalid", operation.OperationId, currentNode.Path);
+            LogCouldNotCreateOperationMethod(ex, operation.OperationId, currentNode.Path);
         }
     }
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not create method for {Operation} in {Path} because the schema was invalid")]
+    private partial void LogCouldNotCreateOperationMethod(Exception ex, string? operation, string path);
     private static readonly OpenApiSchemaReferenceComparer schemaReferenceComparer = new();
 
     private static void AddRequestConfigurationProperties(CodeClass? parameterClass, CodeClass requestConfigClass)
@@ -2224,7 +2229,7 @@ public partial class KiotaBuilder
                 foreach (var baseClass in parents) // discriminator might also be in grand parent types
                     baseClass.DiscriminatorInformation.RemoveDiscriminatorMapping(currentClass);
             }
-            logger.LogInformation("Removing unused model {ModelName} as it is not referenced by the client API surface", x.Name);
+            LogRemovingUnusedModel(x.Name);
             x.GetImmediateParentOfType<CodeNamespace>().RemoveChildElement(x);
         });
         foreach (var leafNamespace in FindLeafNamespaces(modelsNamespace))
@@ -2375,20 +2380,20 @@ public partial class KiotaBuilder
         var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty, StringComparison.OrdinalIgnoreCase);
         if (openApiDocument == null || string.IsNullOrEmpty(componentKey) || openApiDocument.Components?.Schemas is null || GetSchemaReferenceToComponentSchema(componentKey) is not { } discriminatorSchema)
         {
-            logger.LogWarning("Discriminator {ComponentKey} not found in the OpenAPI document.", componentKey);
+            LogDiscriminatorNotFound(componentKey);
             return null;
         }
         var schemaClone = discriminatorSchema.CreateShallowCopy();
         // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator.
         if (CreateModelDeclarations(currentNode, schemaClone, currentOperation, GetShortestNamespace(currentNamespace, schemaClone), string.Empty, null, string.Empty, false, true) is not CodeType result)
         {
-            logger.LogWarning("Discriminator {ComponentKey} is not a valid model and points to a union type.", componentKey);
+            LogDiscriminatorPointsToUnion(componentKey);
             return null;
         }
         if (baseClass is not null && (result.TypeDefinition is not CodeClass codeClass || codeClass.StartBlock.Inherits is null))
         {
             if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case.
-                logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
+                LogDiscriminatorNotInherited(componentKey, baseClass.Name);
             return null;
         }
         return result;
@@ -2406,7 +2411,7 @@ public partial class KiotaBuilder
                     var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
                     if (definition == null)
                     {
-                        logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
+                        LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                         return null;
                     }
                     return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
@@ -2633,7 +2638,7 @@ public partial class KiotaBuilder
         }
         else
         {
-            logger.LogWarning("Ignoring duplicate parameter {Name}", parameter.Name);
+            LogIgnoringDuplicateParameter(parameter.Name);
         }
     }
 
@@ -2664,4 +2669,63 @@ public partial class KiotaBuilder
         classLifecycles.Clear();
         multipartPropertiesModels.Clear();
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Cleaning output directory {Path}")]
+    private partial void LogCleaningOutputDirectory(string path);
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Api manifest path: {ApiManifestPath}")]
+    private partial void LogApiManifestPath(string apiManifestPath);
+    [LoggerMessage(Level = LogLevel.Critical, Message = "error getting the API manifest: {ExceptionMessage}")]
+    private partial void LogErrorGettingApiManifest(string exceptionMessage);
+    [LoggerMessage(Level = LogLevel.Debug, Message = "kiota version {Version}")]
+    private partial void LogKiotaVersion(string version);
+    [LoggerMessage(Level = LogLevel.Information, Message = "No changes detected, skipping generation")]
+    private partial void LogNoChangesDetectedSkippingGeneration();
+    [LoggerMessage(Level = LogLevel.Warning, Message = "No server url found in the OpenAPI document. The base url will need to be set when using the client.")]
+    private partial void LogNoServerUrlFound();
+    [LoggerMessage(Level = LogLevel.Debug, Message = "{Prefix} {SwElapsed}")]
+    private partial void LogStopElapsed(string prefix, TimeSpan swElapsed);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Created UriSpace tree")]
+    private partial void LogCreatedUriSpaceTree(long timestamp);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Created source model with {Count} classes")]
+    private partial void LogCreatedSourceModel(long timestamp, int count);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "OpenAPI document is null")]
+    private partial void LogOpenApiDocumentIsNull();
+    [LoggerMessage(Level = LogLevel.Debug, Message = "{Timestamp}ms: Language refinement applied")]
+    private partial void LogLanguageRefinementApplied(long timestamp);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Files written to {Path}")]
+    private partial void LogFilesWritten(long timestamp, string path);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Creating class {Class}")]
+    private partial void LogCreatingClass(string @class);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Property {Prop} was not created as its type couldn't be determined")]
+    private partial void LogPropertyTypeUndetermined(string prop);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Creating indexer {Name}")]
+    private partial void LogCreatingIndexer(string name);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Creating property {Name} of {Type}")]
+    private partial void LogCreatingProperty(string name, string type);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not create error type for {Error} in {Operation}")]
+    private partial void LogCouldNotCreateErrorType(string error, string? operation);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "No paths were found matching the provided patterns. Check your configuration.")]
+    private partial void LogNoPathsFoundMatchingPatterns();
+    [LoggerMessage(Level = LogLevel.Information, Message = "Client root URL set to {ApiRootUrl}")]
+    private partial void LogClientRootUrlSet(string apiRootUrl);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Type with empty name and parent {ParentName}")]
+    private partial void LogTypeWithEmptyName(string? parentName);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Mapped type {TypeName} for {ParentName} using the fallback approach.")]
+    private partial void LogMappedTypeUsingFallback(string typeName, string? parentName);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Creating method {Name} of {Type}")]
+    private partial void LogCreatingMethod(string name, string? type);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not create method for {Operation} in {Path} because the schema was invalid")]
+    private partial void LogCouldNotCreateMethod(Exception ex, string? operation, string? path);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Removing unused model {ModelName} as it is not referenced by the client API surface")]
+    private partial void LogRemovingUnusedModel(string modelName);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Discriminator {ComponentKey} not found in the OpenAPI document.")]
+    private partial void LogDiscriminatorNotFound(string? componentKey);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Discriminator {ComponentKey} is not a valid model and points to a union type.")]
+    private partial void LogDiscriminatorPointsToUnion(string componentKey);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Discriminator {ComponentKey} is not inherited from {ClassName}.")]
+    private partial void LogDiscriminatorNotInherited(string componentKey, string className);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.")]
+    private partial void LogOmittedPropertyInvalidSchema(string propertyName, string modelName, string apiPath);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring duplicate parameter {Name}")]
+    private partial void LogIgnoringDuplicateParameter(string name);
 }

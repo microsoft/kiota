@@ -20,13 +20,13 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.0.x
       - name: Restore dependencies
-        run: dotnet restore kiota.sln
+        run: dotnet restore kiota.slnx
       - name: Build
-        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net9.0
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: generator
           path: publish
@@ -51,7 +51,7 @@ jobs:
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: generator
           path: publish
@@ -62,7 +62,7 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: it/openapi.yaml
@@ -106,12 +106,12 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         if: startsWith(matrix.description, './') != true
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: description
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: generator
           path: publish
@@ -128,7 +128,7 @@ jobs:
         if: matrix.language == 'csharp'
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.0.x
       - name: Setup Go
         if: matrix.language == 'go'
         uses: actions/setup-go@v6
@@ -181,7 +181,7 @@ jobs:
         run: ./it/do-clean.ps1 -language ${{ matrix.language }}
         if: always()
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}

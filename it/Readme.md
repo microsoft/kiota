@@ -5,7 +5,7 @@ Run the following steps to locally run the integration tests.
 Publish locally a development version of `kiota`:
 
 ```bash
-dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net9.0
+dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
 ```
 
 Generate the code:

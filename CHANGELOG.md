@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added support for OpenAPI 3.2.0
 - Added support for enum path parameters
+- Added support for net10
 
 ### Changed
 
