@@ -117,9 +117,6 @@ public class GoRefiner : CommonLanguageRefiner
                 true,
                 false,
                 true);
-            AddDefaultImports(
-                generatedCode,
-                defaultUsingEvaluators);
             CorrectCoreType(
                 generatedCode,
                 CorrectMethodType,
@@ -218,6 +215,9 @@ public class GoRefiner : CommonLanguageRefiner
                 "Error",
                 () => new CodeType { Name = "string", IsNullable = false, IsExternal = true }
             );
+            AddDefaultImports(
+                generatedCode,
+                defaultUsingEvaluators);
             GenerateCodeFiles(generatedCode);
         }, cancellationToken);
     }
@@ -821,6 +821,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod @method && @method.IsOfKind(CodeMethodKind.RequestExecutor) && (method.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase) ||
                                                                                                         method.Parameters.Any(x => x.Kind is CodeParameterKind.RequestBody && x.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))),
             SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ErrorMessageOverride), "fmt", "*fmt"),
         new (static x => x is CodeEnum @enum && @enum.Flags,"", "math"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
