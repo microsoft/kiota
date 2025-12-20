@@ -694,13 +694,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             WritePropertyDeserializationBlock(otherProp, param, primaryErrorMapping, primaryErrorMappingKey, codeFile, writer);
         }
 
-        // Fallback: If no primaryErrorMappingKey, emit error message assignment here
-        if (string.IsNullOrEmpty(primaryErrorMappingKey) && !string.IsNullOrEmpty(primaryErrorMapping))
-        {
-            writer.WriteLine("// Fallback error message assignment for error definitions without primary message");
-            writer.WriteLine(primaryErrorMapping.Trim());
-        }
-
         writer.CloseBlock();
     }
 
@@ -710,17 +703,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var primaryErrorMappingKey = string.Empty;
         var parentClass = codeFunction.OriginalMethodParentClass;
 
-        if (parentClass.IsErrorDefinition)
+        if (parentClass.IsErrorDefinition && parentClass.AssociatedInterface is not null && parentClass.AssociatedInterface.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
         {
-            if (parentClass.AssociatedInterface is not null && parentClass.AssociatedInterface.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase(), "?.") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
-            {
-                primaryErrorMapping = $" {param.Name.ToFirstCharacterLowerCase()}.message = {param.Name.ToFirstCharacterLowerCase()}.{primaryMessageCodePath} ?? \"\";";
-                primaryErrorMappingKey = primaryMessageCodePath.Split("?.", StringSplitOptions.RemoveEmptyEntries)[0];
-            }
-            else
-            {
-                primaryErrorMapping = $" {param.Name.ToFirstCharacterLowerCase()}.message = `${{{param.Name.ToFirstCharacterLowerCase()}.responseStatusCode}}: ${{super.message ?? \"\"}}`;";
-            }
+            primaryErrorMapping = $" {param.Name.ToFirstCharacterLowerCase()}.message = {param.Name.ToFirstCharacterLowerCase()}.{primaryMessageCodePath} ?? \"\";";
+            primaryErrorMappingKey = primaryMessageCodePath.Split("?.", StringSplitOptions.RemoveEmptyEntries)[0];
         }
 
         return (primaryErrorMapping, primaryErrorMappingKey);
