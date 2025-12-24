@@ -1120,5 +1120,100 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Single(nodeUsing);
         Assert.Equal("@microsoft/kiota-abstractions", nodeUsing[0].Declaration.Name);
     }
+
+    [Fact]
+    public async Task AddsConstructorsForErrorClassesAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var errorClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "SomeError");
+        errorClass.IsErrorDefinition = true;
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
+
+        // Check for parameterless constructor
+        var parameterlessConstructor = errorClass.Methods.FirstOrDefault(m => m.Name == "constructor" && m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+        Assert.NotNull(parameterlessConstructor);
+
+        // Check for constructor with message parameter
+        var messageConstructor = errorClass.Methods.FirstOrDefault(m =>
+            m.Name == "constructor" &&
+            m.IsOfKind(CodeMethodKind.Constructor) &&
+            m.Parameters.Count() == 1 &&
+            m.Parameters.First().Name == "message");
+        Assert.NotNull(messageConstructor);
+        Assert.Equal("string", messageConstructor.Parameters.First().Type.Name);
+        Assert.True(messageConstructor.Parameters.First().Optional);
+
+        // Check for createFromDiscriminatorValueWithMessage factory method
+        var discriminatorMessageFactory = errorClass.Methods.FirstOrDefault(m =>
+            m.Name == "createFromDiscriminatorValueWithMessage" &&
+            m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+        Assert.NotNull(discriminatorMessageFactory);
+        Assert.Equal(2, discriminatorMessageFactory.Parameters.Count());
+        var parseNodeParam = discriminatorMessageFactory.Parameters.FirstOrDefault(p => p.Name == "parseNode");
+        var messageParam = discriminatorMessageFactory.Parameters.FirstOrDefault(p => p.Name == "message");
+        Assert.NotNull(parseNodeParam);
+        Assert.NotNull(messageParam);
+        Assert.Equal("string", messageParam.Type.Name);
+        Assert.True(messageParam.Optional);
+    }
+
+    [Fact]
+    public async Task DoesNotAddConstructorsForNonErrorClassesAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var regularClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "SomeModel");
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
+
+        // Should not have error-specific constructors or factory methods
+        Assert.DoesNotContain(regularClass.Methods, m => m.Name == "createFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.Factory));
+    }
+
+    [Fact]
+    public async Task AddsConstructorsOnlyOnceForErrorClassesAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var errorClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "DuplicateError");
+        errorClass.IsErrorDefinition = true;
+
+        // Add existing constructor to simulate already having one
+        errorClass.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void", IsExternal = true }
+        });
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
+
+        // Should have only one of each constructor/method
+        Assert.Single(errorClass.Methods, m => m.Name == "constructor" && m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+        Assert.Single(errorClass.Methods, m => m.Name == "constructor" && m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Count() == 1);
+        Assert.Single(errorClass.Methods, m => m.Name == "createFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+    }
+
+    [Fact]
+    public async Task AddsConstructorsWithCorrectDescriptionForErrorClassesAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var errorClassWithDescription = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "DetailedError");
+        errorClassWithDescription.IsErrorDefinition = true;
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
+
+        // Check constructors/methods are created
+        var parameterlessConstructor = errorClassWithDescription.Methods.FirstOrDefault(m => m.Name == "constructor" && m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+        Assert.NotNull(parameterlessConstructor);
+        Assert.NotEmpty(parameterlessConstructor.Documentation.DescriptionTemplate);
+
+        var messageConstructor = errorClassWithDescription.Methods.FirstOrDefault(m => m.Name == "constructor" && m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Count() == 1);
+        Assert.NotNull(messageConstructor);
+        Assert.NotEmpty(messageConstructor.Documentation.DescriptionTemplate);
+
+        var discriminatorMessageFactory = errorClassWithDescription.Methods.FirstOrDefault(m => m.Name == "createFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+        Assert.NotNull(discriminatorMessageFactory);
+        Assert.NotEmpty(discriminatorMessageFactory.Documentation.DescriptionTemplate);
+    }
     #endregion
 }

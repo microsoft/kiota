@@ -79,6 +79,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
         }
         writer.CloseBlock();
         writer.WriteLine();
@@ -122,6 +125,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var requestHeadersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Headers);
         var pathParametersProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters);
         var urlTemplateProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate);
+        var messageParameter = currentMethod.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage));
 
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
@@ -129,6 +133,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         }
         else if (parentClass.IsOfKind(CodeClassKind.RequestConfiguration))
             writer.WriteLine($"parent::__construct(${(requestHeadersParameter?.Name ?? "headers")} ?? [], ${(requestOptionParameter?.Name ?? "options")} ?? []);");
+        else if (parentClass.IsErrorDefinition && messageParameter != null)
+        {
+            // For error classes with optional message parameter, pass it to parent only if provided
+            writer.WriteLine($"parent::__construct(${messageParameter.Name} ?? '');");
+        }
         else
             writer.WriteLine("parent::__construct();");
 
@@ -771,7 +780,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.IncreaseIndent(2);
             errorMappings.ToList().ForEach(errorMapping =>
             {
-                writer.WriteLine($"'{errorMapping.Key}' => [{errorMapping.Value.Name.ToFirstCharacterUpperCase()}::class, '{CreateDiscriminatorMethodName}'],");
+                var typeName = errorMapping.Value.Name.ToFirstCharacterUpperCase();
+
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
+                {
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"'{errorMapping.Key}' => function($parseNode) {{ return {typeName}::createFromDiscriminatorValueWithMessage($parseNode, '{errorDescription.SanitizeSingleQuote()}'); }},");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"'{errorMapping.Key}' => [{typeName}::class, '{CreateDiscriminatorMethodName}'],");
+                    }
+                }
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
+                {
+                    writer.WriteLine($"'{errorMapping.Key}' => [{typeName}::class, '{CreateDiscriminatorMethodName}'],");
+                }
             });
             writer.DecreaseIndent();
             writer.WriteLine("];");
@@ -847,6 +873,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     private const string DiscriminatorMappingVarName = "$mappingValue";
     private const string ResultVarName = "$result";
+
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return new {parentClass.Name.ToFirstCharacterUpperCase()}(${messageParam.Name});");
+    }
 
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {

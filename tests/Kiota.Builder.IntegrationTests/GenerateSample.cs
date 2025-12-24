@@ -121,6 +121,7 @@ public sealed class GenerateSample : IDisposable
             Language = language,
             OpenAPIFilePath = GetAbsolutePath("InheritingErrors.yaml"),
             OutputPath = $".\\Generated\\ErrorInlineParents\\{language}",
+            CleanOutput = true
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
