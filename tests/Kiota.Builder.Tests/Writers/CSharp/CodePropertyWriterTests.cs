@@ -250,5 +250,29 @@ public sealed class CodePropertyWriterTests : IDisposable
         // Then
         Assert.Contains("public override string Message { get => Prop1 ?? string.Empty; }", result);
     }
+
+    [Fact]
+    public void WritesMessageOverrideWithStatusCodeWhenNoPrimaryMessage()
+    {
+        // Given
+        parentClass.IsErrorDefinition = true;
+        // No primary error message property added
+        var overrideProperty = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "Message",
+            Kind = CodePropertyKind.ErrorMessageOverride,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        }).First();
+
+        // When
+        writer.Write(overrideProperty);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("public override string Message { get => $\"{ResponseStatusCode}: {base.Message}\"; }", result);
+    }
 }
 

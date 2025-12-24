@@ -132,4 +132,15 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Empty(result);
     }
+
+    [Fact]
+    public void WriteErrorMessageOverrideWithStatusCodeWhenNoPrimary()
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("@override", result);
+        Assert.Contains("get propertyName => '$responseStatusCode: ${super.message}';", result);
+    }
 }
