@@ -2306,6 +2306,71 @@ public sealed class CodeMethodWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesMessageOverrideWithStatusCodeWhenNoPrimary()
+    {
+        // Given
+        parentClass = root.AddClass(new CodeClass
+        {
+            Name = "parentClass",
+            IsErrorDefinition = true,
+            Kind = CodeClassKind.Model,
+        }).First();
+        // No primary error message property added
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsNullable = false,
+            },
+            IsAsync = false,
+            IsStatic = false,
+            Name = "Error"
+        }).First();
+
+        // When
+        writer.Write(method);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("Error()(string) {", result);
+        Assert.Contains("return fmt.Sprintf(\"%d: %s\", m.ResponseStatusCode, m.ApiError.Error())", result);
+    }
+
+    [Fact]
+    public async Task AddsFormatImportForErrorMessageOverride()
+    {
+        // Given
+        parentClass = root.AddClass(new CodeClass
+        {
+            Name = "parentClass",
+            IsErrorDefinition = true,
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsNullable = false,
+            },
+            IsAsync = false,
+            IsStatic = false,
+            Name = "Error"
+        }).First();
+
+        // When - Run refiner to add imports
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        // Then - Verify fmt import was added by the refiner
+        var fmtUsing = parentClass.StartBlock.Usings.FirstOrDefault(u => u.Declaration?.Name == "fmt");
+        Assert.NotNull(fmtUsing);
+        Assert.Equal("*fmt", fmtUsing.Name);
+    }
+
+    [Fact]
     public void WritesRequestGeneratorAcceptHeaderQuotes()
     {
         setup();

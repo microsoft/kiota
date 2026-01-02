@@ -102,7 +102,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         }
         else
         {
-            writer.WriteLine("return m.ApiError.Error()");
+            writer.WriteLine("return fmt.Sprintf(\"%d: %s\", m.ResponseStatusCode, m.ApiError.Error())");
         }
     }
     private void WriteRawUrlBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)

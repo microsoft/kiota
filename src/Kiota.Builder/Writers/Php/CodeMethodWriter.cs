@@ -99,7 +99,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         }
         else
         {
-            writer.WriteLine("return parent::getMessage();");
+            writer.WriteLine("return $this->getResponseStatusCode() . ': ' . parent::getMessage();");
         }
     }
     private const string UrlTemplateTempVarName = "$urlTplParams";

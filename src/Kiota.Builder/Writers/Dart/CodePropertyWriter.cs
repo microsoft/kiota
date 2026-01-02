@@ -60,7 +60,8 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:
                 writer.WriteLine("@override");
-                goto default;
+                writer.WriteLine($"{propertyType} get {codeElement.Name} => '$responseStatusCode: ${{super.message}}';");
+                break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
                 writer.WriteLine($"/// @QueryParameter('{codeElement.SerializationName}')");
                 goto default;

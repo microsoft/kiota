@@ -319,6 +319,32 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("return $primaryError->getMessage() ?? '';", result);
     }
+
+    [Fact]
+    public async Task WriteErrorMessageOverrideWithStatusCodeWhenNoPrimaryAsync()
+    {
+        setup();
+        var error401 = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+        // No primary error message property added
+
+        var codeMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType { Name = "string" },
+            SimpleName = "getPrimaryErrorMessage",
+        };
+        error401.AddMethod(codeMethod);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("return $this->getResponseStatusCode() . ': ' . parent::getMessage();", result);
+    }
+
     [Fact]
     public async Task WritesRequestExecutorForEnumTypesAsync()
     {

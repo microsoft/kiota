@@ -132,6 +132,17 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("super().message", result);
     }
+
+    [Fact]
+    public void WriteMessageOverrideWithStatusCodeWhenNoPrimary()
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("return f'{self.response_status_code}: {super().message}'", result);
+    }
+
     [Fact]
     public void WritePrimaryErrorMessagePropertyOption2()
     {
