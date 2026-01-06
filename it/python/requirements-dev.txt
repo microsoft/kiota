@@ -1,6 +1,6 @@
 -i https://pypi.org/simple
 
-astroid==3.3.8 ; python_full_version >= '3.7.2'
+astroid==4.0.3 ; python_full_version >= '3.7.2'
 
 certifi==2026.1.4 ; python_version >= '3.6'
 
