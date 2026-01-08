@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.OpenApi;
 
 namespace Kiota.Builder.CodeDOM;
 #pragma warning disable CA1711
@@ -39,6 +40,11 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
         get; set;
     }
     public CodeConstant? CodeEnumObject
+    {
+        get; set;
+    }
+
+    public JsonSchemaType? BackingType
     {
         get; set;
     }
