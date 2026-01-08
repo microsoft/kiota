@@ -477,6 +477,80 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("_5XX: createError5XXFromDiscriminatorValue as ParsableFactory<Parsable>", result);
         Assert.Contains("403: createError403FromDiscriminatorValue as ParsableFactory<Parsable>", result);
     }
+
+    [Fact]
+    public void WritesRequestExecutorBodyWithErrorDescriptions()
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            IsErrorDefinition = true
+        }).First();
+        var error5XX = root.AddClass(new CodeClass
+        {
+            Name = "Error5XX",
+            IsErrorDefinition = true
+        }).First();
+
+        // Add error mappings with descriptions
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX }, "Client error response");
+        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX }, "Server error response");
+
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+
+        // Check for enhanced error mapping with descriptions and TypeScript arrow function syntax
+        Assert.Contains("errorMappings: {", result);
+        Assert.Contains("_4XX: (parseNode: ParseNode) => createError4XXFromDiscriminatorValueWithMessage(parseNode, \"Client error response\") as ParsableFactory<Parsable>", result);
+        Assert.Contains("_5XX: (parseNode: ParseNode) => createError5XXFromDiscriminatorValueWithMessage(parseNode, \"Server error response\") as ParsableFactory<Parsable>", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+
+    [Fact]
+    public void WritesRequestExecutorBodyWithoutErrorDescriptions()
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            IsErrorDefinition = true
+        }).First();
+
+        // Add error mapping without description
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX });
+
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = root.TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+
+        // Should use original factory method when no description is provided
+        Assert.Contains("errorMappings: {", result);
+        Assert.Contains("_4XX: createError4XXFromDiscriminatorValue as ParsableFactory<Parsable>", result);
+        Assert.DoesNotContain("createError4XXFromDiscriminatorValueWithMessage", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
     [Fact]
     public void WritesIndexer()
     {

@@ -1297,7 +1297,7 @@ public partial class KiotaBuilder
             {
                 if (!codeClass.IsErrorDefinition)
                     codeClass.IsErrorDefinition = true;
-                executorMethod.AddErrorMapping(errorCode, errorType);
+                executorMethod.AddErrorMapping(errorCode, errorType, response.Description ?? string.Empty);
             }
             else
                 LogCouldNotCreateErrorType(errorCode, operation.OperationId);

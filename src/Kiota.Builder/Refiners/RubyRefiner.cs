@@ -97,6 +97,8 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true,
                 false,
                 [CodeClassKind.RequestConfiguration]);
+            // Add constructors for error classes AFTER default constructors are added
+            AddConstructorsForErrorClasses(generatedCode);
             ShortenLongNamespaceNames(generatedCode);
             if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
                 AddNamespaceModuleImports(parentOfClientNS, generatedCode);
@@ -335,5 +337,50 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder");
+    }
+
+    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            var messageParameter = CreateErrorMessageParameter("String", optional: true, defaultValue: "nil");
+            // Ruby only allows one initialize method, so we modify the existing constructor to add an optional message parameter
+            var existingConstructor = codeClass.Methods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.Constructor));
+            if (existingConstructor != null)
+            {
+                // Add message parameter to existing constructor if not already present
+                if (!existingConstructor.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+                {
+                    existingConstructor.AddParameter(messageParameter);
+                    // Update documentation to reflect the optional parameter
+                    existingConstructor.Documentation.DescriptionTemplate = "Instantiates a new {TypeName} with an optional error message.";
+                }
+            }
+            else
+            {
+                // If no constructor exists, create one with the message parameter
+                var messageConstructor = new CodeMethod
+                {
+                    Name = "initialize",
+                    Kind = CodeMethodKind.Constructor,
+                    Access = AccessModifier.Public,
+                    IsAsync = false,
+                    Documentation = new()
+                    {
+                        DescriptionTemplate = "Instantiates a new {TypeName} with an optional error message."
+                    },
+                    ReturnType = new CodeType { Name = "void", IsExternal = true }
+                };
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            TryAddErrorMessageFactoryMethod(codeClass,
+                "create_from_discriminator_value_with_message",
+                "parse_node",
+                messageParameter: messageParameter
+            );
+        }
+        CrawlTree(currentElement, AddConstructorsForErrorClasses);
     }
 }

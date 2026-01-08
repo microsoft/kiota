@@ -1345,6 +1345,106 @@ components:
         Assert.Equal(isImported, model.StartBlock.Usings.Any(static x => x.Declaration.Name.Equals("strconv", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
+    public async Task AddsConstructorsForErrorClassesAsync()
+    {
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        // Check that the factory methods were created for error classes
+        var parameterlessConstructor = errorClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+        var messageConstructor = errorClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
+        var discriminatorMessageFactory = errorClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+
+        Assert.NotNull(parameterlessConstructor);
+        Assert.NotNull(messageConstructor);
+        Assert.NotNull(discriminatorMessageFactory);
+
+        // Check parameter counts
+        Assert.Single(messageConstructor.Parameters);
+        Assert.Equal(2, discriminatorMessageFactory.Parameters.Count());
+    }
+
+    [Fact]
+    public async Task DoesNotAddConstructorsForNonErrorClassesAsync()
+    {
+        var regularClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = false
+        }).First();
+
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        // Should not have error-specific factory methods
+        Assert.DoesNotContain(regularClass.Methods, m => m.Name == "NewSomeModel" && m.IsOfKind(CodeMethodKind.Factory));
+        Assert.DoesNotContain(regularClass.Methods, m => m.Name == "NewSomeModelWithMessage" && m.IsOfKind(CodeMethodKind.Factory));
+        Assert.DoesNotContain(regularClass.Methods, m => m.Name == "CreateFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+    }
+
+    [Fact]
+    public async Task AddsConstructorsOnlyOnceForErrorClassesAsync()
+    {
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "DuplicateError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        // Add existing factory method to simulate already having one
+        errorClass.AddMethod(new CodeMethod
+        {
+            Name = "NewDuplicateError",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType { Name = "*DuplicateError", IsNullable = true }
+        });
+
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        // Should have only one of each factory method
+        Assert.Single(errorClass.Methods, m => m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+        Assert.Single(errorClass.Methods, m => m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
+        Assert.Single(errorClass.Methods, m => m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+    }
+
+    [Fact]
+    public async Task AddsConstructorsWithCorrectDescriptionForErrorClassesAsync()
+    {
+        var errorClassWithDescription = root.AddClass(new CodeClass
+        {
+            Name = "DetailedError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+
+        // Check factory methods are created
+        var parameterlessConstructor = errorClassWithDescription.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+        Assert.NotNull(parameterlessConstructor);
+        Assert.NotEmpty(parameterlessConstructor.Documentation.DescriptionTemplate);
+
+        var messageConstructor = errorClassWithDescription.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage)));
+        Assert.NotNull(messageConstructor);
+        Assert.NotEmpty(messageConstructor.Documentation.DescriptionTemplate);
+
+        var discriminatorMessageFactory = errorClassWithDescription.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+        Assert.NotNull(discriminatorMessageFactory);
+        Assert.NotEmpty(discriminatorMessageFactory.Documentation.DescriptionTemplate);
+    }
+
+    [Fact]
     public async Task EscapesReservedKeywordsInMethodParametersAsync()
     {
         var model = root.AddClass(new CodeClass

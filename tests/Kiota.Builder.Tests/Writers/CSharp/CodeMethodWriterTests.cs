@@ -2101,4 +2101,32 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
     }
+
+    [Fact]
+    public void WritesRequestExecutorWithEnhancedErrorMapping()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            IsErrorDefinition = true
+        }).First();
+        var error401 = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX }, "Client Error");
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 }, "Unauthorized");
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo", result);
+        Assert.Contains("var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>", result);
+        Assert.Contains("{ \"4XX\", (parseNode) => Error4XX.CreateFromDiscriminatorValueWithMessage(parseNode, \"Client Error\") }", result);
+        Assert.Contains("{ \"401\", (parseNode) => Error401.CreateFromDiscriminatorValueWithMessage(parseNode, \"Unauthorized\") }", result);
+        Assert.Contains("send", result.ToLower());
+    }
 }
