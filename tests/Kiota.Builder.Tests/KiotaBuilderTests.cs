@@ -10112,4 +10112,106 @@ components:
     }
     [GeneratedRegex(@"^[a-zA-Z0-9_]*$", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex OperationIdValidationRegex();
+
+    [Fact]
+    public async Task GeneratesBinaryReturnTypeWhenSuccessResponseIsBinaryAndErrorResponseIsPlainTextOrJsonAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Image API
+  version: 1.0.0
+servers:
+  - url: https://example.org
+paths:
+  /image:
+    get:
+      responses:
+        '200':
+          description: Returns image binary data
+          content:
+            application/octet-stream:
+                schema:
+                    type: string
+                    format: binary
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer
+            text/plain:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("ImageRequestBuilder");
+        Assert.NotNull(rbClass);
+        var getMethod = rbClass.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.NotNull(getMethod.ReturnType);
+        // The return type should be binary since the success response (200) is binary
+        Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task HandlesBinaryContentWithoutSchemaWhenErrorResponseHasSchemaAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Image API with Error Schema
+  version: 1.0.0
+servers:
+  - url: https://example.org
+paths:
+  /avatar:
+    get:
+      responses:
+        '200':
+          description: Returns user avatar image
+          content:
+            image/png: {}
+            image/jpeg: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("AvatarRequestBuilder");
+        Assert.NotNull(rbClass);
+        var getMethod = rbClass.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.NotNull(getMethod.ReturnType);
+        // Since 200 has no schema and only binary content types (image/png, image/jpeg),
+        // and these are not in structuredMimeTypes, GetResponseSchema returns null,
+        // which triggers GetExecutorMethodDefaultReturnType, which should return "binary"
+        Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
 }
