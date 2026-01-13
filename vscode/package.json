@@ -24,8 +24,8 @@
   "author": "Microsoft",
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.4.1",
-    "@types/node": "^25.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@types/node": "^25.0.7",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.39.2",
     "glob": "^13.0.0",
