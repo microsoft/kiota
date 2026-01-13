@@ -54,7 +54,7 @@ tomli==2.4.0 ; python_version < '3.11'
 
 tomli-w==1.2.0 ; python_version >= '3.7'
 
-tomlkit==0.13.3 ; python_version >= '3.7'
+tomlkit==0.14.0 ; python_version >= '3.7'
 
 typing-extensions==4.15.0 ; python_version >= '3.7'
 
