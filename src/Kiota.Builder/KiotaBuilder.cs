@@ -1369,7 +1369,7 @@ public partial class KiotaBuilder
             returnType = "binary";
         else if (operation.Responses?.Any(static x => noContentStatusCodes.Contains(x.Key)) is true)
             returnType = VoidType;
-        else if (operation.Responses?.Any(static x => x.Value.Content?.ContainsKey(RequestBodyPlainTextContentType) ?? false) is true)
+        else if (operation.Responses?.Any(static x => (x.Value.Content?.ContainsKey(RequestBodyPlainTextContentType) ?? false) && OpenApiOperationExtensions.SuccessCodes.Contains(x.Key)) is true)
             returnType = "string";
         else
             returnType = "binary";
