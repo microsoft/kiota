@@ -775,6 +775,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithNonNullableGuidCollection()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "Guid",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            IsNullable = false, // Non-nullable array items
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "GuidValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        // For non-nullable items, should generate List<Guid> without nullable marker
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<Guid>()?.AsList() is List<Guid> guidValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
     {
         setup();
