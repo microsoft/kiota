@@ -720,6 +720,61 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithGuidCollection()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "Guid",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            IsNullable = true,
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "GuidValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<Guid?>()?.AsList() is List<Guid?> guidValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
     {
         setup();
