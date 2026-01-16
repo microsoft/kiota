@@ -80,6 +80,7 @@ public class PhpRefiner : CommonLanguageRefiner
             );
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             AddConstructorsForDefaultValues(generatedCode, true);
+            AddConstructorsForErrorClasses(generatedCode); // Run after AddConstructorsForDefaultValues so we can add message parameter to existing constructor
             cancellationToken.ThrowIfCancellationRequested();
             cancellationToken.ThrowIfCancellationRequested();
             CorrectParameterType(generatedCode);
@@ -470,6 +471,36 @@ public class PhpRefiner : CommonLanguageRefiner
             }
         }
         CrawlTree(codeElement, AddQueryParameterFactoryMethod);
+    }
+
+    private static void AddConstructorsForErrorClasses(CodeElement codeElement)
+    {
+        if (codeElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            var messageParameter = CreateErrorMessageParameter("string", optional: true, defaultValue: "''");
+            // PHP only allows one __construct method, so we add an optional message parameter to the existing constructor
+            // The constructor may already exist from AddConstructorsForDefaultValues
+            var existingConstructor = codeClass.Methods.FirstOrDefault(static m => m.IsOfKind(CodeMethodKind.Constructor));
+            if (existingConstructor == null)
+            {
+                existingConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
+                codeClass.AddMethod(existingConstructor);
+            }
+            if (!existingConstructor.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+            {
+                existingConstructor.AddParameter(messageParameter);
+            }
+
+            TryAddErrorMessageFactoryMethod(
+               codeClass,
+               methodName: "createFromDiscriminatorValueWithMessage",
+               parseNodeTypeName: "ParseNode",
+               messageParameter: messageParameter,
+               returnTypeIsNullable: true,
+               setParent: false);
+        }
+
+        CrawlTree(codeElement, AddConstructorsForErrorClasses);
     }
 }
 
