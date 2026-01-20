@@ -415,7 +415,7 @@ extends:
 
                   - task: UseDotNet@2
                     condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
-                    displayName: "Use .NET 10"
+                    displayName: "Use .NET 9"
                     inputs:
                       version: 9.x
 
