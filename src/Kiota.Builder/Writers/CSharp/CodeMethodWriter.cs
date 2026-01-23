@@ -141,7 +141,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
-                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, true);
+                    // For collections, include nullable info for the inner type (e.g., List<Guid?>)
+                    // For non-collection value types, exclude nullable marker (C# doesn't allow "is int?" in patterns)
+                    var includeNullableInfo = propertyType.IsCollection;
+                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, includeNullableInfo);
                     var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                     writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName})");
                     writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
@@ -162,7 +165,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             if (property.Type is CodeType propertyType)
             {
-                var typeName = conventions.GetTypeString(propertyType, codeElement, true, true);
+                // For collections, include nullable info for the inner type (e.g., List<Guid?>)
+                // For non-collection value types, exclude nullable marker (C# doesn't allow "is int?" in patterns)
+                var includeNullableInfo = propertyType.IsCollection;
+                var typeName = conventions.GetTypeString(propertyType, codeElement, true, includeNullableInfo);
                 var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                 writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName})");
                 writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");

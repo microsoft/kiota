@@ -831,6 +831,63 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithNullableGuidScalar()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "Guid",
+            IsNullable = true, // Nullable but NOT a collection
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "GuidValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        // For non-collection nullable value types, should NOT use nullable marker in pattern (C# doesn't allow "is Guid?")
+        Assert.Contains("parseNode.GetGuidValue() is Guid guidValue", result);
+        // Should NOT contain "is Guid?" which is illegal C# syntax
+        Assert.DoesNotContain("is Guid? guidValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
     {
         setup();
