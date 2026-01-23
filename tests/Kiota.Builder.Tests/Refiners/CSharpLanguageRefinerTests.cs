@@ -975,11 +975,11 @@ public class CSharpLanguageRefinerTests
         }).First();
         // Add serialization members which adds the deserializer method
         KiotaBuilder.AddSerializationMembers(model, false, false, static s => s);
-        
+
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        
+
         var declaration = model.StartBlock;
-        
+
         // Check that the necessary usings are present for the deserializer method
         Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System");
         Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System.Collections.Generic");
@@ -1003,11 +1003,11 @@ public class CSharpLanguageRefinerTests
         };
         model.OriginalComposedType.AddType(new CodeType { Name = "integer" });
         model.OriginalComposedType.AddType(new CodeType { Name = "string" });
-        
+
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
-        
+
         var declaration = model.StartBlock;
-        
+
         // Check that the necessary usings are present for the deserializer method
         Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System");
         Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System.Collections.Generic");
