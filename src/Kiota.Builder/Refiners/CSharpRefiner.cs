@@ -51,7 +51,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 !_configuration.ExcludeBackwardCompatible,//TODO remove the condition for v2
                 !_configuration.ExcludeBackwardCompatible);
-            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
@@ -61,9 +60,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "IComposedTypeWrapper"
             );
             cancellationToken.ThrowIfCancellationRequested();
-            // Add default imports to union type wrappers created during ConvertUnionTypesToWrapper
-            // These wrappers are created after the initial AddDefaultImports call, so they miss the default usings
-            AddDefaultImportsToComposedTypeWrappers(generatedCode, defaultUsingEvaluators);
+            AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -201,30 +198,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, MultipartBodyClassName),
     };
     private const string MultipartBodyClassName = "MultipartBody";
-    protected static void AddDefaultImportsToComposedTypeWrappers(CodeElement currentElement, IEnumerable<AdditionalUsingEvaluator> evaluators)
-    {
-        // This method specifically targets classes created during ConvertUnionTypesToWrapper
-        // These classes have OriginalComposedType set and may not have received default usings
-        if (currentElement is CodeClass currentClass && currentClass.OriginalComposedType != null)
-        {
-            // Apply default imports to the current class, then recursively process child elements
-            // This logic is duplicated from CommonLanguageRefiner.usingSelector to avoid making it protected
-            var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(currentClass))
-                            .SelectMany(x => x.ImportSymbols.Select(y =>
-                                new CodeUsing
-                                {
-                                    Name = y,
-                                    Declaration = new CodeType { Name = x.NamespaceName, IsExternal = true },
-                                    IsErasable = x.IsErasable,
-                                }))
-                            .ToArray();
-            if (usingsToAdd.Length != 0)
-            {
-                currentClass.AddUsing(usingsToAdd);
-            }
-        }
-        CrawlTree(currentElement, x => AddDefaultImportsToComposedTypeWrappers(x, evaluators));
-    }
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
     {
         if (current is CodeNamespace currentNamespace)
