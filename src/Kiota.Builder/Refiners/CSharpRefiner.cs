@@ -207,7 +207,20 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         // These classes have OriginalComposedType set and may not have received default usings
         if (currentElement is CodeClass currentClass && currentClass.OriginalComposedType != null)
         {
-            AddDefaultImports(currentClass, evaluators);
+            // Apply default imports directly without recursive crawl since we only care about the class itself
+            var usingsToAdd = evaluators.Where(x => x.CodeElementEvaluator.Invoke(currentClass))
+                            .SelectMany(x => x.ImportSymbols.Select(y =>
+                                new CodeUsing
+                                {
+                                    Name = y,
+                                    Declaration = new CodeType { Name = x.NamespaceName, IsExternal = true },
+                                    IsErasable = x.IsErasable,
+                                }))
+                            .ToArray();
+            if (usingsToAdd.Length != 0)
+            {
+                currentClass.AddUsing(usingsToAdd);
+            }
         }
         CrawlTree(currentElement, x => AddDefaultImportsToComposedTypeWrappers(x, evaluators));
     }
