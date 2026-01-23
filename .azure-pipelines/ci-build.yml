@@ -413,6 +413,12 @@ extends:
                     inputs:
                       version: 10.0.x
 
+                  - task: UseDotNet@2
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                    displayName: "Use .NET 9"
+                    inputs:
+                      version: 9.x
+
                   - script: dotnet tool install --global PowerShell
                     displayName: "Install PowerShell"
                     condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
