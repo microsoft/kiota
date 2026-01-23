@@ -61,6 +61,9 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "IComposedTypeWrapper"
             );
             cancellationToken.ThrowIfCancellationRequested();
+            // Add default imports to union type wrappers created during ConvertUnionTypesToWrapper
+            // These wrappers are created after the initial AddDefaultImports call, so they miss the default usings
+            AddDefaultImportsToComposedTypeWrappers(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
             AddAsyncSuffix(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
@@ -198,6 +201,16 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, MultipartBodyClassName),
     };
     private const string MultipartBodyClassName = "MultipartBody";
+    protected static void AddDefaultImportsToComposedTypeWrappers(CodeElement currentElement, IEnumerable<AdditionalUsingEvaluator> evaluators)
+    {
+        // This method specifically targets classes created during ConvertUnionTypesToWrapper
+        // These classes have OriginalComposedType set and may not have received default usings
+        if (currentElement is CodeClass currentClass && currentClass.OriginalComposedType != null)
+        {
+            AddDefaultImports(currentClass, evaluators);
+        }
+        CrawlTree(currentElement, x => AddDefaultImportsToComposedTypeWrappers(x, evaluators));
+    }
     protected static void CapitalizeNamespacesFirstLetters(CodeElement current)
     {
         if (current is CodeNamespace currentNamespace)
