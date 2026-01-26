@@ -116,7 +116,19 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 writer.StartBlock("errorMappings: {");
                 foreach (var errorMapping in executorMethod.ErrorMappings)
                 {
-                    writer.WriteLine($"{GetErrorMappingKey(errorMapping.Key)}: {GetFactoryMethodName(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
+                    if (!(errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass errorClass)) continue;
+                    var errorKey = GetErrorMappingKey(errorMapping.Key);
+                    var errorDescription = executorMethod.GetErrorDescription(errorMapping.Key);
+
+                    if (!string.IsNullOrEmpty(errorDescription) && errorClass.IsErrorDefinition)
+                    {
+                        var enhancedFactoryMethodName = GetFactoryMethodName(errorMapping.Value, codeElement, writer).Replace("FromDiscriminatorValue", "FromDiscriminatorValueWithMessage", StringComparison.Ordinal);
+                        writer.WriteLine($"{errorKey}: (parseNode: ParseNode) => {enhancedFactoryMethodName}(parseNode, \"{errorDescription}\") as ParsableFactory<Parsable>,");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"{errorKey}: {GetFactoryMethodName(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
+                    }
                 }
                 writer.CloseBlock("},");
             }

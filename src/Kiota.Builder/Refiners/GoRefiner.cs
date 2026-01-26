@@ -186,6 +186,7 @@ public class GoRefiner : CommonLanguageRefiner
                     "ApiError",
                     "github.com/microsoft/kiota-abstractions-go"
             );
+            AddConstructorsForErrorClasses(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
@@ -1008,5 +1009,37 @@ public class GoRefiner : CommonLanguageRefiner
             }
         }
         CrawlTree(currentElement, NormalizeNamespaceNames);
+    }
+
+    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            // Add parameterless constructor if not already present (Go writer generates New* names)
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
+            {
+                var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
+                codeClass.AddMethod(parameterlessConstructor);
+            }
+
+            var messageParameter = CreateErrorMessageParameter("string");
+            // Add message constructor if not already present (Go writer generates NewWithMessage names)
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            {
+                var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            // Add discriminator-based factory with message
+            TryAddErrorMessageFactoryMethod(
+               codeClass,
+               methodName: "CreateFromDiscriminatorValueWithMessage",
+               parseNodeTypeName: "ParseNode",
+               messageParameter: messageParameter,
+               returnTypeName: "Parsable",
+               returnTypeIsExternal: true);
+        }
+        CrawlTree(currentElement, AddConstructorsForErrorClasses);
     }
 }

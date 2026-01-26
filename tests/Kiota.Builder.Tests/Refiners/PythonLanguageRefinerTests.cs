@@ -651,5 +651,129 @@ public class PythonLanguageRefinerTests
         Assert.Equal("bytes", method.Parameters.First().Type.Name);// type is renamed to use the stream type
         Assert.Equal("bytes", method.ReturnType.Name);// return type is renamed to use the stream type
     }
+
+    [Fact]
+    public async Task AddsConstructorsForErrorClasses()
+    {
+        // Given
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+
+        // Then
+        var parameterlessConstructor = errorClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) && !m.Parameters.Any());
+
+        Assert.NotNull(parameterlessConstructor);
+        Assert.Equal("__init__", parameterlessConstructor.Name);
+        Assert.Equal(AccessModifier.Public, parameterlessConstructor.Access);
+
+        var messageConstructor = errorClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) &&
+                                m.Parameters.Any(p => p.Type.Name.Equals("str", StringComparison.OrdinalIgnoreCase) && p.Name.Equals("message", StringComparison.OrdinalIgnoreCase)));
+
+        Assert.NotNull(messageConstructor);
+        Assert.Single(messageConstructor.Parameters);
+        Assert.Equal("message", messageConstructor.Parameters.First().Name);
+        Assert.Equal("str", messageConstructor.Parameters.First().Type.Name);
+        Assert.True(messageConstructor.Parameters.First().Optional);
+        Assert.Equal("None", messageConstructor.Parameters.First().DefaultValue);
+    }
+
+    [Fact]
+    public async Task DoesNotAddConstructorsToNonErrorClasses()
+    {
+        // Given
+        var regularClass = root.AddClass(new CodeClass
+        {
+            Name = "RegularModel",
+            IsErrorDefinition = false
+        }).First();
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+
+        // Then
+        var messageConstructor = regularClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor) &&
+                                m.Parameters.Any(p => p.Type.Name.Equals("str", StringComparison.OrdinalIgnoreCase) && p.Name.Equals("message", StringComparison.OrdinalIgnoreCase)));
+
+        Assert.Null(messageConstructor);
+    }
+
+    [Fact]
+    public async Task AddsMessageFactoryMethodToErrorClasses()
+    {
+        // Given
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+
+        // Then
+        var messageFactoryMethod = errorClass.Methods
+            .FirstOrDefault(m => m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage) &&
+                                m.Name.Equals("create_from_discriminator_value_with_message", StringComparison.OrdinalIgnoreCase));
+
+        Assert.NotNull(messageFactoryMethod);
+        Assert.Equal(2, messageFactoryMethod.Parameters.Count());
+
+        var parseNodeParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.Name.Equals("parse_node", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(parseNodeParam);
+        Assert.Equal("ParseNode", parseNodeParam.Type.Name);
+
+        var messageParam = messageFactoryMethod.Parameters.FirstOrDefault(p => p.Name.Equals("message", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(messageParam);
+        Assert.Equal("str", messageParam.Type.Name);
+        Assert.True(messageParam.Optional);
+        Assert.Equal("None", messageParam.DefaultValue);
+
+        Assert.True(messageFactoryMethod.IsStatic);
+        Assert.Equal(AccessModifier.Public, messageFactoryMethod.Access);
+    }
+
+    [Fact]
+    public async Task DoesNotDuplicateExistingConstructors()
+    {
+        // Given
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+
+        // Add an existing message constructor
+        var existingConstructor = new CodeMethod
+        {
+            Name = "__init__",
+            Kind = CodeMethodKind.Constructor,
+            Access = AccessModifier.Public,
+            ReturnType = new CodeType { Name = "None", IsExternal = true }
+        };
+        existingConstructor.AddParameter(new CodeParameter
+        {
+            Name = "message",
+            Type = new CodeType { Name = "str", IsExternal = true }
+        });
+        errorClass.AddMethod(existingConstructor);
+
+        var initialConstructorCount = errorClass.Methods.Count(m => m.IsOfKind(CodeMethodKind.Constructor));
+
+        // When
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
+
+        // Then - should add only the parameterless constructor, not duplicate the message one
+        var finalConstructorCount = errorClass.Methods.Count(m => m.IsOfKind(CodeMethodKind.Constructor));
+        Assert.Equal(initialConstructorCount + 1, finalConstructorCount); // Only parameterless constructor added
+    }
     #endregion
 }

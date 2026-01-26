@@ -42,7 +42,11 @@ public enum CodeMethodKind
     /// <summary>
     /// The override for the error message for the error/exception type.
     /// </summary>
-    ErrorMessageOverride
+    ErrorMessageOverride,
+    /// <summary>
+    /// Factory method for error classes that accepts an error message parameter.
+    /// </summary>
+    FactoryWithErrorMessage,
 }
 public enum HttpMethod
 {
@@ -254,6 +258,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
     public bool HasUrlTemplateOverride => !string.IsNullOrEmpty(UrlTemplateOverride);
 
     private ConcurrentDictionary<string, CodeTypeBase> errorMappings = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, string> errorDescriptions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Mapping of the error code and response types for this method.
@@ -263,6 +268,17 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         get
         {
             return errorMappings.OrderBy(static x => x.Key);
+        }
+    }
+
+    /// <summary>
+    /// Mapping of the error code and response descriptions from OpenAPI spec for this method.
+    /// </summary>
+    public IOrderedEnumerable<KeyValuePair<string, string>> ErrorDescriptions
+    {
+        get
+        {
+            return errorDescriptions.OrderBy(static x => x.Key, StringComparer.Ordinal);
         }
     }
     public bool HasErrorMappingCode(string code)
@@ -304,6 +320,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
             Parent = Parent,
             OriginalIndexer = OriginalIndexer,
             errorMappings = new(errorMappings),
+            errorDescriptions = new(errorDescriptions, StringComparer.Ordinal),
             AcceptedResponseTypes = new List<string>(AcceptedResponseTypes),
             PagingInformation = PagingInformation?.Clone() as PagingInformation,
             Documentation = (CodeDocumentation)Documentation.Clone(),
@@ -324,10 +341,19 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         EnsureElementsAreChildren(methodParameters);
         methodParameters.ToList().ForEach(x => parameters.TryAdd(x.Name, x));
     }
-    public void AddErrorMapping(string errorCode, CodeTypeBase type)
+    public void AddErrorMapping(string errorCode, CodeTypeBase type, string? description = null)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrEmpty(errorCode);
-        errorMappings.TryAdd(errorCode, type);
+        if (errorMappings.TryAdd(errorCode, type) && !string.IsNullOrEmpty(description))
+        {
+            errorDescriptions.TryAdd(errorCode, description);
+        }
+    }
+
+    public string? GetErrorDescription(string errorCode)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(errorCode);
+        return errorDescriptions.TryGetValue(errorCode, out var description) ? description : null;
     }
 }

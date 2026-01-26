@@ -82,6 +82,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 WriteComposedTypeMarkerBody(writer);
                 break;
@@ -115,9 +118,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         writer.WriteLine("return true");
     }
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return New{parentClass.Name}WithMessage({messageParam.Name}), nil");
+    }
+
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType || parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             writer.WriteLine($"{ResultVarName} := New{parentClass.Name.ToFirstCharacterUpperCase()}()");
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
@@ -444,7 +454,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
         var methodName = code.Kind switch
         {
-            CodeMethodKind.Constructor when parentBlock is CodeClass parentClass && parentClass.IsOfKind(CodeClassKind.RequestBuilder) => $"New{parentClass.Name.ToFirstCharacterUpperCase()}Internal", // internal instantiation with url template parameters
+            // Error class constructors: generate names based on parameters
+            CodeMethodKind.Constructor when parentBlock is CodeClass { IsErrorDefinition: true } errorClass && code.Parameters.Any(p => p.IsOfKind(CodeParameterKind.ErrorMessage))
+                => $"New{errorClass.Name.ToFirstCharacterUpperCase()}WithMessage",
+            CodeMethodKind.Constructor when parentBlock is CodeClass { IsErrorDefinition: true }
+                => $"New{parentBlock.Name.ToFirstCharacterUpperCase()}",
+            // RequestBuilder constructors with parameters
+            CodeMethodKind.Constructor when parentBlock is CodeClass parentClass && parentClass.IsOfKind(CodeClassKind.RequestBuilder)
+                => $"New{parentClass.Name.ToFirstCharacterUpperCase()}Internal",
             CodeMethodKind.Factory => $"Create{parentBlock.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue",
             _ when isConstructor => $"New{parentBlock.Name.ToFirstCharacterUpperCase()}",
             _ when code.Access == AccessModifier.Public => code.Name.ToFirstCharacterUpperCase(),
@@ -486,27 +503,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 !(codeElement.AccessedProperty.Type?.IsNullable ?? true) &&
                 !codeElement.AccessedProperty.ReadOnly &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty.DefaultValue))
-        {
-            writer.WriteLines(
-                $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
-            writer.WriteBlock("if err != nil {", "}", "panic(err)");
-            writer.WriteBlock("if val == nil {", "}",
-                $"var value = {codeElement.AccessedProperty.DefaultValue};",
-                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
+            {
+                writer.WriteLines(
+                    $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                writer.WriteBlock("if val == nil {", "}",
+                    $"var value = {codeElement.AccessedProperty.DefaultValue};",
+                    $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
 
-            writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
-        }
-        else
-        {
-            var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+                writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
+            }
+            else
+            {
+                var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
 
-            writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
+                writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
 
-            writer.WriteBlock("if err != nil {", "}", "panic(err)");
-            writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
 
-            writer.WriteLine("return nil");
-        }
+                writer.WriteLine("return nil");
+            }
     }
     private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
@@ -560,6 +577,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.DecreaseIndent();
         }
         writer.CloseBlock(decreaseIndent: false);
+
+        // Handle error message parameter for error classes - set the Message field on the parent ApiError
+        if (parentClass.IsErrorDefinition && currentMethod.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) is CodeParameter messageParam)
+        {
+            var parentClassName = parentClass.StartBlock.Inherits?.Name.ToFirstCharacterUpperCase();
+            if (!string.IsNullOrEmpty(parentClassName))
+            {
+                writer.WriteLine($"m.{parentClassName}.Message = *{messageParam.Name.ToFirstCharacterLowerCase()}");
+            }
+        }
+
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -800,7 +828,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.IncreaseIndent();
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {conventions.GetImportedStaticMethodName(errorMapping.Value, parentClass, "Create", "FromDiscriminatorValue", "able")},");
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
+                {
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"\"{errorKey}\": func(parseNode {conventions.SerializationHash}.ParseNode) error {{ return {conventions.GetTypeString(errorMapping.Value, parentClass, false, false, false)}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription.SanitizeDoubleQuote()}\") }},");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"\"{errorKey}\": {conventions.GetImportedStaticMethodName(errorMapping.Value, parentClass, "Create", "FromDiscriminatorValue", "able")},");
+                    }
+                }
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
+                {
+                    writer.WriteLine($"\"{errorKey}\": {conventions.GetImportedStaticMethodName(errorMapping.Value, parentClass, "Create", "FromDiscriminatorValue", "able")},");
+                }
             }
             writer.CloseBlock();
         }

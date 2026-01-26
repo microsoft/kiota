@@ -95,6 +95,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             case CodeMethodKind.Factory:
                 WriteFactoryMethodBody(codeElement, parentClass, writer);
                 break;
+            case CodeMethodKind.FactoryWithErrorMessage:
+                WriteFactoryMethodBodyForErrorClassWithMessage(codeElement, parentClass, writer);
+                break;
             case CodeMethodKind.ComposedTypeMarker:
                 throw new InvalidOperationException("ComposedTypeMarker is not required as interface is explicitly implemented.");
             default:
@@ -191,6 +194,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.WriteLine($"return {ResultVarName};");
     }
     private const string DiscriminatorMappingVarName = "mappingValue";
+    private void WriteFactoryMethodBodyForErrorClassWithMessage(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    {
+        var messageParam = codeElement.Parameters.FirstOrDefault(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)) ?? throw new InvalidOperationException($"FactoryWithErrorMessage should have a message parameter");
+        writer.WriteLine($"return new {parentClass.GetFullName()}({messageParam.Name});");
+    }
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
@@ -400,9 +408,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             errorMappingVarName = "errorMapping";
             writer.WriteLine($"var {errorMappingVarName} = new Dictionary<string, ParsableFactory<IParsable>>");
             writer.StartBlock();
-            foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
+            foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
+                var typeName = conventions.GetTypeString(errorMapping.Value, codeElement, false);
+                var errorKey = errorMapping.Key.ToUpperInvariant();
+
+                if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass { IsErrorDefinition: true })
+                {
+                    var errorDescription = codeElement.GetErrorDescription(errorMapping.Key);
+                    if (!string.IsNullOrEmpty(errorDescription))
+                    {
+                        writer.WriteLine($"{{ \"{errorKey}\", (parseNode) => {typeName}.CreateFromDiscriminatorValueWithMessage(parseNode, \"{errorDescription.SanitizeDoubleQuote()}\") }},");
+                    }
+                    else
+                    {
+                        writer.WriteLine($"{{ \"{errorKey}\", {typeName}.CreateFromDiscriminatorValue }},");
+                    }
+                }
+                else if (errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass)
+                {
+                    writer.WriteLine($"{{ \"{errorKey}\", {typeName}.CreateFromDiscriminatorValue }},");
+                }
             }
             writer.CloseBlock("};");
         }
@@ -560,7 +586,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
         conventions.WriteLongDescription(code, writer);
-        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase) && code.Kind is not CodeMethodKind.ClientConstructor or CodeMethodKind.Constructor)
+        if (!"void".Equals(code.ReturnType.Name, StringComparison.OrdinalIgnoreCase) && code.Kind is not (CodeMethodKind.ClientConstructor or CodeMethodKind.Constructor))
             conventions.WriteAdditionalDescriptionItem($"<returns>A {conventions.GetTypeStringForDocumentation(code.ReturnType, code)}</returns>", writer);
         foreach (var paramWithDescription in code.Parameters
                                                 .Where(static x => x.Documentation.DescriptionAvailable)
@@ -609,9 +635,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             }
             return " : base()";
         }
+        // For error classes with message constructor, pass the message to base constructor
+        else if (isConstructor && parentClass.IsErrorDefinition &&
+                 currentMethod.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage)))
+        {
+            return " : base(message)";
+        }
 
         return string.Empty;
     }
+
     private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;

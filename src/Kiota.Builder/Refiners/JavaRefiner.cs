@@ -148,6 +148,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                     "ApiException",
                     AbstractionsNamespaceName
             );
+            AddConstructorsForErrorClasses(generatedCode);
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
@@ -551,5 +552,33 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
         CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
+    }
+
+    private static void AddConstructorsForErrorClasses(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
+        {
+            // Add parameterless constructor if not already present
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
+            {
+                var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
+                codeClass.AddMethod(parameterlessConstructor);
+            }
+            var messageParameter = CreateErrorMessageParameter("String");
+            // Add message constructor if not already present
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            {
+                var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            TryAddErrorMessageFactoryMethod(
+             codeClass,
+             methodName: "createFromDiscriminatorValueWithMessage",
+             parseNodeTypeName: "ParseNode",
+             messageParameter: messageParameter);
+        }
+        CrawlTree(currentElement, AddConstructorsForErrorClasses);
     }
 }

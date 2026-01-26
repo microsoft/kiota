@@ -299,4 +299,106 @@ public class PhpLanguageRefinerTests
         Assert.True(root.FindChildByName<CodeClass>("Union", false) is CodeClass unionTypeWrapper && unionTypeWrapper.OriginalComposedType != null);
         Assert.True(root.FindChildByName<CodeClass>("UnionWrapper", false) is null);
     }
+
+    [Fact]
+    public async Task AddsConstructorsForErrorClassesAsync()
+    {
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+
+        // PHP only allows one __construct method, so check for single constructor with optional message parameter
+        var constructor = errorClass.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor));
+        Assert.NotNull(constructor);
+        Assert.Single(constructor.Parameters);
+        var constructorMessageParam = constructor.Parameters.First();
+        Assert.Equal("message", constructorMessageParam.Name);
+        Assert.Equal("string", constructorMessageParam.Type.Name);
+        Assert.True(constructorMessageParam.Optional);
+
+        // Check for CreateFromDiscriminatorValueWithMessage factory method
+        var discriminatorMessageFactory = errorClass.Methods.FirstOrDefault(m =>
+            m.Name == "createFromDiscriminatorValueWithMessage" &&
+            m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+        Assert.NotNull(discriminatorMessageFactory);
+        Assert.Equal(2, discriminatorMessageFactory.Parameters.Count());
+        var parseNodeParam = discriminatorMessageFactory.Parameters.FirstOrDefault(p => p.Name == "parseNode");
+        var factoryMessageParam = discriminatorMessageFactory.Parameters.FirstOrDefault(p => p.Name == "message");
+        Assert.NotNull(parseNodeParam);
+        Assert.NotNull(factoryMessageParam);
+        Assert.Equal("string", factoryMessageParam.Type.Name);
+    }
+
+    [Fact]
+    public async Task DoesNotAddConstructorsForNonErrorClassesAsync()
+    {
+        var regularClass = root.AddClass(new CodeClass
+        {
+            Name = "SomeModel",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = false
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+
+        // Should not have error-specific constructors or factory methods
+        Assert.DoesNotContain(regularClass.Methods, m => m.Name == "createFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+    }
+
+    [Fact]
+    public async Task AddsConstructorsOnlyOnceForErrorClassesAsync()
+    {
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "DuplicateError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        // Add existing constructor to simulate already having one
+        errorClass.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void", IsExternal = true }
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+
+        // Should have only one constructor (with optional message parameter added to existing constructor)
+        Assert.Single(errorClass.Methods, m => m.IsOfKind(CodeMethodKind.Constructor));
+        var constructor = errorClass.Methods.First(m => m.IsOfKind(CodeMethodKind.Constructor));
+        Assert.Single(constructor.Parameters); // Should have message parameter added
+        Assert.True(constructor.Parameters.First().Optional);
+        Assert.Single(errorClass.Methods, m => m.Name == "createFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+    }
+
+    [Fact]
+    public async Task AddsConstructorsWithCorrectDescriptionForErrorClassesAsync()
+    {
+        var errorClassWithDescription = root.AddClass(new CodeClass
+        {
+            Name = "DetailedError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+
+        // Check single constructor with optional message parameter is created
+        var constructor = errorClassWithDescription.Methods.FirstOrDefault(m => m.IsOfKind(CodeMethodKind.Constructor));
+        Assert.NotNull(constructor);
+        Assert.NotEmpty(constructor.Documentation.DescriptionTemplate);
+        Assert.Single(constructor.Parameters);
+        Assert.True(constructor.Parameters.First().Optional);
+
+        var discriminatorMessageFactory = errorClassWithDescription.Methods.FirstOrDefault(m => m.Name == "createFromDiscriminatorValueWithMessage" && m.IsOfKind(CodeMethodKind.FactoryWithErrorMessage));
+        Assert.NotNull(discriminatorMessageFactory);
+        Assert.NotEmpty(discriminatorMessageFactory.Documentation.DescriptionTemplate);
+    }
 }

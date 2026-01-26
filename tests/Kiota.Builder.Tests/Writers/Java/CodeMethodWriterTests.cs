@@ -2192,4 +2192,111 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
     }
+
+    [Fact]
+    public void WritesRequestExecutorWithEnhancedErrorMapping()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var error4XX = root.AddClass(new CodeClass
+        {
+            Name = "Error4XX",
+            IsErrorDefinition = true
+        }).First();
+        var error401 = root.AddClass(new CodeClass
+        {
+            Name = "Error401",
+            IsErrorDefinition = true
+        }).First();
+        method.AddErrorMapping("4XX", new CodeType { Name = "Error4XX", TypeDefinition = error4XX }, "Client Error");
+        method.AddErrorMapping("401", new CodeType { Name = "Error401", TypeDefinition = error401 }, "Unauthorized");
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping", result);
+        Assert.Contains("(parseNode) -> Error4XX.createFromDiscriminatorValueWithMessage(parseNode, \"Client Error\")", result);
+        Assert.Contains("(parseNode) -> Error401.createFromDiscriminatorValueWithMessage(parseNode, \"Unauthorized\")", result);
+        Assert.Contains("send", result.ToLower());
+    }
+
+    [Fact]
+    public void WritesRequestExecutorWithRegularErrorMapping()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var regularClass = root.AddClass(new CodeClass
+        {
+            Name = "RegularError",
+            IsErrorDefinition = false
+        }).First();
+        method.AddErrorMapping("500", new CodeType { Name = "RegularError", TypeDefinition = regularClass });
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("final HashMap<String, ParsableFactory<? extends Parsable>> errorMapping", result);
+        Assert.Contains("RegularError::createFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createFromDiscriminatorValueWithMessage", result);
+    }
+
+    [Fact]
+    public void WritesFactoryMethodBodyForErrorClassWithMessage()
+    {
+        setup();
+        parentClass.IsErrorDefinition = true;
+        method.Kind = CodeMethodKind.FactoryWithErrorMessage;
+        method.Name = "createFromDiscriminatorValueWithMessage";
+        method.IsStatic = true;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode", IsExternal = true }
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "message",
+            Kind = CodeParameterKind.ErrorMessage,
+            Type = new CodeType { Name = "String", IsExternal = true }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"return new {parentClass.Name}(message);", result);
+    }
+
+    [Fact]
+    public void WritesConstructorWithMessageInheritance()
+    {
+        // Given
+        var errorClass = root.AddClass(new CodeClass
+        {
+            Name = "TestError",
+            IsErrorDefinition = true
+        }).First();
+
+        var constructor = new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void", IsExternal = true },
+            Parent = errorClass
+        };
+        constructor.AddParameter(new CodeParameter
+        {
+            Name = "message",
+            Kind = CodeParameterKind.ErrorMessage,
+            Type = new CodeType { Name = "String", IsExternal = true }
+        });
+
+        parentClass = errorClass;
+        method = constructor;
+
+        // When
+        writer.Write(method);
+        var result = tw.ToString();
+
+        // Then
+        Assert.Contains("super(message);", result);
+    }
 }

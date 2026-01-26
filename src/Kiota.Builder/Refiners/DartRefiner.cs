@@ -173,28 +173,29 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
     ///error classes should always have a constructor for the copyWith method
     private void AddConstructorForErrorClass(CodeElement currentElement)
     {
-        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition && !codeClass.Methods.Where(static x => x.IsOfKind(CodeMethodKind.Constructor)).Any())
+        if (currentElement is CodeClass codeClass && codeClass.IsErrorDefinition)
         {
-            codeClass.AddMethod(new CodeMethod
+            // Add parameterless constructor if not already present
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && !x.Parameters.Any()))
             {
-                Name = "constructor",
-                Kind = CodeMethodKind.Constructor,
-                IsAsync = false,
-                IsStatic = false,
-                Documentation = new(new() {
-                                {"TypeName", new CodeType {
-                                    IsExternal = false,
-                                    TypeDefinition = codeClass,
-                                }
-                            }
-            })
-                {
-                    DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
-                },
-                Access = AccessModifier.Public,
-                ReturnType = new CodeType { Name = "void", IsExternal = true },
-                Parent = codeClass,
-            });
+                var parameterlessConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} and sets the default values.");
+                codeClass.AddMethod(parameterlessConstructor);
+            }
+            var messageParameter = CreateErrorMessageParameter("String");
+            // Add message constructor if not already present
+            if (!codeClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor) && x.Parameters.Any(static p => p.IsOfKind(CodeParameterKind.ErrorMessage))))
+            {
+                var messageConstructor = CreateConstructor(codeClass, "Instantiates a new {TypeName} with the specified error message.");
+                messageConstructor.AddParameter(messageParameter);
+                codeClass.AddMethod(messageConstructor);
+            }
+
+            TryAddErrorMessageFactoryMethod(
+               codeClass,
+               methodName: "createFromDiscriminatorValueWithMessage",
+               parseNodeTypeName: "ParseNode",
+               messageParameter: messageParameter,
+               setParent: false);
         }
         CrawlTree(currentElement, element => AddConstructorForErrorClass(element));
     }
