@@ -1236,8 +1236,15 @@ public partial class KiotaBuilder
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
         return (typeName & ~JsonSchemaType.Null, format?.ToLowerInvariant()) switch
         {
+            // byte and binary can apply to any type
             (_, "byte") => new CodeType { Name = "base64", IsExternal = true },
             (_, "binary") => new CodeType { Name = "binary", IsExternal = true },
+            // Handle formats that can appear without a type (e.g., from ASP.NET OpenAPI generator in .NET 10+)
+            // or with String | Null type. Must come before generic String pattern.
+            (_, "duration") => new CodeType { Name = "TimeSpan", IsExternal = true },
+            (_, "time") => new CodeType { Name = "TimeOnly", IsExternal = true },
+            (_, "date") => new CodeType { Name = "DateOnly", IsExternal = true },
+            (_, "date-time") => new CodeType { Name = "DateTimeOffset", IsExternal = true },
             (JsonSchemaType.String, "base64url") => new CodeType { Name = "base64url", IsExternal = true },
             (JsonSchemaType.String, "uuid") => new CodeType { Name = "Guid", IsExternal = true },
             (JsonSchemaType.String, _) => new CodeType { Name = "string", IsExternal = true }, // covers commonmark and html
@@ -1250,11 +1257,6 @@ public partial class KiotaBuilder
             (JsonSchemaType.Number, _) => new CodeType { Name = "double", IsExternal = true },
             (JsonSchemaType.Integer, _) => new CodeType { Name = "integer", IsExternal = true },
             (JsonSchemaType.Boolean, _) => new CodeType { Name = "boolean", IsExternal = true },
-            // Handle formats that can appear without a type (e.g., from ASP.NET OpenAPI generator in .NET 10+)
-            (_, "duration") => new CodeType { Name = "TimeSpan", IsExternal = true },
-            (_, "time") => new CodeType { Name = "TimeOnly", IsExternal = true },
-            (_, "date") => new CodeType { Name = "DateOnly", IsExternal = true },
-            (_, "date-time") => new CodeType { Name = "DateTimeOffset", IsExternal = true },
             (_, _) when !string.IsNullOrEmpty(childType) => new CodeType { Name = childType, IsExternal = false, },
             (_, _) => null,
         };
