@@ -4335,6 +4335,16 @@ components:
     [InlineData("date", "DateOnly")]
     [InlineData("byte", "base64")]
     [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")]
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
     [Theory]
     public void MapsPrimitiveFormatsWithoutType(string format, string expected)
     {
@@ -4387,6 +4397,16 @@ components:
     [InlineData("date", "DateOnly")]
     [InlineData("byte", "base64")]
     [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")]
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
     [Theory]
     public void MapsQueryParameterTypesWithoutType(string format, string expected)
     {
