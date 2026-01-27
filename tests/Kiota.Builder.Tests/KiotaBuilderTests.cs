@@ -4342,7 +4342,7 @@ components:
     [InlineData("decimal", "decimal")]
     [InlineData("int8", "sbyte")]
     [InlineData("uint8", "byte")]
-    [InlineData("int16", "integer")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
     [InlineData("int32", "integer")]
     [InlineData("int64", "int64")]
     [Theory]
@@ -4404,7 +4404,7 @@ components:
     [InlineData("decimal", "decimal")]
     [InlineData("int8", "sbyte")]
     [InlineData("uint8", "byte")]
-    [InlineData("int16", "integer")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
     [InlineData("int32", "integer")]
     [InlineData("int64", "int64")]
     [Theory]
