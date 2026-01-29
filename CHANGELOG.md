@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug where OpenAPI schemas with `format` but without `type` keyword would generate `UntypedNode` instead of proper types. [#7315](https://github.com/microsoft/kiota/issues/7315)
+
 ## [1.30.0] - 2026-01-26
 
 ### Added
