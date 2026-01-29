@@ -1236,24 +1236,24 @@ public partial class KiotaBuilder
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
         return (typeName & ~JsonSchemaType.Null, format?.ToLowerInvariant()) switch
         {
-            // Format-based matching (independent of type) - takes precedence when format is present
-            // This handles cases where OpenAPI generators omit the type field but include format
+            // byte and binary can apply to any type
             (_, "byte") => new CodeType { Name = "base64", IsExternal = true },
             (_, "binary") => new CodeType { Name = "binary", IsExternal = true },
-            (_, "base64url") => new CodeType { Name = "base64url", IsExternal = true },
-            (_, "uuid") => new CodeType { Name = "Guid", IsExternal = true },
-            (_, "duration") => new CodeType { Name = "TimeSpan", IsExternal = true },
-            (_, "time") => new CodeType { Name = "TimeOnly", IsExternal = true },
-            (_, "date") => new CodeType { Name = "DateOnly", IsExternal = true },
-            (_, "date-time") => new CodeType { Name = "DateTimeOffset", IsExternal = true },
-            (_, "double" or "float" or "decimal") => new CodeType { Name = format.ToLowerInvariant(), IsExternal = true },
-            (_, "int8") => new CodeType { Name = "sbyte", IsExternal = true },
-            (_, "uint8") => new CodeType { Name = "byte", IsExternal = true },
-            (_, "int64") => new CodeType { Name = "int64", IsExternal = true },
-            (_, "int16") => new CodeType { Name = "integer", IsExternal = true },
-            (_, "int32") => new CodeType { Name = "integer", IsExternal = true },
-            // Type-based fallback (when format is not present or not recognized)
-            (JsonSchemaType.String, _) => new CodeType { Name = "string", IsExternal = true },
+            // String-based formats - handle both with explicit String type and without type (null)
+            (JsonSchemaType.String or null, "base64url") => new CodeType { Name = "base64url", IsExternal = true },
+            (JsonSchemaType.String or null, "uuid") => new CodeType { Name = "Guid", IsExternal = true },
+            (JsonSchemaType.String or null, "duration") => new CodeType { Name = "TimeSpan", IsExternal = true },
+            (JsonSchemaType.String or null, "time") => new CodeType { Name = "TimeOnly", IsExternal = true },
+            (JsonSchemaType.String or null, "date") => new CodeType { Name = "DateOnly", IsExternal = true },
+            (JsonSchemaType.String or null, "date-time") => new CodeType { Name = "DateTimeOffset", IsExternal = true },
+            (JsonSchemaType.String, _) => new CodeType { Name = "string", IsExternal = true }, // covers commonmark and html
+            // Numeric formats - handle with explicit Number/Integer types and without type (null)
+            (JsonSchemaType.Number or null, "double" or "float" or "decimal") => new CodeType { Name = format.ToLowerInvariant(), IsExternal = true },
+            (JsonSchemaType.Number or JsonSchemaType.Integer or null, "int8") => new CodeType { Name = "sbyte", IsExternal = true },
+            (JsonSchemaType.Number or JsonSchemaType.Integer or null, "uint8") => new CodeType { Name = "byte", IsExternal = true },
+            (JsonSchemaType.Number or JsonSchemaType.Integer or null, "int64") => new CodeType { Name = "int64", IsExternal = true },
+            (JsonSchemaType.Number or null, "int16") => new CodeType { Name = "integer", IsExternal = true },
+            (JsonSchemaType.Number or null, "int32") => new CodeType { Name = "integer", IsExternal = true },
             (JsonSchemaType.Number, _) => new CodeType { Name = "double", IsExternal = true },
             (JsonSchemaType.Integer, _) => new CodeType { Name = "integer", IsExternal = true },
             (JsonSchemaType.Boolean, _) => new CodeType { Name = "boolean", IsExternal = true },
