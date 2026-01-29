@@ -188,4 +188,30 @@ public class CodeUsingWriterTests
         Assert.Contains("// @ts-ignore", result);
         Assert.Contains("import { type Bar } from", result);
     }
+
+    [Fact]
+    public void WritesImportTypeStatementForEnum()
+    {
+        // Enums are generated as TypeScript type aliases (e.g., `export type MyEnum = ...`),
+        // so they must use `import type` for compatibility with verbatimModuleSyntax.
+        // See: https://github.com/microsoft/kiota/issues/2959
+        var usingWriter = new CodeUsingWriter("foo");
+        var codeEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "MyStatus",
+        }).First();
+        var us = new CodeUsing
+        {
+            Name = "MyStatus",
+            Declaration = new CodeType
+            {
+                Name = codeEnum.Name,
+                TypeDefinition = codeEnum,
+            }
+        };
+        usingWriter.WriteCodeElement(new CodeUsing[] { us }, root, writer);
+        var result = tw.ToString();
+        Assert.Contains("// @ts-ignore", result);
+        Assert.Contains("import { type MyStatus } from", result);
+    }
 }
