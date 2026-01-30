@@ -412,20 +412,31 @@ public static class OpenApiSchemaExtensions
         if (schema == null)
             return [];
         if (schema.Discriminator?.Mapping is not { Count: > 0 })
+        {
             if (schema.OneOf is { Count: > 0 })
                 return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
-            else if (schema.AnyOf is { Count: > 0 })
+            if (schema.AnyOf is { Count: > 0 })
                 return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
-            else if (schema.IsInherited() && schema.AllOf?.OfType<OpenApiSchema>().FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
+            if (schema.IsInherited())
+            {
                 // ensure we're in an inheritance context and get the discriminator from the parent when available
-                return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
-            else if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
+                // First check inline schemas
+                if (schema.AllOf?.OfType<OpenApiSchema>().FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
+                    return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
+                // Then check schema references and resolve them to find discriminator mappings
+                if (schema.AllOf?.OfType<OpenApiSchemaReference>()
+                        .Select(static x => x.RecursiveTarget)
+                        .OfType<OpenApiSchema>()
+                        .FirstOrDefault(allOfEvaluatorForMappings) is { } allOfRefTarget)
+                    return GetDiscriminatorMappings(allOfRefTarget, inheritanceIndex);
+            }
+            if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
                 return GetAllInheritanceSchemaReferences(refId, inheritanceIndex)
                            .Where(static x => !string.IsNullOrEmpty(x))
                            .Select(x => KeyValuePair.Create(x, x))
                            .Union([KeyValuePair.Create(refId, refId)]);
-            else
-                return [];
+            return [];
+        }
 
         return schema.Discriminator
                 .Mapping
