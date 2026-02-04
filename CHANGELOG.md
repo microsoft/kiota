@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a bug where discriminator mappings for oneOf types with allOf-inherited schemas would incorrectly use schema names as keys instead of resolving the base type discriminator mappings. [#7339](https://github.com/microsoft/kiota/issues/7339)
 - Fixed TypeScript enum imports to use `import type` for type aliases to support `verbatimModuleSyntax`. [#7332](https://github.com/microsoft/kiota/pull/7332)
+- Fixed a bug where the kiota npm package esm variant would fail to resolve modules.
+- Fixes a bug where the kiota npm package type definitions would be misplaced.
 
 ## [1.30.0] - 2026-01-26
 
@@ -1705,4 +1707,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
