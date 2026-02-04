@@ -4,6 +4,6 @@
     "outDir": "./dist/esm",
     "module": "ESNext",
     "declaration": true,
-    "declarationDir": "./dist/esm/types"
+    "declarationDir": "./dist/esm"
   }
 }
