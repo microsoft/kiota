@@ -3530,6 +3530,137 @@ paths:
     }
 
     [Fact]
+    public async Task AddsDiscriminatorMappingsForOneOfWithDerivedTypesFromBaseWithMappingAsync()
+    {
+        // Test case: oneOf contains derived types (via allOf) where the discriminator mapping is defined on the base type
+        // Expected: The discriminator keys from the base type's mapping should be used, not the schema names
+        var baseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                {
+                    "$type", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "$type"
+            },
+            Discriminator = new()
+            {
+                PropertyName = "$type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    {
+                        "typeA", new OpenApiSchemaReference("ResultTypeA")
+                    },
+                    {
+                        "typeB", new OpenApiSchemaReference("ResultTypeB")
+                    }
+                }
+            },
+        };
+        var resultTypeASchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("OperationResult"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "dataA", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                }
+            },
+        };
+        var resultTypeBSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("OperationResult"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "dataB", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                }
+            },
+        };
+        var oneOfResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            OneOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("ResultTypeA"),
+                new OpenApiSchemaReference("ResultTypeB")
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("OperationResponse"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var operationResponse = new OpenApiResponse
+        {
+            Content = new Dictionary<string, IOpenApiMediaType>()
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("OneOfResponse", document)
+                }
+            },
+        };
+        document.AddComponent("OperationResult", baseSchema);
+        document.AddComponent("ResultTypeA", resultTypeASchema);
+        document.AddComponent("ResultTypeB", resultTypeBSchema);
+        document.AddComponent("OneOfResponse", oneOfResponseSchema);
+        document.AddComponent("OperationResponse", operationResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+
+        var oneOfResponseClass = codeModel.FindChildByName<CodeClass>("OneOfResponse");
+        Assert.NotNull(oneOfResponseClass);
+
+        // The discriminator mappings on the oneOf wrapper class should use the keys from OperationResult's discriminator mapping
+        var mappings = oneOfResponseClass.DiscriminatorInformation.DiscriminatorMappings.ToList();
+        Assert.Equal(2, mappings.Count);
+        // Bug fix verification: keys should be "typeA" and "typeB" (from base type mapping), not "ResultTypeA" and "ResultTypeB" (schema names)
+        Assert.Contains("typeA", mappings.Select(static x => x.Key));
+        Assert.Contains("typeB", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("ResultTypeA", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("ResultTypeB", mappings.Select(static x => x.Key));
+    }
+
+    [Fact]
     public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNotAsync()
     {
         var document = new OpenApiDocument

@@ -24,11 +24,11 @@
   "author": "Microsoft",
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.4.1",
-    "@types/node": "^25.1.0",
+    "@types/node": "^25.2.2",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.39.2",
-    "glob": "^13.0.0",
+    "glob": "^13.0.1",
     "typemoq": "^2.1.0",
     "typescript": "^5.9.3"
   },
