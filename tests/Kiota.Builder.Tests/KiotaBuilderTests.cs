@@ -4460,6 +4460,127 @@ components:
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
+    [InlineData("date-time", "DateTimeOffset")]
+    [InlineData("duration", "TimeSpan")]
+    [InlineData("time", "TimeOnly")]
+    [InlineData("date", "DateOnly")]
+    [InlineData("byte", "base64")]
+    [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
+    [Theory]
+    public void MapsPrimitiveFormatsWithoutType(string format, string expected)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                // Type is intentionally not set to simulate .NET 10 ASP.NET OpenAPI generator behavior
+                                                Format = format
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var method = requestBuilder.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(method);
+        Assert.Equal(expected, method.ReturnType.Name);
+        Assert.True(method.ReturnType.AllTypes.First().IsExternal);
+    }
+    [InlineData("date-time", "DateTimeOffset")]
+    [InlineData("duration", "TimeSpan")]
+    [InlineData("time", "TimeOnly")]
+    [InlineData("date", "DateOnly")]
+    [InlineData("byte", "base64")]
+    [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
+    [Theory]
+    public void MapsQueryParameterTypesWithoutType(string format, string expected)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<IOpenApiParameter> {
+                                new OpenApiParameter() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        // Type is intentionally not set to simulate .NET 10 ASP.NET OpenAPI generator behavior
+                                        Format = format
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal(expected, property.Type.Name);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
     [Fact]
     public void IncludesQueryParameterInUriTemplate()
     {
