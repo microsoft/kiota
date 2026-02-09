@@ -10,7 +10,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "typescript",
         "-o",
@@ -31,7 +31,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "java",
         "-o",
@@ -52,7 +52,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "csharp",
         "-o",
@@ -73,7 +73,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "ruby",
         "-o",
@@ -94,7 +94,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "php",
         "-o",
@@ -115,7 +115,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "go",
         "-o",
@@ -136,7 +136,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "python",
         "-o",
@@ -157,7 +157,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "dart",
         "-o",
@@ -200,7 +200,7 @@
       "args": [
         "show",
         "-d",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml"
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml"
       ],
       "cwd": "${workspaceFolder}/src/kiota",
       "console": "internalConsole",
@@ -305,7 +305,7 @@
         "--plugin-name",
         "MicrosoftGraph",
         "-d",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "-i",
         "**/messages",
         "--type",
@@ -348,7 +348,7 @@
       "args": [
         "generate",
         "--openapi",
-        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml",
+        "https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml",
         "--language",
         "http",
         "--output",
