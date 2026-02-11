@@ -82,7 +82,7 @@ azure-identity==1.25.1
 
 cffi==2.0.0
 
-cryptography==46.0.4 ; python_version >= '3.7'
+cryptography==46.0.5 ; python_version >= '3.7'
 
 frozenlist==1.8.0 ; python_version >= '3.7'
 
