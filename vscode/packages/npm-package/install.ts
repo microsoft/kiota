@@ -1,28 +1,34 @@
-import AdmZip from 'adm-zip';
-import { createHash } from 'crypto';
-import * as https from 'https';
-import * as fs from 'fs';
-import * as path from 'path';
-import { getKiotaConfig } from './config.js';
+import AdmZip from "adm-zip";
+import { createHash } from "node:crypto";
+import * as https from "node:https";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+import { getKiotaConfig } from "./config.js";
 
-import runtimeJson from './runtime.json';
+import runtimeJson from "./runtime.json" with { type: "json" };
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
-const state: { [key: string]: any } = {};
+const state: { [key: string]: number | undefined } = {};
 
 let kiotaPath: string | undefined;
-const binariesRootDirectory = '.kiotabin';
+const binariesRootDirectory = ".kiotabin";
 const baseDownloadUrl = "https://github.com/microsoft/kiota/releases/download";
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __filename = fileURLToPath(import.meta.url);
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __dirname = path.dirname(__filename);
 
 export interface Package {
   platformId: string;
   sha256: string;
 }
 
-const windowsPlatform = 'win';
-const osxPlatform = 'osx';
-const linuxPlatform = 'linux';
+const windowsPlatform = "win";
+const osxPlatform = "osx";
+const linuxPlatform = "linux";
 
 /**
  * Checks if a file or directory exists asynchronously
@@ -56,7 +62,10 @@ async function isDirectoryEmpty(dirPath: string): Promise<boolean> {
 async function runIfNotLocked(action: () => Promise<void>) {
   const installStartTimeStamp = state[kiotaInstallStatusKey];
   const currentTimeStamp = new Date().getTime();
-  if (!installStartTimeStamp || (currentTimeStamp - installStartTimeStamp) > installDelayInMs) {
+  if (
+    !installStartTimeStamp ||
+    currentTimeStamp - installStartTimeStamp > installDelayInMs
+  ) {
     //locking the context to prevent multiple downloads across multiple instances
     //overriding after 30 seconds to prevent stale locks
     state[kiotaInstallStatusKey] = currentTimeStamp;
@@ -73,16 +82,29 @@ export async function ensureKiotaIsPresent() {
   if (installPath) {
     const runtimeDependencies = getRuntimeDependenciesPackages();
     const currentPlatform = getCurrentPlatform();
-    await ensureKiotaIsPresentInPath(installPath, runtimeDependencies, currentPlatform);
+    await ensureKiotaIsPresentInPath(
+      installPath,
+      runtimeDependencies,
+      currentPlatform,
+    );
   }
 }
 
-export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDependencies: Package[], currentPlatform: string) {
+export async function ensureKiotaIsPresentInPath(
+  installPath: string,
+  runtimeDependencies: Package[],
+  currentPlatform: string,
+) {
   if (installPath) {
-    if (!await checkFileExists(installPath) || await isDirectoryEmpty(installPath)) {
+    if (
+      !(await checkFileExists(installPath)) ||
+      (await isDirectoryEmpty(installPath))
+    ) {
       await runIfNotLocked(async () => {
         try {
-          const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
+          const packageToInstall = runtimeDependencies.find(
+            (p) => p.platformId === currentPlatform,
+          );
           if (!packageToInstall) {
             throw new Error("Could not find package to install");
           }
@@ -90,24 +112,34 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
           const zipFilePath = `${installPath}.zip`;
           // If env variable that points to kiota binary zip exists, use it to copy the file instead of downloading it
           const kiotaBinaryZip = process.env.KIOTA_SIDELOADING_BINARY_ZIP_PATH;
-          if (kiotaBinaryZip && await checkFileExists(kiotaBinaryZip)) {
+          if (kiotaBinaryZip && (await checkFileExists(kiotaBinaryZip))) {
             fs.copyFileSync(kiotaBinaryZip, zipFilePath);
           } else {
             const downloadUrl = getDownloadUrl(currentPlatform);
             await downloadFileFromUrl(downloadUrl, zipFilePath);
-            if (!await doesFileHashMatch(zipFilePath, packageToInstall.sha256)) {
-              throw new Error("Hash validation of the downloaded file mismatch");
+            if (
+              !(await doesFileHashMatch(zipFilePath, packageToInstall.sha256))
+            ) {
+              throw new Error(
+                "Hash validation of the downloaded file mismatch",
+              );
             }
           }
           unzipFile(zipFilePath, installPath);
-          if ((currentPlatform.startsWith(linuxPlatform) || currentPlatform.startsWith(osxPlatform)) && installPath) {
+          if (
+            (currentPlatform.startsWith(linuxPlatform) ||
+              currentPlatform.startsWith(osxPlatform)) &&
+            installPath
+          ) {
             const fileName = getKiotaFileName();
             const kiotaFilePath = path.join(installPath, fileName);
             makeExecutable(kiotaFilePath);
           }
-        } catch (error) {
+        } catch {
           fs.rmSync(installPath, { recursive: true, force: true });
-          throw new Error("Kiota download failed. Check the logs for more information.");
+          throw new Error(
+            "Kiota download failed. Check the logs for more information.",
+          );
         }
       });
     }
@@ -137,19 +169,25 @@ function getRuntimeVersion(): string {
 }
 
 function getKiotaFileName(): string {
-  return process.platform === 'win32' ? 'kiota.exe' : 'kiota';
+  return process.platform === "win32" ? "kiota.exe" : "kiota";
 }
 
 function getKiotaPathInternal(withFileName = true): string | undefined {
   const fileName = getKiotaFileName();
   const runtimeDependencies = getRuntimeDependenciesPackages();
   const currentPlatform = getCurrentPlatform();
-  const packageToInstall = runtimeDependencies.find((p) => p.platformId === currentPlatform);
+  const packageToInstall = runtimeDependencies.find(
+    (p) => p.platformId === currentPlatform,
+  );
   const baseDir = getBaseDir();
   const runtimeVersion = getRuntimeVersion();
   if (packageToInstall) {
     const installPath = path.join(baseDir, binariesRootDirectory);
-    const directoryPath = path.join(installPath, runtimeVersion, currentPlatform);
+    const directoryPath = path.join(
+      installPath,
+      runtimeVersion,
+      currentPlatform,
+    );
     if (withFileName) {
       return path.join(directoryPath, fileName);
     }
@@ -163,26 +201,41 @@ function unzipFile(zipFilePath: string, destinationPath: string) {
   zip.extractAllTo(destinationPath, true);
 }
 
-async function doesFileHashMatch(destinationPath: string, hashValue: string): Promise<boolean> {
-  const hash = createHash('sha256');
-  return new Promise((resolve, reject) => {
-    fs.createReadStream(destinationPath).pipe(hash).on('finish', () => {
-      const computedValue = hash.digest('hex');
-      hash.destroy();
-      resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
-    });
+async function doesFileHashMatch(
+  destinationPath: string,
+  hashValue: string,
+): Promise<boolean> {
+  const hash = createHash("sha256");
+  return new Promise((resolve) => {
+    fs.createReadStream(destinationPath)
+      .pipe(hash)
+      .on("finish", () => {
+        const computedValue = hash.digest("hex");
+        hash.destroy();
+        resolve(computedValue.toUpperCase() === hashValue.toUpperCase());
+      });
   });
 }
 
-function downloadFileFromUrl(url: string, destinationPath: string): Promise<void> {
+function downloadFileFromUrl(
+  url: string,
+  destinationPath: string,
+): Promise<void> {
   return new Promise((resolve) => {
-    https.get(url, (response: any) => {
-      if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        resolve(downloadFileFromUrl(response.headers.location, destinationPath));
+    https.get(url, (response) => {
+      if (
+        response.statusCode &&
+        response.statusCode >= 300 &&
+        response.statusCode < 400 &&
+        response.headers.location
+      ) {
+        resolve(
+          downloadFileFromUrl(response.headers.location, destinationPath),
+        );
       } else {
         const filePath = fs.createWriteStream(destinationPath);
         response.pipe(filePath);
-        filePath.on('finish', () => {
+        filePath.on("finish", () => {
           filePath.close();
           resolve(undefined);
         });
@@ -197,12 +250,19 @@ function getDownloadUrl(platform: string): string {
 
 export function getRuntimeDependenciesPackages(): Package[] {
   if (runtimeJson.runtimeDependencies) {
-    return JSON.parse(JSON.stringify(<Package[]>runtimeJson.runtimeDependencies));
+    return JSON.parse(
+      JSON.stringify(<Package[]>runtimeJson.runtimeDependencies),
+    );
   }
   throw new Error("No runtime dependencies found");
 }
 
 export function getCurrentPlatform(): string {
-  const binPathSegmentOS = process.platform === 'win32' ? windowsPlatform : process.platform === 'darwin' ? osxPlatform : linuxPlatform;
+  const binPathSegmentOS =
+    process.platform === "win32"
+      ? windowsPlatform
+      : process.platform === "darwin"
+        ? osxPlatform
+        : linuxPlatform;
   return `${binPathSegmentOS}-${process.arch}`;
 }
