@@ -1,7 +1,10 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaGetManifestDetailsConfiguration, KiotaManifestResult } from "..";
-import connectToKiota from "../connect";
+import {
+  KiotaGetManifestDetailsConfiguration,
+  KiotaManifestResult,
+} from "../index.js";
+import connectToKiota from "../connect.js";
 
 export interface ManifestOptions {
   manifestPath: string;
@@ -19,18 +22,23 @@ export interface ManifestOptions {
  * @returns {Promise<KiotaManifestResult | undefined>} A promise that resolves to the manifest details or undefined if not found.
  * @throws {Error} Throws an error if the request fails.
  */
-export async function getManifestDetails({ manifestPath, clearCache, apiIdentifier }: ManifestOptions): Promise<KiotaManifestResult | undefined> {
+export async function getManifestDetails({
+  manifestPath,
+  clearCache,
+  apiIdentifier,
+}: ManifestOptions): Promise<KiotaManifestResult | undefined> {
   const result = await connectToKiota(async (connection) => {
-    const request = new rpc.RequestType<KiotaGetManifestDetailsConfiguration, KiotaManifestResult, void>('GetManifestDetails');
+    const request = new rpc.RequestType<
+      KiotaGetManifestDetailsConfiguration,
+      KiotaManifestResult,
+      void
+    >("GetManifestDetails");
 
-    return await connection.sendRequest(
-      request,
-      {
-        manifestPath,
-        apiIdentifier: apiIdentifier ?? '',
-        clearCache: clearCache ?? false,
-      }
-    );
+    return await connection.sendRequest(request, {
+      manifestPath,
+      apiIdentifier: apiIdentifier ?? "",
+      clearCache: clearCache ?? false,
+    });
   });
 
   if (result instanceof Error) {
@@ -38,4 +46,4 @@ export async function getManifestDetails({ manifestPath, clearCache, apiIdentifi
   }
 
   return result;
-};
+}

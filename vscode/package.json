@@ -8,7 +8,9 @@
   },
   "scripts": {
     "lint": "npm run lint --w=\"@microsoft/kiota\" && npm run lint --w=kiota",
-    "build": "npm run build --w=\"@microsoft/kiota\" && npm run build --w=kiota",
+    "build": "npm run build:package && npm run build:vscode",
+    "build:package": "npm run build --w=\"@microsoft/kiota\"",
+    "build:vscode": "npm run build --w=kiota",
     "test:vscode": "npm run build && npm run test --w=kiota",
     "test:vscode:coverage": "npm run build && npm run test:coverage --w=kiota",
     "test:package": "npm run build --w=\"@microsoft/kiota\" && npm run test --w=\"@microsoft/kiota\"",

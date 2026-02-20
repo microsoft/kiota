@@ -1,8 +1,13 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "..";
-import connectToKiota from "../connect";
-import { KiotaGenerationLanguage, KiotaResult } from "../types";
+import {
+  checkForSuccess,
+  ConsumerOperation,
+  GenerationConfiguration,
+  KiotaLogEntry,
+} from "../index.js";
+import connectToKiota from "../connect.js";
+import { KiotaGenerationLanguage, KiotaResult } from "../types.js";
 
 export interface ClientGenerationOptions {
   openAPIFilePath: string;
@@ -54,35 +59,39 @@ export interface ClientGenerationOptions {
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if successful, or undefined if not.
  * @throws {Error} If an error occurs during the client generation process.
  */
-export async function generateClient(clientGenerationOptions: ClientGenerationOptions): Promise<KiotaResult | undefined> {
+export async function generateClient(
+  clientGenerationOptions: ClientGenerationOptions,
+): Promise<KiotaResult | undefined> {
   const result = await connectToKiota<KiotaLogEntry[]>(async (connection) => {
-    const request = new rpc.RequestType1<GenerationConfiguration, KiotaLogEntry[], void>(
-      "Generate"
-    );
+    const request = new rpc.RequestType1<
+      GenerationConfiguration,
+      KiotaLogEntry[],
+      void
+    >("Generate");
 
-    return await connection.sendRequest(
-      request,
-      {
-        openAPIFilePath: clientGenerationOptions.openAPIFilePath,
-        clientClassName: clientGenerationOptions.clientClassName,
-        clientNamespaceName: clientGenerationOptions.clientNamespaceName,
-        language: clientGenerationOptions.language,
-        outputPath: clientGenerationOptions.outputPath,
-        operation: clientGenerationOptions.operation,
+    return await connection.sendRequest(request, {
+      openAPIFilePath: clientGenerationOptions.openAPIFilePath,
+      clientClassName: clientGenerationOptions.clientClassName,
+      clientNamespaceName: clientGenerationOptions.clientNamespaceName,
+      language: clientGenerationOptions.language,
+      outputPath: clientGenerationOptions.outputPath,
+      operation: clientGenerationOptions.operation,
 
-        deserializers: clientGenerationOptions.deserializers ?? [],
-        disabledValidationRules: clientGenerationOptions.disabledValidationRules ?? [],
-        excludeBackwardCompatible: clientGenerationOptions.excludeBackwardCompatible ?? false,
-        excludePatterns: clientGenerationOptions.excludePatterns ?? [],
-        includeAdditionalData: clientGenerationOptions.includeAdditionalData ?? false,
-        cleanOutput: clientGenerationOptions.cleanOutput ?? false,
-        clearCache: clientGenerationOptions.clearCache ?? false,
-        includePatterns: clientGenerationOptions.includePatterns ?? [],
-        serializers: clientGenerationOptions.serializers ?? [],
-        structuredMimeTypes: clientGenerationOptions.structuredMimeTypes ?? [],
-        usesBackingStore: clientGenerationOptions.usesBackingStore ?? false,
-      } as GenerationConfiguration,
-    );
+      deserializers: clientGenerationOptions.deserializers ?? [],
+      disabledValidationRules:
+        clientGenerationOptions.disabledValidationRules ?? [],
+      excludeBackwardCompatible:
+        clientGenerationOptions.excludeBackwardCompatible ?? false,
+      excludePatterns: clientGenerationOptions.excludePatterns ?? [],
+      includeAdditionalData:
+        clientGenerationOptions.includeAdditionalData ?? false,
+      cleanOutput: clientGenerationOptions.cleanOutput ?? false,
+      clearCache: clientGenerationOptions.clearCache ?? false,
+      includePatterns: clientGenerationOptions.includePatterns ?? [],
+      serializers: clientGenerationOptions.serializers ?? [],
+      structuredMimeTypes: clientGenerationOptions.structuredMimeTypes ?? [],
+      usesBackingStore: clientGenerationOptions.usesBackingStore ?? false,
+    } as GenerationConfiguration);
   }, clientGenerationOptions.workingDirectory);
 
   if (result instanceof Error) {
@@ -92,10 +101,9 @@ export async function generateClient(clientGenerationOptions: ClientGenerationOp
   if (result) {
     return {
       isSuccess: checkForSuccess(result as KiotaLogEntry[]),
-      logs: result
+      logs: result,
     };
   }
 
   return undefined;
-};
-
+}

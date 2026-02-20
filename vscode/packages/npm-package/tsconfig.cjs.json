@@ -4,6 +4,6 @@
     "outDir": "./dist/cjs",
     "module": "CommonJS",
     "declaration": true,
-    "declarationDir": "./dist/cjs/types"
+    "declarationDir": "./dist/cjs"
   }
 }

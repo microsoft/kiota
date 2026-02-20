@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaLogEntry } from "..";
-import connectToKiota from "../connect";
+import { KiotaLogEntry } from "../index.js";
+import connectToKiota from "../connect.js";
 
 /**
  * Migrates data from a lock file located in the specified directory.
@@ -14,15 +14,14 @@ import connectToKiota from "../connect";
  * @returns {Promise<KiotaLogEntry[] | undefined>} A promise that resolves to an array of `KiotaLogEntry` objects if the migration is successful, or `undefined` if no data is migrated.
  * @throws {Error} If an error occurs during the migration process.
  */
-export async function migrateFromLockFile(lockFileDirectory: string): Promise<KiotaLogEntry[] | undefined> {
+export async function migrateFromLockFile(
+  lockFileDirectory: string,
+): Promise<KiotaLogEntry[] | undefined> {
   const result = await connectToKiota(async (connection) => {
     const request = new rpc.RequestType1<string, KiotaLogEntry[], void>(
-      "MigrateFromLockFile"
+      "MigrateFromLockFile",
     );
-    return await connection.sendRequest(
-      request,
-      lockFileDirectory
-    );
+    return await connection.sendRequest(request, lockFileDirectory);
   });
 
   if (result instanceof Error) {
@@ -30,4 +29,4 @@ export async function migrateFromLockFile(lockFileDirectory: string): Promise<Ki
   }
 
   return result;
-};
+}

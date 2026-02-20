@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaLogEntry, KiotaResult } from "..";
-import connectToKiota from "../connect";
+import { KiotaLogEntry, KiotaResult } from "../index.js";
+import connectToKiota from "../connect.js";
 
 export interface RemoveItemConfiguration {
   cleanOutput: boolean;
@@ -26,16 +26,19 @@ export interface RemoveClientConfiguration extends RemoveItemConfiguration {
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if the operation is successful, or undefined if no result is returned.
  * @throws {Error} Throws an error if the operation fails.
  */
-export async function removePlugin({ pluginName, cleanOutput, workingDirectory }: RemovePluginConfiguration): Promise<KiotaResult | undefined> {
+export async function removePlugin({
+  pluginName,
+  cleanOutput,
+  workingDirectory,
+}: RemovePluginConfiguration): Promise<KiotaResult | undefined> {
   const result = await connectToKiota(async (connection) => {
-    const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
-      "RemovePlugin"
-    );
-    return await connection.sendRequest(
-      request,
-      pluginName,
-      cleanOutput
-    );
+    const request = new rpc.RequestType2<
+      string,
+      boolean,
+      KiotaLogEntry[],
+      void
+    >("RemovePlugin");
+    return await connection.sendRequest(request, pluginName, cleanOutput);
   }, workingDirectory);
 
   if (result instanceof Error) {
@@ -44,13 +47,13 @@ export async function removePlugin({ pluginName, cleanOutput, workingDirectory }
 
   if (result) {
     return {
-      isSuccess: result.some(k => k.message.includes('removed successfully')),
-      logs: result
+      isSuccess: result.some((k) => k.message.includes("removed successfully")),
+      logs: result,
     };
   }
 
   return undefined;
-};
+}
 
 /**
  * Removes a client using the provided configuration.
@@ -62,16 +65,19 @@ export async function removePlugin({ pluginName, cleanOutput, workingDirectory }
  * @returns {Promise<KiotaResult | undefined>} A promise that resolves to a KiotaResult if the client was removed successfully, or undefined if no result is returned.
  * @throws {Error} Throws an error if the result is an instance of Error.
  */
-export async function removeClient({ clientName, cleanOutput, workingDirectory }: RemoveClientConfiguration): Promise<KiotaResult | undefined> {
+export async function removeClient({
+  clientName,
+  cleanOutput,
+  workingDirectory,
+}: RemoveClientConfiguration): Promise<KiotaResult | undefined> {
   const result = await connectToKiota(async (connection) => {
-    const request = new rpc.RequestType2<string, boolean, KiotaLogEntry[], void>(
-      "RemoveClient"
-    );
-    return await connection.sendRequest(
-      request,
-      clientName,
-      cleanOutput
-    );
+    const request = new rpc.RequestType2<
+      string,
+      boolean,
+      KiotaLogEntry[],
+      void
+    >("RemoveClient");
+    return await connection.sendRequest(request, clientName, cleanOutput);
   }, workingDirectory);
 
   if (result instanceof Error) {
@@ -80,10 +86,10 @@ export async function removeClient({ clientName, cleanOutput, workingDirectory }
 
   if (result) {
     return {
-      isSuccess: result.some(k => k.message.includes('removed successfully')),
-      logs: result
+      isSuccess: result.some((k) => k.message.includes("removed successfully")),
+      logs: result,
     };
   }
 
   return undefined;
-};
+}

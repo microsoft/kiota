@@ -34,10 +34,15 @@ export interface KiotaLogEntry {
 }
 
 export enum OpenApiAuthType {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   None = 0,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   ApiKey = 1,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   Http = 2,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   OAuth2 = 3,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   OpenIdConnect = 4,
 }
 
@@ -80,8 +85,7 @@ export interface KiotaShowConfiguration extends CacheClearableConfiguration {
   includeKiotaValidationRules: boolean;
 }
 
-export interface KiotaGetManifestDetailsConfiguration
-  extends CacheClearableConfiguration {
+export interface KiotaGetManifestDetailsConfiguration extends CacheClearableConfiguration {
   manifestPath: string;
   apiIdentifier: string;
 }
@@ -97,6 +101,8 @@ export enum OpenApiSpecVersion {
   V3_0 = 1,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   V3_1 = 2,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  V3_2 = 3,
 }
 
 export interface KiotaTreeResult extends KiotaLoggedResult {
@@ -141,7 +147,7 @@ export enum ConsumerOperation {
 }
 
 export function generationLanguageToString(
-  language: KiotaGenerationLanguage
+  language: KiotaGenerationLanguage,
 ): string {
   switch (language) {
     case KiotaGenerationLanguage.CSharp:
@@ -164,6 +170,33 @@ export function generationLanguageToString(
       return "HTTP";
     default:
       throw new Error("unknown language");
+  }
+}
+
+export function parseGenerationLanguage(
+  language: string,
+): KiotaGenerationLanguage {
+  switch (language.toLowerCase()) {
+    case "csharp":
+      return KiotaGenerationLanguage.CSharp;
+    case "java":
+      return KiotaGenerationLanguage.Java;
+    case "typescript":
+      return KiotaGenerationLanguage.TypeScript;
+    case "php":
+      return KiotaGenerationLanguage.PHP;
+    case "python":
+      return KiotaGenerationLanguage.Python;
+    case "go":
+      return KiotaGenerationLanguage.Go;
+    case "ruby":
+      return KiotaGenerationLanguage.Ruby;
+    case "dart":
+      return KiotaGenerationLanguage.Dart;
+    case "http":
+      return KiotaGenerationLanguage.HTTP;
+    default:
+      throw new Error(`unknown language: ${language}`);
   }
 }
 
@@ -300,8 +333,6 @@ export interface KiotaResult extends KiotaLoggedResult {
   isSuccess: boolean;
 }
 
-export interface ValidateOpenApiResult extends KiotaLoggedResult {}
-
 export interface GeneratePluginResult extends KiotaResult {
   aiPlugin: string;
   openAPISpec: string;
@@ -309,7 +340,9 @@ export interface GeneratePluginResult extends KiotaResult {
 
 export interface PluginManifestResult extends KiotaResult {
   isValid: boolean;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   schema_version: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   name_for_human: string;
   functions: PluginFunction[];
   runtime: PluginRuntime[];
@@ -322,12 +355,14 @@ export interface PluginFunction {
 
 export interface PluginAuth {
   type: string; // None, OAuthPluginVault, ApiKeyPluginVault
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   reference_id?: string;
 }
 
 export interface PluginRuntime {
   type: string;
   auth: PluginAuth;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   run_for_functions: string[];
 }
 
