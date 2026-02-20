@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where C# code generated from OpenAPI union types (oneOf) was missing `using System;` and `using System.Collections.Generic;` statements when ImplicitUsings is disabled. [#7603](https://github.com/microsoft/kiota/issues/7603)
 - Fixed a bug where error responses including text/plain would cause binary responses to be generated as string responses [#3855](https://github.com/microsoft/kiota/issues/3855)
 - Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
+- Fixed a bug where Go model interfaces would redundantly include GetBackingStore method when backing store was enabled, even though it's already defined in the composed BackedModel interface.
 
 ## [1.29.0] - 2025-10-23
 
