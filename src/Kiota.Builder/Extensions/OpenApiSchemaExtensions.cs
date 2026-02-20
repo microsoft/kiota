@@ -423,12 +423,23 @@ public static class OpenApiSchemaExtensions
                 // First check inline schemas
                 if (schema.AllOf?.OfType<OpenApiSchema>().FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
                     return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
-                // Then check schema references and resolve them to find discriminator mappings
+                // Then check schema references and resolve them to find discriminator mappings.
+                // Only return entries that directly reference this schema to avoid O(n²) expansion
+                // when a base type has a large discriminator mapping (e.g., entity with 2,200+ entries).
                 if (schema.AllOf?.OfType<OpenApiSchemaReference>()
                         .Select(static x => x.RecursiveTarget)
                         .OfType<OpenApiSchema>()
-                        .FirstOrDefault(allOfEvaluatorForMappings) is { } allOfRefTarget)
-                    return GetDiscriminatorMappings(allOfRefTarget, inheritanceIndex);
+                        .FirstOrDefault(allOfEvaluatorForMappings) is { } allOfRefTarget
+                    && schema.GetReferenceId() is string currentRefId
+                    && !string.IsNullOrEmpty(currentRefId))
+                {
+                    var filteredMappings = (allOfRefTarget.Discriminator?.Mapping ?? new Dictionary<string, OpenApiSchemaReference>())
+                        .Where(x => string.Equals(x.Value.Reference.Id, currentRefId, StringComparison.OrdinalIgnoreCase))
+                        .Select(static x => KeyValuePair.Create(x.Key, x.Value.Reference.Id!))
+                        .ToList();
+                    if (filteredMappings.Count > 0)
+                        return filteredMappings;
+                }
             }
             if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
                 return GetAllInheritanceSchemaReferences(refId, inheritanceIndex)
