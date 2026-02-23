@@ -1,0 +1,30 @@
+name: Graph Beta generation performance test
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  graph-beta-generation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore dependencies
+        run: dotnet restore kiota.slnx
+      - name: Publish kiota (Release)
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./kiota-release -f net10.0
+      - name: Generate Microsoft Graph Beta CSharp SDK
+        timeout-minutes: 20
+        run: |
+          ./kiota-release/kiota generate \
+            --openapi "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml" \
+            --output ./output \
+            --language CSharp \
+            --backing-store \
+            --exclude-path '/copilot' \
+            --exclude-path '/copilot/**' \
+            --clean-output
