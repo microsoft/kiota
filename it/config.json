@@ -260,6 +260,14 @@
       {
         "Pattern": "/copilot/**",
         "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/me",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/me/**",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
       }
     ],
     "Suppressions": [
@@ -270,6 +278,10 @@
       {
         "Language": "dart",
         "Rationale": "Graph Beta generation not tested for Dart, see https://github.com/microsoft/kiota/issues/7401"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "Graph Beta generation for TypeScript currently fails due to a known issue, https://github.com/microsoft/kiota/issues/7409"
       }
     ]
   }
