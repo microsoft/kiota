@@ -12,6 +12,7 @@ namespace Kiota.Builder.Refiners;
 public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public PythonRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -149,6 +150,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true,
                 includeParentNamespace: true
             );
+            AliasUsingWithSameSymbol(generatedCode);
             AddPrimaryErrorMessage(generatedCode,
                 "primary_message",
                 () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
@@ -201,6 +203,33 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             "warnings", "warn"),
     };
 
+    private static void AliasUsingWithSameSymbol(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal))
+        {
+            var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
+                .Distinct(usingComparer)
+                .Where(static x => !string.IsNullOrEmpty(x.Declaration?.Name) && x.Declaration.TypeDefinition != null)
+                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x.Count() > 1)
+                .SelectMany(x => x)
+                .Union(currentClass.StartBlock
+                    .Usings
+                    .Where(x => !x.IsExternal)
+                    .Where(x => x.Declaration!
+                        .Name
+                        .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+            foreach (var usingElement in duplicatedSymbolsUsings)
+            {
+                var replacement = string.Join("_", usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name
+                    .Split(".", StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLowerInvariant())
+                    .ToArray());
+                usingElement.Alias = $"{(string.IsNullOrEmpty(replacement) ? string.Empty : $"{replacement}")}_{usingElement.Declaration!.TypeDefinition!.Name.ToLowerInvariant()}";
+            }
+        }
+        CrawlTree(currentElement, AliasUsingWithSameSymbol);
+    }
     private static void CorrectCommonNames(CodeElement currentElement)
     {
         if (currentElement is CodeMethod m &&
