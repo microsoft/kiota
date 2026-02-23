@@ -408,28 +408,35 @@ public static class OpenApiSchemaExtensions
         return string.Empty;
     }
     internal static IEnumerable<KeyValuePair<string, string>> GetDiscriminatorMappings(this IOpenApiSchema schema, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
+        => GetDiscriminatorMappings(schema, inheritanceIndex, false);
+    private static IEnumerable<KeyValuePair<string, string>> GetDiscriminatorMappings(IOpenApiSchema schema, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex, bool lookupKeyInParentMapping)
     {
         if (schema == null)
             return [];
         if (schema.Discriminator?.Mapping is not { Count: > 0 })
         {
             if (schema.OneOf is { Count: > 0 })
-                return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
+                // Pass lookupKeyInParentMapping: true so each member looks up its key in the parent's mapping
+                return schema.OneOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex, lookupKeyInParentMapping: true));
             if (schema.AnyOf is { Count: > 0 })
-                return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex));
+                // Pass lookupKeyInParentMapping: true so each member looks up its key in the parent's mapping
+                return schema.AnyOf.SelectMany(x => GetDiscriminatorMappings(x, inheritanceIndex, lookupKeyInParentMapping: true));
             if (schema.IsInherited())
             {
                 // ensure we're in an inheritance context and get the discriminator from the parent when available
                 // First check inline schemas
                 if (schema.AllOf?.OfType<OpenApiSchema>().FirstOrDefault(allOfEvaluatorForMappings) is { } allOfEntry)
-                    return GetDiscriminatorMappings(allOfEntry, inheritanceIndex);
-                // Then check schema references and resolve them to find discriminator mappings.
-                // Only return entries that directly reference this schema to avoid O(n²) expansion
-                // when a base type has a large discriminator mapping (e.g., entity with 2,200+ entries).
-                if (schema.AllOf?.OfType<OpenApiSchemaReference>()
-                        .Select(static x => x.RecursiveTarget)
-                        .OfType<OpenApiSchema>()
-                        .FirstOrDefault(allOfEvaluatorForMappings) is { } allOfRefTarget
+                    return GetDiscriminatorMappings(allOfEntry, inheritanceIndex, lookupKeyInParentMapping);
+                // When looking up the key for a specific schema in its parent's mapping (e.g. a oneOf member),
+                // resolve $ref allOf entries and return only the entry that maps to the current schema.
+                // This avoids O(n²) expansion when a base type has a large discriminator mapping.
+                // For regular inheritance (lookupKeyInParentMapping=false), fall through to the
+                // inheritance-index path which returns subtypes without the O(n²) expansion.
+                if (lookupKeyInParentMapping
+                    && schema.AllOf?.OfType<OpenApiSchemaReference>()
+                            .Select(static x => x.RecursiveTarget)
+                            .OfType<OpenApiSchema>()
+                            .FirstOrDefault(allOfEvaluatorForMappings) is { } allOfRefTarget
                     && schema.GetReferenceId() is string currentRefId
                     && !string.IsNullOrEmpty(currentRefId))
                 {
