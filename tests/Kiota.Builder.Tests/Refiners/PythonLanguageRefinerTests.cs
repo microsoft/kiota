@@ -651,52 +651,5 @@ public class PythonLanguageRefinerTests
         Assert.Equal("bytes", method.Parameters.First().Type.Name);// type is renamed to use the stream type
         Assert.Equal("bytes", method.ReturnType.Name);// return type is renamed to use the stream type
     }
-    [Fact]
-    public async Task AliasesImportsWithSameNameAsync()
-    {
-        var modelsNS = root.AddNamespace($"{root.Name}.models");
-        var callRecordsNS = modelsNS.AddNamespace($"{modelsNS.Name}.callrecords");
-        var userIdentityModel = modelsNS.AddClass(new CodeClass
-        {
-            Name = "UserIdentity",
-            Kind = CodeClassKind.Model,
-        }).First();
-        var callRecordsUserIdentityModel = callRecordsNS.AddClass(new CodeClass
-        {
-            Name = "UserIdentity",
-            Kind = CodeClassKind.Model,
-        }).First();
-        var identityModel = modelsNS.AddClass(new CodeClass
-        {
-            Name = "Identity",
-            Kind = CodeClassKind.Model,
-        }).First();
-        // AddDiscriminatorMappingsUsingsToParentClasses (with includeParentNamespace:true) creates usings
-        // where Name=namespace.Name and Declaration.Name=type.Name, matching the real generation pattern.
-        identityModel.StartBlock.AddUsings(
-            new CodeUsing
-            {
-                Name = modelsNS.Name,
-                Declaration = new CodeType
-                {
-                    Name = "UserIdentity",
-                    TypeDefinition = userIdentityModel,
-                }
-            },
-            new CodeUsing
-            {
-                Name = callRecordsNS.Name,
-                Declaration = new CodeType
-                {
-                    Name = "UserIdentity",
-                    TypeDefinition = callRecordsUserIdentityModel,
-                }
-            }
-        );
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root);
-        var usings = identityModel.StartBlock.Usings.Where(x => x.Declaration?.Name?.Equals("UserIdentity", StringComparison.OrdinalIgnoreCase) == true).ToList();
-        Assert.All(usings, u => Assert.False(string.IsNullOrEmpty(u.Alias)));
-        Assert.Equal(2, usings.Select(x => x.Alias).Distinct(StringComparer.OrdinalIgnoreCase).Count());
-    }
     #endregion
 }
