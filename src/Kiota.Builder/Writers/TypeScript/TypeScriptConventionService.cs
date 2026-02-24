@@ -337,7 +337,10 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass && GetFactoryMethod(definitionClass, resultName) is { } factoryMethod)
         {
             var methodName = GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
-            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+            // Discriminator factory functions follow lowerCamelCase convention (createXFromDiscriminatorValue)
+            return methodName.Contains("FromDiscriminatorValue", StringComparison.Ordinal)
+                ? methodName.ToFirstCharacterLowerCase()
+                : methodName.ToFirstCharacterUpperCase();
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
