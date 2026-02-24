@@ -253,7 +253,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum)
+            var propertyType = propWithDefault.Type as CodeType;
+            if (propertyType != null && propertyType.TypeDefinition is CodeEnum)
             {
                 defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
@@ -262,9 +263,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             { // avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            else if (propertyType != null && propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
             {
                 defaultValue = defaultValue.TrimQuotes();
+            }
+            else if (propertyType != null && propertyType.Name.Equals("date", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = $"new Date(DateTimeOffset.Parse({defaultValue}).Date)";
+            }
+            else if (propertyType != null && propertyType.Name.Equals("datetimeoffset", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = $"DateTimeOffset.Parse({defaultValue})";
+            }
+            else if (propertyType != null && propertyType.Name.Equals("time", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)";
+            }
+            else if (propertyType != null && propertyType.Name.Equals("guid", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultValue = $"Guid.Parse({defaultValue})";
+            }
+            else if (propertyType != null && propertyType.Name.Equals("float", StringComparison.OrdinalIgnoreCase))
+            {
+                //Append "f" to the float value:
+                defaultValue = $"{defaultValue}f";
             }
             else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
             {

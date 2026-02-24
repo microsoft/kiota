@@ -235,5 +235,27 @@ public sealed class GenerateSample : IDisposable
 
         }
     }
+    /// <summary>
+    /// Test for https://github.com/microsoft/kiota/issues/7404
+    /// Tests assignment of default values in model classes.
+    /// </summary>
+    /// <param name="language"></param>
+    /// <returns></returns>
+    [InlineData(GenerationLanguage.CSharp)]
+    [Theory]
+    public async Task GeneratesModelWithDefaultValuesAsync(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder =>
+        {
+        }).CreateLogger<KiotaBuilder>();
+
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = GetAbsolutePath("ModelWithDefaultValues.json"),
+            OutputPath = $".\\Generated\\ModelWithDefaultValues\\{language}",
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+    }
     private static string GetAbsolutePath(string relativePath) => Path.Combine(Directory.GetCurrentDirectory(), relativePath);
 }
