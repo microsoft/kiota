@@ -1,8 +1,8 @@
 import * as rpc from "vscode-jsonrpc/node";
 
 import { checkForSuccess, ConsumerOperation, GenerationConfiguration, KiotaLogEntry } from "..";
-import connectToKiota from "../connect";
-import { KiotaGenerationLanguage, KiotaResult } from "../types";
+import connectToKiota from "../connect.js";
+import { KiotaGenerationLanguage, KiotaResult } from "../types.js";
 
 export interface ClientGenerationOptions {
   openAPIFilePath: string;

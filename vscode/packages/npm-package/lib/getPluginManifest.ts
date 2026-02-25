@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import connectToKiota from "../connect";
-import { PluginManifestResult } from "../types";
+import connectToKiota from "../connect.js";
+import { PluginManifestResult } from "../types.js";
 
 export interface GetPluginManifestOptions {
   descriptionPath: string;

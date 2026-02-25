@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
 import { KiotaLogEntry, KiotaResult } from "..";
-import connectToKiota from "../connect";
+import connectToKiota from "../connect.js";
 
 export interface RemoveItemConfiguration {
   cleanOutput: boolean;
