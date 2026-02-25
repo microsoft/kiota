@@ -2,7 +2,7 @@
 
 astroid==4.0.3 ; python_full_version >= '3.7.2'
 
-certifi==2026.1.4 ; python_version >= '3.6'
+certifi==2026.2.25 ; python_version >= '3.6'
 
 charset-normalizer==3.4.4 ; python_full_version >= '3.7.0'
 
