@@ -1,6 +1,6 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaLogEntry } from "..";
+import { KiotaLogEntry } from "../types.js";
 import connectToKiota from "../connect.js";
 
 export interface UpdateClientsConfiguration {
