@@ -107,7 +107,7 @@ jobs:
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.binaries.architecture }}
           path: vscode/packages/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }}
@@ -168,7 +168,7 @@ jobs:
         if: matrix.builds.id == 'vscode'
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.builds.name }}
           path: vscode/packages/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}

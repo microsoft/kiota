@@ -29,7 +29,7 @@ jobs:
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report
         run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:./reports/coverage
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: reports/coverage
@@ -59,7 +59,7 @@ jobs:
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }} -f net10.0
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}
           path: ./${{ matrix.os }}
