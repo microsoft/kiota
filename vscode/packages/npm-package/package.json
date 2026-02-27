@@ -14,22 +14,22 @@
   "module": "dist/esm/index.js",
   "exports": {
     "import": {
-      "types": "./dist/esm/types/index.d.ts",
+      "types": "./dist/esm/index.d.ts",
       "default": "./dist/esm/index.js"
     },
     "require": {
-      "types": "./dist/cjs/types/index.d.ts",
+      "types": "./dist/cjs/index.d.ts",
       "default": "./dist/cjs/index.js"
     }
   },
-  "types": "dist/esm/types/index.d.ts",
+  "types": "dist/esm/index.d.ts",
   "typesVersions": {
     "*": {
       "import": [
-        "./dist/esm/types/index.d.ts"
+        "./dist/esm/index.d.ts"
       ],
       "require": [
-        "./dist/cjs/types/index.d.ts"
+        "./dist/cjs/index.d.ts"
       ]
     }
   },

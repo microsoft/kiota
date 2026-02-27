@@ -1,9 +1,9 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/cjs",
     "module": "CommonJS",
-    "declaration": true,
-    "declarationDir": "./dist/cjs/types"
+    "moduleResolution": "node",
   }
 }

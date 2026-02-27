@@ -1,7 +1,8 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
   "compilerOptions": {
+    "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
     "rootDir": ".",
     "outDir": "./dist",
     "strict": true,
@@ -9,7 +10,6 @@
       "node",
       "jest"
     ],
-    "moduleResolution": "node",
     "target": "ESNext",
     "lib": [
       "ESNext"

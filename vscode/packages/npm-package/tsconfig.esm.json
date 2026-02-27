@@ -1,9 +1,9 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/esm",
-    "module": "ESNext",
-    "declaration": true,
-    "declarationDir": "./dist/esm/types"
+    "module": "esnext",
+    "moduleResolution": "bundler",
   }
 }
