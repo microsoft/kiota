@@ -1,6 +1,6 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaSearchResult, KiotaSearchResultItem } from "..";
+import { KiotaSearchResult, KiotaSearchResultItem } from "../types";
 import connectToKiota from '../connect';
 
 export interface SearchConfiguration {

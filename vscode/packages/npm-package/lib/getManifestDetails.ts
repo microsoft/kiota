@@ -1,6 +1,6 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaGetManifestDetailsConfiguration, KiotaManifestResult } from "..";
+import { KiotaGetManifestDetailsConfiguration, KiotaManifestResult } from "../types";
 import connectToKiota from "../connect";
 
 export interface ManifestOptions {
