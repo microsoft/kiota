@@ -26,7 +26,7 @@ jobs:
       - name: Build
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: generator
           path: publish
@@ -63,7 +63,7 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: it/openapi.yaml
@@ -184,7 +184,7 @@ jobs:
         run: ./it/do-clean.ps1 -language ${{ matrix.language }}
         if: always()
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
