@@ -250,5 +250,39 @@
   "apisguru::apis.guru": {
     "Suppressions": [],
     "IdempotencySuppressions": []
+  },
+  "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/copilot",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/copilot/**",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/me",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/me/**",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "Graph Beta generation not tested for Ruby, see https://github.com/microsoft/kiota/issues/7401"
+      },
+      {
+        "Language": "dart",
+        "Rationale": "Graph Beta generation not tested for Dart, see https://github.com/microsoft/kiota/issues/7401"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "Graph Beta generation for TypeScript currently fails due to a known issue, https://github.com/microsoft/kiota/issues/7409"
+      }
+    ]
   }
 }

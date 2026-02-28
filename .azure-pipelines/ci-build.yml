@@ -57,8 +57,8 @@ parameters:
       - architecture: "win-arm64"
         jobPrefix: "win_arm64"
         os: "windows"
-        image: windows-2022-arm64
-        pool: 1es-windows-latest-arm
+        image: windows-2025-arm64
+        pool: 1es-window2025-latest-arm
         # arm64 is not currently available in the shared pool
         hostArchitecture: "arm64"
       - architecture: "linux-x64"
@@ -457,7 +457,7 @@ extends:
                       echo "$(graph-cli-apple-developer-certificate)" | base64 -D > $(agent.tempdirectory)/cert.p12
                       security import $(agent.tempdirectory)/cert.p12 -k $(agent.tempdirectory)/buildagent.keychain -P "$(graph-cli-apple-developer-certificate-password)" -T /usr/bin/codesign
                       security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k pwd $(agent.tempdirectory)/buildagent.keychain
-                      codesign -s 6V7V694XP3 --deep --force --options runtime --entitlements scripts/entitlements.plist $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}/kiota
+                      codesign -s 5F8M7Q8HYB --deep --force --options runtime --entitlements scripts/entitlements.plist $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}/kiota
                     displayName: Set Hardened Entitlements
                     condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
 
