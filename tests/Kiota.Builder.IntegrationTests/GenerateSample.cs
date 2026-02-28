@@ -42,6 +42,7 @@ public sealed class GenerateSample : IDisposable
             OpenAPIFilePath = GetAbsolutePath("ToDoApi.yaml"),
             OutputPath = $".\\Generated\\Todo\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -70,6 +71,7 @@ public sealed class GenerateSample : IDisposable
             OpenAPIFilePath = GetAbsolutePath("ModelWithDictionary.yaml"),
             OutputPath = $".\\Generated\\ModelWithDictionary\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -98,6 +100,7 @@ public sealed class GenerateSample : IDisposable
             OpenAPIFilePath = GetAbsolutePath("ResponseWithMultipleReturnFormats.yaml"),
             OutputPath = $".\\Generated\\ResponseWithMultipleReturnFormats\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -121,6 +124,7 @@ public sealed class GenerateSample : IDisposable
             Language = language,
             OpenAPIFilePath = GetAbsolutePath("InheritingErrors.yaml"),
             OutputPath = $".\\Generated\\ErrorInlineParents\\{language}",
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -144,6 +148,7 @@ public sealed class GenerateSample : IDisposable
             Language = language,
             OpenAPIFilePath = GetAbsolutePath("EnumHandling.yaml"),
             OutputPath = $".\\Generated\\EnumHandling\\{language}",
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -254,6 +259,7 @@ public sealed class GenerateSample : IDisposable
             Language = language,
             OpenAPIFilePath = GetAbsolutePath("ModelWithDefaultValues.json"),
             OutputPath = $".\\Generated\\ModelWithDefaultValues\\{language}",
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
