@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaSearchResult, KiotaSearchResultItem } from "..";
-import connectToKiota from '../connect';
+import { KiotaSearchResult, KiotaSearchResultItem } from "../index.js";
+import connectToKiota from "../connect.js";
 
 export interface SearchConfiguration {
   searchTerm: string;
@@ -17,16 +17,20 @@ export interface SearchConfiguration {
  * @returns {Promise<Record<string, KiotaSearchResultItem> | undefined>} A promise that resolves to a record of search results or undefined if no results are found.
  * @throws {Error} Throws an error if the search operation fails.
  */
-export async function searchDescription({ searchTerm, clearCache }: SearchConfiguration): Promise<Record<string, KiotaSearchResultItem> | undefined> {
+export async function searchDescription({
+  searchTerm,
+  clearCache,
+}: SearchConfiguration): Promise<
+  Record<string, KiotaSearchResultItem> | undefined
+> {
   const result = await connectToKiota(async (connection) => {
-    const request = new rpc.RequestType2<string, boolean, KiotaSearchResult, void>(
-      "Search"
-    );
-    return await connection.sendRequest(
-      request,
-      searchTerm,
-      clearCache,
-    );
+    const request = new rpc.RequestType2<
+      string,
+      boolean,
+      KiotaSearchResult,
+      void
+    >("Search");
+    return await connection.sendRequest(request, searchTerm, clearCache);
   });
 
   if (result instanceof Error) {
@@ -38,4 +42,4 @@ export async function searchDescription({ searchTerm, clearCache }: SearchConfig
   }
 
   return undefined;
-};
+}

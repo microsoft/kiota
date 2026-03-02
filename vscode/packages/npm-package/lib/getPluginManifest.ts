@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import connectToKiota from "../connect";
-import { PluginManifestResult } from "../types";
+import connectToKiota from "../connect.js";
+import { PluginManifestResult } from "../types.js";
 
 export interface GetPluginManifestOptions {
   descriptionPath: string;
@@ -15,9 +15,15 @@ export interface GetPluginManifestOptions {
  * @returns {Promise<PluginManifestResult | undefined>} A promise that resolves to the result or undefined if an error occurs.
  * @throws {Error} Throws an error if the result is an instance of Error.
  */
-export async function getPluginManifest({ descriptionPath }: GetPluginManifestOptions): Promise<PluginManifestResult | undefined> {
+export async function getPluginManifest({
+  descriptionPath,
+}: GetPluginManifestOptions): Promise<PluginManifestResult | undefined> {
   const result = await connectToKiota(async (connection) => {
-    const request = new rpc.RequestType<GetPluginManifestOptions, PluginManifestResult, void>('ShowPlugin');
+    const request = new rpc.RequestType<
+      GetPluginManifestOptions,
+      PluginManifestResult,
+      void
+    >("ShowPlugin");
 
     const response = await connection.sendRequest(request, {
       descriptionPath,
@@ -25,7 +31,6 @@ export async function getPluginManifest({ descriptionPath }: GetPluginManifestOp
 
     // Mapping
     return response;
-
   });
 
   if (result instanceof Error) {
@@ -33,4 +38,4 @@ export async function getPluginManifest({ descriptionPath }: GetPluginManifestOp
   }
 
   return result;
-};
+}
