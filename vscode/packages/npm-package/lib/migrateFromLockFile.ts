@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import connectToKiota from "../connect";
-import { KiotaLogEntry } from "../types";
+import connectToKiota from "./connect.js";
+import { KiotaLogEntry } from "./types.js";
 
 /**
  * Migrates data from a lock file located in the specified directory.

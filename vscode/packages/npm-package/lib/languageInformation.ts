@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import connectToKiota from "../connect";
-import { LanguagesInformation } from "../types";
+import connectToKiota from "./connect.js";
+import { LanguagesInformation } from "./types.js";
 
 export interface LanguageInformationConfiguration {
   descriptionUrl: string; clearCache: boolean;
