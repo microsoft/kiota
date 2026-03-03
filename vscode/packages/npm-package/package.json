@@ -1,6 +1,7 @@
 {
+  "$schema": "https://www.schemastore.org/package.json",
   "name": "@microsoft/kiota",
-  "version": "1.25.1",
+  "version": "1.30.0",
   "description": "npm package exposing Kiota CLI functionality to TypeScript",
   "repository": {
     "url": "https://github.com/microsoft/kiota.git",
@@ -22,6 +23,7 @@
       "default": "./dist/cjs/index.js"
     }
   },
+  "type": "module",
   "types": "dist/esm/types/index.d.ts",
   "typesVersions": {
     "*": {
