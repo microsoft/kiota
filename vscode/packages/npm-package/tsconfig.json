@@ -7,7 +7,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "rootDir": "./lib/",
-    "outDir": "./dist",
+    "outDir": "./dist/",
     "strict": true,
     "types": [
       "node",

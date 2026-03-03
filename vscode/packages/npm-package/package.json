@@ -11,42 +11,24 @@
     "lib": "lib",
     "test": "tests"
   },
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
+  "main": "dist/index.js",
   "exports": {
-    "import": {
-      "types": "./dist/esm/types/index.d.ts",
-      "default": "./dist/esm/index.js"
-    },
-    "require": {
-      "types": "./dist/cjs/types/index.d.ts",
-      "default": "./dist/cjs/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "type": "module",
-  "types": "dist/esm/types/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "import": [
-        "./dist/esm/types/index.d.ts"
-      ],
-      "require": [
-        "./dist/cjs/types/index.d.ts"
-      ]
-    }
-  },
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "runtime.json"
+    "dist"
   ],
   "scripts": {
     "lint": "eslint",
     "test": "jest --runInBand",
     "test:unit": "jest --config=jest.config.unit.cjs",
     "test:integration": "jest --config=jest.config.integration.cjs --runInBand",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
-    "build:esm": "tsc --project tsconfig.esm.json",
-    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build": "npm run clean && tsc --project tsconfig.json",
     "clean": "rimraf dist",
     "generate-readme": "node scripts/generate-readme.js",
     "test:coverage": "jest --coverage --runInBand",
@@ -72,8 +54,6 @@
     "rimraf": "^6.1.3",
     "ts-jest": "^29.4.6",
     "ts-loader": "^9.5.4",
-    "typescript": "^5.9.3",
-    "webpack": "^5.105.4",
-    "webpack-cli": "^6.0.1"
+    "typescript": "^5.9.3"
   }
 }
