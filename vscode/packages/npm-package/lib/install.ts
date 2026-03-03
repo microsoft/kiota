@@ -3,9 +3,9 @@ import { createHash } from 'crypto';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getKiotaConfig } from './config';
+import { getKiotaConfig } from '../config.js';
 
-import runtimeJson from './runtime.json' with { type: 'json' };
+import runtimeJson from '../runtime.json' with { type: 'json' };
 
 const kiotaInstallStatusKey = "kiotaInstallStatus";
 const installDelayInMs = 30000; // 30 seconds
