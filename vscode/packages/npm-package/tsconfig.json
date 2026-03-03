@@ -1,4 +1,5 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",

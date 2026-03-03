@@ -1,4 +1,5 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig.json",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/cjs",
