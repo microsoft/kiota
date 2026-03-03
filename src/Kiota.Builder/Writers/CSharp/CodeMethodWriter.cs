@@ -242,6 +242,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
     }
+    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
+    {
+        return propertyType.Name.ToLowerInvariant() switch
+        {
+            "boolean" => defaultValue.TrimQuotes(),
+            "date" => $"new Date(DateTimeOffset.Parse({defaultValue}).Date)",
+            "datetimeoffset" => $"DateTimeOffset.Parse({defaultValue})",
+            "time" => $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)",
+            "guid" => $"Guid.Parse({defaultValue})",
+            "float" => $"{defaultValue}f", //Append "f" to the float value
+            _ => null,
+        };
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
         foreach (var propWithDefault in parentClass
@@ -253,8 +266,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            var propertyType = propWithDefault.Type as CodeType;
-            if (propertyType != null && propertyType.TypeDefinition is CodeEnum)
+            if (propWithDefault.Type is CodeType { TypeDefinition: CodeEnum })
             {
                 defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
@@ -263,30 +275,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             { // avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propertyType != null && propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            else if (propWithDefault.Type is CodeType propertyType && GetDefaultValue(defaultValue, propertyType) is string convertedDefaultValue)
             {
-                defaultValue = defaultValue.TrimQuotes();
-            }
-            else if (propertyType != null && propertyType.Name.Equals("date", StringComparison.OrdinalIgnoreCase))
-            {
-                defaultValue = $"new Date(DateTimeOffset.Parse({defaultValue}).Date)";
-            }
-            else if (propertyType != null && propertyType.Name.Equals("datetimeoffset", StringComparison.OrdinalIgnoreCase))
-            {
-                defaultValue = $"DateTimeOffset.Parse({defaultValue})";
-            }
-            else if (propertyType != null && propertyType.Name.Equals("time", StringComparison.OrdinalIgnoreCase))
-            {
-                defaultValue = $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)";
-            }
-            else if (propertyType != null && propertyType.Name.Equals("guid", StringComparison.OrdinalIgnoreCase))
-            {
-                defaultValue = $"Guid.Parse({defaultValue})";
-            }
-            else if (propertyType != null && propertyType.Name.Equals("float", StringComparison.OrdinalIgnoreCase))
-            {
-                //Append "f" to the float value:
-                defaultValue = $"{defaultValue}f";
+                defaultValue = convertedDefaultValue;
             }
             else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
             {
