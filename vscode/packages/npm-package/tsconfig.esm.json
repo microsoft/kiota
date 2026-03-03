@@ -3,9 +3,6 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/esm",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "declaration": true,
     "declarationDir": "./dist/esm/types"
   }
 }

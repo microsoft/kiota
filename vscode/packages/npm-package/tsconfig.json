@@ -1,16 +1,17 @@
 {
   "$schema": "https://www.schemastore.org/tsconfig.json",
   "compilerOptions": {
+    "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "rootDir": ".",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rootDir": "./lib/",
     "outDir": "./dist",
     "strict": true,
     "types": [
       "node",
       "jest"
     ],
-    "moduleResolution": "node",
     "target": "ESNext",
     "lib": [
       "ESNext"
@@ -21,9 +22,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
   },
-  "exclude": [
-    "dist",
-    "node_modules",
-    "tests"
+  "include": [
+    "./lib/**/*.ts"
   ]
 }
