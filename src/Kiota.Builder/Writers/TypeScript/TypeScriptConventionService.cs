@@ -337,7 +337,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass && GetFactoryMethod(definitionClass, resultName) is { } factoryMethod)
         {
             var methodName = GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
-            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+            return methodName;// static function may be aliased
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }

@@ -962,5 +962,55 @@ public class CSharpLanguageRefinerTests
         Assert.Equal(codeClass.Access, accessModifier);
         Assert.Equal(codeEnum.Access, accessModifier);
     }
+    [Fact]
+    public async Task AddsUsingsForDeserializerMethodReturnTypeAsync()
+    {
+        // Test for issue where models with no fields are missing using statements
+        // The deserializer method uses IDictionary<string, Action<IParseNode>> which needs
+        // System and System.Collections.Generic usings
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "MediaSegments",
+            Kind = CodeClassKind.Model
+        }).First();
+        // Add serialization members which adds the deserializer method
+        KiotaBuilder.AddSerializationMembers(model, false, false, static s => s);
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        var declaration = model.StartBlock;
+
+        // Check that the necessary usings are present for the deserializer method
+        Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System");
+        Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System.Collections.Generic");
+    }
+    [Fact]
+    public async Task AddsUsingsForUnionTypeWrapperWithNoFieldsAsync()
+    {
+        // Test for issue where union type wrapper models (converted from oneOf) 
+        // with no fields are missing using statements
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "MediaSegments",
+            Kind = CodeClassKind.Model
+        }).First();
+        // Add serialization members which adds the deserializer method
+        KiotaBuilder.AddSerializationMembers(model, false, false, static s => s);
+        // Set the OriginalComposedType to simulate a union type wrapper
+        model.OriginalComposedType = new CodeUnionType
+        {
+            Name = "MediaSegments",
+        };
+        model.OriginalComposedType.AddType(new CodeType { Name = "integer" });
+        model.OriginalComposedType.AddType(new CodeType { Name = "string" });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+
+        var declaration = model.StartBlock;
+
+        // Check that the necessary usings are present for the deserializer method
+        Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System");
+        Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System.Collections.Generic");
+    }
     #endregion
 }

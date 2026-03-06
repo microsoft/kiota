@@ -51,6 +51,6 @@
   "java.configuration.updateBuildConfiguration": "automatic",
   "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",
   "editor.formatOnSave": true,
-  "dotnet.defaultSolution": "kiota.sln",
+  "dotnet.defaultSolution": "kiota.slnx",
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true
 }

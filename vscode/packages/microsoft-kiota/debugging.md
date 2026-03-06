@@ -4,7 +4,7 @@
 
 Context: you're a developer working on the extension, and you want to debug/step through the extension code.
 
-1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Release -r <rid> -o ./vscode/packages/npm-package/.kiotabin/<versionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and versionInPackage is the Version field in `vscode/packages/npm-package/package.json`.
+1. run `dotnet publish ./src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net10.0 -c Release -r <rid> -o ./vscode/packages/npm-package/.kiotabin/<versionInPackage.json>/<rid>/` where rid is one of `win-x64|linux-x64|osx-x64` and versionInPackage is the Version field in `vscode/packages/npm-package/package.json`.
 1. in `vscode` run `npm i && npm run build`.
 1. in `vscode/packages/microsoft-kiota` run `code .`
 1. in the code instance that was opened at step 2, just press f5

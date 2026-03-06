@@ -517,7 +517,7 @@
   },
   "dependencies": {
     "@microsoft/kiota": "^1.25.1",
-    "@vscode/extension-telemetry": "^1.2.0",
+    "@vscode/extension-telemetry": "^1.5.1",
     "@vscode/l10n": "^0.0.18"
   },
   "devDependencies": {
@@ -527,10 +527,10 @@
     "@types/vscode": "^1.103.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.4.1",
-    "chai": "^6.2.1",
+    "chai": "^6.2.2",
     "mocha": "^11.7.5",
-    "sinon": "^21.0.0",
-    "webpack": "^5.103.0",
+    "sinon": "^21.0.2",
+    "webpack": "^5.105.4",
     "webpack-cli": "^6.0.1"
   }
 }

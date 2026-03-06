@@ -109,4 +109,46 @@ public class TypeScriptConventionServiceTests
         // Assert
         Assert.False(result);
     }
+
+    [Fact]
+    public void GetFactoryMethodName_ReturnsCamelCase_WhenTypeIsAliasedButMethodIsNot()
+    {
+        // Arrange - create model interface and factory method in a code file
+        var root = CodeNamespace.InitRootNamespace();
+        var modelsNS = root.AddNamespace("models");
+
+        var modelInterface = new CodeInterface { Name = "Policy", Kind = CodeInterfaceKind.Model, OriginalClass = new CodeClass { Name = "Policy" } };
+
+        // CodeFunction requires a static method parented by a CodeClass
+        var parentClass = modelsNS.AddClass(new CodeClass { Name = "Policy" }).First();
+        var factoryMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "createPolicyFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType { Name = "Policy", TypeDefinition = modelInterface },
+            IsStatic = true,
+        }).First();
+        var codeFunction = new CodeFunction(factoryMethod);
+
+        // Place interface and factory function in the same CodeFile
+        modelsNS.TryAddCodeFile("policyFile", modelInterface, codeFunction);
+
+        // Create a consumer element that has an aliased using for the type but NOT for the factory method
+        var consumerNS = root.AddNamespace("consumer");
+        var consumerClass = consumerNS.AddClass(new CodeClass { Name = "Consumer" }).First();
+        consumerClass.AddUsing(new CodeUsing
+        {
+            Name = "Policy",
+            Alias = "SomeAliasedPolicy",
+            Declaration = new CodeType { Name = "Policy", TypeDefinition = modelInterface },
+        });
+
+        var targetType = new CodeType { Name = "Policy", TypeDefinition = modelInterface };
+
+        // Act
+        var result = TypeScriptConventionService.GetFactoryMethodName(targetType, consumerClass);
+
+        // Assert - should be camelCase, not PascalCase
+        Assert.Equal("createPolicyFromDiscriminatorValue", result);
+    }
 }

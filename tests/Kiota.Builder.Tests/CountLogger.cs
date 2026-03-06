@@ -12,7 +12,7 @@ internal class CountLogger<T> : ILogger<T>
     }
     public bool IsEnabled(LogLevel logLevel)
     {
-        throw new NotImplementedException();
+        return true;
     }
     internal Dictionary<LogLevel, int> Count { get; } = new();
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)

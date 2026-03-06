@@ -11,10 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Fixed a bug where OpenAPI schemas with `format` but without `type` keyword would generate `UntypedNode` instead of proper types. [#7315](https://github.com/microsoft/kiota/issues/7315)
+- Fixed a bug where discriminator mappings for oneOf types with allOf-inherited schemas would incorrectly use schema names as keys instead of resolving the base type discriminator mappings. [#7339](https://github.com/microsoft/kiota/issues/7339)
+- Fixed TypeScript enum imports to use `import type` for type aliases to support `verbatimModuleSyntax`. [#7332](https://github.com/microsoft/kiota/pull/7332)
+
+## [1.30.0] - 2026-01-26
+
+### Added
+
 - Added support for OpenAPI 3.2.0
+- Added support for net10
 
 ### Changed
 
+- Fixed a bug where C# code generated from OpenAPI union types (oneOf) was missing `using System;` and `using System.Collections.Generic;` statements when ImplicitUsings is disabled. [#7603](https://github.com/microsoft/kiota/issues/7603)
+- Fixed a bug where error responses including text/plain would cause binary responses to be generated as string responses [#3855](https://github.com/microsoft/kiota/issues/3855)
 - Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
 
 ## [1.29.0] - 2025-10-23
@@ -1693,3 +1706,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

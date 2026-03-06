@@ -142,20 +142,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
-                    var readerReference = parseNodeParameter.Name.ToFirstCharacterLowerCase();
-                    var selfReference = $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()}";
-                    var deserializationMethodName = GetDeserializationMethodName(propertyType, codeElement);
-                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, (propertyType.TypeDefinition is CodeEnum || conventions.IsPrimitiveType(propertyType.Name)) && propertyType.CollectionKind is not CodeTypeBase.CodeTypeCollectionKind.None);
+                    // For collections, include nullable info for the inner type (e.g., List<Guid?>)
+                    // For non-collection value types, exclude nullable marker (C# doesn't allow "is int?" in patterns)
+                    var includeNullableInfo = propertyType.IsCollection;
+                    var typeName = conventions.GetTypeString(propertyType, codeElement, true, includeNullableInfo);
                     var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                     if (propertyType.TypeDefinition is CodeType { TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
                     {
-                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is int {valueVarName})");
-                        writer.WriteBlock(lines: $"{selfReference} = ({typeName}){valueVarName};");
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is int {valueVarName})");
+                        writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = ({typeName}){valueVarName};");
                     }
                     else
                     {
-                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is {typeName} {valueVarName})");
-                        writer.WriteBlock(lines: $"{selfReference} = {valueVarName};");
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName})");
+                        writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
                     }
                 }
             if (!includeElse)
@@ -174,20 +174,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             if (property.Type is CodeType propertyType)
             {
-                var readerReference = parseNodeParameter.Name.ToFirstCharacterLowerCase();
-                var selfReference = $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()}";
-                var deserializationMethodName = GetDeserializationMethodName(propertyType, codeElement);
-                var typeName = conventions.GetTypeString(propertyType, codeElement, true, propertyType.TypeDefinition is CodeEnum && propertyType.CollectionKind is not CodeTypeBase.CodeTypeCollectionKind.None);
+                // For collections, include nullable info for the inner type (e.g., List<Guid?>)
+                // For non-collection value types, exclude nullable marker (C# doesn't allow "is int?" in patterns)
+                var includeNullableInfo = propertyType.IsCollection;
+                var typeName = conventions.GetTypeString(propertyType, codeElement, true, includeNullableInfo);
                 var valueVarName = $"{property.Name.ToFirstCharacterLowerCase()}Value";
                 if (propertyType.TypeDefinition is CodeType { TypeDefinition: CodeEnum {BackingType: JsonSchemaType.Integer}})
                 {
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is int {valueVarName})");
-                    writer.WriteBlock(lines: $"{selfReference} = ({typeName}){valueVarName};");
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is int {valueVarName})");
+                    writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = ({typeName}){valueVarName};");
                 }
                 else
                 {
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({readerReference}.{deserializationMethodName} is {typeName} {valueVarName})");
-                    writer.WriteBlock(lines: $"{selfReference} = {valueVarName};");
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name.ToFirstCharacterLowerCase()}.{GetDeserializationMethodName(propertyType, codeElement)} is {typeName} {valueVarName})");
+                    writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = {valueVarName};");
                 }
             }
             if (!includeElse)

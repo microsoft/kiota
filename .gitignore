@@ -453,3 +453,6 @@ idempotency-results/
 vscode/npm-package/dist/*
 vscode/npm-package/coverage/*
 vscode/npm-package/.kiotabin/*
+
+## Claude AI files
+tmpclaude-*

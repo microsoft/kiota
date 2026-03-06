@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Kiota.Builder.Plugins
 {
 
-    internal class AdaptiveCardTemplate
+    internal partial class AdaptiveCardTemplate
     {
         private readonly ILogger<KiotaBuilder> Logger;
         private readonly string? AdaptiveCard;
@@ -24,9 +24,12 @@ namespace Kiota.Builder.Plugins
                 using var reader = new StreamReader(stream);
                 return reader.ReadToEnd();
             }
-            Logger.LogCritical("Failed to load embedded resource: {ResourceName}", resourceName);
+            LogFailedToLoadEmbeddedResource(resourceName);
             return null;
         }
+
+        [LoggerMessage(Level = LogLevel.Critical, Message = "Failed to load embedded resource: {ResourceName}")]
+        private partial void LogFailedToLoadEmbeddedResource(string resourceName);
 
         public void Write(string filePath)
         {

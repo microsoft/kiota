@@ -59,6 +59,12 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
+      pytest:
+        patterns:
+          - "astroid*"
+          - "isort*"
+          - "pylint*"
+          - "pytest*"
   - package-ecosystem: bundler
     directory: "/it/ruby"
     schedule:

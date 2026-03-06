@@ -3530,6 +3530,137 @@ paths:
     }
 
     [Fact]
+    public async Task AddsDiscriminatorMappingsForOneOfWithDerivedTypesFromBaseWithMappingAsync()
+    {
+        // Test case: oneOf contains derived types (via allOf) where the discriminator mapping is defined on the base type
+        // Expected: The discriminator keys from the base type's mapping should be used, not the schema names
+        var baseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                {
+                    "$type", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "$type"
+            },
+            Discriminator = new()
+            {
+                PropertyName = "$type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    {
+                        "typeA", new OpenApiSchemaReference("ResultTypeA")
+                    },
+                    {
+                        "typeB", new OpenApiSchemaReference("ResultTypeB")
+                    }
+                }
+            },
+        };
+        var resultTypeASchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("OperationResult"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "dataA", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                }
+            },
+        };
+        var resultTypeBSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("OperationResult"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "dataB", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                }
+            },
+        };
+        var oneOfResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            OneOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("ResultTypeA"),
+                new OpenApiSchemaReference("ResultTypeB")
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("OperationResponse"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var operationResponse = new OpenApiResponse
+        {
+            Content = new Dictionary<string, IOpenApiMediaType>()
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("OneOfResponse", document)
+                }
+            },
+        };
+        document.AddComponent("OperationResult", baseSchema);
+        document.AddComponent("ResultTypeA", resultTypeASchema);
+        document.AddComponent("ResultTypeB", resultTypeBSchema);
+        document.AddComponent("OneOfResponse", oneOfResponseSchema);
+        document.AddComponent("OperationResponse", operationResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+
+        var oneOfResponseClass = codeModel.FindChildByName<CodeClass>("OneOfResponse");
+        Assert.NotNull(oneOfResponseClass);
+
+        // The discriminator mappings on the oneOf wrapper class should use the keys from OperationResult's discriminator mapping
+        var mappings = oneOfResponseClass.DiscriminatorInformation.DiscriminatorMappings.ToList();
+        Assert.Equal(2, mappings.Count);
+        // Bug fix verification: keys should be "typeA" and "typeB" (from base type mapping), not "ResultTypeA" and "ResultTypeB" (schema names)
+        Assert.Contains("typeA", mappings.Select(static x => x.Key));
+        Assert.Contains("typeB", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("ResultTypeA", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("ResultTypeB", mappings.Select(static x => x.Key));
+    }
+
+    [Fact]
     public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNotAsync()
     {
         var document = new OpenApiDocument
@@ -4305,6 +4436,127 @@ components:
                                     In = ParameterLocation.Query,
                                     Schema = new OpenApiSchema {
                                         Type = type,
+                                        Format = format
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal(expected, property.Type.Name);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
+    [InlineData("date-time", "DateTimeOffset")]
+    [InlineData("duration", "TimeSpan")]
+    [InlineData("time", "TimeOnly")]
+    [InlineData("date", "DateOnly")]
+    [InlineData("byte", "base64")]
+    [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
+    [Theory]
+    public void MapsPrimitiveFormatsWithoutType(string format, string expected)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                // Type is intentionally not set to simulate .NET 10 ASP.NET OpenAPI generator behavior
+                                                Format = format
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var method = requestBuilder.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(method);
+        Assert.Equal(expected, method.ReturnType.Name);
+        Assert.True(method.ReturnType.AllTypes.First().IsExternal);
+    }
+    [InlineData("date-time", "DateTimeOffset")]
+    [InlineData("duration", "TimeSpan")]
+    [InlineData("time", "TimeOnly")]
+    [InlineData("date", "DateOnly")]
+    [InlineData("byte", "base64")]
+    [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
+    [Theory]
+    public void MapsQueryParameterTypesWithoutType(string format, string expected)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<IOpenApiParameter> {
+                                new OpenApiParameter() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        // Type is intentionally not set to simulate .NET 10 ASP.NET OpenAPI generator behavior
                                         Format = format
                                     }
                                 }
@@ -10112,4 +10364,106 @@ components:
     }
     [GeneratedRegex(@"^[a-zA-Z0-9_]*$", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex OperationIdValidationRegex();
+
+    [Fact]
+    public async Task GeneratesBinaryReturnTypeWhenSuccessResponseIsBinaryAndErrorResponseIsPlainTextOrJsonAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Image API
+  version: 1.0.0
+servers:
+  - url: https://example.org
+paths:
+  /image:
+    get:
+      responses:
+        '200':
+          description: Returns image binary data
+          content:
+            application/octet-stream:
+                schema:
+                    type: string
+                    format: binary
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer
+            text/plain:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("ImageRequestBuilder");
+        Assert.NotNull(rbClass);
+        var getMethod = rbClass.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.NotNull(getMethod.ReturnType);
+        // The return type should be binary since the success response (200) is binary
+        Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task HandlesBinaryContentWithoutSchemaWhenErrorResponseHasSchemaAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Image API with Error Schema
+  version: 1.0.0
+servers:
+  - url: https://example.org
+paths:
+  /avatar:
+    get:
+      responses:
+        '200':
+          description: Returns user avatar image
+          content:
+            image/png: {}
+            image/jpeg: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("AvatarRequestBuilder");
+        Assert.NotNull(rbClass);
+        var getMethod = rbClass.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.NotNull(getMethod.ReturnType);
+        // Since 200 has no schema and only binary content types (image/png, image/jpeg),
+        // and these are not in structuredMimeTypes, GetResponseSchema returns null,
+        // which triggers GetExecutorMethodDefaultReturnType, which should return "binary"
+        Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
 }
