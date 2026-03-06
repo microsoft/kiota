@@ -104,9 +104,14 @@
             "type": "boolean",
             "default": true
           },
+          "longValue": {
+            "type": "integer",
+            "format": "int64",
+            "default": 255
+          },
           "enumValue": {
             "type": "string",
-            "enum": ["one", "two", "three"],
+            "enum": [ "one", "two", "three" ],
             "default": "one"
           }
         },

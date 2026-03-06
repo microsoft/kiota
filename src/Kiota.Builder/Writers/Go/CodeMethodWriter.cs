@@ -583,6 +583,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 discardError = false;
                 isPointer = false;
                 return $"int32({defaultValue})";
+            case "int64":
+                discardError = false;
+                isPointer = false;
+                return $"int64({defaultValue})";
             default:
                 discardError = false;
                 isPointer = false;

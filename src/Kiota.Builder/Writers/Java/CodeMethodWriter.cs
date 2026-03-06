@@ -344,6 +344,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             "uuid" => $"UUID.fromString({defaultValue})",
             "double" => $"{defaultValue}d", //Append "d" to the double value (required if it is a plain int and has no decimal separator)
             "float" => $"{defaultValue}f", //Append "f" to the float value
+            "int64" => $"{defaultValue}L", //Append "L" to the long value
             _ => null,
         };
     }

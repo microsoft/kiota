@@ -1844,6 +1844,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueLong = "255";
+        var longPropName = "propWithDefaultLongValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = longPropName,
+            DefaultValue = defaultValueLong,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int64",
+                IsNullable = true
+            }
+        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -1864,6 +1877,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"this.set{floatPropName.ToFirstCharacterUpperCase()}({defaultValueFloat}f)", result);
         //double must be followed by "d":
         Assert.Contains($"this.set{doublePropName.ToFirstCharacterUpperCase()}({defaultValueDouble}d)", result);
+        //long value must be followed by "L":
+        Assert.Contains($"this.set{longPropName.ToFirstCharacterUpperCase()}({defaultValueLong}L)", result);
         Assert.Contains("super", result);
     }
     [Fact]

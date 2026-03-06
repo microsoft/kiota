@@ -1937,6 +1937,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueLong = "255";
+        var longPropName = "propWithDefaultLongValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = longPropName,
+            DefaultValue = defaultValueLong,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int64",
+                IsNullable = true
+            }
+        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -1961,6 +1974,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"m.Set{doublePropName.ToFirstCharacterUpperCase()}(&{doublePropName}Value)", result);
         Assert.Contains($"{intPropName}Value := int32({defaultValueInt})", result);
         Assert.Contains($"m.Set{intPropName.ToFirstCharacterUpperCase()}(&{intPropName}Value)", result);
+        Assert.Contains($"{longPropName}Value := int64({defaultValueLong})", result);
+        Assert.Contains($"m.Set{longPropName.ToFirstCharacterUpperCase()}(&{longPropName}Value)", result);
         Assert.Contains("NewBaseRequestBuilder", result);
     }
     [Fact]
