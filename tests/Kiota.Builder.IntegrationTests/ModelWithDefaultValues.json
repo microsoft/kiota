@@ -103,6 +103,11 @@
           "boolValue": {
             "type": "boolean",
             "default": true
+          },
+          "enumValue": {
+            "type": "string",
+            "enum": ["one", "two", "three"],
+            "default": "one"
           }
         },
         "additionalProperties": false

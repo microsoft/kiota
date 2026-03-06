@@ -538,6 +538,57 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine($"{methodImportSymbol}(func() {interfaceImportSymbol} {{ return {moduleImportSymbol}.New{module}() }})");
             }
     }
+    private string? GetDefaultValue(string defaultValue, CodeType propertyType, out bool discardError, out bool isPointer)
+    {
+        switch (propertyType.Name.ToLowerInvariant())
+        {
+            case "boolean":
+                discardError = false;
+                isPointer = false;
+                return defaultValue.TrimQuotes();
+            case "dateonly":
+                discardError = true;
+                isPointer = true; //"ParseDateOnly" returns a pointer var.
+                //Type "DateOnly" is defined in a module "github.com/microsoft/kiota-abstractions-go/serialization" that has this import hash:
+                return $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})"; 
+            case "time":
+                //This is "DateTime":
+                discardError = true;
+                isPointer = false;
+                //Add "+00:00" if value has no timezone.
+                if (!defaultValue.Contains('+', StringComparison.InvariantCulture))
+                {
+                    //Insert the timezone before the final quote:
+                    defaultValue = string.Concat(defaultValue.AsSpan(0, defaultValue.Length - 1), "+00:00\"");
+                }
+                //Module "time" has this hash:
+                return $"{GoConventionService.TimeFormatHash}.Parse({GoConventionService.TimeFormatHash}.RFC3339, {defaultValue})";
+            case "timeonly":
+                discardError = true;
+                isPointer = true; //"ParseTimeOnly" returns a pointer var.
+                return $"{conventions.SerializationHash}.ParseTimeOnly({defaultValue})";
+            case "uuid":
+                discardError = true;
+                isPointer = false;
+                return $"{GoConventionService.UuidHash}.Parse({defaultValue})";
+            case "float":
+                discardError = false;
+                isPointer = false;
+                return $"float32({defaultValue})";  //set type to "float32" (in case the default value has no decimal separator)
+            case "double":
+                discardError = false;
+                isPointer = false;
+                return $"float64({defaultValue})";
+            case "integer":
+                discardError = false;
+                isPointer = false;
+                return $"int32({defaultValue})";
+            default:
+                discardError = false;
+                isPointer = false;
+                return null;
+        };
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
@@ -579,10 +630,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             {// avoid setting null as a string.
                 defaultValueReference = "nil";
             }
-            else if (defaultValueReference.StartsWith('"'))
+            else
             {
+                //default value with quotes or literal value (true/false, numeric)
                 defaultValueReference = $"{propWithDefault.Name.ToFirstCharacterLowerCase()}Value";
                 var defaultValue = propWithDefault.DefaultValue;
+                //Is a Parse method invoked that also returns an error string?
+                bool discardError = false;
+                //Is the variable that holds the converted value a pointer?
+                bool isPointer = false;
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
                 {
                     defaultValue = defaultValue.Trim('"');
@@ -590,12 +646,29 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                         enumDefinition.Options.FirstOrDefault(x => x.SerializationName.Equals(defaultValue, StringComparison.OrdinalIgnoreCase))?.Name ?? defaultValue;
                     defaultValue = $"{defaultValue.ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
                 }
-                else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+                else if (propWithDefault.Type is CodeType propertyType2 && GetDefaultValue(defaultValue, propertyType2, out discardError, out isPointer) is string convertedDefaultValue)
                 {
-                    defaultValue = defaultValue.TrimQuotes();
+                    defaultValue = convertedDefaultValue;
                 }
-                writer.WriteLine($"{defaultValueReference} := {defaultValue}");
-                defaultValueReference = $"&{defaultValueReference}";
+
+                //Some parse operations return the parsed value and a error string. Discard this one.
+                //Might be better to create a message?
+                if (discardError)
+                {
+                    writer.WriteLine($"{defaultValueReference}, _ := {defaultValue}");
+                }
+                else
+                {
+                    writer.WriteLine($"{defaultValueReference} := {defaultValue}");
+                }
+                if (isPointer)
+                {
+                    defaultValueReference = $"{defaultValueReference}";
+                }
+                else
+                {
+                    defaultValueReference = $"&{defaultValueReference}";
+                }
             }
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"m.{setterName}({defaultValueReference})");

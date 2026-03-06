@@ -247,6 +247,7 @@ public sealed class GenerateSample : IDisposable
     /// <param name="language"></param>
     /// <returns></returns>
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Go)]
     [InlineData(GenerationLanguage.Java)]
     [Theory]
     public async Task GeneratesModelWithDefaultValuesAsync(GenerationLanguage language)
