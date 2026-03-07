@@ -1,4 +1,4 @@
-import { KiotaLogEntry, KiotaResult } from '../../types';
+import { KiotaLogEntry, KiotaResult } from '../../lib/types';
 import { removeClient, removePlugin } from '../../lib/removeItem';
 import { setupKiotaStubs } from './stubs.util';
 
