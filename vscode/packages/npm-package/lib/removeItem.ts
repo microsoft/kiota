@@ -44,7 +44,7 @@ export async function removePlugin({ pluginName, cleanOutput, workingDirectory }
 
   if (result) {
     return {
-      isSuccess: result.some((k: any) => k.message.includes('removed successfully')),
+      isSuccess: result.some(k => k.message.includes('removed successfully')),
       logs: result
     };
   }
