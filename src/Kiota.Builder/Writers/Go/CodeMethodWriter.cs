@@ -634,6 +634,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             {// avoid setting null as a string.
                 defaultValueReference = "nil";
             }
+            else if (propWithDefault.Kind == CodePropertyKind.AdditionalData)
+            {
+                //default value contains a code snippet. So create "m.SetAdditionalData(make(map[string]any))"
+                writer.WriteLine($"m.Set{propWithDefault.Name.ToFirstCharacterUpperCase()}({defaultValueReference})");
+            }
             else
             {
                 //default value with quotes or literal value (true/false, numeric)
