@@ -550,7 +550,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 discardError = true;
                 isPointer = true; //"ParseDateOnly" returns a pointer var.
                 //Type "DateOnly" is defined in a module "github.com/microsoft/kiota-abstractions-go/serialization" that has this import hash:
-                return $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})"; 
+                return $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})";
             case "time":
                 //This is "DateTime":
                 discardError = true;
@@ -591,7 +591,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 discardError = false;
                 isPointer = false;
                 return null;
-        };
+        }
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
