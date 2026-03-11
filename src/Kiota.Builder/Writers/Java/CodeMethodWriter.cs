@@ -383,7 +383,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             var defaultValue = propWithDefault.DefaultValue;
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
-                defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
+                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             }
             else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
