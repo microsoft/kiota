@@ -54,6 +54,7 @@
   "dotnet.defaultSolution": "kiota.slnx",
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "chat.tools.terminal.autoApprove": {
-    "dotnet outdated": true
+    "dotnet outdated": true,
+    "dotnet list": true
   }
 }
