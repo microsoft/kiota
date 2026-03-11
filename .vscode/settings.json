@@ -52,5 +52,8 @@
   "dotnet-test-explorer.testProjectPath": "tests/**/*.Tests.csproj",
   "editor.formatOnSave": true,
   "dotnet.defaultSolution": "kiota.slnx",
-  "azure-pipelines.1ESPipelineTemplatesSchemaFile": true
+  "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
+  "chat.tools.terminal.autoApprove": {
+    "dotnet outdated": true
+  }
 }
