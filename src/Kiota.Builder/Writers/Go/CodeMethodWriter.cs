@@ -486,27 +486,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 !(codeElement.AccessedProperty.Type?.IsNullable ?? true) &&
                 !codeElement.AccessedProperty.ReadOnly &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty.DefaultValue))
-        {
-            writer.WriteLines(
-                $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
-            writer.WriteBlock("if err != nil {", "}", "panic(err)");
-            writer.WriteBlock("if val == nil {", "}",
-                $"var value = {codeElement.AccessedProperty.DefaultValue};",
-                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
+            {
+                writer.WriteLines(
+                    $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                writer.WriteBlock("if val == nil {", "}",
+                    $"var value = {codeElement.AccessedProperty.DefaultValue};",
+                    $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
 
-            writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
-        }
-        else
-        {
-            var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+                writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
+            }
+            else
+            {
+                var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
 
-            writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
+                writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
 
-            writer.WriteBlock("if err != nil {", "}", "panic(err)");
-            writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
 
-            writer.WriteLine("return nil");
-        }
+                writer.WriteLine("return nil");
+            }
     }
     private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {

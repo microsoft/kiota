@@ -406,16 +406,16 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             if (!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                 !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue))
-        {
-            writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\");");
-            writer.StartBlock("if(value == null) {");
-            writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
-                $"this.set{codeElement.AccessedProperty?.Name.ToFirstCharacterUpperCase()}(value);");
-            writer.CloseBlock();
-            writer.WriteLine("return value;");
-        }
-        else
-            writer.WriteLine($"return this.{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\");");
+            {
+                writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\");");
+                writer.StartBlock("if(value == null) {");
+                writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
+                    $"this.set{codeElement.AccessedProperty?.Name.ToFirstCharacterUpperCase()}(value);");
+                writer.CloseBlock();
+                writer.WriteLine("return value;");
+            }
+            else
+                writer.WriteLine($"return this.{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\");");
     }
     private void WriteQueryParametersExtractorBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
