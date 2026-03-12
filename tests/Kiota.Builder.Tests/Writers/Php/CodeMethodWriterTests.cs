@@ -1163,6 +1163,87 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->setPropWithDefaultBoolValue(true)", result);
     }
     [Fact]
+    public async Task WritesConstructorWithDefaultValuesThatRequireParsingAsync()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        var constructor = new CodeMethod
+        {
+            Name = "constructor",
+            Access = AccessModifier.Public,
+            Documentation = new()
+            {
+                DescriptionTemplate = "The constructor for this class",
+            },
+            ReturnType = new CodeType { Name = "void" },
+            Kind = CodeMethodKind.Constructor
+        };
+        parentClass.AddMethod(constructor);
+
+        //PHP cannot parse a value without timezone. So it must be appended.
+        //The PHP generator surrounds the values from the OpenAPI spec with single quotes.
+        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
+        var dateTimePropName = "propWithDefaultDateTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimePropName,
+            DefaultValue = defaultValueDateTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "DateTime"
+            },
+        });
+        var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
+        var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimeWithTimeZonePropName,
+            DefaultValue = defaultValueDateTimeWithTimeZone,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "DateTime"
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Date"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Time"
+            }
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("public function __construct", result);
+        //Original value without timezone: a timezone was appended:
+        Assert.Contains($"$this->set{dateTimePropName.ToFirstCharacterUpperCase()}(DateTime::createFromFormat(DateTime::ISO8601, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}'));", result);
+        Assert.Contains($"$this->set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}(DateTime::createFromFormat(DateTime::ISO8601, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}'));", result);
+        Assert.Contains($"$this->set{datePropName.ToFirstCharacterUpperCase()}(new Date('{defaultValueDate.TrimQuotes()}'));", result);
+        Assert.Contains($"$this->set{timePropName.ToFirstCharacterUpperCase()}(new Time('{defaultValueTime.TrimQuotes()}'));", result);
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         setup();

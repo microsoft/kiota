@@ -326,9 +326,10 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     {
         //"OffsetDateTime.parse" works only if the string has format "DateTimeFormatter.ISO_OFFSET_DATE_TIME".
         //In my sample, the OpenAPI default value had no timezone suffix. Add one if necessary.
+        //"Z" or "z" is also valid.
         string AddTimezoneToDateTimeOffset()
         {
-            if (!defaultValue.Contains('+', StringComparison.InvariantCulture))
+            if (!defaultValue.Contains('+', StringComparison.InvariantCulture) && !defaultValue.Contains('Z', StringComparison.OrdinalIgnoreCase))
             {
                 //Insert the timezone before the final quote:
                 return string.Concat(defaultValue.AsSpan(0, defaultValue.Length - 1), "+00:00\"");
