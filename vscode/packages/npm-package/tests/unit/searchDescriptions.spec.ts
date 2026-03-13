@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { KiotaSearchResultItem } from '../../types';
+import { KiotaSearchResultItem } from '../../lib/types';
 import { searchDescription } from '../../lib/searchDescription';
 import { setupKiotaStubs } from './stubs.util';
 

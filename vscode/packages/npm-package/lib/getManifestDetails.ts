@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import connectToKiota from "../connect";
-import { KiotaManifestResult, KiotaGetManifestDetailsConfiguration } from "../types";
+import connectToKiota from "./connect.js";
+import { KiotaManifestResult, KiotaGetManifestDetailsConfiguration } from "./types.js";
 
 export interface ManifestOptions {
   manifestPath: string;

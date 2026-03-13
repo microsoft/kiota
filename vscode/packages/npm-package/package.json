@@ -1,6 +1,7 @@
 {
+  "$schema": "https://www.schemastore.org/package.json",
   "name": "@microsoft/kiota",
-  "version": "1.25.1",
+  "version": "1.30.0",
   "description": "npm package exposing Kiota CLI functionality to TypeScript",
   "repository": {
     "url": "https://github.com/microsoft/kiota.git",
@@ -10,43 +11,25 @@
     "lib": "lib",
     "test": "tests"
   },
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
+  "main": "dist/index.js",
   "exports": {
-    "import": {
-      "types": "./dist/esm/types/index.d.ts",
-      "default": "./dist/esm/index.js"
-    },
-    "require": {
-      "types": "./dist/cjs/types/index.d.ts",
-      "default": "./dist/cjs/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
-  "types": "dist/esm/types/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "import": [
-        "./dist/esm/types/index.d.ts"
-      ],
-      "require": [
-        "./dist/cjs/types/index.d.ts"
-      ]
-    }
-  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "runtime.json"
+    "dist"
   ],
   "scripts": {
     "lint": "eslint",
     "test": "jest --runInBand",
     "test:unit": "jest --config=jest.config.unit.cjs",
     "test:integration": "jest --config=jest.config.integration.cjs --runInBand",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run copy-files",
-    "build:esm": "tsc --project tsconfig.esm.json",
-    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build": "npm run clean && tsc --project ./tsconfig.json",
     "clean": "rimraf dist",
-    "copy-files": "node scripts/copy-files.js",
     "generate-readme": "node scripts/generate-readme.js",
     "test:coverage": "jest --coverage --runInBand",
     "prepack": "npm run build",
