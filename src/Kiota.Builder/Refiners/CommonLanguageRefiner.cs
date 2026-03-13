@@ -1273,7 +1273,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                                         .Where(x => x.IsOfKind(CodeMethodKind.Getter,
                                                                             CodeMethodKind.Setter,
                                                                             CodeMethodKind.Factory) &&
-                                                                    !(x.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData) ?? false)))
+                                                                    !(x.AccessedProperty?.IsOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.BackingStore) ?? false)))
             {
                 if (method.ReturnType is CodeType methodReturnType &&
                     !methodReturnType.IsExternal)
