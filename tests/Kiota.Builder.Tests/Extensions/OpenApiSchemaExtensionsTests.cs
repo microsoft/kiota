@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
 using Xunit;
@@ -77,6 +78,18 @@ public class OpenApiSchemaExtensionsTests
     public void ExternalReferencesAreSupported()
     {
         var mockSchema = new OpenApiSchemaReference("example.json#/path/to/component", null, "http://example.com/example.json");
+        Assert.True(mockSchema.IsReferencedSchema());
+    }
+    [Fact]
+    public void ExternalNullableReferencesAreSupported()
+    {
+        var mockSchema = new OpenApiSchema
+        {
+            OneOf = [
+                new OpenApiSchema{Type = JsonSchemaType.Null},
+                new OpenApiSchemaReference("example.json#/path/to/component", null, "http://example.com/example.json")
+            ]
+        };
         Assert.True(mockSchema.IsReferencedSchema());
     }
     [Fact]
@@ -354,6 +367,20 @@ public class OpenApiSchemaExtensionsTests
         var names = schema.GetSchemaReferenceIds();
         Assert.Contains("microsoft.graph.entity", names);
         Assert.Contains("microsoft.graph.user", names);
+    }
+    [Fact]
+    public void GetReferenceIdsOneOfNullable()
+    {
+        var schema = new OpenApiSchema
+        {
+            OneOf = [
+                new OpenApiSchema{Type = JsonSchemaType.Null},
+                new OpenApiSchemaReference("microsoft.graph.user")
+            ]
+        };
+        var names = schema.GetSchemaReferenceIds();
+        var name = Assert.Single(names);
+        Assert.Contains("microsoft.graph.user", name);
     }
     [Fact]
     public void GetReferenceIdsItems()

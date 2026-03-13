@@ -7,6 +7,8 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.CSharp;
 
+using Microsoft.OpenApi;
+
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
@@ -1538,6 +1540,246 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", result);
         AssertExtensions.Before("writer.WriteStringValue(null, StringValue)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
         AssertExtensions.Before("writer.WriteCollectionOfObjectValues<ComplexType2>(null, ComplexType2Value)", "writer.WriteObjectValue<ComplexType1>(null, ComplexType1Value, ComplexType3Value)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithIntegerEnum()
+    {
+        setup();
+        var intEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "IntEnum",
+            BackingType = JsonSchemaType.Integer,
+        }).First();
+        intEnum.AddOption(new CodeEnumOption { Name = "Value1" });
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var enumType = new CodeType
+        {
+            Name = "IntEnum",
+            TypeDefinition = intEnum,
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(enumType);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "IntEnumValue",
+            Type = enumType,
+            Kind = CodePropertyKind.Custom,
+        });
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+            },
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("GetIntValue() is int intEnumValueValue", result);
+        Assert.Contains("(IntEnum)intEnumValueValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForIntersectionModelWithIntegerEnum()
+    {
+        setup();
+        var intEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "IntEnum",
+            BackingType = JsonSchemaType.Integer,
+        }).First();
+        intEnum.AddOption(new CodeEnumOption { Name = "Value1" });
+        var intersectionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "IntersectionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeIntersectionType
+            {
+                Name = "IntersectionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var enumType = new CodeType
+        {
+            Name = "IntEnum",
+            TypeDefinition = intEnum,
+        };
+        intersectionTypeWrapper.OriginalComposedType.AddType(enumType);
+        intersectionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "IntEnumValue",
+            Type = enumType,
+            Kind = CodePropertyKind.Custom,
+        });
+        var factoryMethod = intersectionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "IntersectionTypeWrapper",
+                TypeDefinition = intersectionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+            },
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("GetIntValue() is int intEnumValueValue", result);
+        Assert.Contains("(IntEnum)intEnumValueValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesUnionSerializerBodyWithIntegerEnum()
+    {
+        setup();
+        var intEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "IntEnum",
+            BackingType = JsonSchemaType.Integer,
+        }).First();
+        intEnum.AddOption(new CodeEnumOption { Name = "Value1" });
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var enumType = new CodeType
+        {
+            Name = "IntEnum",
+            TypeDefinition = intEnum,
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(enumType);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "IntEnumValue",
+            Type = enumType,
+            Kind = CodePropertyKind.Custom,
+        });
+        var serializationMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter
+        {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType
+            {
+                Name = "SerializationWriter",
+            },
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.Contains("(int?)IntEnumValue", result);
+        Assert.Contains("WriteIntValue(null, (int?)IntEnumValue)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBodyWithIntegerEnum()
+    {
+        setup();
+        var intEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "IntEnum",
+            BackingType = JsonSchemaType.Integer,
+        }).First();
+        intEnum.AddOption(new CodeEnumOption { Name = "Value1" });
+        var intersectionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "IntersectionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeIntersectionType
+            {
+                Name = "IntersectionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var enumType = new CodeType
+        {
+            Name = "IntEnum",
+            TypeDefinition = intEnum,
+        };
+        intersectionTypeWrapper.OriginalComposedType.AddType(enumType);
+        intersectionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "IntEnumValue",
+            Type = enumType,
+            Kind = CodePropertyKind.Custom,
+        });
+        var serializationMethod = intersectionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "void",
+            },
+        }).First();
+        serializationMethod.AddParameter(new CodeParameter
+        {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType
+            {
+                Name = "SerializationWriter",
+            },
+        });
+        writer.Write(serializationMethod);
+        var result = tw.ToString();
+        Assert.Contains("(int?)IntEnumValue", result);
+        Assert.Contains("WriteIntValue(null, (int?)IntEnumValue)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
