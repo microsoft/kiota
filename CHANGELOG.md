@@ -367,6 +367,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `InvalidOperationException` thrown when serializing IBacked models with no changes present in the additional data in dotnet [microsoftgraph/msgraph-sdk-dotnet#2471](https://github.com/microsoftgraph/msgraph-sdk-dotnet/issues/2471).
 - Fixed a bug where enums could be considered inheritance parents. [#4640](https://github.com/microsoft/kiota/issues/4640)
 - Fixed `RequestConfiguration` Classes dropped in RequestBuilder methods in python [#4535](https://github.com/microsoft/kiota/issues/4535)
+- Updated conversion to snake case to deal with strigns with multiple uppercase letters in a row for example "imageURL" will be converted to "image_url" and not "image_u_r_l"
 - Fixed incorrect optional types in method parameters in Python [#4507](https://github.com/microsoft/kiota/issues/4507)
 - Changed enum parsing methods to return nil in the default case in Go [#4621](https://github.com/microsoft/kiota/issues/4621)
 - Changes the cached description file name to `openapi.yml|json` from `description.yml|json` [#4641](https://github.com/microsoft/kiota/issues/4641)
