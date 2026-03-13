@@ -10362,6 +10362,140 @@ components:
         Assert.Equal("PostAdministrativeUnits_With201_response", operations[1].Value.OperationId);
         Assert.Equal("directory_adminstativeunits_item_get", operations[2].Value.OperationId);
     }
+
+    [Fact]
+    public async Task GeneratesEnumTypeForIndexerParameterAndCreatesEnumModelAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: Test API
+  version: 1.0.0
+servers:
+  - url: https://api.contoso.test
+paths:
+  /tenants/{{tenant}}/resources:
+    get:
+      parameters:
+        - name: tenant
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Tenant'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Tenant:
+      type: string
+      enum: [A, B]
+");
+
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "ApiSdk",
+            OpenAPIFilePath = tempFilePath,
+            Language = GenerationLanguage.CSharp
+        }, _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+
+        var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.tenants");
+        Assert.NotNull(collectionRequestBuilderNamespace);
+        var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("tenantsRequestBuilder");
+        Assert.NotNull(collectionRequestBuilder);
+
+        var indexer = collectionRequestBuilder.Indexer;
+        Assert.NotNull(indexer);
+        Assert.NotNull(indexer.IndexParameter);
+        Assert.NotNull(indexer.IndexParameter.Type);
+        Assert.False(indexer.IndexParameter.Type.IsNullable);
+
+        // verify the type is an enum definition named Tenant
+        var indexParamTypeDef = indexer.IndexParameter.Type.AllTypes.First().TypeDefinition;
+        Assert.IsType<CodeEnum>(indexParamTypeDef);
+        var enumType = (CodeEnum)indexParamTypeDef!;
+        Assert.Equal("Tenant", enumType.Name);
+
+        // verify the enum model exists in the Models namespace
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.Models");
+        Assert.NotNull(modelsNS);
+        var tenantEnumInModels = modelsNS.FindChildByName<CodeEnum>("Tenant", false);
+        Assert.NotNull(tenantEnumInModels);
+    }
+
+    [Fact]
+    public async Task GeneratesEnumTypeForIndexerParameterFromAllOfWrapperAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, @$"openapi: 3.0.1
+info:
+  title: Test API
+  version: 1.0.0
+servers:
+  - url: https://api.contoso.test
+paths:
+  /tenants/{{tenant}}/resources:
+    get:
+      parameters:
+        - name: tenant
+          in: path
+          required: true
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Tenant'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Tenant:
+      type: string
+      enum: [A, B]
+");
+
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "ApiSdk",
+            OpenAPIFilePath = tempFilePath,
+            Language = GenerationLanguage.CSharp
+        }, _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document!);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+
+        var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.tenants");
+        Assert.NotNull(collectionRequestBuilderNamespace);
+        var collectionRequestBuilder = collectionRequestBuilderNamespace.FindChildByName<CodeClass>("tenantsRequestBuilder");
+        Assert.NotNull(collectionRequestBuilder);
+
+        var indexer = collectionRequestBuilder.Indexer;
+        Assert.NotNull(indexer);
+        Assert.NotNull(indexer.IndexParameter);
+        Assert.NotNull(indexer.IndexParameter.Type);
+        Assert.False(indexer.IndexParameter.Type.IsNullable);
+
+        var indexParamTypeDef = indexer.IndexParameter.Type.AllTypes.First().TypeDefinition;
+        Assert.IsType<CodeEnum>(indexParamTypeDef);
+        var enumType = (CodeEnum)indexParamTypeDef!;
+        Assert.Equal("Tenant", enumType.Name);
+
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.Models");
+        Assert.NotNull(modelsNS);
+        var tenantEnumInModels = modelsNS.FindChildByName<CodeEnum>("Tenant", false);
+        Assert.NotNull(tenantEnumInModels);
+    }
+
     [GeneratedRegex(@"^[a-zA-Z0-9_]*$", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex OperationIdValidationRegex();
 
