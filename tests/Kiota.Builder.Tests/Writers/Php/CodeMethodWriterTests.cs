@@ -1237,9 +1237,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
 
         Assert.Contains("public function __construct", result);
+        //DateTime values must be assigned to a dummy variable and a "false" check must be generated.
         //Original value without timezone: a timezone was appended:
-        Assert.Contains($"$this->set{dateTimePropName.ToFirstCharacterUpperCase()}(DateTime::createFromFormat(DateTime::ISO8601, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}'));", result);
-        Assert.Contains($"$this->set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}(DateTime::createFromFormat(DateTime::ISO8601, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}'));", result);
+        Assert.Contains($"$tempSet{dateTimePropName.ToFirstCharacterUpperCase()} = DateTime::createFromFormat(DateTime::ISO8601, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}');", result);
+        Assert.Contains($"if (!is_bool($tempSet{dateTimePropName.ToFirstCharacterUpperCase()})", result);
+        Assert.Contains($"$this->set{dateTimePropName.ToFirstCharacterUpperCase()}($tempSet{dateTimePropName.ToFirstCharacterUpperCase()});", result);
+
+        Assert.Contains($"$tempSet{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()} = DateTime::createFromFormat(DateTime::ISO8601, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}');", result);
+        Assert.Contains($"if (!is_bool($tempSet{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()})", result);
+        Assert.Contains($"$this->set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}($tempSet{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()});", result);
+
         Assert.Contains($"$this->set{datePropName.ToFirstCharacterUpperCase()}(new Date('{defaultValueDate.TrimQuotes()}'));", result);
         Assert.Contains($"$this->set{timePropName.ToFirstCharacterUpperCase()}(new Time('{defaultValueTime.TrimQuotes()}'));", result);
     }

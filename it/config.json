@@ -48,12 +48,12 @@
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
       },
       {
-        "Pattern": "/repos/{owner}/{repo}/releases/{release_id}",
-        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 (default value for enum is not quoted)"
+        "Pattern": "/repos/{owner}/{repo}/releases/{release_id}#PATCH",
+        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 and https://github.com/github/rest-api-description/issues/6100 (default value for enum is not quoted)"
       },
       {
-        "Pattern": "/repos/{owner}/{repo}/releases",
-        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 (default value for enum is not quoted)"
+        "Pattern": "/repos/{owner}/{repo}/releases#POST",
+        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 (default value for enum is not quoted, fixed in recent file as of 03/2026 but not updated to APIGurus)"
       }
     ]
   },
