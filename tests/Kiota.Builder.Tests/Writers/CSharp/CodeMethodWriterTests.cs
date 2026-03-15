@@ -6,7 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.CSharp;
-
+using Microsoft.Kiota.Abstractions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
@@ -1804,6 +1804,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueFloat = "15.5";
+        var floatPropName = "propWithDefaultFloatValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = floatPropName,
+            DefaultValue = defaultValueFloat,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "float",
+                IsNullable = true
+            }
+        });
         var defaultValueEscapedLineBreak = "\"someVal\n\"";
         var expectedValueEscapedLineBreak = @"""someVal\n""";
         var escapedLineBreakPropName = "propWithDefaultEscapedLineBreak";
@@ -1838,6 +1851,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
         Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
         Assert.Contains($"{boolPropName.ToFirstCharacterUpperCase()} = {defaultValueBool.TrimQuotes()}", result);
+        //float value must be followed by "f":
+        Assert.Contains($"{floatPropName.ToFirstCharacterUpperCase()} = {defaultValueFloat}f", result);
         Assert.Contains($"{escapedLineBreakPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedLineBreak}", result);
         Assert.Contains($"{escapedQuotesPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedQuotes}", result);
     }
@@ -1935,6 +1950,72 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
         Assert.Contains("global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
+    }
+
+    [Fact]
+    public void WritesConstructorWithDefaultValuesThatRequireParsing()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
+        method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
+        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
+        var dateTimePropName = "propWithDefaultDateTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimePropName,
+            DefaultValue = defaultValueDateTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(DateTimeOffset)
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Date)
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Guid)
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Time)
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains($"{dateTimePropName.ToFirstCharacterUpperCase()} = DateTimeOffset.Parse({defaultValueDateTime})", result);
+        Assert.Contains($"{datePropName.ToFirstCharacterUpperCase()} = new Date(DateTimeOffset.Parse({defaultValueDate}).Date)", result);
+        Assert.Contains($"{uuidPropName.ToFirstCharacterUpperCase()} = Guid.Parse({defaultValueUuid})", result);
+        Assert.Contains($"{timePropName.ToFirstCharacterUpperCase()} = new Time(DateTimeOffset.Parse({defaultValueTime}).DateTime)", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

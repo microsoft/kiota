@@ -134,6 +134,35 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
 
     }
 
+    private static string? GetDefaultValue(string defaultValue, CodeType propertyType, out bool checkParsedValue)
+    {
+        checkParsedValue = false;
+        switch (propertyType.Name.ToLowerInvariant())
+        {
+            case "boolean":
+                return defaultValue.TrimQuotes();
+            case "date":
+                return $"new Date({defaultValue})";
+            case "datetime":
+                //We use "DateTime::createFromFormat" for format ISO8601.
+                //In my sample, the OpenAPI default value had no timezone suffix. Add one if necessary.
+                //"Z" or "z" is also valid.
+                if (!defaultValue.Contains('+', StringComparison.InvariantCulture) && !defaultValue.Contains('Z', StringComparison.OrdinalIgnoreCase))
+                {
+                    //Insert the timezone before the final quote:
+                    //PHP string values are quoted with a single quote.
+                    defaultValue = string.Concat(defaultValue.AsSpan(0, defaultValue.Length - 1), "+00:00'");
+                }
+                //"createFromFormat" can return "false" if parsing failed. PHPStan level 9 requires a check for boolean values.
+                checkParsedValue = true;
+                return $"DateTime::createFromFormat(DateTime::ISO8601, {defaultValue})";
+            case "time":
+                return $"new Time({defaultValue})";
+            default:
+                return null;
+        }
+    }
+
     private void WriteModelConstructorBody(CodeClass parentClass, LanguageWriter writer)
     {
         var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
@@ -147,6 +176,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         {
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterLowerCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
             var defaultValue = propWithDefault.DefaultValue.ReplaceDoubleQuoteWithSingleQuote();
+            var checkParsedValue = false;
             if (propWithDefault.Type is CodeType codeType && codeType.TypeDefinition is CodeEnum enumDefinition)
             {
                 defaultValue = $"new {enumDefinition.Name.ToFirstCharacterUpperCase()}({defaultValue})";
@@ -156,11 +186,26 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             { // avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            else if (propWithDefault.Type is CodeType propType && GetDefaultValue(defaultValue, propType, out checkParsedValue) is string convertedDefaultValue)
             {
-                defaultValue = defaultValue.TrimQuotes();
+                defaultValue = convertedDefaultValue;
             }
-            writer.WriteLine($"$this->{setterName}({defaultValue});");
+
+            //So assign the parsed value to a dummy variable and check this for boolean:
+            if (checkParsedValue)
+            {
+                string tempVarName = $"$temp{setterName.ToFirstCharacterUpperCase()}";
+                writer.WriteLine($"{tempVarName} = {defaultValue};");
+                writer.WriteLine($"if (!is_bool({tempVarName})) {{");
+                writer.IncreaseIndent();
+                writer.WriteLine($"$this->{setterName}({tempVarName});");
+                writer.DecreaseIndent();
+                writer.WriteLine("}");
+            }
+            else
+            {
+                writer.WriteLine($"$this->{setterName}({defaultValue});");
+            }
         }
     }
 

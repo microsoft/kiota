@@ -1212,6 +1212,14 @@ public partial class KiotaBuilder
             !string.IsNullOrEmpty(stringDefaultValue) &&
             !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
             prop.DefaultValue = $"\"{stringDefaultValue}\"";
+        else if (kind == CodePropertyKind.Custom &&
+            propertySchema?.Default is JsonValue stringDefaultJsonValue2 &&
+            !stringDefaultJsonValue2.IsJsonNullSentinel() &&
+            (stringDefaultJsonValue2.GetValueKind() == JsonValueKind.Number || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.True || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.False))
+        {
+            //Values not placed in quotes (number and boolean): just forwared the value.
+            prop.DefaultValue = stringDefaultJsonValue2.ToString();
+        }
 
         if (existingType == null)
         {

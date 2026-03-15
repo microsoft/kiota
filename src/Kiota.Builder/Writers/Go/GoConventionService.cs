@@ -22,7 +22,7 @@ public class GoConventionService : CommonLanguageConventionService
     public string SerializationHash => "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
     public string StoreHash => "ie8677ce2c7e1b4c22e9c3827ecd078d41185424dd9eeb92b7d971ed2d49a392e";
     public string StringsHash => "ie967d16dae74a49b5e0e051225c5dac0d76e5e38f13dd1628028cbce108c25b6";
-
+    public const string UuidHash = "i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22";
     public string ContextVarTypeName => "context.Context";
 
 #pragma warning restore CA1822 // Method should be static
@@ -100,9 +100,9 @@ public class GoConventionService : CommonLanguageConventionService
             "byte" => "byte",
             "sbyte" => "int8",
             "boolean" => "bool",
-            "Guid" or "UUID" when includeImportSymbol => "i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22.UUID",
+            "Guid" or "UUID" when includeImportSymbol => $"{UuidHash}.UUID",
             "Guid" or "UUID" when !includeImportSymbol => "UUID",
-            "DateTimeOffset" or "Time" when includeImportSymbol => "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e.Time",
+            "DateTimeOffset" or "Time" when includeImportSymbol => $"{TimeFormatHash}.Time",
             "DateTimeOffset" or "Time" when !includeImportSymbol => "Time",
             "DateOnly" or "TimeOnly" or "ISODuration" when includeImportSymbol => $"{SerializationHash}.{type.Name}",
             "DateOnly" or "TimeOnly" or "ISODuration" when !includeImportSymbol => type.Name,
@@ -254,7 +254,7 @@ public class GoConventionService : CommonLanguageConventionService
     }
 #pragma warning restore CA1822 // Method should be static
     internal const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
-    private const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
+    public const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
     private static string GetValueStringConversion(string typeName, string reference)
     {
         return typeName switch
