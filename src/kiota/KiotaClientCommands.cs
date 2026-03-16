@@ -6,7 +6,7 @@ namespace kiota;
 
 public static class KiotaClientCommands
 {
-    public static Command GetClientNodeCommand(IServiceProvider? serviceProvider = null)
+    public static Command GetClientNodeCommand(IServiceProvider? serviceProvider)
     {
         var command = new Command("client", "Manages the Kiota generated API clients");
         command.Add(GetAddCommand(serviceProvider));
@@ -34,7 +34,7 @@ public static class KiotaClientCommands
         clientName.Aliases.Add("--cn");
         return clientName;
     }
-    public static Command GetAddCommand(IServiceProvider? serviceProvider = null)
+    public static Command GetAddCommand(IServiceProvider? serviceProvider)
     {
         var defaultConfiguration = new GenerationConfiguration();
         var languageOption = KiotaHost.GetLanguageOption();
@@ -91,7 +91,7 @@ public static class KiotaClientCommands
 
         return command;
     }
-    public static Command GetRemoveCommand(IServiceProvider? serviceProvider = null)
+    public static Command GetRemoveCommand(IServiceProvider? serviceProvider)
     {
         var clientNameOption = GetClientNameOption();
         var cleanOutputOption = KiotaHost.GetCleanOutputOption(false);
@@ -111,7 +111,7 @@ public static class KiotaClientCommands
         };
         return command;
     }
-    public static Command GetEditCommand(IServiceProvider? serviceProvider = null)
+    public static Command GetEditCommand(IServiceProvider? serviceProvider)
     {
         var languageOption = KiotaHost.GetOptionalLanguageOption();
         var typeAccessModifierOption = KiotaHost.GetOptionalTypeAccessModifierOption();
@@ -166,7 +166,7 @@ public static class KiotaClientCommands
         };
         return command;
     }
-    public static Command GetGenerateCommand(IServiceProvider? serviceProvider = null)
+    public static Command GetGenerateCommand(IServiceProvider? serviceProvider)
     {
         var clientNameOption = GetClientNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();
