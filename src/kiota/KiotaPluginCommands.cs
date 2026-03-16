@@ -8,7 +8,7 @@ namespace kiota;
 
 public static class KiotaPluginCommands
 {
-    public static Command GetPluginNodeCommand(IServiceProvider? serviceProvider)
+    public static Command GetPluginNodeCommand(IServiceProvider serviceProvider)
     {
         var command = new Command("plugin", "Manages the Kiota generated API plugins");
         command.Add(GetAddCommand(serviceProvider));
@@ -77,7 +77,7 @@ public static class KiotaPluginCommands
         noWorkspaceOption.Aliases.Add("--nw");
         return noWorkspaceOption;
     }
-    public static Command GetAddCommand(IServiceProvider? serviceProvider)
+    public static Command GetAddCommand(IServiceProvider serviceProvider)
     {
         var defaultConfiguration = new GenerationConfiguration();
         var outputOption = KiotaHost.GetOutputPathOption(defaultConfiguration.OutputPath);
@@ -125,7 +125,7 @@ public static class KiotaPluginCommands
         };
         return command;
     }
-    public static Command GetEditCommand(IServiceProvider? serviceProvider)
+    public static Command GetEditCommand(IServiceProvider serviceProvider)
     {
         var outputOption = KiotaHost.GetOutputPathOption(string.Empty);
         var descriptionOption = KiotaHost.GetDescriptionOption(string.Empty);
@@ -169,7 +169,7 @@ public static class KiotaPluginCommands
         };
         return command;
     }
-    public static Command GetRemoveCommand(IServiceProvider? serviceProvider)
+    public static Command GetRemoveCommand(IServiceProvider serviceProvider)
     {
         var pluginNameOption = GetPluginNameOption();
         var cleanOutputOption = KiotaHost.GetCleanOutputOption(false);
@@ -189,7 +189,7 @@ public static class KiotaPluginCommands
         };
         return command;
     }
-    public static Command GetGenerateCommand(IServiceProvider? serviceProvider)
+    public static Command GetGenerateCommand(IServiceProvider serviceProvider)
     {
         var pluginNameOption = GetPluginNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();

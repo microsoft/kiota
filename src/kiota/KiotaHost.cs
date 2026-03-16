@@ -15,7 +15,7 @@ public static partial class KiotaHost
 {
     internal const string KiotaPreviewEnvironmentVariable = "KIOTA_CONFIG_PREVIEW";
     internal static readonly Lazy<bool> IsConfigPreviewEnabled = new(() => bool.TryParse(Environment.GetEnvironmentVariable(KiotaPreviewEnvironmentVariable), out var isPreviewEnabled) && isPreviewEnabled);
-    public static RootCommand GetRootCommand(IServiceProvider? serviceProvider)
+    public static RootCommand GetRootCommand(IServiceProvider serviceProvider)
     {
         var rootCommand = new RootCommand();
         if (!IsConfigPreviewEnabled.Value)
@@ -37,14 +37,14 @@ public static partial class KiotaHost
         }
         return rootCommand;
     }
-    private static Command GetGitHubLoginCommand(IServiceProvider? serviceProvider)
+    private static Command GetGitHubLoginCommand(IServiceProvider serviceProvider)
     {
         var githubLoginCommand = new Command("github", "Logs in to GitHub.");
         githubLoginCommand.Add(GetGitHubDeviceLoginCommand(serviceProvider));
         githubLoginCommand.Add(GetGitHubPatLoginCommand(serviceProvider));
         return githubLoginCommand;
     }
-    private static Command GetGitHubDeviceLoginCommand(IServiceProvider? serviceProvider)
+    private static Command GetGitHubDeviceLoginCommand(IServiceProvider serviceProvider)
     {
         var logLevelOption = GetLogLevelOption();
         var deviceLoginCommand = new Command("device", "Logs in to GitHub using a device code flow.")
@@ -58,7 +58,7 @@ public static partial class KiotaHost
         };
         return deviceLoginCommand;
     }
-    private static Command GetGitHubPatLoginCommand(IServiceProvider? serviceProvider)
+    private static Command GetGitHubPatLoginCommand(IServiceProvider serviceProvider)
     {
         var logLevelOption = GetLogLevelOption();
         var patOption = new Option<string>("--pat")
@@ -79,7 +79,7 @@ public static partial class KiotaHost
         };
         return deviceLoginCommand;
     }
-    private static Command GetGitHubLogoutCommand(IServiceProvider? serviceProvider)
+    private static Command GetGitHubLogoutCommand(IServiceProvider serviceProvider)
     {
         var logLevelOption = GetLogLevelOption();
         var githubLogoutCommand = new Command("github", "Logs out of GitHub.") {
@@ -92,19 +92,19 @@ public static partial class KiotaHost
         };
         return githubLogoutCommand;
     }
-    private static Command GetLoginCommand(IServiceProvider? serviceProvider)
+    private static Command GetLoginCommand(IServiceProvider serviceProvider)
     {
         var loginCommand = new Command("login", "Logs in to the Kiota registries so search/download/show/generate commands can access private API definitions.");
         loginCommand.Add(GetGitHubLoginCommand(serviceProvider));
         return loginCommand;
     }
-    private static Command GetLogoutCommand(IServiceProvider? serviceProvider)
+    private static Command GetLogoutCommand(IServiceProvider serviceProvider)
     {
         var loginCommand = new Command("logout", "Logs out of Kiota registries.");
         loginCommand.Add(GetGitHubLogoutCommand(serviceProvider));
         return loginCommand;
     }
-    private static Command GetInfoCommand(IServiceProvider? serviceProvider)
+    private static Command GetInfoCommand(IServiceProvider serviceProvider)
     {
         var defaultGenerationConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
@@ -173,7 +173,7 @@ public static partial class KiotaHost
         option.Aliases.Add("-k");
         return option;
     }
-    private static Command GetShowCommand(IServiceProvider? serviceProvider)
+    private static Command GetShowCommand(IServiceProvider serviceProvider)
     {
         var defaultGenerationConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultGenerationConfiguration.OpenAPIFilePath);
@@ -219,7 +219,7 @@ public static partial class KiotaHost
         };
         return displayCommand;
     }
-    internal static Command GetRpcCommand(IServiceProvider? serviceProvider)
+    internal static Command GetRpcCommand(IServiceProvider serviceProvider)
     {
         var modeOption = new Option<RpcMode>("--mode")
         {
@@ -246,7 +246,7 @@ public static partial class KiotaHost
         command.Action = commandHandler;
         return command;
     }
-    private static Command GetDownloadCommand(IServiceProvider? serviceProvider)
+    private static Command GetDownloadCommand(IServiceProvider serviceProvider)
     {
         var keyArgument = new Argument<string>("key")
         {
@@ -298,7 +298,7 @@ public static partial class KiotaHost
         versionOption.Aliases.Add("-v");
         return versionOption;
     }
-    private static Command GetSearchCommand(IServiceProvider? serviceProvider)
+    private static Command GetSearchCommand(IServiceProvider serviceProvider)
     {
         var searchTermArgument = new Argument<string>("searchTerm")
         {
@@ -530,7 +530,7 @@ public static partial class KiotaHost
         structuredMimeTypesOption.Aliases.Add("-m");
         return structuredMimeTypesOption;
     }
-    private static Command GetGenerateCommand(IServiceProvider? serviceProvider)
+    private static Command GetGenerateCommand(IServiceProvider serviceProvider)
     {
         var defaultConfiguration = new GenerationConfiguration();
         var descriptionOption = GetDescriptionOption(defaultConfiguration.OpenAPIFilePath);
@@ -637,7 +637,7 @@ public static partial class KiotaHost
         };
         return command;
     }
-    private static Command GetUpdateCommand(IServiceProvider? serviceProvider)
+    private static Command GetUpdateCommand(IServiceProvider serviceProvider)
     {
         var defaultConfiguration = new GenerationConfiguration();
         var outputOption = GetOutputPathOption(defaultConfiguration.OutputPath);

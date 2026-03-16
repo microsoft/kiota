@@ -5,14 +5,14 @@ namespace kiota;
 
 public static class KiotaWorkspaceCommands
 {
-    public static Command GetWorkspaceNodeCommand(IServiceProvider? serviceProvider)
+    public static Command GetWorkspaceNodeCommand(IServiceProvider serviceProvider)
     {
         var command = new Command("workspace", "Manages the Kiota workspace configuration");
         command.Add(GetInitCommand(serviceProvider));
         command.Add(GetMigrateCommand(serviceProvider));
         return command;
     }
-    private static Command GetInitCommand(IServiceProvider? serviceProvider)
+    private static Command GetInitCommand(IServiceProvider serviceProvider)
     {
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var command = new Command("init", "Initializes the Kiota workspace configuration"){
@@ -25,7 +25,7 @@ public static class KiotaWorkspaceCommands
         };
         return command;
     }
-    private static Command GetMigrateCommand(IServiceProvider? serviceProvider)
+    private static Command GetMigrateCommand(IServiceProvider serviceProvider)
     {
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var lockDirectoryOption = GetLockDirectoryOption();
