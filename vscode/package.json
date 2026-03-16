@@ -30,7 +30,8 @@
     "eslint": "^9.39.4",
     "glob": "^13.0.6",
     "typemoq": "^2.1.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "webpack-cli": "^7.0.0"
   },
   "workspaces": [
     "packages/npm-package",
