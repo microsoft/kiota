@@ -98,7 +98,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         bool cleanOutput = parseResult.GetValue(CleanOutputOption);
         List<string>? structuredMimeTypes0 = parseResult.GetValue(StructuredMimeTypesOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, clearCache, disableSSLValidation, cleanOutput, output,

@@ -35,7 +35,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
         string? className0 = parseResult.GetValue(ClassOption);
         bool cleanOutput = parseResult.GetValue(CleanOutputOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, cleanOutput, className0, logLevel, out var tags);

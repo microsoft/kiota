@@ -35,7 +35,7 @@ internal class MigrateHandler : BaseKiotaCommandHandler
         string? lockDirectory0 = parseResult.GetValue(LockDirectoryOption);
         string? clientName0 = parseResult.GetValue(ClassOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, lockDirectory0, clientName0, logLevel, out var tags);

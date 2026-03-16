@@ -36,7 +36,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         string? className0 = parseResult.GetValue(ClassOption);
         bool refresh = parseResult.GetValue(RefreshOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, refresh, className0, logLevel, out var tags);

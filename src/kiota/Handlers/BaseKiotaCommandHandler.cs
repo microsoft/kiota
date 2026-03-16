@@ -46,7 +46,7 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
     {
         get; init;
     }
-    public IServiceProvider? ServiceProvider
+    public required IServiceProvider ServiceProvider
     {
         get; init;
     }

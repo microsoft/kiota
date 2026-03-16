@@ -41,7 +41,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         bool cleanOutput = parseResult.GetValue(CleanOutputOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, output, clearCache, cleanOutput,

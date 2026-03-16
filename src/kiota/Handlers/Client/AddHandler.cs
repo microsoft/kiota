@@ -100,7 +100,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         List<string>? disabledValidationRules0 = parseResult.GetValue(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes0 = parseResult.GetValue(StructuredMimeTypesOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output,

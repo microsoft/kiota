@@ -39,7 +39,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         string? version0 = parseResult.GetValue(VersionOption);
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, version0, clearCache, logLevel, out var tags);

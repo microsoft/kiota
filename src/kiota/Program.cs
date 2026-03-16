@@ -20,11 +20,18 @@ static class Program
                 logging.AddEventSourceLogger();
             })
             .Build();
-        await host.StartAsync().ConfigureAwait(false);
+        using var cts = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+        };
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => cts.Cancel();
+        await host.StartAsync(cts.Token).ConfigureAwait(false);
         var rootCommand = KiotaHost.GetRootCommand(host.Services);
-        var result = await rootCommand.Parse(args).InvokeAsync().ConfigureAwait(false);
+        var result = await rootCommand.Parse(args).InvokeAsync(null, cts.Token).ConfigureAwait(false);
         DisposeSubCommands(rootCommand);
-        await host.StopAsync().ConfigureAwait(false);
+        await host.StopAsync(cts.Token).ConfigureAwait(false);
         host.Dispose();
         return result;
     }

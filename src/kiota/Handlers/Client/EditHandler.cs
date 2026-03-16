@@ -100,7 +100,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         List<string>? disabledValidationRules = parseResult.GetValue(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes = parseResult.GetValue(StructuredMimeTypesOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,

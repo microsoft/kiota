@@ -27,7 +27,7 @@ internal class KiotaGitHubPatLoginCommandHandler : BaseKiotaCommandHandler
         // Get options
         string pat = parseResult.GetValue(PatOption).OrEmpty();
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, logLevel, out var tags);

@@ -76,7 +76,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         List<string>? includePatterns = parseResult.GetValue(IncludePatternsOption);
         List<string>? excludePatterns = parseResult.GetValue(ExcludePatternsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, pluginTypes, pluginAuthType, pluginAuthRefId0, skipGeneration, output, includePatterns, excludePatterns,

@@ -66,7 +66,7 @@ internal class
         DependencyType[]? dependencyTypes0 = parseResult.GetValue(DependencyTypesOption);
         GenerationLanguage? language = parseResult.GetValue(GenerationLanguage);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, searchTerm0, openapi0, version0, language, clearCache,

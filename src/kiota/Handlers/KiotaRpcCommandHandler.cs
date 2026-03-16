@@ -17,7 +17,7 @@ internal class KiotaRpcCommandHandler : AsynchronousCommandLineAction
         get;
         set;
     }
-    public IServiceProvider? ServiceProvider
+    public required IServiceProvider ServiceProvider
     {
         get; init;
     }

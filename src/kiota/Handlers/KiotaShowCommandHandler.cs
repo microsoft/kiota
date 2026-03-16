@@ -71,7 +71,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, searchTerm0, version0, clearCache, includePatterns0, excludePatterns0, logLevel, out var tags);

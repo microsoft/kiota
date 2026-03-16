@@ -81,7 +81,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         List<string>? includePatterns0 = parseResult.GetValue(IncludePatternsOption);
         List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
-        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, pluginTypes, pluginAuthType, pluginAuthRefId, skipGeneration, output, includePatterns0, excludePatterns0,
