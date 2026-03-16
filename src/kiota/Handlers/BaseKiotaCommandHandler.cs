@@ -46,7 +46,10 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
     {
         get; init;
     }
-    public IServiceProvider? ServiceProvider { get; init; }
+    public IServiceProvider? ServiceProvider
+    {
+        get; init;
+    }
     protected KiotaConfiguration Configuration
     {
         get => ConfigurationFactory.Value;

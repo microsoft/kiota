@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using kiota.Handlers.Client;
 using Kiota.Builder.Configuration;
 

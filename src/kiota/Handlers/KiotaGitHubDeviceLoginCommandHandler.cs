@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Diagnostics;
 using kiota.Authentication.GitHub.DeviceCode;
 using kiota.Extension;

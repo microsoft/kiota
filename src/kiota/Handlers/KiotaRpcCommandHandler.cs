@@ -17,7 +17,10 @@ internal class KiotaRpcCommandHandler : AsynchronousCommandLineAction
         get;
         set;
     }
-    public IServiceProvider? ServiceProvider { get; init; }
+    public IServiceProvider? ServiceProvider
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
