@@ -1,9 +1,4 @@
-﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
-using System.CommandLine.IO;
-using System.CommandLine.Rendering;
-using System.CommandLine.Rendering.Views;
+using System.CommandLine;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
@@ -56,25 +51,22 @@ internal class
         get; init;
     }
 
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string? openapi0 = context.ParseResult.GetValueForOption(DescriptionOption);
-        string manifest = context.ParseResult.GetValueForOption(ManifestOption).OrEmpty();
-        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        string? searchTerm0 = context.ParseResult.GetValueForOption(SearchTermOption);
-        string? version0 = context.ParseResult.GetValueForOption(VersionOption);
-        bool json = context.ParseResult.GetValueForOption(JsonOption);
-        DependencyType[]? dependencyTypes0 = context.ParseResult.GetValueForOption(DependencyTypesOption);
-        GenerationLanguage? language = context.ParseResult.GetValueForOption(GenerationLanguage);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? openapi0 = parseResult.GetValue(DescriptionOption);
+        string manifest = parseResult.GetValue(ManifestOption).OrEmpty();
+        bool clearCache = parseResult.GetValue(ClearCacheOption);
+        string? searchTerm0 = parseResult.GetValue(SearchTermOption);
+        string? version0 = parseResult.GetValue(VersionOption);
+        bool json = parseResult.GetValue(JsonOption);
+        DependencyType[]? dependencyTypes0 = parseResult.GetValue(DependencyTypesOption);
+        GenerationLanguage? language = parseResult.GetValue(GenerationLanguage);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, searchTerm0, openapi0, version0, language, clearCache,
@@ -94,7 +86,7 @@ internal class
         string searchTerm = searchTerm0.OrEmpty();
         string version = version0.OrEmpty();
         DependencyType[] dependencyTypes = dependencyTypes0.OrEmpty();
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult);
         Configuration.Search.ClearCache = clearCache;
         using (loggerFactory)
         {
@@ -155,17 +147,11 @@ internal class
     private void ShowLanguagesTable()
     {
         var defaultInformation = Configuration.Languages;
-        var view = new TableView<KeyValuePair<string, LanguageInformation>>()
-        {
-            Items = defaultInformation.OrderBy(static x => x.Key).Select(static x => x).ToList(),
-        };
-        view.AddColumn(static x => x.Key, "Language");
-        view.AddColumn(static x => x.Value.MaturityLevel.ToString(), "Maturity Level");
-        view.AddColumn(static x => x.Value.SupportExperience.ToString(), "Support Experience");
-        var console = new SystemConsole();
-        using var terminal = new SystemConsoleTerminal(console);
-        var layout = new StackLayoutView { view };
-        console.Append(layout);
+        var headers = new[] { "Language", "Maturity Level", "Support Experience" };
+        var rows = defaultInformation.OrderBy(static x => x.Key)
+            .Select(static x => new[] { x.Key, x.Value.MaturityLevel.ToString(), x.Value.SupportExperience.ToString() })
+            .ToList();
+        DisplayTable(headers, rows);
     }
     private void ShowLanguageInformation(GenerationLanguage language, LanguagesInformation informationSource, bool json, DependencyType[] dependencyTypes)
     {
@@ -186,18 +172,11 @@ internal class
                     //otherwise we display all dependencies
                     _ => orderedDependencies
                 };
-                var view = new TableView<LanguageDependency>()
-                {
-                    Items = filteredDependencies,
-                };
-                view.AddColumn(static x => x.Name, "Package Name");
-                view.AddColumn(static x => x.Version, "Version");
+                var headers = new[] { "Package Name", "Version" };
                 if (orderedDependencies.Any(static x => x.DependencyType is not null))
-                    view.AddColumn(static x => x.DependencyType?.ToString(), "Type");
-                var console = new SystemConsole();
-                using var terminal = new SystemConsoleTerminal(console);
-                var layout = new StackLayoutView { view };
-                console.Append(layout);
+                    headers = [.. headers, "Type"];
+                var rows = filteredDependencies.Select(x => new[] { x.Name, x.Version, x.DependencyType?.ToString() ?? "" }).ToList();
+                DisplayTable(headers, rows);
                 DisplayDependenciesHint(language);
                 DisplayInstallHint(languageInformation, filteredDependencies);
             }

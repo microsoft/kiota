@@ -6,7 +6,7 @@ using Nerdbank.Streams;
 using StreamJsonRpc;
 namespace kiota.Handlers;
 
-internal class KiotaRpcCommandHandler : ICommandHandler
+internal class KiotaRpcCommandHandler : AsynchronousCommandLineAction
 {
     public required Option<RpcMode> ModeOption
     {
@@ -17,12 +17,12 @@ internal class KiotaRpcCommandHandler : ICommandHandler
         get;
         set;
     }
+    public IServiceProvider? ServiceProvider { get; init; }
 
-    public async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
-        var mode = context.ParseResult.GetValueForOption(ModeOption);
-        var pipeName = context.ParseResult.GetValueForOption(PipeNameOption);
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
+        var mode = parseResult.GetValue(ModeOption);
+        var pipeName = parseResult.GetValue(PipeNameOption);
         if (mode == RpcMode.Stdio)
         {
             await using var stream = FullDuplexStream.Splice(Console.OpenStandardInput(), Console.OpenStandardOutput());
@@ -62,10 +62,5 @@ internal class KiotaRpcCommandHandler : ICommandHandler
         await Console.Error.WriteLineAsync($"JSON-RPC listener attached to #{clientId}. Waiting for requests...");
         await jsonRpc.Completion;
         await Console.Error.WriteLineAsync($"Connection #{clientId} terminated.");
-    }
-
-    public int Invoke(InvocationContext context)
-    {
-        throw new InvalidOperationException("This command handler is only intended to be used with the async entry point.");
     }
 }

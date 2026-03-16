@@ -1,7 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Hosting;
-using System.CommandLine.Parsing;
 using kiota.Extension;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -12,31 +9,29 @@ static class Program
 {
     static async Task<int> Main(string[] args)
     {
-        var rootCommand = KiotaHost.GetRootCommand();
-        var parser = new CommandLineBuilder(rootCommand)
-            .UseDefaults()
-            .UseHost(static args =>
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureKiotaTelemetryServices()
+            .ConfigureLogging(static logging =>
             {
-                return Host.CreateDefaultBuilder(args)
-                    .ConfigureKiotaTelemetryServices()
-                    .ConfigureLogging(static logging =>
-                    {
-                        logging.ClearProviders();
+                logging.ClearProviders();
 #if DEBUG
-                        logging.AddDebug();
+                logging.AddDebug();
 #endif
-                        logging.AddEventSourceLogger();
-                    });
+                logging.AddEventSourceLogger();
             })
             .Build();
-        var result = await parser.InvokeAsync(args);
+        await host.StartAsync().ConfigureAwait(false);
+        var rootCommand = KiotaHost.GetRootCommand(host.Services);
+        var result = await rootCommand.Parse(args).InvokeAsync().ConfigureAwait(false);
         DisposeSubCommands(rootCommand);
+        await host.StopAsync().ConfigureAwait(false);
+        host.Dispose();
         return result;
     }
 
     private static void DisposeSubCommands(this Command command)
     {
-        if (command.Handler is IDisposable disposableHandler)
+        if (command.Action is IDisposable disposableHandler)
             disposableHandler.Dispose();
         foreach (var subCommand in command.Subcommands)
         {

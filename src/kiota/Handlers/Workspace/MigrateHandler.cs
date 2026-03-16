@@ -1,6 +1,4 @@
-﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
+using System.CommandLine;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
@@ -26,7 +24,7 @@ internal class MigrateHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
@@ -34,13 +32,10 @@ internal class MigrateHandler : BaseKiotaCommandHandler
 
         // Get options
         var workingDirectory = NormalizeSlashesInPath(Directory.GetCurrentDirectory());
-        string? lockDirectory0 = context.ParseResult.GetValueForOption(LockDirectoryOption);
-        string? clientName0 = context.ParseResult.GetValueForOption(ClassOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? lockDirectory0 = parseResult.GetValue(LockDirectoryOption);
+        string? clientName0 = parseResult.GetValue(ClassOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider?.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, lockDirectory0, clientName0, logLevel, out var tags);
@@ -56,7 +51,7 @@ internal class MigrateHandler : BaseKiotaCommandHandler
 
         var lockDirectory = NormalizeSlashesInPath(lockDirectory0 ?? workingDirectory);
         var clientName = clientName0.OrEmpty();
-        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceManagementService>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
+        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceManagementService>(parseResult, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             try
