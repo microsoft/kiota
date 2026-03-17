@@ -26,7 +26,17 @@ static class Program
             e.Cancel = true;
             cts.Cancel();
         };
-        AppDomain.CurrentDomain.ProcessExit += (_, _) => cts.Cancel();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            try
+            {
+                cts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // CancellationTokenSource is already disposed when the process exits normally
+            }
+        };
         await host.StartAsync(cts.Token).ConfigureAwait(false);
         var rootCommand = KiotaHost.GetRootCommand(host.Services);
         var result = await rootCommand.Parse(args).InvokeAsync(null, cts.Token).ConfigureAwait(false);

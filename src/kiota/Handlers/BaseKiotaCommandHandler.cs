@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Authentication;
+using Spectre.Console;
 
 namespace kiota.Handlers;
 
@@ -396,14 +397,17 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
     {
         DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
     }
-    protected void DisplayTable(string[] headers, List<string[]> rows)
+    protected static void DisplayTable(string[] headers, List<string[]> rows)
     {
-        var colWidths = headers.Select((h, i) => rows.Count == 0 ? h.Length : Math.Max(h.Length, rows.Max(r => i < r.Length ? (r[i]?.Length ?? 0) : 0))).ToArray();
-        var headerLine = string.Join(" | ", headers.Select((h, i) => h.PadRight(colWidths[i])));
-        Console.WriteLine(headerLine);
-        Console.WriteLine(new string('-', headerLine.Length));
+        var table = new Table();
+        foreach (var header in headers)
+            table.AddColumn(new TableColumn(Markup.Escape(header)));
         foreach (var row in rows)
-            Console.WriteLine(string.Join(" | ", headers.Select((_, i) => i < row.Length ? (row[i] ?? "").PadRight(colWidths[i]) : "".PadRight(colWidths[i]))));
+        {
+            var cells = headers.Select((_, i) => i < row.Length ? Markup.Escape(row[i] ?? string.Empty) : string.Empty).ToArray();
+            table.AddRow(cells);
+        }
+        AnsiConsole.Write(table);
     }
     public void Dispose()
     {
