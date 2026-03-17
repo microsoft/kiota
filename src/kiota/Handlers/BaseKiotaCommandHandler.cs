@@ -399,7 +399,7 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
     }
     protected static void DisplayTable(string[] headers, List<string[]> rows)
     {
-        var table = new Table();
+        var table = new Table().Border(TableBorder.None);
         foreach (var header in headers)
             table.AddColumn(new TableColumn(Markup.Escape(header)));
         foreach (var row in rows)
