@@ -64,7 +64,7 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
-        run: npm ci --workspaces --include-workspace-root
+        run: npm ci
         working-directory: vscode
 
       - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
@@ -146,7 +146,7 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
-        run: npm ci --workspaces --include-workspace-root
+        run: npm ci
         working-directory: vscode
 
       - run: npm run package:${{ matrix.builds.id }}
