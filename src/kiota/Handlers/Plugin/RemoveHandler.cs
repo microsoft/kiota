@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
@@ -27,20 +25,17 @@ internal class RemoveHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
 
         // Get options
-        string? className0 = context.ParseResult.GetValueForOption(ClassOption);
-        bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? className0 = parseResult.GetValue(ClassOption);
+        bool cleanOutput = parseResult.GetValue(CleanOutputOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, cleanOutput, className0, logLevel, out var tags);
@@ -56,7 +51,7 @@ internal class RemoveHandler : BaseKiotaCommandHandler
 
         string className = className0.OrEmpty();
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             try

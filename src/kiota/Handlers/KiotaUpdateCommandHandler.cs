@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
@@ -32,21 +30,18 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         WarnShouldUseKiotaConfigClientsCommands();
         // Get options
-        string? output = context.ParseResult.GetValueForOption(OutputOption);
-        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? output = parseResult.GetValue(OutputOption);
+        bool clearCache = parseResult.GetValue(ClearCacheOption);
+        bool cleanOutput = parseResult.GetValue(CleanOutputOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, output, clearCache, cleanOutput,
@@ -73,7 +68,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         }
         Configuration.Generation.ClearCache = clearCache;
         Configuration.Generation.CleanOutput = cleanOutput;
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -103,7 +98,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                                                             TelemetryLabels.TagGeneratorLanguage,
                                                             x.Language.ToString("G"))
                                                     };
-                                                    var result = await GenerateClientAsync(context, x, cancellationToken);
+                                                    var result = await GenerateClientAsync(parseResult, x, cancellationToken);
                                                     genCounter?.Add(1, meterTags);
                                                     return result;
                                                 }));
@@ -138,9 +133,9 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
             }
         }
     }
-    private async Task<bool> GenerateClientAsync(InvocationContext context, GenerationConfiguration config, CancellationToken cancellationToken)
+    private async Task<bool> GenerateClientAsync(ParseResult parseResult, GenerationConfiguration config, CancellationToken cancellationToken)
     {
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, config.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, config.OutputPath);
         using (loggerFactory)
         {
             return await new KiotaBuilder(logger, config, httpClient).GenerateClientAsync(cancellationToken);

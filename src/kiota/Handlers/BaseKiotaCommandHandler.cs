@@ -6,12 +6,14 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Logging;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Authentication;
+using Spectre.Console;
 
 namespace kiota.Handlers;
 
-internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
+internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction, IDisposable
 {
     protected static void DefaultSerializersAndDeserializers(GenerationConfiguration generationConfiguration)
     { // needed until we have rollup packages
@@ -42,6 +44,10 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         }
     }
     public required Option<LogLevel> LogLevelOption
+    {
+        get; init;
+    }
+    public required IServiceProvider ServiceProvider
     {
         get; init;
     }
@@ -115,10 +121,6 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         };
         return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback);
     }
-    public int Invoke(InvocationContext context)
-    {
-        throw new InvalidOperationException("This command handler is async only");
-    }
     protected async Task CheckForNewVersionAsync(ILogger logger, CancellationToken cancellationToken)
     {
         if (Configuration.Update.Disabled)
@@ -131,11 +133,11 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
         if (!string.IsNullOrEmpty(result))
             DisplayWarning(result);
     }
-    public abstract Task<int> InvokeAsync(InvocationContext context);
+    public override abstract Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default);
     private readonly List<IDisposable> disposables = [];
-    protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(InvocationContext context, string logFileRootPath = "")
+    protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(ParseResult parseResult, string logFileRootPath = "")
     {
-        LogLevel logLevel = context.ParseResult.GetValueForOption(LogLevelOption);
+        LogLevel logLevel = parseResult.GetValue(LogLevelOption);
         var loggerFactory = LoggerFactory.Create(builder =>
         {
             var logFileAbsoluteRootPath = GetAbsolutePath(logFileRootPath);
@@ -394,6 +396,18 @@ internal abstract class BaseKiotaCommandHandler : ICommandHandler, IDisposable
     protected void DisplayGitHubDeviceCodeLoginMessage(Uri uri, string code)
     {
         DisplayInfo($"Please go to {uri} and enter the code {code} to authenticate.");
+    }
+    protected static void DisplayTable(string[] headers, List<string[]> rows)
+    {
+        var table = new Table().Border(TableBorder.None);
+        foreach (var header in headers)
+            table.AddColumn(new TableColumn(Markup.Escape(header)));
+        foreach (var row in rows)
+        {
+            var cells = headers.Select((_, i) => i < row.Length ? Markup.Escape(row[i] ?? string.Empty) : string.Empty).ToArray();
+            table.AddRow(cells);
+        }
+        AnsiConsole.Write(table);
     }
     public void Dispose()
     {

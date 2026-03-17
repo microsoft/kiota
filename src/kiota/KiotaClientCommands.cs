@@ -6,31 +6,35 @@ namespace kiota;
 
 public static class KiotaClientCommands
 {
-    public static Command GetClientNodeCommand()
+    public static Command GetClientNodeCommand(IServiceProvider serviceProvider)
     {
         var command = new Command("client", "Manages the Kiota generated API clients");
-        command.AddCommand(GetAddCommand());
-        command.AddCommand(GetRemoveCommand());
-        command.AddCommand(GetEditCommand());
-        command.AddCommand(GetGenerateCommand());
+        command.Add(GetAddCommand(serviceProvider));
+        command.Add(GetRemoveCommand(serviceProvider));
+        command.Add(GetEditCommand(serviceProvider));
+        command.Add(GetGenerateCommand(serviceProvider));
         return command;
     }
     internal static Option<bool> GetSkipGenerationOption()
     {
-        var skipGeneration = new Option<bool>("--skip-generation", "Skips the generation of the client");
-        skipGeneration.AddAlias("--sg");
+        var skipGeneration = new Option<bool>("--skip-generation")
+        {
+            Description = "Skips the generation of the client",
+        };
+        skipGeneration.Aliases.Add("--sg");
         return skipGeneration;
     }
     internal static Option<string> GetClientNameOption(bool required = true)
     {
-        var clientName = new Option<string>("--client-name", "The name of the client to manage")
+        var clientName = new Option<string>("--client-name")
         {
-            IsRequired = required,
+            Description = "The name of the client to manage",
+            Required = required,
         };
-        clientName.AddAlias("--cn");
+        clientName.Aliases.Add("--cn");
         return clientName;
     }
-    public static Command GetAddCommand()
+    public static Command GetAddCommand(IServiceProvider serviceProvider)
     {
         var defaultConfiguration = new GenerationConfiguration();
         var languageOption = KiotaHost.GetLanguageOption();
@@ -65,7 +69,7 @@ public static class KiotaClientCommands
             dvrOption,
             skipGenerationOption,
         };
-        command.Handler = new AddHandler
+        command.Action = new AddHandler
         {
             DescriptionOption = descriptionOption,
             OutputOption = outputOption,
@@ -82,11 +86,12 @@ public static class KiotaClientCommands
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
+            ServiceProvider = serviceProvider,
         };
 
         return command;
     }
-    public static Command GetRemoveCommand()
+    public static Command GetRemoveCommand(IServiceProvider serviceProvider)
     {
         var clientNameOption = GetClientNameOption();
         var cleanOutputOption = KiotaHost.GetCleanOutputOption(false);
@@ -97,15 +102,16 @@ public static class KiotaClientCommands
             cleanOutputOption,
             logLevelOption,
         };
-        command.Handler = new RemoveHandler
+        command.Action = new RemoveHandler
         {
             ClassOption = clientNameOption,
             CleanOutputOption = cleanOutputOption,
             LogLevelOption = logLevelOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }
-    public static Command GetEditCommand()
+    public static Command GetEditCommand(IServiceProvider serviceProvider)
     {
         var languageOption = KiotaHost.GetOptionalLanguageOption();
         var typeAccessModifierOption = KiotaHost.GetOptionalTypeAccessModifierOption();
@@ -139,7 +145,7 @@ public static class KiotaClientCommands
             dvrOption,
             skipGenerationOption,
         };
-        command.Handler = new EditHandler
+        command.Action = new EditHandler
         {
             DescriptionOption = descriptionOption,
             OutputOption = outputOption,
@@ -156,10 +162,11 @@ public static class KiotaClientCommands
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }
-    public static Command GetGenerateCommand()
+    public static Command GetGenerateCommand(IServiceProvider serviceProvider)
     {
         var clientNameOption = GetClientNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();
@@ -170,18 +177,22 @@ public static class KiotaClientCommands
             logLevelOption,
             refreshOption,
         };
-        command.Handler = new GenerateHandler
+        command.Action = new GenerateHandler
         {
             ClassOption = clientNameOption,
             LogLevelOption = logLevelOption,
             RefreshOption = refreshOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }
     internal static Option<bool> GetRefreshOption()
     {
-        var refresh = new Option<bool>("--refresh", "Refreshes the client OpenAPI description before generating the client");
-        refresh.AddAlias("-r");
+        var refresh = new Option<bool>("--refresh")
+        {
+            Description = "Refreshes the client OpenAPI description before generating the client",
+        };
+        refresh.Aliases.Add("-r");
         return refresh;
     }
 }
