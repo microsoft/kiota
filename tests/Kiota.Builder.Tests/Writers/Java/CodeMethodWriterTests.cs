@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -2052,7 +2052,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Access = AccessModifier.Public,
             Kind = CodePropertyKind.Custom,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);

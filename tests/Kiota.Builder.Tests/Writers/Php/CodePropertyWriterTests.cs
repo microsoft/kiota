@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -101,7 +101,7 @@ public class CodePropertyWriterTests
         };
         parentClass.Kind = CodeClassKind.Model;
         parentClass.AddProperty(property);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("private ?array $additionalData = null;", result);

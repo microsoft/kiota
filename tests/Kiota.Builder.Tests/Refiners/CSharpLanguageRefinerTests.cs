@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -23,7 +23,7 @@ public class CSharpLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption { Name = "kiotaCsharpName", SerializationName = "Kiota:CSharp:Enum" };
         model.AddOption(option);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -40,7 +40,7 @@ public class CSharpLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption { Name = input, SerializationName = input };
         model.AddOption(option);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(input, model.Options.First().Name);
     }
@@ -53,7 +53,7 @@ public class CSharpLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption { Name = "item1" };
         model.AddOption(option);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -68,7 +68,7 @@ public class CSharpLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -126,7 +126,7 @@ public class CSharpLanguageRefinerTests
         {
             TypeDefinition = otherModel
         };
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains(model.Properties, x => x.Name.Equals("OtherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
@@ -162,7 +162,7 @@ public class CSharpLanguageRefinerTests
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = requestBuilder.StartBlock;
 
@@ -194,7 +194,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         // Assert
         Assert.Equal("break", model.Name);
         Assert.DoesNotContain("@", model.Name); // classname will be capitalized
@@ -244,7 +244,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         // Assert
         Assert.Equal("fileObject1", reservedModel.Name);// classes/models will be renamed if reserved without conflicts
         Assert.Equal("fileObject", reservedObjectModel.Name);// original stays the same
@@ -283,7 +283,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         // Assert
         Assert.NotEqual(typeName, model.Name);
         Assert.Equal($"{typeName}Object", model.Name);//our defined model is renamed
@@ -336,7 +336,7 @@ public class CSharpLanguageRefinerTests
             },
         });
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains("TaskNamespace", subNS.Name);
         Assert.Contains("TaskNamespace", itemSubNamespace.Name);
@@ -391,7 +391,7 @@ public class CSharpLanguageRefinerTests
         };
         model.AddIndexer(indexer);
         method.AddParameter(parameter);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the indexer doesn't get removed
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken); //using CSharp so the indexer doesn't get removed
         Assert.True(property.Type is CodeType);
         Assert.True(parameter.Type is CodeType);
         Assert.True(method.ReturnType is CodeType);
@@ -412,7 +412,7 @@ public class CSharpLanguageRefinerTests
             Name = "model",
             Kind = CodeClassKind.Model
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(root.GetChildElements(true));
         Assert.Single(graphNS.GetChildElements(true));
         Assert.Single(modelNS.GetChildElements(true));
@@ -447,7 +447,7 @@ public class CSharpLanguageRefinerTests
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root); //using CSharp so the cancellationToken doesn't get removed
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken); //using CSharp so the cancellationToken doesn't get removed
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
     }
@@ -468,7 +468,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("stacktraceEscaped", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal("stacktrace", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
     }
@@ -490,7 +490,7 @@ public class CSharpLanguageRefinerTests
             }
         }).First();
         Assert.False(exception.Properties.First().IsOfKind(CodePropertyKind.ErrorMessageOverride));// property is NOT message override
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         var properties = exception.Properties.ToArray();
         Assert.Equal("messageEscaped", propToAdd.Name, StringComparer.OrdinalIgnoreCase);// property remains
         Assert.Equal(2, properties.Length); // no primary message property added
@@ -516,7 +516,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         var properties = exception.Properties.ToArray();
         Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed to avoid removing special overidden property
         Assert.Equal("messageEscapedProp", propToAdd.Name, StringComparer.OrdinalIgnoreCase); // property renamed to avoid conflicting with base
@@ -541,7 +541,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("messageEscaped", exception.Name, StringComparer.OrdinalIgnoreCase);// class is renamed to avoid removing special overidden property
         Assert.Equal("something", propToAdd.Name, StringComparer.OrdinalIgnoreCase); // existing property remains
         Assert.Equal(2, exception.Properties.Count()); // initial property plus primary message
@@ -565,7 +565,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("message", propToAdd.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Equal("message", propToAdd.SerializationName, StringComparer.OrdinalIgnoreCase);
     }
@@ -587,7 +587,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("ModelProp", propToAdd.Name);
         Assert.Equal("model", propToAdd.SerializationName);
     }
@@ -623,7 +623,7 @@ public class CSharpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("Summary", firstProperty.Name);// remains as is. No refinement needed
         Assert.Equal("_summary", secondProperty.Name);// No refinement as it will create a duplicate with firstProperty
         Assert.Equal("Replaced", thirdProperty.Name);// Base case. Proper refinements
@@ -646,7 +646,7 @@ public class CSharpLanguageRefinerTests
             },
             SerializationName = serializationName,
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(serializationName, propToAdd.SerializationName);
     }
     [Fact]
@@ -666,7 +666,7 @@ public class CSharpLanguageRefinerTests
                 IsExternal = true// this is external from the Kiota abstractions
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Date", method.ReturnType.Name);
     }
@@ -692,7 +692,7 @@ public class CSharpLanguageRefinerTests
                 IsExternal = true// this is external from the Kiota abstractions
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings); // using is added to outer class.
         Assert.Empty(nestedModel.StartBlock.Usings); // using is not added to nested model
         Assert.Equal("Date", propertyInNestedModel.Type.Name);
@@ -714,7 +714,7 @@ public class CSharpLanguageRefinerTests
                 IsExternal = true // this is external from the Kiota abstractions
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
     }
@@ -741,7 +741,7 @@ public class CSharpLanguageRefinerTests
                 TypeDefinition = dateOnlyModel
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateOnlyObject", method.ReturnType.Name);
     }
@@ -768,7 +768,7 @@ public class CSharpLanguageRefinerTests
                 TypeDefinition = timeOnlyModel
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("TimeOnlyObject", method.ReturnType.Name);
     }
@@ -800,7 +800,7 @@ public class CSharpLanguageRefinerTests
         });
 
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("Date", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
@@ -833,7 +833,7 @@ public class CSharpLanguageRefinerTests
         });
 
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("Time", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
@@ -873,7 +873,7 @@ public class CSharpLanguageRefinerTests
         });
 
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("DateOnlyObject", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
@@ -913,7 +913,7 @@ public class CSharpLanguageRefinerTests
         });
 
         // Act
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TimeOnlyObject", requestBuilder.Indexer.IndexParameter.Type.Name, StringComparer.OrdinalIgnoreCase);
@@ -936,7 +936,7 @@ public class CSharpLanguageRefinerTests
                 IsExternal = true
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -958,7 +958,7 @@ public class CSharpLanguageRefinerTests
         {
             Name = "Enum1",
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp, TypeAccessModifier = accessModifier }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp, TypeAccessModifier = accessModifier }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(codeClass.Access, accessModifier);
         Assert.Equal(codeEnum.Access, accessModifier);
     }
@@ -976,7 +976,7 @@ public class CSharpLanguageRefinerTests
         // Add serialization members which adds the deserializer method
         KiotaBuilder.AddSerializationMembers(model, false, false, static s => s);
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -1004,7 +1004,7 @@ public class CSharpLanguageRefinerTests
         model.OriginalComposedType.AddType(new CodeType { Name = "integer" });
         model.OriginalComposedType.AddType(new CodeType { Name = "string" });
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -81,7 +81,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Single(results);
         var result = results.First();
         var resultUrl = result.Value.DescriptionUrl;
-        var bytes = await httpClient.GetByteArrayAsync(resultUrl);
+        var bytes = await httpClient.GetByteArrayAsync(resultUrl, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(bytes);
     }
     public void Dispose()

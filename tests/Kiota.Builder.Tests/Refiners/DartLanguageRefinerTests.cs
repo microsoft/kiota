@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -22,7 +22,7 @@ public class DartLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -58,7 +58,7 @@ public class DartLanguageRefinerTests
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = requestBuilder.StartBlock;
 
@@ -82,7 +82,7 @@ public class DartLanguageRefinerTests
             TypeDefinition = model
         };
         model.AddUsing(nUsing);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual("break", nUsing.Declaration.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("_", nUsing.Declaration.Name);
     }
@@ -94,7 +94,7 @@ public class DartLanguageRefinerTests
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual("break", model.Name, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("_", model.Name);
     }
@@ -120,7 +120,7 @@ public class DartLanguageRefinerTests
                 Name = "string",
             },
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.NotEmpty(requestBuilder.StartBlock.Usings);
     }
@@ -140,7 +140,7 @@ public class DartLanguageRefinerTests
                 Name = "DateTimeOffset"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateTime", method.ReturnType.Name);
     }
@@ -160,7 +160,7 @@ public class DartLanguageRefinerTests
                 Name = "TimeSpan"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Duration", method.ReturnType.Name);
     }
@@ -221,7 +221,7 @@ public class DartLanguageRefinerTests
                 TypeDefinition = requestBuilder,
             },
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(requestBuilder.Properties);
         Assert.Empty(requestBuilder.GetChildElements(true).OfType<CodeIndexer>());
         Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
@@ -256,7 +256,7 @@ public class DartLanguageRefinerTests
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
@@ -288,7 +288,7 @@ public class DartLanguageRefinerTests
             Name = "implements_Model",
             TypeDefinition = implementsModel,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("ParentModel", childModel.StartBlock.Inherits.Name);
         Assert.Equal("ImplementsModel", childModel.StartBlock.Implements.First().Name);
     }
@@ -374,7 +374,7 @@ public class DartLanguageRefinerTests
                 Name = serializerDefaultName,
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(model.Properties, static x => requestAdapterDefaultName.Equals(x.Type.Name));
         Assert.DoesNotContain(model.Properties, static x => factoryDefaultName.Equals(x.Type.Name));
         Assert.DoesNotContain(model.Properties, static x => dateTimeOffsetDefaultName.Equals(x.Type.Name));
@@ -403,7 +403,7 @@ public class DartLanguageRefinerTests
                 IsExternal = true
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart, UsesBackingStore = usesBackingStore }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart, UsesBackingStore = usesBackingStore }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(KiotaBuilder.UntypedNodeName, property.Type.Name);
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -425,7 +425,7 @@ public class DartLanguageRefinerTests
             IsErrorDefinition = true,
         }).First();
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         var buildermethods = builder.Methods;
         var modelmethods = model.Methods;
         Assert.Contains(buildermethods, x => x.IsOfKind(CodeMethodKind.Custom) && x.Name.Equals("clone", StringComparison.Ordinal));
@@ -448,7 +448,7 @@ public class DartLanguageRefinerTests
                 Name = "string",
             },
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("property", model.Properties.First().Name);
         Assert.Equal("Property", model.Properties.First().WireName);
     }
@@ -470,7 +470,7 @@ public class DartLanguageRefinerTests
                 Name = "string",
             },
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("customType", model.Properties.First().Name);
         Assert.Equal("\\$type", model.Properties.First().WireName);
     }

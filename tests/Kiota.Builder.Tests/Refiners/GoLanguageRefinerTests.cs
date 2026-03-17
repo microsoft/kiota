@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -49,7 +49,7 @@ public class GoLanguageRefinerTests
             }
         };
         method.AddParameter(parameter);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(2, requestBuilder.GetChildElements(true).Count());
     }
 
@@ -65,7 +65,7 @@ public class GoLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption { Name = input, SerializationName = input };
         model.AddOption(option);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(input, model.Options.First().Name);
     }
@@ -106,7 +106,7 @@ public class GoLanguageRefinerTests
         }).First();
         baseModel.DiscriminatorInformation.DiscriminatorPropertyName = "Discriminator";
         baseModel.DiscriminatorInformation.AddDiscriminatorMapping("DerivedModel", new CodeType { Name = derivedModel.Name, TypeDefinition = derivedModel });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Empty(baseModel.DiscriminatorInformation.DiscriminatorMappings);
         Assert.DoesNotContain(baseModel.Usings, x => x.Name.Equals("models.sub", StringComparison.OrdinalIgnoreCase));
     }
@@ -120,7 +120,7 @@ public class GoLanguageRefinerTests
             Kind = CodeClassKind.Model,
         }).First();
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
 
         var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
@@ -154,7 +154,7 @@ public class GoLanguageRefinerTests
             Kind = CodePropertyKind.Custom,
         }).First();
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, UsesBackingStore = true }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
 
         var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
@@ -211,7 +211,7 @@ public class GoLanguageRefinerTests
             },
         }).First();
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
         Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
@@ -254,7 +254,7 @@ public class GoLanguageRefinerTests
         });
 
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("SetProperty_a", model.FindChildByName<CodeMethod>("setProperty_a").Name);
         Assert.Equal("SetPropertyA", model.FindChildByName<CodeMethod>("setPropertyA").Name);
@@ -301,7 +301,7 @@ public class GoLanguageRefinerTests
         };
         executorMethod.AddParameter(executorParameter);
         Assert.Empty(root.GetChildElements(true).OfType<CodeInterface>());
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var codeFile = root.GetChildElements(true).OfType<CodeFile>().First();
         Assert.Single(codeFile.GetChildElements(true).OfType<CodeInterface>());
@@ -358,7 +358,7 @@ public class GoLanguageRefinerTests
         };
         model.AddIndexer(indexer);
         method.AddParameter(parameter);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(property.Type is CodeType);
         Assert.True(parameter.Type is CodeType);
         Assert.True(method.ReturnType is CodeType);
@@ -438,7 +438,7 @@ public class GoLanguageRefinerTests
         model.AddIndexer(indexer, typeSpecificIndexer);
         Assert.NotNull(model.Indexer);
         method.AddParameter(parameter);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Null(model.Indexer);
         Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ByIdInteger") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("Integer", StringComparison.OrdinalIgnoreCase)));
         Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ById") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)));
@@ -512,10 +512,10 @@ components:
           nullable: true");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, new HttpClient());
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, codeModel);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, codeModel, cancellationToken: TestContext.Current.CancellationToken);
         var requestBuilder = codeModel.FindChildByName<CodeClass>("groupsRequestBuilder");
         var indexerMethods = requestBuilder.Methods.Where(static method =>
             method.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility)).ToArray();
@@ -533,7 +533,7 @@ components:
             IsErrorDefinition = true,
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains("ApiError", model.StartBlock.Usings.Select(x => x.Name));
         Assert.Equal("ApiError", model.StartBlock.Inherits.Name);
@@ -588,7 +588,7 @@ components:
         {
             TypeDefinition = otherModel
         };
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains(model.Properties, x => x.Name.Equals("otherProp"));
         Assert.Contains(model.Methods, x => x.Name.Equals("otherMethod"));
@@ -634,7 +634,7 @@ components:
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { ClientNamespaceName = "main", Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { ClientNamespaceName = "main", Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains("Error4XX", requestBuilder.StartBlock.Usings.Select(static x => x.Declaration?.Name));
     }
@@ -675,7 +675,7 @@ components:
         Assert.Empty(parentModel.StartBlock.Usings);
         var ns = root.AddNamespace("ApiSdk/models");
         ns.AddClass(childModel);// so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(childModel, parentModel.StartBlock.Usings.First(x => x.Declaration.Name.Equals("childModel", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
         Assert.Null(parentModel.StartBlock.Usings.FirstOrDefault(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)));
     }
@@ -729,7 +729,7 @@ components:
         }).First();
         Assert.Empty(requestBuilderClass.StartBlock.Usings);
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(factoryMethod, requestBuilderClass.StartBlock.Usings.First(x => x.Declaration.Name.Equals("factory", StringComparison.OrdinalIgnoreCase)).Declaration.TypeDefinition);
     }
     [Fact]
@@ -761,7 +761,7 @@ components:
             Type = new CodeType { Name = "CancelletionToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root); //using CSharp so the cancelletionToken doesn't get removed
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken); //using CSharp so the cancelletionToken doesn't get removed
         Assert.True(method.Parameters.Any());
         Assert.Contains(cancellationParam, method.Parameters);
         Assert.Equal("ctx", cancellationParam.Name);
@@ -783,7 +783,7 @@ components:
             },
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
     }
@@ -804,7 +804,7 @@ components:
             },
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateOnly", method.ReturnType.Name);
     }
@@ -825,7 +825,7 @@ components:
             },
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("TimeOnly", method.ReturnType.Name);
     }
@@ -846,7 +846,7 @@ components:
             },
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("ISODuration", method.ReturnType.Name);
     }
@@ -909,7 +909,7 @@ components:
             }
         });
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("ApiSdk.models", modelB.GetImmediateParentOfType<CodeNamespace>().Name); // migrated to root namespace
         Assert.Equal("ApiSdk.models", modelA.GetImmediateParentOfType<CodeNamespace>().Name); // migrated to root namespace
         Assert.Equal("SubaModelA", modelA.Name); // renamed to avoid conflict
@@ -934,7 +934,7 @@ components:
             Type = new CodeType { Name = "string" },
             Access = AccessModifier.Public,
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("Select", property.Name);
         Assert.False(property.IsNameEscaped);
     }
@@ -953,7 +953,7 @@ components:
             Access = AccessModifier.Public,
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("selectEscaped", property.Name);
         Assert.True(property.IsNameEscaped);
     }
@@ -975,7 +975,7 @@ components:
         {
             Name = "someType",
         };
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Empty(model.Properties);
         Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.RequestBuilderBackwardCompatibility));
     }
@@ -987,7 +987,7 @@ components:
             Name = "TestEnum",
             Flags = true
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(testEnum.Usings, static x => "errors".Equals(x.Name, StringComparison.Ordinal));
         Assert.Single(testEnum.Usings, static x => "strings".Equals(x.Name, StringComparison.Ordinal));
     }
@@ -999,7 +999,7 @@ components:
             Name = "TestEnum",
             Flags = false
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(testEnum.Usings, static x => "errors".Equals(x.Name, StringComparison.Ordinal));
         Assert.DoesNotContain(testEnum.Usings, static x => "strings".Equals(x.Name, StringComparison.Ordinal));
     }
@@ -1110,7 +1110,7 @@ components:
             DefaultValue = "wrongDefaultValue"
         }).First();
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(model.Properties, static x => requestAdapterDefaultName.Equals(x.Type.Name));
         Assert.DoesNotContain(model.Properties, static x => factoryDefaultName.Equals(x.Type.Name));
         Assert.DoesNotContain(model.Properties, static x => dateTimeOffsetDefaultName.Equals(x.Type.Name));
@@ -1177,7 +1177,7 @@ components:
                 TypeDefinition = propertyModel
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Empty(mainModel.Properties);
         Assert.DoesNotContain(mainModel.Methods, x => x.IsAccessor);
     }
@@ -1226,7 +1226,7 @@ components:
             }
         }).First();
         generator.AddParameter(executor.Parameters.ToArray());
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         var childMethods = builder.Methods;
         Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestExecutor)); // no executor overloads
         Assert.DoesNotContain(childMethods, x => x.IsOverload && x.IsOfKind(CodeMethodKind.RequestGenerator)); // no generator overloads
@@ -1251,7 +1251,7 @@ components:
                 IsExternal = true
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(GoRefiner.UntypedNodeName, property.Type.Name);// type is renamed
         Assert.NotEmpty(model.StartBlock.Usings);
         var nodeUsing = model.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -1266,7 +1266,7 @@ components:
         var models = root.AddNamespace("ApiSdk.models");
         var submodels = models.AddNamespace("ApiSdk.models.submodels");
         var camelCaseModel = submodels.AddNamespace("ApiSdk.models.submodels.camelCase");
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, ClientNamespaceName = "github.com/OrgName/RepoName" }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go, ClientNamespaceName = "github.com/OrgName/RepoName" }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels", submodels.Name);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models", models.Name);
         Assert.Equal("github.com/OrgName/RepoName.apisdk.models.submodels.camelcase", camelCaseModel.Name);
@@ -1296,7 +1296,7 @@ components:
             Kind = CodeParameterKind.RequestBody
         });
         requestBuilderClass.AddMethod(method);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(GoRefiner.UntypedNodeName, method.Parameters.First().Type.Name);// type is renamed
         Assert.NotEmpty(requestBuilderClass.StartBlock.Usings);
         var nodeUsing = requestBuilderClass.StartBlock.Usings.Where(static declaredUsing => declaredUsing.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -1341,7 +1341,7 @@ components:
                 Name = pathParameterType
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(isImported, model.StartBlock.Usings.Any(static x => x.Declaration.Name.Equals("strconv", StringComparison.OrdinalIgnoreCase)));
     }
     [Fact]
@@ -1380,7 +1380,7 @@ components:
                 Name = "string"
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Verify that reserved keyword parameters are escaped
         Assert.Contains(method.Parameters, p => p.Name == "typeEscaped");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
@@ -103,25 +103,25 @@ components:
             OutputPath = Path.GetTempPath()
         };
         var builder = new KiotaBuilder(mockLogger.Object, generationConfig, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(testDocumentStream);
+        var document = await builder.CreateOpenApiDocumentAsync(testDocumentStream, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
 
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(generationConfig, codeModel, default);
+        await builder.ApplyLanguageRefinementAsync(generationConfig, codeModel, TestContext.Current.CancellationToken);
 
         // serialize the dom model
         var exportService = new PublicApiExportService(generationConfig);
         using var outputStream = new MemoryStream();
-        await exportService.SerializeDomAsync(outputStream, codeModel);
+        await exportService.SerializeDomAsync(outputStream, codeModel, cancellationToken: TestContext.Current.CancellationToken);
 
         // validate the export exists
         outputStream.Seek(0, SeekOrigin.Begin);
         Assert.NotEqual(0, outputStream.Length); // output is not empty
 
         using var streamReader = new StreamReader(outputStream);
-        var contents = new HashSet<string>((await streamReader.ReadToEndAsync()).Split(Environment.NewLine), StringComparer.Ordinal);
+        var contents = new HashSet<string>((await streamReader.ReadToEndAsync(cancellationToken: TestContext.Current.CancellationToken)).Split(Environment.NewLine), StringComparer.Ordinal);
 
         if (!Validators.TryGetValue(generationLanguage, out var validator))
         {

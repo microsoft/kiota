@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -168,7 +168,7 @@ public sealed class GenerateSample : IDisposable
         var fullText = "";
         foreach (var file in Directory.GetFiles(OutputPath, "*.*", SearchOption.AllDirectories))
         {
-            fullText += await File.ReadAllTextAsync(file);
+            fullText += await File.ReadAllTextAsync(file, cancellationToken: TestContext.Current.CancellationToken);
         }
 
         Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -89,7 +89,7 @@ paths:
 """;
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -100,14 +100,14 @@ paths:
             ClientClassName = inputPluginName,
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
 
-        var manifestPaths = await pluginsGenerationService.GenerateManifestAsync();
+        var manifestPaths = await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
         Console.WriteLine($"Generated manifest paths: {string.Join(", ", manifestPaths.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
 
         // Validate that the dictionary contains the plugin path for API plugin
@@ -124,7 +124,7 @@ paths:
         Assert.False(File.Exists(Path.Combine(outputDirectory, "outline.png")));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json"));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, $"{expectedPluginName.ToLower()}-apiplugin.json"), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -159,7 +159,7 @@ paths:
           description: test";
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
         {
@@ -246,7 +246,7 @@ components:
             type: string";
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -257,19 +257,19 @@ components:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -282,7 +282,7 @@ components:
         using var originalOpenApiFile = File.OpenRead(simpleDescriptionPath);
         var settings = new OpenApiReaderSettings();
         settings.AddYamlReader();
-        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml", settings);
+        var originalResult = await OpenApiDocument.LoadAsync(originalOpenApiFile, "yaml", settings, cancellationToken: TestContext.Current.CancellationToken);
         var originalDocument = originalResult.Document;
         Assert.Empty(originalResult.Diagnostic.Errors);
 
@@ -300,7 +300,7 @@ components:
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
-        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml", settings);
+        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml", settings, cancellationToken: TestContext.Current.CancellationToken);
         var resultDocument = resultResult.Document;
         Assert.Empty(resultResult.Diagnostic.Errors);
 
@@ -391,7 +391,7 @@ components:
 
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -402,19 +402,19 @@ components:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -500,7 +500,7 @@ components:
 
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -511,19 +511,19 @@ components:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -602,7 +602,7 @@ components:
 
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -613,19 +613,19 @@ components:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -661,7 +661,7 @@ paths:
 
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -672,22 +672,22 @@ paths:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
 
-        var (openAPIDocumentStream2, _) = await openAPIDocumentDS.LoadStreamAsync(Path.Combine(outputDirectory, OpenApiFileName), generationConfiguration, null, false);
-        var resultingSpec = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream2, generationConfiguration);
+        var (openAPIDocumentStream2, _) = await openAPIDocumentDS.LoadStreamAsync(Path.Combine(outputDirectory, OpenApiFileName), generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var resultingSpec = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream2, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
 
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
@@ -829,7 +829,7 @@ components:
         Directory.CreateDirectory(workingDirectory);
 
         var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-1.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1, cancellationToken: TestContext.Current.CancellationToken);
 
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
@@ -842,8 +842,8 @@ components:
             ApiRootUrl = "http://localhost/", // Kiota builder would set this for us
         };
 
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
@@ -851,7 +851,7 @@ components:
         pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(manifestPaths);
@@ -872,10 +872,10 @@ components:
 
         // Write the first description
         var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-2.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1, cancellationToken: TestContext.Current.CancellationToken);
         // Write the second description
         var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description-partial-2-2.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
+        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2, cancellationToken: TestContext.Current.CancellationToken);
 
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
@@ -888,15 +888,15 @@ components:
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
         // Generate the first manifest
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
         pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
-        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
+        List<string> manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         string ManifestFileName1 = "client-apiplugin-partial-1-2.json";
         string OpenApiFileName1 = "client-openapi-partial-1-2.yml";
@@ -928,7 +928,7 @@ components:
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName2)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(manifestPathMerged);
+        var manifestContent = await File.ReadAllTextAsync(manifestPathMerged, cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -955,10 +955,10 @@ components:
         Directory.CreateDirectory(workingDirectory);
 
         var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-3.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1, cancellationToken: TestContext.Current.CancellationToken);
 
         var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description-partial-2-3.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
+        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2, cancellationToken: TestContext.Current.CancellationToken);
 
         var simpleDescriptionPath3 = Path.Combine(workingDirectory, "description-partial-3-3.yaml");
         var manifestContent3 = """
@@ -986,7 +986,7 @@ components:
                     '200':
                       description: success
             """;
-        await File.WriteAllTextAsync(simpleDescriptionPath3, manifestContent3);
+        await File.WriteAllTextAsync(simpleDescriptionPath3, manifestContent3, cancellationToken: TestContext.Current.CancellationToken);
 
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
@@ -999,8 +999,8 @@ components:
             ApiRootUrl = "http://localhost/", // Kiota builder would set this for us
         };
 
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath1, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
@@ -1008,7 +1008,7 @@ components:
         pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(manifestPaths);
@@ -1043,10 +1043,10 @@ components:
         Directory.CreateDirectory(workingDirectory);
 
         var simpleDescriptionPath1 = Path.Combine(workingDirectory, "description-partial-1-3.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1);
+        await File.WriteAllTextAsync(simpleDescriptionPath1, ManifestContent1, cancellationToken: TestContext.Current.CancellationToken);
 
         var simpleDescriptionPath2 = Path.Combine(workingDirectory, "description-partial-2-3.yaml");
-        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2);
+        await File.WriteAllTextAsync(simpleDescriptionPath2, ManifestContent2, cancellationToken: TestContext.Current.CancellationToken);
 
         var simpleDescriptionPath3 = Path.Combine(workingDirectory, "description-partial-3-3.yaml");
         var manifestContent3 = """
@@ -1074,7 +1074,7 @@ components:
                     '200':
                       description: success
             """;
-        await File.WriteAllTextAsync(simpleDescriptionPath3, manifestContent3);
+        await File.WriteAllTextAsync(simpleDescriptionPath3, manifestContent3, cancellationToken: TestContext.Current.CancellationToken);
 
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
@@ -1088,8 +1088,8 @@ components:
         };
 
         // Start with the second manifest
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath2, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath2, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
@@ -1097,7 +1097,7 @@ components:
         pluginsGenerationService.DownloadService = openAPIDocumentDS;
 
         // Act
-        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync();
+        var manifestPaths = await pluginsGenerationService.GenerateAndMergeMultipleManifestsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(manifestPaths);
@@ -1362,7 +1362,7 @@ components:
                               """;
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription, cancellationToken: TestContext.Current.CancellationToken);
         var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -1375,22 +1375,22 @@ components:
             PluginAuthInformation = pluginAuthConfiguration,
         };
         var (openApiDocumentStream, _) =
-            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
         var openApiDocument =
-            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration);
+            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(openApiDocument);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService =
             new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
 
@@ -1440,7 +1440,7 @@ components:
                               """;
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription, cancellationToken: TestContext.Current.CancellationToken);
         var openApiDocumentDs = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -1452,22 +1452,22 @@ components:
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
         var (openApiDocumentStream, _) =
-            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
+            await openApiDocumentDs.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
         var openApiDocument =
-            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration);
+            await openApiDocumentDs.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(openApiDocument);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService =
             new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
 
@@ -1557,7 +1557,7 @@ paths:
 
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -1568,19 +1568,19 @@ paths:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
 
         // Validate the v2 plugin
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
         Assert.NotNull(resultingManifest.Document);
@@ -1652,7 +1652,7 @@ paths:
 
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent);
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -1663,15 +1663,15 @@ paths:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName));
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
         using var jsonDocument = JsonDocument.Parse(manifestContent);
         var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
 
@@ -1833,7 +1833,7 @@ paths:
         // creates a new schema with both type:string & maxLength:5
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
-        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription);
+        await File.WriteAllTextAsync(simpleDescriptionPath, apiDescription, cancellationToken: TestContext.Current.CancellationToken);
         var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
         var outputDirectory = Path.Combine(workingDirectory, "output");
         var generationConfiguration = new GenerationConfiguration
@@ -1844,13 +1844,13 @@ paths:
             ClientClassName = "client",
             ApiRootUrl = "http://localhost/", //Kiota builder would set this for us
         };
-        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false);
-        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration);
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
         KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
         var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
 
         var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
-        await pluginsGenerationService.GenerateManifestAsync();
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
@@ -1861,7 +1861,7 @@ paths:
             using var stream = File.Open(Path.Combine(outputDirectory, OpenApiFileName), FileMode.Open);
             var settings = new OpenApiReaderSettings();
             settings.AddYamlReader();
-            var readResult = await OpenApiDocument.LoadAsync(stream, "yaml", settings);
+            var readResult = await OpenApiDocument.LoadAsync(stream, "yaml", settings, cancellationToken: TestContext.Current.CancellationToken);
             assertions(readResult.Document, readResult.Diagnostic);
         }
         finally
@@ -2090,7 +2090,7 @@ paths:
 
         // Assert
         Assert.True(File.Exists(manifestPath), "The manifest file was not created.");
-        var savedContent = await File.ReadAllTextAsync(manifestPath);
+        var savedContent = await File.ReadAllTextAsync(manifestPath, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Contains("\"namespace\": \"TestNamespace\"", savedContent);
         Assert.Contains("\"description_for_human\": \"Test Description\"", savedContent);
 
@@ -2121,7 +2121,7 @@ paths:
         var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(workingDirectory);
         var manifestPath = Path.Combine(workingDirectory, "test-manifest.json");
-        await File.WriteAllTextAsync(manifestPath, "{\"Namespace\":\"OldNamespace\"}");
+        await File.WriteAllTextAsync(manifestPath, "{\"Namespace\":\"OldNamespace\"}", cancellationToken: TestContext.Current.CancellationToken);
         var pluginManifestDocument = new PluginManifestDocument
         {
             Namespace = "NewNamespace",
@@ -2132,7 +2132,7 @@ paths:
         await PluginsGenerationService.SavePluginManifestAsync(manifestPath, pluginManifestDocument);
 
         // Assert
-        var savedContent = await File.ReadAllTextAsync(manifestPath);
+        var savedContent = await File.ReadAllTextAsync(manifestPath, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Contains("\"namespace\": \"NewNamespace\"", savedContent);
         Assert.Contains("\"description_for_human\": \"Updated Description\"", savedContent);
 
