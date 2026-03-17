@@ -1,9 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
-using System.CommandLine.IO;
-using System.CommandLine.Rendering;
-using System.CommandLine.Rendering.Views;
 using System.Diagnostics;
 using System.Text.Json;
 using kiota.Extension;
@@ -34,20 +29,17 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
-        string? version0 = context.ParseResult.GetValueForOption(VersionOption);
-        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string searchTerm = parseResult.GetValue(SearchTermArgument) ?? string.Empty;
+        string? version0 = parseResult.GetValue(VersionOption);
+        bool clearCache = parseResult.GetValue(ClearCacheOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, version0, clearCache, logLevel, out var tags);
@@ -66,7 +58,7 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         Configuration.Search.ClearCache = clearCache;
 
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(parseResult);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -113,18 +105,11 @@ internal class KiotaSearchCommandHandler : BaseKiotaCommandHandler
         }
         else
         {
-            var view = new TableView<KeyValuePair<string, SearchResult>>()
-            {
-                Items = results.OrderBy(static x => x.Key).Select(static x => x).ToList(),
-            };
-            view.AddColumn(static x => x.Key, "Key");
-            view.AddColumn(static x => x.Value.Title, "Title");
-            view.AddColumn(static x => ShortenDescription(x.Value.Description), "Description");
-            view.AddColumn(static x => string.Join(", ", x.Value.VersionLabels), "Versions");
-            var console = new SystemConsole();
-            using var terminal = new SystemConsoleTerminal(console);
-            var layout = new StackLayoutView { view };
-            console.Append(layout);
+            var headers = new[] { "Key", "Title", "Description", "Versions" };
+            var rows = results.OrderBy(static x => x.Key)
+                .Select(static x => new[] { x.Key, x.Value.Title, ShortenDescription(x.Value.Description), string.Join(", ", x.Value.VersionLabels) })
+                .ToList();
+            DisplayTable(headers, rows);
             DisplaySearchHint(results.Keys.FirstOrDefault(), version);
             await DisplayLoginHintAsync(logger, cancellationToken);
             DisplaySearchAddHint();
