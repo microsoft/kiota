@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub;
+using Kiota.Builder.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Kiota.Builder.Tests.Helpers;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
