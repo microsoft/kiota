@@ -7,6 +7,7 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Kiota.Builder.Tests.Helpers;
 using Xunit;
 
 namespace Kiota.Builder.Tests;
@@ -31,7 +32,7 @@ public sealed class KiotaSearcherTests : IDisposable
         {
         }
     };
-    [Fact]
+    [RetryFact]
     public async Task GetsMicrosoftGraphBothVersionsAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
@@ -48,7 +49,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Single(results);
         Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
     }
-    [Fact]
+    [RetryFact]
     public async Task GetsMicrosoftGraphBetaAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
