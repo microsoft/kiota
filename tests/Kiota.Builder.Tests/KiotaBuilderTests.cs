@@ -3661,6 +3661,122 @@ paths:
     }
 
     [Fact]
+    public async Task AddsDiscriminatorMappingsForOneOfWithDerivedTypesFromGrandparentMappingAsync()
+    {
+        // Regression test: 3-level hierarchy where entity (grandparent) has the discriminator mapping,
+        // directoryObject (parent) has no discriminator, and application (child) is a oneOf member.
+        // The discriminator key for application should be resolved from entity's mapping, not
+        // fall back to the schema name (which wouldn't match OData @odata.type values like "#microsoft.graph.application").
+        var entitySchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema { Type = JsonSchemaType.String }
+                },
+                {
+                    "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String }
+                }
+            },
+            Required = new HashSet<string> { "@odata.type" },
+            Discriminator = new()
+            {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    { "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject") },
+                    { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                }
+            },
+        };
+        var directoryObjectSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "deletedDateTime", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    }
+                }
+            },
+            // No discriminator on directoryObject — discriminator lives on the grandparent entity
+        };
+        var applicationSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "appId", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "displayName", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    }
+                }
+            },
+        };
+        var deltaResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            OneOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchemaReference("microsoft.graph.application"),
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["applications/delta"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("deltaResponse"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var deltaResponse = new OpenApiResponse
+        {
+            Content = new Dictionary<string, IOpenApiMediaType>()
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("deltaResponseSchema", document)
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.application", applicationSchema);
+        document.AddComponent("deltaResponseSchema", deltaResponseSchema);
+        document.AddComponent("deltaResponse", deltaResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+
+        var deltaResponseClass = codeModel.FindChildByName<CodeClass>("deltaResponseSchema");
+        Assert.NotNull(deltaResponseClass);
+
+        var mappings = deltaResponseClass.DiscriminatorInformation.DiscriminatorMappings.ToList();
+        // Bug fix: discriminator keys should come from the grandparent (entity) mapping,
+        // i.e. "#microsoft.graph.directoryObject" and "#microsoft.graph.application", NOT the schema names.
+        Assert.Contains("#microsoft.graph.directoryObject", mappings.Select(static x => x.Key));
+        Assert.Contains("#microsoft.graph.application", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("microsoft.graph.directoryObject", mappings.Select(static x => x.Key).Where(k => !k.StartsWith('#')));
+        Assert.DoesNotContain("microsoft.graph.application", mappings.Select(static x => x.Key).Where(k => !k.StartsWith('#')));
+    }
+
+    [Fact]
     public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNotAsync()
     {
         var document = new OpenApiDocument
