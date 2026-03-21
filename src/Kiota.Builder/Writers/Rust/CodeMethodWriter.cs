@@ -85,10 +85,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
                 WriteQueryParametersBody(parentClass, writer);
                 break;
             case CodeMethodKind.Getter:
+                WriteGetterBody(codeElement, writer, parentClass);
+                break;
             case CodeMethodKind.Setter:
-                throw new InvalidOperationException("getters and setters are represented as struct fields in Rust");
+                WriteSetterBody(codeElement, writer);
+                break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
-                throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by methods.");
+                WriteRequestBuilderBody(parentClass, codeElement, writer);
+                break;
             case CodeMethodKind.ErrorMessageOverride:
                 throw new InvalidOperationException("ErrorMessageOverride is not supported as the error message is implemented by Display trait.");
             case CodeMethodKind.CommandBuilder:
@@ -130,6 +134,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
     {
         var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
         conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)), customParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Custom)));
+    }
+
+    private void WriteGetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
+    {
+        var accessedProperty = codeElement.AccessedProperty;
+        if (accessedProperty?.IsOfKind(CodePropertyKind.RequestBuilder) == true)
+        {
+            // Navigation property: create and return child request builder on the fly
+            var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+            conventions.AddRequestBuilderBody(parentClass, returnType, writer, prefix: "");
+        }
+        else
+        {
+            // Regular field getter: return the field value
+            var fieldName = accessedProperty?.Name?.ToSnakeCase() ?? codeElement.Name.ToSnakeCase();
+            writer.WriteLine($"self.{fieldName}.clone()");
+        }
+    }
+
+    private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer)
+    {
+        var fieldName = codeElement.AccessedProperty?.Name?.ToSnakeCase() ?? codeElement.Name.ToSnakeCase();
+        var paramName = codeElement.Parameters.FirstOrDefault()?.Name?.ToSnakeCase() ?? "value";
+        writer.WriteLine($"self.{fieldName} = {paramName};");
     }
 
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
@@ -280,10 +308,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
                 .OrderBy(static x => x.Name))
             {
                 var propName = prop.Name.ToSnakeCase();
-                if (prop.Type is CodeType ct && ct.TypeDefinition is CodeEnum)
+                var isCollection = prop.Type.CollectionKind != CodeTypeCollectionKind.None;
+                var isEnum = prop.Type is CodeType ect && ect.TypeDefinition is CodeEnum;
+                var isComplex = prop.Type is CodeType cct && cct.TypeDefinition is CodeClass;
+
+                if (isComplex || (isCollection && !IsPrimitiveCollection(prop.Type)) || isEnum)
                 {
-                    // Enum deserialization via serde: parse string to enum using JSON deserialization
-                    writer.WriteLine($"map.insert(\"{prop.WireName}\".to_string(), Box::new(|node, obj| {{ obj.{propName} = node.get_string_value().and_then(|s| serde_json::from_value(serde_json::Value::String(s)).ok()); }}));");
+                    // Complex types, non-primitive collections, enums: use serde via raw value
+                    writer.WriteLine($"map.insert(\"{prop.WireName}\".to_string(), Box::new(|node, obj| {{ obj.{propName} = node.get_raw_value().and_then(|v| serde_json::from_value(v).ok()); }}));");
+                }
+                else if (isCollection)
+                {
+                    // Primitive collections: use concrete collection methods, wrap in Some()
+                    var deserMethod = GetDeserializationMethodName(prop.Type, codeElement);
+                    writer.WriteLine($"map.insert(\"{prop.WireName}\".to_string(), Box::new(|node, obj| {{ let vals = node.{deserMethod}; obj.{propName} = if vals.is_empty() {{ None }} else {{ Some(vals) }}; }}));");
                 }
                 else
                 {
@@ -295,6 +333,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         writer.WriteLine("map");
     }
 
+    private static bool IsPrimitiveCollection(CodeTypeBase propType)
+    {
+        if (propType is CodeType ct && ct.CollectionKind != CodeTypeCollectionKind.None && ct.TypeDefinition == null)
+            return true;
+        return false;
+    }
+
     private void WriteSerializerBody(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
     {
         foreach (var otherProp in parentClass
@@ -303,10 +348,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
             .OrderBy(static x => x.Name))
         {
             var propName = otherProp.Name.ToSnakeCase();
-            if (otherProp.Type is CodeType ct && ct.TypeDefinition is CodeEnum)
+            var isCollection = otherProp.Type.CollectionKind != CodeTypeCollectionKind.None;
+            var isEnum = otherProp.Type is CodeType ect && ect.TypeDefinition is CodeEnum;
+            var isComplex = otherProp.Type is CodeType cct && cct.TypeDefinition is CodeClass;
+
+            if (isEnum && !isCollection)
             {
                 // Enum serialization via serde: convert enum to string using JSON serialization
                 writer.WriteLine($"writer.write_string_value(\"{otherProp.WireName}\", &self.{propName}.as_ref().and_then(|v| serde_json::to_value(v).ok()).and_then(|v| v.as_str().map(String::from)))?;");
+            }
+            else if (isComplex || isCollection || isEnum)
+            {
+                // Complex objects, collections, and enum collections: serialize via serde to raw JSON
+                writer.StartBlock($"if let Some(ref val) = self.{propName} {{");
+                writer.StartBlock($"if let Ok(json) = serde_json::to_value(val) {{");
+                writer.WriteLine($"writer.write_raw_value(\"{otherProp.WireName}\", &json)?;");
+                writer.CloseBlock();
+                writer.CloseBlock();
             }
             else
             {
@@ -448,26 +506,39 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
             if (isCollection)
             {
                 if (currentType.TypeDefinition == null)
-                    return $"get_collection_of_primitive_values::<{propertyType}>()";
-                if (currentType.TypeDefinition is CodeEnum)
-                    return $"get_collection_of_enum_values::<{propertyType}>()";
-                return $"get_collection_of_object_values::<{propertyType}>({propertyType}::create_from_discriminator_value)";
+                {
+                    // Primitive collection: use concrete method names (no generics for dyn-compatibility)
+                    return propertyType switch
+                    {
+                        "String" => "get_collection_of_primitive_string_values()",
+                        "i32" => "get_collection_of_primitive_i32_values()",
+                        "i64" => "get_collection_of_primitive_i64_values()",
+                        "f64" => "get_collection_of_primitive_f64_values()",
+                        "bool" => "get_collection_of_primitive_bool_values()",
+                        _ => $"get_raw_value().and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default()",
+                    };
+                }
+                // Enum or object collection: use serde via raw value
+                return $"get_raw_value().and_then(|v| serde_json::from_value(v).ok())";
             }
             if (currentType.TypeDefinition is CodeEnum)
-                return $"get_enum_value::<{propertyType}>()";
+                return $"get_string_value().and_then(|s| serde_json::from_value(serde_json::Value::String(s)).ok())";
         }
         return propertyType switch
         {
             "Vec<u8>" => "get_byte_array_value()",
             "uuid::Uuid" => "get_uuid_value()",
+            "chrono::DateTime<chrono::Utc>" => "get_date_time_value()",
+            "chrono::NaiveDate" => "get_date_value()",
+            "chrono::NaiveTime" => "get_time_value()",
+            "chrono::Duration" => "get_duration_value()",
             "String" => "get_string_value()",
             "bool" => "get_bool_value()",
             "i32" => "get_i32_value()",
             "i64" => "get_i64_value()",
             "f32" => "get_f32_value()",
             "f64" => "get_f64_value()",
-            _ when conventions.IsPrimitiveType(propertyType) => $"get_{propertyType.ToSnakeCase()}_value()",
-            _ => $"get_object_value::<{propertyType}>({propertyType}::create_from_discriminator_value)",
+            _ => $"get_raw_value().and_then(|v| serde_json::from_value(v).ok())",
         };
     }
 
@@ -479,27 +550,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         {
             if (isCollection)
             {
-                if (currentType.TypeDefinition == null)
-                    return $"write_collection_of_primitive_values::<{propertyType}>";
-                if (currentType.TypeDefinition is CodeEnum)
-                    return $"write_collection_of_enum_values::<{propertyType}>";
-                return $"write_collection_of_object_values::<{propertyType}>";
+                // All collections serialized via serde raw value
+                return "COLLECTION_SERDE";
             }
             if (currentType.TypeDefinition is CodeEnum)
-                return $"write_enum_value::<{propertyType}>";
+                return "ENUM_SERDE";
         }
         return propertyType switch
         {
             "Vec<u8>" => "write_byte_array_value",
             "uuid::Uuid" => "write_uuid_value",
+            "chrono::DateTime<chrono::Utc>" => "write_date_time_value",
+            "chrono::NaiveDate" => "write_date_value",
+            "chrono::NaiveTime" => "write_time_value",
+            "chrono::Duration" => "write_duration_value",
             "String" => "write_string_value",
             "bool" => "write_bool_value",
             "i32" => "write_i32_value",
             "i64" => "write_i64_value",
             "f32" => "write_f32_value",
             "f64" => "write_f64_value",
-            _ when conventions.IsPrimitiveType(propertyType) => $"write_{propertyType.ToSnakeCase()}_value",
-            _ => $"write_object_value::<{propertyType}>",
+            _ => "OBJECT_SERDE",
         };
     }
 

@@ -56,6 +56,10 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by_{x.ToSnakeCase()}",
                 static x => x.ToSnakeCase(),
                 GenerationLanguage.Rust);
+
+            // Replace navigation properties by methods early, before CorrectCoreType/ReplacePropertyNames
+            ReplaceRequestBuilderPropertiesByMethods(generatedCode);
+
             CorrectCommonNames(generatedCode);
             var reservedNamesProvider = new RustReservedNamesProvider();
             cancellationToken.ThrowIfCancellationRequested();
@@ -71,12 +75,12 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
 
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
+
             ReplacePropertyNames(generatedCode,
                 [
                     CodePropertyKind.Custom,
                     CodePropertyKind.AdditionalData,
                     CodePropertyKind.QueryParameter,
-                    CodePropertyKind.RequestBuilder,
                 ],
                 static s => s.ToSnakeCase());
 
@@ -301,6 +305,27 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
         CrawlTree(currentElement, MoveInnerClassesToNamespace);
+    }
+
+    private static void ReplaceRequestBuilderPropertiesByMethods(CodeElement currentElement)
+    {
+        if (currentElement is CodeProperty currentProperty &&
+            currentProperty.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            currentElement.Parent is CodeClass parentClass)
+        {
+            parentClass.RemoveChildElement(currentProperty);
+            currentProperty.Type.IsNullable = false;
+            parentClass.AddMethod(new CodeMethod
+            {
+                Name = currentProperty.Name,
+                ReturnType = currentProperty.Type,
+                Access = AccessModifier.Public,
+                Documentation = (CodeDocumentation)currentProperty.Documentation.Clone(),
+                IsAsync = false,
+                Kind = CodeMethodKind.RequestBuilderBackwardCompatibility,
+            });
+        }
+        CrawlTree(currentElement, ReplaceRequestBuilderPropertiesByMethods);
     }
 
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {
