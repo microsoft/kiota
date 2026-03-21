@@ -80,16 +80,8 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
                 ],
                 static s => s.ToSnakeCase());
 
-            MoveRequestBuilderPropertiesToBaseType(generatedCode,
-                new CodeUsing
-                {
-                    Name = "BaseRequestBuilder",
-                    Declaration = new CodeType
-                    {
-                        Name = AbstractionsNamespaceName,
-                        IsExternal = true,
-                    }
-                }, addCurrentTypeAsGenericTypeParameter: false);
+            // Rust has no inheritance, so we do NOT call MoveRequestBuilderPropertiesToBaseType.
+            // Request builder properties (request_adapter, path_parameters, url_template) stay on the struct.
 
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing
@@ -105,6 +97,8 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
                     Name = "DefaultQueryParameters",
                     IsExternal = true,
                 });
+
+            MoveInnerClassesToNamespace(generatedCode);
 
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
@@ -126,8 +120,6 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
                     $"{SerializationNamespaceName}_json.JsonSerializationWriterFactory",
-                    $"{SerializationNamespaceName}_text.TextSerializationWriterFactory",
-                    $"{SerializationNamespaceName}_form.FormSerializationWriterFactory",
                 }
             );
             ReplaceDefaultDeserializationModules(
@@ -135,8 +127,6 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
                     $"{SerializationNamespaceName}_json.JsonParseNodeFactory",
-                    $"{SerializationNamespaceName}_form.FormParseNodeFactory",
-                    $"{SerializationNamespaceName}_text.TextParseNodeFactory",
                 }
             );
             AddSerializationModulesImport(generatedCode,
@@ -223,7 +213,7 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.DefaultValue = "RequestHeaders::new()";
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
         {
-            currentProperty.Type.Name = "Box<dyn RequestAdapter>";
+            currentProperty.Type.Name = "std::sync::Arc<dyn RequestAdapter + Send + Sync>";
             currentProperty.Type.IsNullable = false;
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.BackingStore))
@@ -283,6 +273,34 @@ public class RustRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
         }
         CrawlTree(currentElement, DisambiguatePropertiesWithClassNames);
+    }
+
+    private static void MoveInnerClassesToNamespace(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass parentClass)
+        {
+            var innerClasses = parentClass.InnerClasses.ToArray();
+            if (innerClasses.Length > 0 && parentClass.Parent is CodeNamespace ns)
+            {
+                foreach (var innerClass in innerClasses)
+                {
+                    parentClass.RemoveChildElement(innerClass);
+                    ns.AddClass(innerClass);
+                    // Add a using so the parent class can still reference the moved type
+                    parentClass.AddUsing(new CodeUsing
+                    {
+                        Name = innerClass.Name,
+                        Declaration = new CodeType
+                        {
+                            Name = innerClass.Name,
+                            TypeDefinition = innerClass,
+                            IsExternal = false,
+                        }
+                    });
+                }
+            }
+        }
+        CrawlTree(currentElement, MoveInnerClassesToNamespace);
     }
 
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase) {

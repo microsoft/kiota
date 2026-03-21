@@ -211,9 +211,11 @@ public class RustConventionService : CommonLanguageConventionService
             "object" => "serde_json::Value",
             "void" => "()",
             "binary" or "base64" or "base64url" => "Vec<u8>",
-            "iparsenode" => "Box<dyn ParseNode>",
-            "iserializationwriter" => "Box<dyn SerializationWriter>",
-            _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "serde_json::Value",
+            "iparsenode" or "parsenode" => "&dyn ParseNode",
+            "iserializationwriter" or "serializationwriter" => "&mut dyn SerializationWriter",
+            "requestadapter" or "irequestadapter" => "std::sync::Arc<dyn RequestAdapter + Send + Sync>",
+            _ => type.Name.Contains("::", StringComparison.Ordinal) ? type.Name : // qualified types (chrono::DateTime, uuid::Uuid) from refiner replacements
+                (type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "serde_json::Value"),
         };
     }
 

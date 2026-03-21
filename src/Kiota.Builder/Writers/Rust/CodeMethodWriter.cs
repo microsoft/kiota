@@ -115,14 +115,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
             writer.StartBlock("match mapping_value.as_deref() {");
             foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
-                writer.WriteLine($"Some(\"{mappedType.Key}\") => Box::new({conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}::default()),");
+                writer.WriteLine($"Some(\"{mappedType.Key}\") => {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}::default(),");
             }
-            writer.WriteLine($"_ => Box::new({parentClass.Name}::default()),");
+            writer.WriteLine($"_ => {parentClass.Name}::default(),");
             writer.CloseBlock();
         }
         else
         {
-            writer.WriteLine($"Box::new({parentClass.Name}::default())");
+            writer.WriteLine($"{parentClass.Name}::default()");
         }
     }
 
@@ -172,6 +172,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             WriteRequestBuilderConstructorBody(parentClass, currentMethod, writer);
+            // ClientConstructor continues with WriteApiConstructorBody which writes its own "instance" return
+            if (!currentMethod.IsOfKind(CodeMethodKind.ClientConstructor))
+                writer.WriteLine("instance");
         }
         else if (parentClass.IsOfKind(CodeClassKind.Model))
         {
@@ -187,7 +190,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         var pathParametersParam = currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters);
         var rawUrlParam = currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl);
 
-        writer.StartBlock($"let mut instance = Self {{");
+        // Only use `mut` if we need to mutate `instance` after construction
+        var pathParameters = pathParametersProp != null && pathParametersParam != null
+            ? currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)).ToArray()
+            : [];
+        var needsMut = pathParameters.Length > 0 || currentMethod.IsOfKind(CodeMethodKind.ClientConstructor);
+        var letBinding = needsMut ? "let mut instance" : "let instance";
+
+        writer.StartBlock($"{letBinding} = Self {{");
         if (requestAdapterParam != null)
             writer.WriteLine($"request_adapter: {requestAdapterParam.Name.ToSnakeCase()},");
         if (urlTemplateProp != null && !string.IsNullOrEmpty(urlTemplateProp.DefaultValue))
@@ -198,10 +208,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
                 writer.WriteLine($"path_parameters: {pathParametersParam.Name.ToSnakeCase()},");
             else if (rawUrlParam != null)
             {
+                var rawUrlRef = rawUrlParam.Optional || rawUrlParam.Type.IsNullable
+                    ? $"{rawUrlParam.Name.ToSnakeCase()}.unwrap_or_default()"
+                    : rawUrlParam.Name.ToSnakeCase();
                 writer.WriteLine("path_parameters: {");
                 writer.IncreaseIndent();
                 writer.WriteLine("let mut m = std::collections::HashMap::new();");
-                writer.WriteLine($"m.insert(RequestInformation::RAW_URL_KEY.to_string(), {rawUrlParam.Name.ToSnakeCase()}.to_string());");
+                writer.WriteLine($"m.insert(RequestInformation::RAW_URL_KEY.to_string(), {rawUrlRef});");
                 writer.WriteLine("m");
                 writer.DecreaseIndent();
                 writer.WriteLine("},");
@@ -212,16 +225,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         writer.CloseBlock("};");
 
         // Handle path parameters
-        if (pathParametersProp != null && pathParametersParam != null)
+        if (pathParameters.Length > 0)
         {
-            var pathParameters = currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)).ToArray();
-            if (pathParameters.Length > 0)
+            foreach (var param in pathParameters)
             {
-                foreach (var param in pathParameters)
-                {
-                    var serialName = string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName;
-                    writer.WriteLine($"instance.path_parameters.insert(\"{serialName}\".to_string(), {param.Name.ToSnakeCase()}.to_string());");
-                }
+                var serialName = string.IsNullOrEmpty(param.SerializationName) ? param.Name : param.SerializationName;
+                writer.WriteLine($"instance.path_parameters.insert(\"{serialName}\".to_string(), {param.Name.ToSnakeCase()}.to_string());");
             }
         }
     }
@@ -271,8 +280,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
                 .OrderBy(static x => x.Name))
             {
                 var propName = prop.Name.ToSnakeCase();
-                var deserMethod = GetDeserializationMethodName(prop.Type, codeElement);
-                writer.WriteLine($"map.insert(\"{prop.WireName}\".to_string(), Box::new(|node, obj| {{ obj.{propName} = node.{deserMethod}; }}));");
+                if (prop.Type is CodeType ct && ct.TypeDefinition is CodeEnum)
+                {
+                    // Enum deserialization via serde: parse string to enum using JSON deserialization
+                    writer.WriteLine($"map.insert(\"{prop.WireName}\".to_string(), Box::new(|node, obj| {{ obj.{propName} = node.get_string_value().and_then(|s| serde_json::from_value(serde_json::Value::String(s)).ok()); }}));");
+                }
+                else
+                {
+                    var deserMethod = GetDeserializationMethodName(prop.Type, codeElement);
+                    writer.WriteLine($"map.insert(\"{prop.WireName}\".to_string(), Box::new(|node, obj| {{ obj.{propName} = node.{deserMethod}; }}));");
+                }
             }
         }
         writer.WriteLine("map");
@@ -285,9 +302,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
             .Where(x => !x.ExistsInBaseType && !x.ReadOnly && !conventions.ErrorClassPropertyExistsInSuperClass(x))
             .OrderBy(static x => x.Name))
         {
-            var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
             var propName = otherProp.Name.ToSnakeCase();
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", &self.{propName})?;");
+            if (otherProp.Type is CodeType ct && ct.TypeDefinition is CodeEnum)
+            {
+                // Enum serialization via serde: convert enum to string using JSON serialization
+                writer.WriteLine($"writer.write_string_value(\"{otherProp.WireName}\", &self.{propName}.as_ref().and_then(|v| serde_json::to_value(v).ok()).and_then(|v| v.as_str().map(String::from)))?;");
+            }
+            else
+            {
+                var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
+                writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", &self.{propName})?;");
+            }
         }
 
         if (parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
@@ -314,25 +339,26 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
             .Aggregate(static (x, y) => $"{x}, {y}");
         writer.WriteLine($"let request_info = self.{generatorMethodName}({parametersList})?;");
 
-        if (codeElement.ErrorMappings.Any())
+        // Error mappings (currently simplified — Rust uses Result instead of exception types)
+        writer.WriteLine("let error_mapping: std::collections::HashMap<String, Box<dyn Fn(&dyn ParseNode) -> Box<dyn std::error::Error + Send + Sync> + Send + Sync>> = std::collections::HashMap::new();");
+
+        var sendMethod = GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType);
+
+        if (isVoid)
         {
-            writer.StartBlock("let error_mapping: HashMap<String, Box<dyn Fn(&dyn ParseNode) -> Box<dyn std::error::Error>>> = [");
-            foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
-            {
-                writer.WriteLine($"(\"{errorMapping.Key.ToUpperInvariant()}\".to_string(), Box::new(|n| Box::new({conventions.GetTypeString(errorMapping.Value, codeElement, false)}::create_from_discriminator_value(n))) as Box<dyn Fn(&dyn ParseNode) -> Box<dyn std::error::Error>>),");
-            }
-            writer.CloseBlock("].into_iter().collect();");
+            writer.WriteLine($"self.request_adapter.{sendMethod}(request_info, error_mapping).await?;");
+            writer.WriteLine("Ok(())");
         }
         else
         {
-            writer.WriteLine("let error_mapping: HashMap<String, Box<dyn Fn(&dyn ParseNode) -> Box<dyn std::error::Error>>> = HashMap::new();");
+            writer.WriteLine($"let response = self.request_adapter.{sendMethod}(request_info, error_mapping).await?;");
+            if (sendMethod == "send_raw")
+                writer.WriteLine("Ok(response.and_then(|v| serde_json::from_value(v).ok()))");
+            else if (sendMethod == "send_raw_collection")
+                writer.WriteLine("Ok(Some(response.into_iter().filter_map(|v| serde_json::from_value(v).ok()).collect()))");
+            else
+                writer.WriteLine("Ok(response)");
         }
-
-        var sendMethod = GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType);
-        var returnTypeFactory = codeElement.ReturnType is CodeType { TypeDefinition: CodeClass }
-            ? $", {returnTypeWithoutCollectionInformation}::create_from_discriminator_value"
-            : "";
-        writer.WriteLine($"self.request_adapter.{sendMethod}(request_info{returnTypeFactory}, error_mapping).await");
     }
 
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass currentClass, LanguageWriter writer)
@@ -342,8 +368,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString()?.ToUpperInvariant();
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : $"&self.{urlTemplateProperty.Name.ToSnakeCase()}";
-        writer.WriteLine($"let mut request_info = RequestInformation::new(Method::{operationName}, {urlTemplateValue}.to_string(), self.{urlTemplateParamsProperty.Name.ToSnakeCase()}.clone());");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\".to_string()" : $"self.{urlTemplateProperty.Name.ToSnakeCase()}.clone()";
+        writer.WriteLine($"let mut request_info = RequestInformation::new(Method::{operationName}, {urlTemplateValue}, self.{urlTemplateParamsProperty.Name.ToSnakeCase()}.clone());");
 
         if (requestParams.requestConfiguration != null)
         {
@@ -353,7 +379,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         }
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"request_info.headers.insert(\"Accept\".to_string(), \"{codeElement.AcceptHeaderValue}\".to_string());");
+            writer.WriteLine($"request_info.headers.add(\"Accept\", \"{codeElement.AcceptHeaderValue}\");");
 
         if (requestParams.requestBody != null)
         {
@@ -365,10 +391,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
                     writer.WriteLine($"request_info.set_stream_content({bodyParamName}, \"{codeElement.RequestBodyContentType}\");");
             }
-            else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                writer.WriteLine($"request_info.set_content_from_parsable(&self.request_adapter, \"{codeElement.RequestBodyContentType}\", &{bodyParamName})?;");
             else
-                writer.WriteLine($"request_info.set_content_from_scalar(&self.request_adapter, \"{codeElement.RequestBodyContentType}\", &{bodyParamName})?;");
+            {
+                // Use serde serialization for the body (handles both model and scalar types)
+                var isOptional = requestParams.requestBody.Optional || requestParams.requestBody.Type.IsNullable;
+                if (isOptional)
+                {
+                    writer.StartBlock($"if let Some(ref body_val) = {bodyParamName} {{");
+                    writer.WriteLine($"request_info.content = Some(serde_json::to_vec(body_val)?);");
+                    writer.WriteLine($"request_info.content_type = Some(\"{codeElement.RequestBodyContentType}\".to_string());");
+                    writer.CloseBlock();
+                }
+                else
+                {
+                    writer.WriteLine($"request_info.content = Some(serde_json::to_vec(&{bodyParamName})?);");
+                    writer.WriteLine($"request_info.content_type = Some(\"{codeElement.RequestBodyContentType}\".to_string());");
+                }
+            }
         }
 
         writer.WriteLine("Ok(request_info)");
@@ -393,12 +432,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
         ArgumentNullException.ThrowIfNull(returnType);
         var returnTypeName = conventions.GetTypeString(returnType, currentElement, false);
         var isStream = conventions.StreamTypeName.Equals(returnTypeName, StringComparison.OrdinalIgnoreCase);
-        var isEnum = returnType is CodeType codeType && codeType.TypeDefinition is CodeEnum;
         if (isVoid) return "send_no_content";
-        if (isStream || conventions.IsPrimitiveType(returnTypeName) || isEnum)
-            return returnType.IsCollection ? "send_primitive_collection" : "send_primitive";
-        if (returnType.IsCollection) return "send_collection";
-        return "send";
+        if (returnTypeName.Equals("String", StringComparison.Ordinal))
+            return "send_primitive_string";
+        if (returnType.IsCollection) return "send_raw_collection";
+        return "send_raw";
     }
 
     private string GetDeserializationMethodName(CodeTypeBase propType, CodeMethod method)
@@ -495,22 +533,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RustConventionServ
 
         var allParams = string.IsNullOrEmpty(parameters) ? selfParam.TrimEnd(' ').TrimEnd(',') : $"{selfParam}{parameters}";
 
+        // Methods that use `?` operator need Result return type
+        var needsResult = code.IsAsync || code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.RequestGenerator);
+
         string returnTypeStr;
         if (isConstructor)
         {
             returnTypeStr = " -> Self";
         }
-        else if (isVoid && code.IsAsync)
+        else if (isVoid && needsResult)
         {
-            returnTypeStr = " -> Result<(), Box<dyn std::error::Error>>";
+            returnTypeStr = " -> Result<(), Box<dyn std::error::Error + Send + Sync>>";
         }
         else if (isVoid)
         {
             returnTypeStr = "";
         }
-        else if (code.IsAsync)
+        else if (needsResult)
         {
-            returnTypeStr = $" -> Result<{returnType}, Box<dyn std::error::Error>>";
+            returnTypeStr = $" -> Result<{returnType}, Box<dyn std::error::Error + Send + Sync>>";
         }
         else
         {

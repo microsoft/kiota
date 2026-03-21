@@ -9,10 +9,12 @@ namespace Kiota.Builder.Writers.Rust;
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, RustConventionService>
 {
     private readonly RelativeImportManager relativeImportManager;
+    private readonly string clientNamespaceName;
 
     public CodeClassDeclarationWriter(RustConventionService conventionService, string clientNamespaceName, RustPathSegmenter pathSegmenter) : base(conventionService)
     {
         ArgumentNullException.ThrowIfNull(pathSegmenter);
+        this.clientNamespaceName = clientNamespaceName;
         relativeImportManager = new RelativeImportManager(clientNamespaceName, '.', (ns, element) => pathSegmenter.NormalizeFileName(element));
     }
 
@@ -30,22 +32,58 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         // Write use statements for external dependencies
         if (codeElement.Parent?.Parent is CodeNamespace)
         {
+            // Standard imports for generated Rust files
+            writer.WriteLine("use std::collections::HashMap;");
+
             foreach (var externalUsing in codeElement.Usings
                     .Where(static x => x.IsExternal)
                     .DistinctBy(static x => x.Declaration!.Name, StringComparer.Ordinal)
                     .OrderBy(static x => x.Declaration!.Name, StringComparer.Ordinal))
             {
-                writer.WriteLine($"use {externalUsing.Declaration!.Name};");
+                var declName = externalUsing.Declaration!.Name;
+                if (declName.Equals("kiota_abstractions", StringComparison.Ordinal))
+                    writer.WriteLine("use kiota_abstractions::*;");
+                else if (declName.Equals("serde", StringComparison.Ordinal))
+                    writer.WriteLine("use serde::{Serialize, Deserialize};");
+                else if (declName.Equals("serde_json", StringComparison.Ordinal))
+                    writer.WriteLine("use serde_json;");
+                else if (declName.StartsWith("kiota_serialization_", StringComparison.Ordinal))
+                    writer.WriteLine($"use {declName}::*;");
+                else
+                    writer.WriteLine($"use {declName};");
             }
 
             foreach (var internalUsing in codeElement.Usings
-                    .Where(static x => !x.IsExternal)
-                    .DistinctBy(static x => $"{x.Name}{x.Declaration?.Name}", StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(static x => x.Declaration?.Name, StringComparer.Ordinal))
+                    .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition != null)
+                    .DistinctBy(static x => x.Declaration?.TypeDefinition?.Name, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(static x => x.Declaration?.TypeDefinition?.Name, StringComparer.Ordinal))
             {
-                var typeName = internalUsing.Declaration?.Name?.ToFirstCharacterUpperCase() ?? internalUsing.Name.ToFirstCharacterUpperCase();
-                var modulePath = internalUsing.Declaration?.Name?.ToSnakeCase() ?? internalUsing.Name.ToSnakeCase();
-                writer.WriteLine($"use crate::{modulePath};");
+                var typeName = internalUsing.Declaration?.TypeDefinition?.Name?.ToFirstCharacterUpperCase();
+                if (!string.IsNullOrEmpty(typeName))
+                {
+                    var moduleFileName = typeName.ToSnakeCase();
+                    // Build the full module path from the namespace hierarchy
+                    var typeNamespace = internalUsing.Declaration?.TypeDefinition?.Parent as CodeNamespace;
+                    var currentNamespace = codeElement.Parent?.Parent as CodeNamespace;
+                    if (typeNamespace != null && currentNamespace != null)
+                    {
+                        var nsName = typeNamespace.Name;
+                        var rootName = clientNamespaceName;
+                        var relativePath = nsName.StartsWith(rootName + ".", StringComparison.Ordinal)
+                            ? nsName[(rootName.Length + 1)..]
+                            : (nsName.Equals(rootName, StringComparison.Ordinal) ? string.Empty : nsName);
+                        if (string.IsNullOrEmpty(relativePath))
+                        {
+                            writer.WriteLine($"use crate::{moduleFileName}::{typeName};");
+                        }
+                        else
+                        {
+                            var moduleParts = relativePath.Split('.').Select(p => p.ToSnakeCase());
+                            var modulePath = string.Join("::", moduleParts);
+                            writer.WriteLine($"use crate::{modulePath}::{moduleFileName}::{typeName};");
+                        }
+                    }
+                }
             }
 
             writer.WriteLine();
@@ -56,12 +94,22 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
 
         var isModel = parentClass.IsOfKind(CodeClassKind.Model);
         var isRequestBuilder = parentClass.IsOfKind(CodeClassKind.RequestBuilder);
+        var isQueryParameters = parentClass.IsOfKind(CodeClassKind.QueryParameters);
 
         if (isModel)
         {
             // Model classes get serde derives
             var derives = new[] { "Debug", "Clone", "Default", "Serialize", "Deserialize" };
             writer.WriteLine($"#[derive({string.Join(", ", derives)})]");
+        }
+        else if (isQueryParameters)
+        {
+            // Query parameter classes need Default and Clone
+            writer.WriteLine("#[derive(Debug, Clone, Default)]");
+        }
+        else if (isRequestBuilder)
+        {
+            // Request builders have Box<dyn> fields that can't derive Clone/Debug
         }
         else
         {

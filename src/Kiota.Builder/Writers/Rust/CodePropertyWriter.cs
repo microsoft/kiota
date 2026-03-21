@@ -27,7 +27,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RustConvention
                 // Request builder properties are accessed via methods in Rust, skip field declaration
                 break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                writer.WriteLine($"#[serde(rename = \"{codeElement.SerializationName}\")]");
                 WriteField(writer, propertyName, propertyType, codeElement);
                 break;
             case CodePropertyKind.Custom when !string.IsNullOrEmpty(codeElement.SerializationName) && !codeElement.SerializationName.Equals(codeElement.Name, StringComparison.Ordinal):
