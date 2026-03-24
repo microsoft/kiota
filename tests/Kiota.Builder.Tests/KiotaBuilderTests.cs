@@ -3777,6 +3777,141 @@ paths:
     }
 
     [Fact]
+    public async Task DeltaResponseValuePropertyTypeIsConcreteTypeNotBaseTypeAsync()
+    {
+        // Regression test: The Value property on a delta response should have the concrete type
+        // (Application), NOT the base type (DirectoryObject).
+        // Schema: entity (root discriminator) → directoryObject (inline allOf discriminator) → application
+        // Delta response: allOf: [BaseDeltaFunctionResponse, {value: array of $ref application}]
+        var entitySchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "id", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+            Required = new HashSet<string> { "@odata.type" },
+            Discriminator = new()
+            {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    { "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject") },
+                    { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                }
+            },
+        };
+        var directoryObjectSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "deletedDateTime", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    },
+                    Required = new HashSet<string> { "@odata.type" },
+                    Discriminator = new()
+                    {
+                        PropertyName = "@odata.type",
+                        Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                            { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                        }
+                    }
+                }
+            },
+        };
+        var applicationSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "appId", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    },
+                    Required = new HashSet<string> { "@odata.type" }
+                }
+            },
+        };
+        var baseDeltaResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "@odata.nextLink", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "@odata.deltaLink", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+        };
+        var deltaGetResponseSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("BaseDeltaFunctionResponse"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "value", new OpenApiSchema {
+                                Type = JsonSchemaType.Array,
+                                Items = new OpenApiSchemaReference("microsoft.graph.application")
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["applications/delta()"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = deltaGetResponseSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.application", applicationSchema);
+        document.AddComponent("BaseDeltaFunctionResponse", baseDeltaResponseSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+
+        var deltaResponseClass = codeModel.FindChildByName<CodeClass>("DeltaGetResponse");
+        Assert.NotNull(deltaResponseClass);
+
+        var valueProperty = deltaResponseClass.Properties
+            .FirstOrDefault(p => p.Name.Equals("value", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(valueProperty);
+        // The type name should be "application" (Application class), not "directoryObject"
+        Assert.Equal("application", valueProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.NotEqual("directoryObject", valueProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AddsDiscriminatorMappingsAllOfImplicitWithParentHavingMappingsWhileChildDoesNotAsync()
     {
         var document = new OpenApiDocument
