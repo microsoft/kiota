@@ -8875,6 +8875,119 @@ components:
     }
 
     [Fact]
+    public async Task NullableReferenceWrapperUnwrapsToReferencedSchemaAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(
+    """
+openapi: 3.1.0
+info:
+  title: "Nullable reference wrapper unwrap test"
+  version: "1.0.0"
+servers:
+  - url: https://example.doesnotexist/
+paths:
+  /items:
+    get:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkbookOperationError"
+components:
+  schemas:
+    WorkbookOperationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        innerError:
+          type:
+            - 'null'
+            - object
+          anyOf:
+            - $ref: "#/components/schemas/WorkbookOperationError"
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The self-referential schema should produce exactly one class, not infinite inline classes
+        var errorClass = codeModel.FindChildByName<CodeClass>("WorkbookOperationError");
+        Assert.NotNull(errorClass);
+        var codeProperty = errorClass.FindChildByName<CodeProperty>("innerError", false);
+        Assert.NotNull(codeProperty);
+        // innerError should reference the same WorkbookOperationError type, not a unique inline class
+        Assert.Equal("WorkbookOperationError", codeProperty.Type.Name);
+    }
+
+    [Fact]
+    public async Task NullableReferenceWrapperWithDiscriminatorIsNotUnwrappedAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(
+    """
+openapi: 3.0.0
+info:
+  title: "Nullable reference wrapper with discriminator should not unwrap"
+  version: "1.0.0"
+servers:
+  - url: https://example.doesnotexist/
+paths:
+  /items:
+    get:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesWrapper"
+components:
+  schemas:
+    UsesWrapper:
+      type: object
+      properties:
+        value:
+          $ref: "#/components/schemas/WrapperWithDiscriminator"
+    WrapperWithDiscriminator:
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+    Component1:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        name:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // With a discriminator, the wrapper should NOT be unwrapped — it should keep its own class with merged properties
+        var wrapperClass = codeModel.FindChildByName<CodeClass>("WrapperWithDiscriminator");
+        Assert.NotNull(wrapperClass);
+        var nameProperty = wrapperClass.FindChildByName<CodeProperty>("name", false);
+        Assert.NotNull(nameProperty);
+    }
+
+    [Fact]
     public async Task InclusiveUnionInheritanceEntriesMergingAsync()
     {
         var tempFilePath = Path.GetTempFileName();
