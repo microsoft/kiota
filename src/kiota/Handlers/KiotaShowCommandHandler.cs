@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text;
 using kiota.Extension;
@@ -57,26 +55,23 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         get; init;
     }
 
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string? openapi0 = context.ParseResult.GetValueForOption(DescriptionOption);
-        string? manifest0 = context.ParseResult.GetValueForOption(ManifestOption);
-        string? searchTerm0 = context.ParseResult.GetValueForOption(SearchTermOption);
-        string? version0 = context.ParseResult.GetValueForOption(VersionOption);
-        uint maxDepth = context.ParseResult.GetValueForOption(MaxDepthOption);
-        List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
-        List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
-        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? openapi0 = parseResult.GetValue(DescriptionOption);
+        string? manifest0 = parseResult.GetValue(ManifestOption);
+        string? searchTerm0 = parseResult.GetValue(SearchTermOption);
+        string? version0 = parseResult.GetValue(VersionOption);
+        uint maxDepth = parseResult.GetValue(MaxDepthOption);
+        List<string>? includePatterns0 = parseResult.GetValue(IncludePatternsOption);
+        List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
+        bool clearCache = parseResult.GetValue(ClearCacheOption);
+        bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, searchTerm0, version0, clearCache, includePatterns0, excludePatterns0, logLevel, out var tags);
@@ -97,7 +92,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         string version = version0.OrEmpty();
         var includePatterns = includePatterns0.OrEmpty();
         var excludePatterns = excludePatterns0.OrEmpty();
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult);
 
         Configuration.Search.ClearCache = clearCache;
         Configuration.Generation.DisableSSLValidation = disableSSLValidation;

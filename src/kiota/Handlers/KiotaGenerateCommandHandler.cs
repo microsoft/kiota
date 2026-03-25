@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
 using kiota.Extension;
@@ -73,37 +71,34 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         WarnShouldUseKiotaConfigClientsCommands();
         // Get options
-        string? output = context.ParseResult.GetValueForOption(OutputOption);
-        GenerationLanguage language = context.ParseResult.GetValueForOption(LanguageOption);
-        string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);
-        string? manifest = context.ParseResult.GetValueForOption(ManifestOption);
-        bool backingStore = context.ParseResult.GetValueForOption(BackingStoreOption);
-        bool excludeBackwardCompatible = context.ParseResult.GetValueForOption(ExcludeBackwardCompatibleOption);
-        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
-        bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
-        string? className = context.ParseResult.GetValueForOption(ClassOption);
-        AccessModifier typeAccessModifier = context.ParseResult.GetValueForOption(TypeAccessModifierOption);
-        string? namespaceName = context.ParseResult.GetValueForOption(NamespaceOption);
-        List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption).OrEmpty();
-        List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption).OrEmpty();
-        List<string>? includePatterns0 = context.ParseResult.GetValueForOption(IncludePatternsOption);
-        List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
-        List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
-        bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
-        List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? output = parseResult.GetValue(OutputOption);
+        GenerationLanguage language = parseResult.GetValue(LanguageOption);
+        string? openapi = parseResult.GetValue(DescriptionOption);
+        string? manifest = parseResult.GetValue(ManifestOption);
+        bool backingStore = parseResult.GetValue(BackingStoreOption);
+        bool excludeBackwardCompatible = parseResult.GetValue(ExcludeBackwardCompatibleOption);
+        bool clearCache = parseResult.GetValue(ClearCacheOption);
+        bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
+        bool includeAdditionalData = parseResult.GetValue(AdditionalDataOption);
+        string? className = parseResult.GetValue(ClassOption);
+        AccessModifier typeAccessModifier = parseResult.GetValue(TypeAccessModifierOption);
+        string? namespaceName = parseResult.GetValue(NamespaceOption);
+        List<string> serializer = parseResult.GetValue(SerializerOption).OrEmpty();
+        List<string> deserializer = parseResult.GetValue(DeserializerOption).OrEmpty();
+        List<string>? includePatterns0 = parseResult.GetValue(IncludePatternsOption);
+        List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
+        List<string>? disabledValidationRules0 = parseResult.GetValue(DisabledValidationRulesOption);
+        bool cleanOutput = parseResult.GetValue(CleanOutputOption);
+        List<string>? structuredMimeTypes0 = parseResult.GetValue(StructuredMimeTypesOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, clearCache, disableSSLValidation, cleanOutput, output,
@@ -158,7 +153,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.ClearCache = clearCache;
         Configuration.Generation.DisableSSLValidation = disableSSLValidation;
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);

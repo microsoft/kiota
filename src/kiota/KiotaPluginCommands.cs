@@ -8,69 +8,76 @@ namespace kiota;
 
 public static class KiotaPluginCommands
 {
-    public static Command GetPluginNodeCommand()
+    public static Command GetPluginNodeCommand(IServiceProvider serviceProvider)
     {
         var command = new Command("plugin", "Manages the Kiota generated API plugins");
-        command.AddCommand(GetAddCommand());
-        command.AddCommand(GetRemoveCommand());
-        command.AddCommand(GetEditCommand());
-        command.AddCommand(GetGenerateCommand());
+        command.Add(GetAddCommand(serviceProvider));
+        command.Add(GetRemoveCommand(serviceProvider));
+        command.Add(GetEditCommand(serviceProvider));
+        command.Add(GetGenerateCommand(serviceProvider));
         return command;
     }
     internal static Option<string> GetPluginNameOption(bool required = true)
     {
-        var clientName = new Option<string>("--plugin-name", "The name of the plugin to manage")
+        var clientName = new Option<string>("--plugin-name")
         {
-            IsRequired = required,
+            Description = "The name of the plugin to manage",
+            Required = required,
         };
-        clientName.AddAlias("--pn");
+        clientName.Aliases.Add("--pn");
         return clientName;
     }
     internal static Option<List<PluginType>> GetPluginTypeOption(bool isRequired = true)
     {
-        var typeOption = new Option<List<PluginType>>("--type", "The type of manifest to generate. Accepts multiple values.");
-        typeOption.AddAlias("-t");
+        var typeOption = new Option<List<PluginType>>("--type")
+        {
+            Description = "The type of manifest to generate. Accepts multiple values.",
+        };
+        typeOption.Aliases.Add("-t");
         if (isRequired)
         {
-            typeOption.IsRequired = true;
+            typeOption.Required = true;
             typeOption.Arity = ArgumentArity.OneOrMore;
         }
-        typeOption.AddCompletions(Enum.GetNames<PluginType>());
-        typeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
+        typeOption.CompletionSources.Add(Enum.GetNames<PluginType>());
+        typeOption.Validators.Add(x => KiotaHost.ValidateKnownValues(x, "type", Enum.GetNames<PluginType>()));
         return typeOption;
     }
 
     internal static Option<SecuritySchemeType> GetPluginAuthenticationTypeOption(bool isRequired = false)
     {
-        var authTypeOption = new Option<SecuritySchemeType>("--authentication-type", "The authentication type for the plugin. Should be a valid OpenAPI security scheme.");
-        authTypeOption.AddAlias("--at");
+        var authTypeOption = new Option<SecuritySchemeType>("--authentication-type")
         {
-            authTypeOption.IsRequired = isRequired;
-            authTypeOption.Arity = ArgumentArity.ZeroOrOne;
-        }
-        authTypeOption.AddValidator(x => KiotaHost.ValidateKnownValues(x, "authentication-type", Enum.GetNames<SecuritySchemeType>()));
+            Description = "The authentication type for the plugin. Should be a valid OpenAPI security scheme.",
+        };
+        authTypeOption.Aliases.Add("--at");
+        authTypeOption.Required = isRequired;
+        authTypeOption.Arity = ArgumentArity.ZeroOrOne;
+        authTypeOption.Validators.Add(x => KiotaHost.ValidateKnownValues(x, "authentication-type", Enum.GetNames<SecuritySchemeType>()));
         return authTypeOption;
     }
 
     internal static Option<string> GetPluginAuthenticationReferenceIdOption(bool required = false)
     {
-        var authRefIdOption = new Option<string>("--authentication-ref-id", "The authentication reference id for the plugin.")
+        var authRefIdOption = new Option<string>("--authentication-ref-id")
         {
-            IsRequired = required,
+            Description = "The authentication reference id for the plugin.",
+            Required = required,
         };
-        authRefIdOption.AddAlias("--refid");
+        authRefIdOption.Aliases.Add("--refid");
         return authRefIdOption;
     }
     internal static Option<bool> GetNoWorkspaceOption()
     {
-        var noWorkspaceOption = new Option<bool>("--no-workspace", "Disables the workspace management for the plugin.")
+        var noWorkspaceOption = new Option<bool>("--no-workspace")
         {
-            IsRequired = false,
+            Description = "Disables the workspace management for the plugin.",
+            Required = false,
         };
-        noWorkspaceOption.AddAlias("--nw");
+        noWorkspaceOption.Aliases.Add("--nw");
         return noWorkspaceOption;
     }
-    public static Command GetAddCommand()
+    public static Command GetAddCommand(IServiceProvider serviceProvider)
     {
         var defaultConfiguration = new GenerationConfiguration();
         var outputOption = KiotaHost.GetOutputPathOption(defaultConfiguration.OutputPath);
@@ -97,11 +104,11 @@ public static class KiotaPluginCommands
             noWorkspaceOption,
             //TODO overlay when we have support for it in OAI.net
         };
-        command.AddValidator(commandResult =>
+        command.Validators.Add(commandResult =>
             {
                 KiotaHost.ValidateAllOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
             });
-        command.Handler = new AddHandler
+        command.Action = new AddHandler
         {
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
@@ -114,10 +121,11 @@ public static class KiotaPluginCommands
             SkipGenerationOption = skipGenerationOption,
             LogLevelOption = logLevelOption,
             NoWorkspaceOption = noWorkspaceOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }
-    public static Command GetEditCommand()
+    public static Command GetEditCommand(IServiceProvider serviceProvider)
     {
         var outputOption = KiotaHost.GetOutputPathOption(string.Empty);
         var descriptionOption = KiotaHost.GetDescriptionOption(string.Empty);
@@ -141,11 +149,11 @@ public static class KiotaPluginCommands
             pluginAuthRefIdOption,
             //TODO overlay when we have support for it in OAI.net
         };
-        command.AddValidator(commandResult =>
+        command.Validators.Add(commandResult =>
             {
                 KiotaHost.ValidateAllOrNoneOptions(commandResult, pluginAuthTypeOption, pluginAuthRefIdOption);
             });
-        command.Handler = new EditHandler
+        command.Action = new EditHandler
         {
             ClassOption = pluginNameOption,
             OutputOption = outputOption,
@@ -157,10 +165,11 @@ public static class KiotaPluginCommands
             ExcludePatternsOption = excludePatterns,
             SkipGenerationOption = skipGenerationOption,
             LogLevelOption = logLevelOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }
-    public static Command GetRemoveCommand()
+    public static Command GetRemoveCommand(IServiceProvider serviceProvider)
     {
         var pluginNameOption = GetPluginNameOption();
         var cleanOutputOption = KiotaHost.GetCleanOutputOption(false);
@@ -171,15 +180,16 @@ public static class KiotaPluginCommands
             cleanOutputOption,
             logLevelOption,
         };
-        command.Handler = new RemoveHandler
+        command.Action = new RemoveHandler
         {
             ClassOption = pluginNameOption,
             CleanOutputOption = cleanOutputOption,
             LogLevelOption = logLevelOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }
-    public static Command GetGenerateCommand()
+    public static Command GetGenerateCommand(IServiceProvider serviceProvider)
     {
         var pluginNameOption = GetPluginNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();
@@ -190,11 +200,12 @@ public static class KiotaPluginCommands
             logLevelOption,
             refreshOption,
         };
-        command.Handler = new GenerateHandler
+        command.Action = new GenerateHandler
         {
             ClassOption = pluginNameOption,
             LogLevelOption = logLevelOption,
             RefreshOption = refreshOption,
+            ServiceProvider = serviceProvider,
         };
         return command;
     }

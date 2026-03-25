@@ -4,7 +4,7 @@ astroid==4.0.3 ; python_full_version >= '3.7.2'
 
 certifi==2026.2.25 ; python_version >= '3.6'
 
-charset-normalizer==3.4.5 ; python_full_version >= '3.7.0'
+charset-normalizer==3.4.6 ; python_full_version >= '3.7.0'
 
 colorama==0.4.6 ; sys_platform == 'win32'
 
@@ -74,11 +74,11 @@ anyio==4.12.1 ; python_version >= '3.7'
 
 async-timeout==5.0.1 ; python_version >= '3.6'
 
-attrs==25.4.0 ; python_version >= '3.7'
+attrs==26.1.0 ; python_version >= '3.7'
 
-azure-core==1.38.2 ; python_version >= '3.7'
+azure-core==1.39.0 ; python_version >= '3.7'
 
-azure-identity==1.25.2
+azure-identity==1.25.3
 
 cffi==2.0.0
 
@@ -98,19 +98,19 @@ httpx[http2]==0.28.1
 
 hyperframe==6.1.0 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.9.9
+microsoft-kiota-abstractions==1.9.10
 
-microsoft-kiota-authentication-azure==1.9.9
+microsoft-kiota-authentication-azure==1.9.10
 
-microsoft-kiota-http==1.9.9
+microsoft-kiota-http==1.9.10
 
-microsoft-kiota-serialization-json==1.9.9
+microsoft-kiota-serialization-json==1.9.10
 
-microsoft-kiota-serialization-text==1.9.9
+microsoft-kiota-serialization-text==1.9.10
 
-microsoft-kiota-serialization-form==1.9.9
+microsoft-kiota-serialization-form==1.9.10
 
-microsoft-kiota-serialization-multipart==1.9.9
+microsoft-kiota-serialization-multipart==1.9.10
 
 msal==1.35.1
 
@@ -122,7 +122,7 @@ portalocker==3.1.1 ; python_version >= '3.5' and platform_system == 'Windows'
 
 pycparser==2.23
 
-pyjwt[crypto]==2.11.0 ; python_version >= '3.7'
+pyjwt[crypto]==2.12.1 ; python_version >= '3.7'
 
 python-dateutil==2.9.0.post0 ; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'
 
