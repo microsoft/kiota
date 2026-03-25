@@ -79,7 +79,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml": {
+  "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
     "ExcludePatterns": [
       {
         "Pattern": "/maps/api/directions/json",
