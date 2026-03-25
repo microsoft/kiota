@@ -135,7 +135,7 @@ jobs:
         if: matrix.language == 'go'
         uses: actions/setup-go@v6
         with:
-          go-version: "^1.24"
+          go-version: "^1.25"
       - name: Setup Typescript
         if: matrix.language == 'typescript'
         uses: actions/setup-node@v6
