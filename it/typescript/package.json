@@ -21,7 +21,7 @@
     "@es-exec/esbuild-plugin-start": "^0.0.5",
     "@stylistic/eslint-plugin-ts": "^4.4.1",
     "@types/node": "^25.5.0",
-    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.32.1",
     "esbuild": "^0.27.4",
     "eslint": "^9.39.4",
@@ -31,7 +31,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@azure/identity": "^4.13.0",
+    "@azure/identity": "^4.13.1",
     "@microsoft/kiota-abstractions": "^1.0.0-preview.100",
     "@microsoft/kiota-authentication-azure": "^1.0.0-preview.100",
     "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.100",
