@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Xunit;
 using Xunit.Sdk;
 
@@ -12,6 +13,13 @@ namespace Kiota.Builder.Tests.Helpers;
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
 public sealed class RetryFactAttribute : FactAttribute
 {
+    public RetryFactAttribute(
+        [CallerFilePath] string sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
+    {
+    }
+
     /// <summary>
     /// Maximum number of attempts before giving up (default: 5).
     /// </summary>
