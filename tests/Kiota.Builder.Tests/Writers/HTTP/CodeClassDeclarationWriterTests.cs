@@ -145,7 +145,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
 
         root.AddClass(codeClass);
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.HTTP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.HTTP }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         writer.Write(codeClass.StartBlock);
         var result = tw.ToString();
@@ -257,7 +257,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
 
         root.AddClass(codeClass);
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.HTTP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.HTTP }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         writer.Write(codeClass.StartBlock);
         var result = tw.ToString();
