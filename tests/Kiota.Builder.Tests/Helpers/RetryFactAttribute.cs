@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Xunit;
-using Xunit.Sdk;
+using Xunit.v3;
 
 namespace Kiota.Builder.Tests.Helpers;
 
@@ -9,7 +9,7 @@ namespace Kiota.Builder.Tests.Helpers;
 /// A custom xUnit [Fact] that retries on failure with exponential backoff.
 /// Use for tests that are flaky due to external service throttling.
 /// </summary>
-[XunitTestCaseDiscoverer("Kiota.Builder.Tests.Helpers.RetryFactDiscoverer", "Kiota.Builder.Tests")]
+[XunitTestCaseDiscoverer(typeof(RetryFactDiscoverer))]
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
 public sealed class RetryFactAttribute : FactAttribute
 {
