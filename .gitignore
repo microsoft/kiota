@@ -13,8 +13,8 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
-# Ignore local AI settings
-.claude/settings.local.json
+# User-specific files (AI)
+.claude/
 
 # Mono auto generated files
 mono_crash.*
