@@ -253,7 +253,18 @@ extends:
                 inputs:
                   command: test
                   projects: '$(Build.SourcesDirectory)\kiota.slnx'
-                  arguments: "--configuration $(BuildConfiguration) --no-build"
+                  arguments: '--configuration $(BuildConfiguration) --no-build --collect:"XPlat Code Coverage"'
+
+              - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool
+                displayName: "Install ReportGenerator"
+
+              - pwsh: reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
+                displayName: "Generate coverage report"
+
+              - task: PublishCodeCoverageResults@2
+                displayName: "Publish code coverage"
+                inputs:
+                  summaryFileLocation: "$(Build.SourcesDirectory)/reports/coverage/Cobertura.xml"
 
               - task: EsrpCodeSigning@5
                 displayName: "ESRP CodeSigning"
