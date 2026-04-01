@@ -249,6 +249,7 @@ extends:
 
               # Run the Unit test
               - task: DotNetCoreCLI@2
+                condition: succeeded()
                 displayName: "test"
                 inputs:
                   command: test
@@ -256,12 +257,15 @@ extends:
                   arguments: '--configuration $(BuildConfiguration) --no-build --collect:"XPlat Code Coverage"'
 
               - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool
+                condition: succeededOrFailed()
                 displayName: "Install ReportGenerator"
 
               - pwsh: reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
+                condition: succeeded()
                 displayName: "Generate coverage report"
 
               - task: PublishCodeCoverageResults@2
+                condition: succeeded()
                 displayName: "Publish code coverage"
                 inputs:
                   summaryFileLocation: "$(Build.SourcesDirectory)/reports/coverage/Cobertura.xml"
