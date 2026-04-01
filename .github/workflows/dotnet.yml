@@ -10,6 +10,9 @@ on:
 jobs:
   dotnet-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v6
@@ -28,7 +31,15 @@ jobs:
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report
-        run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:./reports/coverage
+        run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:./reports/coverage -reporttypes:"Html;MarkdownSummaryGithub"
+      - name: Add coverage to job summary
+        run: cat ./reports/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+      - name: Add coverage PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: ./reports/coverage/SummaryGithub.md
       - uses: actions/upload-artifact@v7
         with:
           name: coverage
