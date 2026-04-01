@@ -1893,6 +1893,20 @@ public partial class KiotaBuilder
             typeNameForInlineSchema = string.Empty;
         }
 
+        // Unwrap single-entry anyOf/oneOf wrappers that contain only a $ref and no discriminator or own properties.
+        // This covers the OpenAPI 3.1 nullable reference pattern (e.g. { type: [object, null], anyOf: [$ref: X] })
+        // as well as degenerate single-entry unions. Without unwrapping, the wrapper gets treated as an inline
+        // object, and self-referential properties like "innerError" or "parent" cause infinite recursion because
+        // each iteration creates a uniquely-named inline class.
+        if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName())
+            && !schema.HasAnyProperty()
+            && ((schema.AnyOf is { Count: 1 } && schema.AnyOf[0].IsReferencedSchema())
+                || (schema.OneOf is { Count: 1 } && schema.OneOf[0].IsReferencedSchema())))
+        {
+            var innerRef = schema.AnyOf is { Count: 1 } ? schema.AnyOf[0] : schema.OneOf![0];
+            return CreateModelDeclarations(currentNode, innerRef, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isViaDiscriminator);
+        }
+
         if (schema.IsInherited())
         {
             // Pass isViaDiscriminator so that we can handle the special case where this model was referenced by a discriminator and we always want to generate a base class.
@@ -1972,6 +1986,7 @@ public partial class KiotaBuilder
         return currentNamespace;
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ThreadLocal<HashSet<string>> schemasBeingProcessedForDiscriminators = new(() => new(StringComparer.OrdinalIgnoreCase));
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
@@ -2102,7 +2117,7 @@ public partial class KiotaBuilder
 
         var newClass = currentNamespace.AddClass(newClassStub).First();
         var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
-        if (!lifecycle.IsPropertiesBuilt())
+        if (!lifecycle.IsPropertiesBuilt() && !lifecycle.IsPropertiesBuildingInProgress())
         {
             try
             {
@@ -2122,16 +2137,37 @@ public partial class KiotaBuilder
                 lifecycle.PropertiesBuildingDone();
             }
         }
+        else if (lifecycle.IsPropertiesBuildingInProgress())
+        {
+            LogCircularPropertyReference(declarationName, currentNamespace.Name);
+        }
 
         var lookupSchema = schema.GetMergedSchemaOriginalReferenceId() is string originalName ?
             new OpenApiSchemaReference(originalName, openApiDocument) :
             schema;
-        // Recurse into the discriminator & generate its referenced types
-        var mappings = GetDiscriminatorMappings(currentNode, lookupSchema, currentNamespace, newClass, currentOperation)
-                        .Where(x => x.Value is { TypeDefinition: CodeClass definition } &&
-                                    definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
+        // Recurse into the discriminator & generate its referenced types, guarding against same-thread circular
+        // references for schemas with a reference ID. Inline schemas (no ref ID) bypass this guard but are
+        // covered by the depth guard in CreatePropertiesForModelClass.
+        var schemaRefId = lookupSchema.GetReferenceId();
+        var discriminatorVisited = schemasBeingProcessedForDiscriminators.Value!;
+        if (!string.IsNullOrEmpty(schemaRefId) && !discriminatorVisited.Add(schemaRefId))
+        {
+            // This schema's discriminators are already being resolved up the call stack — skip to break the cycle
+            return newClass;
+        }
+        try
+        {
+            var mappings = GetDiscriminatorMappings(currentNode, lookupSchema, currentNamespace, newClass, currentOperation)
+                            .Where(x => x.Value is { TypeDefinition: CodeClass definition } &&
+                                        definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
-        AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
+            AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
+        }
+        finally
+        {
+            if (!string.IsNullOrEmpty(schemaRefId))
+                discriminatorVisited.Remove(schemaRefId);
+        }
         return newClass;
     }
     /// <summary>
@@ -2350,28 +2386,46 @@ public partial class KiotaBuilder
         }
         return result;
     }
+    private static readonly ThreadLocal<int> modelCreationDepth = new(() => 0);
+    // Parallel.ForEach may inline tasks on the calling thread, so this depth counter can be
+    // inflated across unrelated URL tree nodes sharing a thread. 50 is conservative enough
+    // to avoid false positives — legitimate model nesting rarely exceeds 5-10 levels.
+    private const int MaxModelCreationDepth = 50;
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {
-        var propertiesToAdd = schema.Properties
-                ?.Select(x =>
-                {
-                    var propertySchema = x.Value;
-                    var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
-                    var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.GetReferenceId());
-                    var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
-                                        rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                    var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
-                    if (definition == null)
+        if (modelCreationDepth.Value >= MaxModelCreationDepth)
+        {
+            logger.LogWarning("Maximum model creation depth ({MaxDepth}) exceeded for model {ModelName} in namespace {Namespace}. Skipping property creation to prevent stack overflow.", MaxModelCreationDepth, model.Name, ns.Name);
+            return;
+        }
+        modelCreationDepth.Value++;
+        try
+        {
+            var propertiesToAdd = schema.Properties
+                    ?.Select(x =>
                     {
-                        LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
-                        return null;
-                    }
-                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
-                })
-                .OfType<CodeProperty>()
-                .ToArray() ?? [];
-        if (propertiesToAdd.Length != 0)
-            model.AddProperty(propertiesToAdd);
+                        var propertySchema = x.Value;
+                        var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
+                        var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.GetReferenceId());
+                        var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
+                                            rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                        var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
+                        if (definition == null)
+                        {
+                            LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
+                            return null;
+                        }
+                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                    })
+                    .OfType<CodeProperty>()
+                    .ToArray() ?? [];
+            if (propertiesToAdd.Length != 0)
+                model.AddProperty(propertiesToAdd);
+        }
+        finally
+        {
+            modelCreationDepth.Value--;
+        }
     }
     private const string FieldDeserializersMethodName = "GetFieldDeserializers";
     private const string SerializeMethodName = "Serialize";
@@ -2680,4 +2734,6 @@ public partial class KiotaBuilder
     private partial void LogOmittedPropertyInvalidSchema(string propertyName, string modelName, string apiPath);
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring duplicate parameter {Name}")]
     private partial void LogIgnoringDuplicateParameter(string name);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Circular property reference detected for model {ModelName} in namespace {Namespace}. Skipping property creation to prevent infinite recursion.")]
+    private partial void LogCircularPropertyReference(string modelName, string @namespace);
 }
