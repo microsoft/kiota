@@ -1,4 +1,4 @@
-import { KiotaTreeResult } from '../../types';
+import { KiotaTreeResult } from '../../lib/types';
 import { getKiotaTree } from '../../lib/getKiotaTree';
 import { setupKiotaStubs } from './stubs.util';
 
