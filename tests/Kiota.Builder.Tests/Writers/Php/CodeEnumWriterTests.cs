@@ -45,7 +45,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         var declaration = currentEnum.Parent as CodeNamespace;
         const string optionName = "option1";
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
         _codeEnumWriter.WriteCodeElement(currentEnum, writer);
         var result = tw.ToString();
         Assert.Contains("<?php", result);

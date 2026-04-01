@@ -1,17 +1,20 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit.Abstractions;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace Kiota.Builder.Tests.Helpers;
 
 [Serializable]
-public class RetryTestCase : XunitTestCase
+public class RetryTestCase : XunitTestCase, ISelfExecutingXunitTestCase
 {
-    private int _maxRetries;
-    private int _delayMs;
+    private int maxRetries;
+    private int delayMilliseconds;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
     [Obsolete("Called by the de-serializer; should only be called by deriving classes for de-serialization purposes")]
@@ -20,87 +23,121 @@ public class RetryTestCase : XunitTestCase
     }
 
     public RetryTestCase(
-        IMessageSink diagnosticMessageSink,
-        TestMethodDisplay defaultMethodDisplay,
-        TestMethodDisplayOptions defaultMethodDisplayOptions,
-        ITestMethod testMethod,
-        int maxRetries,
-        int delayMs)
-        : base(diagnosticMessageSink, defaultMethodDisplay, defaultMethodDisplayOptions, testMethod)
+        IXunitTestMethod testMethod,
+        string testCaseDisplayName,
+        string uniqueID,
+        bool @explicit,
+        Type[] skipExceptions = null,
+        string skipReason = null,
+        Type skipType = null,
+        string skipUnless = null,
+        string skipWhen = null,
+        Dictionary<string, HashSet<string>> traits = null,
+        object[] testMethodArguments = null,
+        string sourceFilePath = null,
+        int? sourceLineNumber = null,
+        int? timeout = null,
+        int maxRetries = 5,
+        int delayMilliseconds = 500)
+        : base(
+            testMethod,
+            testCaseDisplayName,
+            uniqueID,
+            @explicit,
+            skipExceptions,
+            skipReason,
+            skipType,
+            skipUnless,
+            skipWhen,
+            traits,
+            testMethodArguments,
+            sourceFilePath,
+            sourceLineNumber,
+            timeout)
     {
-        _maxRetries = maxRetries;
-        _delayMs = delayMs;
+        this.maxRetries = maxRetries;
+        this.delayMilliseconds = delayMilliseconds;
     }
 
-    public override async Task<RunSummary> RunAsync(
-        IMessageSink diagnosticMessageSink,
+    public async ValueTask<RunSummary> Run(
+        ExplicitOption explicitOption,
         IMessageBus messageBus,
         object[] constructorArguments,
         ExceptionAggregator aggregator,
         CancellationTokenSource cancellationTokenSource)
     {
-        var delayMs = _delayMs;
+        var delay = delayMilliseconds;
+        RunSummary lastSummary = default;
+        var hasLastSummary = false;
 
-        for (var attempt = 1; attempt <= _maxRetries; attempt++)
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var interceptingBus = new InterceptingMessageBus(messageBus);
+            var replayBus = new ReplayMessageBus(messageBus);
+            var attemptAggregator = aggregator.Clone();
 
-            var summary = await base.RunAsync(
-                diagnosticMessageSink,
-                interceptingBus,
-                constructorArguments,
-                new ExceptionAggregator(aggregator),
-                cancellationTokenSource);
+            var summary = await XunitRunnerHelper.RunXunitTestCase(
+                this,
+                replayBus,
+                cancellationTokenSource,
+                attemptAggregator,
+                explicitOption,
+                constructorArguments).ConfigureAwait(false);
 
-            if (summary.Failed == 0 || attempt == _maxRetries)
+            var hasFailures = summary.Failed > 0 || attemptAggregator.HasExceptions;
+            if (!hasFailures || attempt == maxRetries)
             {
-                // Forward all intercepted messages on final attempt or on success
-                interceptingBus.ForwardAll();
+                replayBus.ForwardAll();
+                aggregator.Aggregate(attemptAggregator);
                 return summary;
             }
 
-            diagnosticMessageSink.OnMessage(new DiagnosticMessage(
-                $"[RetryFact] {DisplayName} failed on attempt {attempt}/{_maxRetries}. Retrying in {delayMs}ms..."));
+            lastSummary = summary;
+            hasLastSummary = true;
 
-            await Task.Delay(delayMs, cancellationTokenSource.Token);
-            delayMs *= 2; // exponential backoff
+            messageBus.QueueMessage(
+                new DiagnosticMessage(
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[RetryFact] {0} failed on attempt {1}/{2}. Retrying in {3}ms...",
+                        TestCaseDisplayName,
+                        attempt,
+                        maxRetries,
+                        delay)));
+
+            await Task.Delay(delay, cancellationTokenSource.Token).ConfigureAwait(false);
+            delay *= 2;
         }
 
-        // Should never reach here, but just in case
-        return new RunSummary();
+        return hasLastSummary ? lastSummary : new RunSummary { Total = 1, Failed = 1 };
     }
 
-    public override void Serialize(IXunitSerializationInfo data)
+    protected override void Serialize(IXunitSerializationInfo info)
     {
-        base.Serialize(data);
-        data.AddValue(nameof(_maxRetries), _maxRetries);
-        data.AddValue(nameof(_delayMs), _delayMs);
+        base.Serialize(info);
+        info.AddValue(nameof(maxRetries), maxRetries);
+        info.AddValue(nameof(delayMilliseconds), delayMilliseconds);
     }
 
-    public override void Deserialize(IXunitSerializationInfo data)
+    protected override void Deserialize(IXunitSerializationInfo info)
     {
-        base.Deserialize(data);
-        _maxRetries = data.GetValue<int>(nameof(_maxRetries));
-        _delayMs = data.GetValue<int>(nameof(_delayMs));
+        base.Deserialize(info);
+        maxRetries = info.GetValue<int>(nameof(maxRetries));
+        delayMilliseconds = info.GetValue<int>(nameof(delayMilliseconds));
     }
 
-    /// <summary>
-    /// Message bus that captures messages so they can be replayed only when needed.
-    /// This prevents intermediate failures from being reported to the test runner.
-    /// </summary>
-    private sealed class InterceptingMessageBus(IMessageBus innerBus) : IMessageBus
+    private sealed class ReplayMessageBus(IMessageBus innerBus) : IMessageBus
     {
-        private readonly System.Collections.Concurrent.ConcurrentQueue<IMessageSinkMessage> _messages = new();
+        private readonly ConcurrentQueue<IMessageSinkMessage> messages = new();
 
         public bool QueueMessage(IMessageSinkMessage message)
         {
-            _messages.Enqueue(message);
+            messages.Enqueue(message);
             return true;
         }
 
         public void ForwardAll()
         {
-            while (_messages.TryDequeue(out var message))
+            while (messages.TryDequeue(out var message))
             {
                 innerBus.QueueMessage(message);
             }
@@ -108,7 +145,6 @@ public class RetryTestCase : XunitTestCase
 
         public void Dispose()
         {
-            // Do not dispose the inner bus; it's owned by the framework.
         }
     }
 }

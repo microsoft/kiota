@@ -149,12 +149,12 @@ components:
 
         Directory.CreateDirectory(TempDirectory);
         var documentPath = Path.Combine(TempDirectory, "document.yaml");
-        await File.WriteAllTextAsync(documentPath, documentContent);
+        await File.WriteAllTextAsync(documentPath, documentContent, cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<OpenApiAiCapabilitiesExtension>>();
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, mockLogger.Object);
         var generationConfig = new GenerationConfiguration { OutputPath = TempDirectory, PluginTypes = [PluginType.APIPlugin] };
-        var (openApiDocumentStream, _) = await documentDownloadService.LoadStreamAsync(documentPath, generationConfig);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfig);
+        var (openApiDocumentStream, _) = await documentDownloadService.LoadStreamAsync(documentPath, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(openApiDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         Assert.NotNull(document.Paths);
