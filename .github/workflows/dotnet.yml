@@ -35,7 +35,7 @@ jobs:
       - name: Add coverage to job summary
         run: cat ./reports/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       - name: Add coverage PR comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         if: github.event_name == 'pull_request'
         with:
           recreate: true
