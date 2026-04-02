@@ -3373,7 +3373,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects");
         Assert.NotNull(entityClass);
@@ -3501,7 +3501,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
