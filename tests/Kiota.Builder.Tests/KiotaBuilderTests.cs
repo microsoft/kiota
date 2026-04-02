@@ -10830,4 +10830,235 @@ paths:
         // which triggers GetExecutorMethodDefaultReturnType, which should return "binary"
         Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
     }
+    [Fact]
+    public async Task GeneratesNavigationPropertiesForSimplePathsSiblingToIndexNodes()
+    {
+        // Regression test: navigation properties for simple path segments (no path parameters)
+        // that are siblings of index nodes ({id}) must be generated.
+        // e.g. /admin/teams/telephoneNumberManagement must appear as a property on TeamsRequestBuilder
+        // even though /admin/teams/{team-id} (index node) also exists at the same level.
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /admin/teams:
+    description: Provides operations to manage the admin teams.
+    get:
+      operationId: admin.GetTeams
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsAdmin'
+  /admin/teams/{team-id}:
+    description: Provides operations to manage a specific team.
+    get:
+      operationId: admin.teams.GetTeam
+      parameters:
+        - name: team-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsAdmin'
+  /admin/teams/telephoneNumberManagement:
+    description: Provides operations to manage the telephoneNumberManagement property.
+    get:
+      operationId: admin.teams.GetTelephoneNumberManagement
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+    patch:
+      operationId: admin.teams.UpdateTelephoneNumberManagement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+components:
+  schemas:
+    TeamsAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+    TelephoneNumberManagementRoot:
+      allOf:
+        - $ref: '#/components/schemas/Entity'
+        - type: object
+          properties:
+            displayName:
+              type: string
+    Entity:
+      type: object
+      properties:
+        id:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = "https://localhost",
+            ClientNamespaceName = "TestSdk"
+        }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The TeamsRequestBuilder should have a navigation property for TelephoneNumberManagement
+        var teamsRbNs = codeModel.FindNamespaceByName("TestSdk.Admin.Teams");
+        Assert.NotNull(teamsRbNs);
+        var teamsRb = teamsRbNs.FindChildByName<CodeClass>("TeamsRequestBuilder", false);
+        Assert.NotNull(teamsRb);
+
+        // Must have the TelephoneNumberManagement property
+        var telephoneNumberManagementProperty = teamsRb.Properties.FirstOrDefault(p =>
+            p.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            p.Name.Equals("TelephoneNumberManagement", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(telephoneNumberManagementProperty);
+
+        // The TelephoneNumberManagement request builder namespace must exist
+        var telephoneNumberManagementNs = codeModel.FindNamespaceByName("TestSdk.Admin.Teams.TelephoneNumberManagement");
+        Assert.NotNull(telephoneNumberManagementNs);
+        var telephoneNumberManagementRb = telephoneNumberManagementNs.FindChildByName<CodeClass>("TelephoneNumberManagementRequestBuilder", false);
+        Assert.NotNull(telephoneNumberManagementRb);
+    }
+    [Fact]
+    public async Task GeneratesNavigationPropertiesForActionPathsSiblingToCollectionIndexNodes()
+    {
+        // Regression test: navigation properties for OData action paths (e.g. /messages/replyWithQuote)
+        // that are siblings of index nodes must be generated on the collection request builder.
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /chats/{chat-id}/messages:
+    description: Collection of messages.
+    get:
+      operationId: chats.messages.ListMessages
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+  /chats/{chat-id}/messages/{chatMessage-id}:
+    description: A specific message.
+    get:
+      operationId: chats.messages.GetMessage
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: chatMessage-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+  /chats/{chat-id}/messages/replyWithQuote:
+    description: Provides operations to call the replyWithQuote method.
+    post:
+      operationId: chats.messages.replyWithQuote
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+components:
+  schemas:
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        body:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = "https://localhost",
+            ClientNamespaceName = "TestSdk"
+        }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The MessagesRequestBuilder should have a navigation property for ReplyWithQuote
+        var messagesRbNs = codeModel.FindNamespaceByName("TestSdk.Chats.Item.Messages");
+        Assert.NotNull(messagesRbNs);
+        var messagesRb = messagesRbNs.FindChildByName<CodeClass>("MessagesRequestBuilder", false);
+        Assert.NotNull(messagesRb);
+
+        // Must have the ReplyWithQuote property
+        var replyWithQuoteProperty = messagesRb.Properties.FirstOrDefault(p =>
+            p.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            p.Name.Equals("ReplyWithQuote", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(replyWithQuoteProperty);
+
+        // The ReplyWithQuote request builder namespace must exist
+        var replyWithQuoteNs = codeModel.FindNamespaceByName("TestSdk.Chats.Item.Messages.ReplyWithQuote");
+        Assert.NotNull(replyWithQuoteNs);
+        var replyWithQuoteRb = replyWithQuoteNs.FindChildByName<CodeClass>("ReplyWithQuoteRequestBuilder", false);
+        Assert.NotNull(replyWithQuoteRb);
+    }
 }
