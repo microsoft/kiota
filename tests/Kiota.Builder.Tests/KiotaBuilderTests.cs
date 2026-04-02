@@ -746,7 +746,7 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, TestContext.Current.CancellationToken);
         var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
         Assert.NotNull(requestBuilderNamespace);
         if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
@@ -1295,7 +1295,7 @@ servers:
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(extensionResult);
         Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
         Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
@@ -1331,7 +1331,7 @@ servers:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
         var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
-        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
@@ -1354,7 +1354,7 @@ servers:
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(TestContext.Current.CancellationToken);
         Assert.Null(extensionResult);
     }
     [Fact]
@@ -1403,7 +1403,7 @@ paths:
                 type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.DeduplicatedSegment());
         Assert.Equal("enumeration", treeNode.Children.First().Value.DeduplicatedSegment());
@@ -3645,7 +3645,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
 
         var oneOfResponseClass = codeModel.FindChildByName<CodeClass>("OneOfResponse");
         Assert.NotNull(oneOfResponseClass);
@@ -3762,7 +3762,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
 
         var deltaResponseClass = codeModel.FindChildByName<CodeClass>("deltaResponseSchema");
         Assert.NotNull(deltaResponseClass);
@@ -3898,7 +3898,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
 
         var deltaResponseClass = codeModel.FindChildByName<CodeClass>("DeltaGetResponse");
         Assert.NotNull(deltaResponseClass);
@@ -4036,7 +4036,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
