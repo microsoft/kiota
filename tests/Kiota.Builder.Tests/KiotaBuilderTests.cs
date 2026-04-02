@@ -10924,7 +10924,7 @@ components:
             OpenAPIFilePath = "https://localhost",
             ClientNamespaceName = "TestSdk"
         }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -11039,7 +11039,7 @@ components:
             OpenAPIFilePath = "https://localhost",
             ClientNamespaceName = "TestSdk"
         }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
