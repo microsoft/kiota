@@ -261,11 +261,11 @@ extends:
                 displayName: "Install ReportGenerator"
 
               - pwsh: reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
-                condition: succeeded()
+                condition: succeededOrFailed()
                 displayName: "Generate coverage report"
 
               - task: PublishCodeCoverageResults@2
-                condition: succeeded()
+                condition: succeededOrFailed()
                 displayName: "Publish code coverage"
                 inputs:
                   summaryFileLocation: "$(Build.SourcesDirectory)/reports/coverage/Cobertura.xml"
