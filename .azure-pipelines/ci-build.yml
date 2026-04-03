@@ -254,7 +254,7 @@ extends:
                 inputs:
                   command: test
                   projects: '$(Build.SourcesDirectory)\kiota.slnx'
-                  arguments: '--configuration $(BuildConfiguration) --no-build --collect:"XPlat Code Coverage"'
+                  arguments: '--configuration $(BuildConfiguration) --results-directory $(Build.SourcesDirectory)/test-results --no-build --collect:"XPlat Code Coverage"'
 
               - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool
                 condition: succeededOrFailed()
