@@ -746,7 +746,7 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, TestContext.Current.CancellationToken);
         var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
         Assert.NotNull(requestBuilderNamespace);
         if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
@@ -1295,7 +1295,7 @@ servers:
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(extensionResult);
         Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
         Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
@@ -1331,7 +1331,7 @@ servers:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
         var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
-        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
@@ -1354,7 +1354,7 @@ servers:
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(TestContext.Current.CancellationToken);
         Assert.Null(extensionResult);
     }
     [Fact]
@@ -1403,7 +1403,7 @@ paths:
                 type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.DeduplicatedSegment());
         Assert.Equal("enumeration", treeNode.Children.First().Value.DeduplicatedSegment());
@@ -3373,7 +3373,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects");
         Assert.NotNull(entityClass);
@@ -3501,7 +3501,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
@@ -3645,7 +3645,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
 
         var oneOfResponseClass = codeModel.FindChildByName<CodeClass>("OneOfResponse");
         Assert.NotNull(oneOfResponseClass);
@@ -3658,6 +3658,257 @@ paths:
         Assert.Contains("typeB", mappings.Select(static x => x.Key));
         Assert.DoesNotContain("ResultTypeA", mappings.Select(static x => x.Key));
         Assert.DoesNotContain("ResultTypeB", mappings.Select(static x => x.Key));
+    }
+
+    [Fact]
+    public async Task AddsDiscriminatorMappingsForOneOfWithDerivedTypesFromGrandparentMappingAsync()
+    {
+        // Regression test: 3-level hierarchy where entity (grandparent) has the discriminator mapping,
+        // directoryObject (parent) has no discriminator, and application (child) is a oneOf member.
+        // The discriminator key for application should be resolved from entity's mapping, not
+        // fall back to the schema name (which wouldn't match OData @odata.type values like "#microsoft.graph.application").
+        var entitySchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema { Type = JsonSchemaType.String }
+                },
+                {
+                    "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String }
+                }
+            },
+            Required = new HashSet<string> { "@odata.type" },
+            Discriminator = new()
+            {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    { "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject") },
+                    { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                }
+            },
+        };
+        var directoryObjectSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "deletedDateTime", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    }
+                }
+            },
+            // No discriminator on directoryObject — discriminator lives on the grandparent entity
+        };
+        var applicationSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "appId", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "displayName", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    }
+                }
+            },
+        };
+        var deltaResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            OneOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchemaReference("microsoft.graph.application"),
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["applications/delta"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("deltaResponse"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var deltaResponse = new OpenApiResponse
+        {
+            Content = new Dictionary<string, IOpenApiMediaType>()
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("deltaResponseSchema", document)
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.application", applicationSchema);
+        document.AddComponent("deltaResponseSchema", deltaResponseSchema);
+        document.AddComponent("deltaResponse", deltaResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
+
+        var deltaResponseClass = codeModel.FindChildByName<CodeClass>("deltaResponseSchema");
+        Assert.NotNull(deltaResponseClass);
+
+        var mappings = deltaResponseClass.DiscriminatorInformation.DiscriminatorMappings.ToList();
+        // Bug fix: discriminator keys should come from the grandparent (entity) mapping,
+        // i.e. "#microsoft.graph.directoryObject" and "#microsoft.graph.application", NOT the schema names.
+        Assert.Contains("#microsoft.graph.directoryObject", mappings.Select(static x => x.Key));
+        Assert.Contains("#microsoft.graph.application", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("microsoft.graph.directoryObject", mappings.Select(static x => x.Key).Where(k => !k.StartsWith('#')));
+        Assert.DoesNotContain("microsoft.graph.application", mappings.Select(static x => x.Key).Where(k => !k.StartsWith('#')));
+    }
+
+    [Fact]
+    public async Task DeltaResponseValuePropertyTypeIsConcreteTypeNotBaseTypeAsync()
+    {
+        // Regression test: The Value property on a delta response should have the concrete type
+        // (Application), NOT the base type (DirectoryObject).
+        // Schema: entity (root discriminator) → directoryObject (inline allOf discriminator) → application
+        // Delta response: allOf: [BaseDeltaFunctionResponse, {value: array of $ref application}]
+        var entitySchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "id", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+            Required = new HashSet<string> { "@odata.type" },
+            Discriminator = new()
+            {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    { "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject") },
+                    { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                }
+            },
+        };
+        var directoryObjectSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "deletedDateTime", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    },
+                    Required = new HashSet<string> { "@odata.type" },
+                    Discriminator = new()
+                    {
+                        PropertyName = "@odata.type",
+                        Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                            { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                        }
+                    }
+                }
+            },
+        };
+        var applicationSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "appId", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    },
+                    Required = new HashSet<string> { "@odata.type" }
+                }
+            },
+        };
+        var baseDeltaResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "@odata.nextLink", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "@odata.deltaLink", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+        };
+        var deltaGetResponseSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("BaseDeltaFunctionResponse"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "value", new OpenApiSchema {
+                                Type = JsonSchemaType.Array,
+                                Items = new OpenApiSchemaReference("microsoft.graph.application")
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["applications/delta()"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = deltaGetResponseSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.application", applicationSchema);
+        document.AddComponent("BaseDeltaFunctionResponse", baseDeltaResponseSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
+
+        var deltaResponseClass = codeModel.FindChildByName<CodeClass>("DeltaGetResponse");
+        Assert.NotNull(deltaResponseClass);
+
+        var valueProperty = deltaResponseClass.Properties
+            .FirstOrDefault(p => p.Name.Equals("value", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(valueProperty);
+        // The type name should be "application" (Application class), not "directoryObject"
+        Assert.Equal("application", valueProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.NotEqual("directoryObject", valueProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -3785,7 +4036,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
@@ -10578,5 +10829,236 @@ paths:
         // and these are not in structuredMimeTypes, GetResponseSchema returns null,
         // which triggers GetExecutorMethodDefaultReturnType, which should return "binary"
         Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task GeneratesNavigationPropertiesForSimplePathsSiblingToIndexNodes()
+    {
+        // Regression test: navigation properties for simple path segments (no path parameters)
+        // that are siblings of index nodes ({id}) must be generated.
+        // e.g. /admin/teams/telephoneNumberManagement must appear as a property on TeamsRequestBuilder
+        // even though /admin/teams/{team-id} (index node) also exists at the same level.
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /admin/teams:
+    description: Provides operations to manage the admin teams.
+    get:
+      operationId: admin.GetTeams
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsAdmin'
+  /admin/teams/{team-id}:
+    description: Provides operations to manage a specific team.
+    get:
+      operationId: admin.teams.GetTeam
+      parameters:
+        - name: team-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsAdmin'
+  /admin/teams/telephoneNumberManagement:
+    description: Provides operations to manage the telephoneNumberManagement property.
+    get:
+      operationId: admin.teams.GetTelephoneNumberManagement
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+    patch:
+      operationId: admin.teams.UpdateTelephoneNumberManagement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+components:
+  schemas:
+    TeamsAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+    TelephoneNumberManagementRoot:
+      allOf:
+        - $ref: '#/components/schemas/Entity'
+        - type: object
+          properties:
+            displayName:
+              type: string
+    Entity:
+      type: object
+      properties:
+        id:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = "https://localhost",
+            ClientNamespaceName = "TestSdk"
+        }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The TeamsRequestBuilder should have a navigation property for TelephoneNumberManagement
+        var teamsRbNs = codeModel.FindNamespaceByName("TestSdk.Admin.Teams");
+        Assert.NotNull(teamsRbNs);
+        var teamsRb = teamsRbNs.FindChildByName<CodeClass>("TeamsRequestBuilder", false);
+        Assert.NotNull(teamsRb);
+
+        // Must have the TelephoneNumberManagement property
+        var telephoneNumberManagementProperty = teamsRb.Properties.FirstOrDefault(p =>
+            p.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            p.Name.Equals("TelephoneNumberManagement", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(telephoneNumberManagementProperty);
+
+        // The TelephoneNumberManagement request builder namespace must exist
+        var telephoneNumberManagementNs = codeModel.FindNamespaceByName("TestSdk.Admin.Teams.TelephoneNumberManagement");
+        Assert.NotNull(telephoneNumberManagementNs);
+        var telephoneNumberManagementRb = telephoneNumberManagementNs.FindChildByName<CodeClass>("TelephoneNumberManagementRequestBuilder", false);
+        Assert.NotNull(telephoneNumberManagementRb);
+    }
+    [Fact]
+    public async Task GeneratesNavigationPropertiesForActionPathsSiblingToCollectionIndexNodes()
+    {
+        // Regression test: navigation properties for OData action paths (e.g. /messages/replyWithQuote)
+        // that are siblings of index nodes must be generated on the collection request builder.
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /chats/{chat-id}/messages:
+    description: Collection of messages.
+    get:
+      operationId: chats.messages.ListMessages
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+  /chats/{chat-id}/messages/{chatMessage-id}:
+    description: A specific message.
+    get:
+      operationId: chats.messages.GetMessage
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: chatMessage-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+  /chats/{chat-id}/messages/replyWithQuote:
+    description: Provides operations to call the replyWithQuote method.
+    post:
+      operationId: chats.messages.replyWithQuote
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+components:
+  schemas:
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        body:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = "https://localhost",
+            ClientNamespaceName = "TestSdk"
+        }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The MessagesRequestBuilder should have a navigation property for ReplyWithQuote
+        var messagesRbNs = codeModel.FindNamespaceByName("TestSdk.Chats.Item.Messages");
+        Assert.NotNull(messagesRbNs);
+        var messagesRb = messagesRbNs.FindChildByName<CodeClass>("MessagesRequestBuilder", false);
+        Assert.NotNull(messagesRb);
+
+        // Must have the ReplyWithQuote property
+        var replyWithQuoteProperty = messagesRb.Properties.FirstOrDefault(p =>
+            p.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            p.Name.Equals("ReplyWithQuote", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(replyWithQuoteProperty);
+
+        // The ReplyWithQuote request builder namespace must exist
+        var replyWithQuoteNs = codeModel.FindNamespaceByName("TestSdk.Chats.Item.Messages.ReplyWithQuote");
+        Assert.NotNull(replyWithQuoteNs);
+        var replyWithQuoteRb = replyWithQuoteNs.FindChildByName<CodeClass>("ReplyWithQuoteRequestBuilder", false);
+        Assert.NotNull(replyWithQuoteRb);
     }
 }

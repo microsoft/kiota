@@ -13,6 +13,9 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# User-specific files (AI)
+.claude/
+
 # Mono auto generated files
 mono_crash.*
 
