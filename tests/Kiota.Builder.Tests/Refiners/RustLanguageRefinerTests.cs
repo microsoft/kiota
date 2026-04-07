@@ -22,7 +22,7 @@ public class RustLanguageRefinerTests
             Kind = CodeClassKind.Model,
             IsErrorDefinition = true,
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -58,7 +58,7 @@ public class RustLanguageRefinerTests
             Name = "Error4XX",
             TypeDefinition = errorClass,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
 
         var declaration = requestBuilder.StartBlock;
 
@@ -82,7 +82,7 @@ public class RustLanguageRefinerTests
             TypeDefinition = model
         };
         model.AddUsing(nUsing);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         // Rust escapes reserved words with r# prefix
         Assert.NotEqual("break", nUsing.Declaration.Name, StringComparer.OrdinalIgnoreCase);
     }
@@ -94,7 +94,7 @@ public class RustLanguageRefinerTests
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         Assert.NotEqual("break", model.Name, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
@@ -114,7 +114,7 @@ public class RustLanguageRefinerTests
                 Name = "DateTimeOffset"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Contains("chrono", model.StartBlock.Usings.Select(x => x.Name));
     }
@@ -135,7 +135,7 @@ public class RustLanguageRefinerTests
                 Name = "Guid"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Contains("uuid", model.StartBlock.Usings.Select(x => x.Name));
     }
@@ -176,7 +176,7 @@ public class RustLanguageRefinerTests
                 },
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         Assert.Single(requestBuilder.Methods, x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
     }
     [Fact]
@@ -205,7 +205,7 @@ public class RustLanguageRefinerTests
                 Name = "CancellationToken"
             },
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         Assert.DoesNotContain(method.Parameters, x => x.IsOfKind(CodeParameterKind.Cancellation));
     }
     [Fact]
@@ -222,7 +222,7 @@ public class RustLanguageRefinerTests
             Kind = CodePropertyKind.Custom,
             Type = new CodeType { Name = "string" },
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Rust }, root, TestContext.Current.CancellationToken);
         Assert.Contains("Parsable", model.StartBlock.Usings.Select(x => x.Name));
     }
     #endregion
