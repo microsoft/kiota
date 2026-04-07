@@ -48,7 +48,7 @@ paths:
 
         using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         //There should be a log entry for the no server rule
@@ -69,7 +69,7 @@ paths:
 
         using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         //There should be no log entry for the no server rule
@@ -89,7 +89,7 @@ paths:
 
         using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         //There should be no log entry for the no server rule

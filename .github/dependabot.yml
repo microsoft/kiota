@@ -24,7 +24,9 @@ updates:
       interval: daily
     open-pull-requests-limit: 10
   - package-ecosystem: nuget
-    directory: "/it/csharp"
+    directories:
+      - "/it/csharp"
+      - "/it/csharp/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -33,7 +35,9 @@ updates:
         patterns:
           - "*kiota*"
   - package-ecosystem: gomod
-    directory: "/it/go"
+    directories:
+      - "/it/go"
+      - "/it/go/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -75,7 +79,9 @@ updates:
         patterns:
           - "*kiota*"
   - package-ecosystem: maven
-    directory: "/it/java"
+    directories:
+      - "/it/java"
+      - "/it/java/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10

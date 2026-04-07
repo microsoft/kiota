@@ -432,11 +432,10 @@ public static class OpenApiSchemaExtensions
                 // This avoids O(n²) expansion when a base type has a large discriminator mapping.
                 // For regular inheritance (lookupKeyInParentMapping=false), fall through to the
                 // inheritance-index path which returns subtypes without the O(n²) expansion.
+                // We search the full allOf ancestry chain (not just the immediate parent) because the
+                // discriminator may be defined on a grandparent schema (e.g. entity → directoryObject → application).
                 if (lookupKeyInParentMapping
-                    && schema.AllOf?.OfType<OpenApiSchemaReference>()
-                            .Select(static x => x.RecursiveTarget)
-                            .OfType<OpenApiSchema>()
-                            .FirstOrDefault(allOfEvaluatorForMappings) is { } allOfRefTarget
+                    && FindAncestorSchemaWithDiscriminatorMapping(schema) is { } allOfRefTarget
                     && schema.GetReferenceId() is string currentRefId
                     && !string.IsNullOrEmpty(currentRefId))
                 {
@@ -462,6 +461,25 @@ public static class OpenApiSchemaExtensions
                 .Select(static x => KeyValuePair.Create(x.Key, x.Value.Reference.Id!));
     }
     private static readonly Func<IOpenApiSchema, bool> allOfEvaluatorForMappings = static x => x.Discriminator?.Mapping is { Count: > 0 };
+    /// <summary>
+    /// Recursively searches the allOf reference chain for the first ancestor schema that has a non-empty discriminator mapping.
+    /// This handles multi-level inheritance where the discriminator lives on a grandparent (or higher) schema,
+    /// not the immediate allOf parent.
+    /// </summary>
+    private static OpenApiSchema? FindAncestorSchemaWithDiscriminatorMapping(IOpenApiSchema schema, HashSet<IOpenApiSchema>? visited = null)
+    {
+        if (schema is null) return null;
+        visited ??= [];
+        foreach (var allOfRef in schema.AllOf?.OfType<OpenApiSchemaReference>() ?? [])
+        {
+            if (allOfRef.RecursiveTarget is not OpenApiSchema target || !visited.Add(target)) continue;
+            if (allOfEvaluatorForMappings(target))
+                return target;
+            var ancestor = FindAncestorSchemaWithDiscriminatorMapping(target, visited);
+            if (ancestor is not null) return ancestor;
+        }
+        return null;
+    }
     private static IEnumerable<string> GetAllInheritanceSchemaReferences(string currentReferenceId, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> inheritanceIndex)
     {
         ArgumentException.ThrowIfNullOrEmpty(currentReferenceId);

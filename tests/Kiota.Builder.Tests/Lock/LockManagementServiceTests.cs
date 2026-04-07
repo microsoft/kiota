@@ -13,10 +13,10 @@ public class LockManagementServiceTests
     {
         var lockManagementService = new LockManagementService();
         Assert.Throws<ArgumentNullException>(() => lockManagementService.GetDirectoriesContainingLockFile(null));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.GetLockFromDirectoryAsync(null));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.GetLockFromStreamAsync(null));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.WriteLockFileAsync(null, new KiotaLock()));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.WriteLockFileAsync("path", null));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.GetLockFromDirectoryAsync(null, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.GetLockFromStreamAsync(null, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.WriteLockFileAsync(null, new KiotaLock(), cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => lockManagementService.WriteLockFileAsync("path", null, cancellationToken: TestContext.Current.CancellationToken));
     }
     [Fact]
     public async Task IdentityAsync()
@@ -30,9 +30,9 @@ public class LockManagementServiceTests
             DescriptionLocation = descriptionPath,
         };
         var path = Path.GetTempPath();
-        await lockManagementService.WriteLockFileAsync(path, lockFile);
+        await lockManagementService.WriteLockFileAsync(path, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         lockFile.DescriptionLocation = Path.GetFullPath(descriptionPath); // expected since we write the relative path but read to the full path
-        var result = await lockManagementService.GetLockFromDirectoryAsync(path);
+        var result = await lockManagementService.GetLockFromDirectoryAsync(path, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(lockFile, result, new KiotaLockComparer());
     }
     [Fact]
@@ -49,7 +49,7 @@ public class LockManagementServiceTests
         };
         var outputDirectory = Path.Combine(tmpPath, "output");
         Directory.CreateDirectory(outputDirectory);
-        await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile);
+        await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("../information/description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
     }
     [Fact]
@@ -64,8 +64,8 @@ public class LockManagementServiceTests
             DescriptionLocation = descriptionPath,
         };
         var path = Path.GetTempPath();
-        await lockManagementService.WriteLockFileAsync(path, lockFile);
+        await lockManagementService.WriteLockFileAsync(path, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         lockManagementService.DeleteLockFile(path);
-        Assert.Null(await lockManagementService.GetLockFromDirectoryAsync(path));
+        Assert.Null(await lockManagementService.GetLockFromDirectoryAsync(path, cancellationToken: TestContext.Current.CancellationToken));
     }
 }

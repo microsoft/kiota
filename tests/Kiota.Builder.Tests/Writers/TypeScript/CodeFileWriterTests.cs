@@ -50,7 +50,7 @@ public sealed class CodeFileWriterTests : IDisposable
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", true);
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
-        await ILanguageRefiner.RefineAsync(generationConfiguration, root);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
         var modelsNS = root.FindChildByName<CodeNamespace>(generationConfiguration.ModelsNamespaceName);
         var codeFile = modelsNS.FindChildByName<CodeFile>("index", false);
         WriteCode(writer, codeFile);

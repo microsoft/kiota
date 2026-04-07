@@ -1162,7 +1162,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters(executor);
         AddRequestBodyParameters();
         AddRequestProperties();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -1200,7 +1200,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
         bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -1237,7 +1237,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters(executor, true);
         AddRequestBodyParameters(useComplexTypeForBody: true);
         AddRequestProperties();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -1273,7 +1273,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters(useComplexTypeForBody: true);
         AddRequestProperties();
         method.UrlTemplateOverride = "{baseurl+}/foo/bar";
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -1302,7 +1302,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         var bodyParameter = method.Parameters.OfKind(CodeParameterKind.RequestBody);
         bodyParameter.Type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -1366,7 +1366,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Optional = false,
         });
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
         method.AcceptedResponseTypes.Add("application/json");
         writer.Write(method);
         var result = tw.ToString();
@@ -2164,7 +2164,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Kind = CodePropertyKind.Custom,
         });
         root.AddNamespace("ApiSdk/models"); // so the interface copy refiner goes through
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, DefaultPath, DefaultName);
