@@ -10,5 +10,6 @@ public enum GenerationLanguage
     Go,
     Ruby,
     Dart,
-    HTTP
+    HTTP,
+    Rust
 }
