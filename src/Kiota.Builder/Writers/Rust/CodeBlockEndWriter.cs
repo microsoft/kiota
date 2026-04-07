@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Rust;

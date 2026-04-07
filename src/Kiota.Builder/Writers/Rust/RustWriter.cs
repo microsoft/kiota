@@ -1,4 +1,4 @@
-using Kiota.Builder.PathSegmenters;
+﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Rust;
 
