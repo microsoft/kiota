@@ -1174,7 +1174,7 @@ public partial class KiotaBuilder
     }
     private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
-    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom, bool isRequired = false)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
@@ -1196,6 +1196,7 @@ public partial class KiotaBuilder
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = resultType,
             Deprecation = propertySchema?.GetDeprecationInformation(),
+            IsRequired = isRequired,
             IsPrimaryErrorMessage = kind == CodePropertyKind.Custom &&
                                         propertySchema is { Extensions: not null } &&
                                         propertySchema.Extensions.TryGetValue(OpenApiPrimaryErrorMessageExtension.Name, out var openApiExtension) &&
@@ -1212,6 +1213,15 @@ public partial class KiotaBuilder
             !string.IsNullOrEmpty(stringDefaultValue) &&
             !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
             prop.DefaultValue = $"\"{stringDefaultValue}\"";
+
+        // If the property is required and the schema does not explicitly allow null,
+        // mark the type as non-nullable. We clone existingType to avoid mutating a shared reference.
+        if (kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable())
+        {
+            if (existingType != null)
+                prop.Type = (CodeTypeBase)existingType.Clone();
+            prop.Type.IsNullable = false;
+        }
 
         if (existingType == null)
         {
@@ -2415,7 +2425,8 @@ public partial class KiotaBuilder
                             LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                             return null;
                         }
-                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                        var isRequired = schema.Required?.Contains(x.Key) ?? false;
+                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition, isRequired: isRequired);
                     })
                     .OfType<CodeProperty>()
                     .ToArray() ?? [];

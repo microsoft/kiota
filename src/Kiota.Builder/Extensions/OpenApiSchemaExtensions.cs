@@ -80,6 +80,16 @@ public static class OpenApiSchemaExtensions
     {
         return schema?.Properties is { Count: > 0 };
     }
+
+    internal static bool IsExplicitlyNullable(this IOpenApiSchema? schema)
+    {
+        if (schema is null) return false;
+        // OAS 3.0 nullable: true or OAS 3.1 type includes null
+        if ((schema.Type & JsonSchemaType.Null) is JsonSchemaType.Null) return true;
+        // OAS 3.1 anyOf [ { type: null } ] pattern
+        return schema.AnyOf?.Any(static x =>
+            (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null && !x.HasAnyProperty()) ?? false;
+    }
     public static bool IsInclusiveUnion(this IOpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
         return schema?.AnyOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > exclusiveMinimumNumberOfEntries;
