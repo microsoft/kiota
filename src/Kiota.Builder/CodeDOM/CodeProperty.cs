@@ -126,7 +126,10 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     /// Indicates that this property appeared in the parent schema's <c>required</c> array.
     /// Set during Code DOM construction in KiotaBuilder; should not be modified by refiners.
     /// </summary>
-    public bool IsRequired { get; set; }
+    public bool IsRequired
+    {
+        get; set;
+    }
 
     public object Clone()
     {
