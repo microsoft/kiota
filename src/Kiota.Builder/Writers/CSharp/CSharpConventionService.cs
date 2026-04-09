@@ -240,6 +240,13 @@ public class CSharpConventionService : CommonLanguageConventionService
             _ => false,
         };
     }
+    internal bool IsValueType(CodeTypeBase type)
+    {
+        if (type is not CodeType codeType) return false;
+        if (codeType.TypeDefinition is CodeEnum) return true;
+        var typeName = TranslateType(codeType);
+        return NullableTypes.Contains(typeName);
+    }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);

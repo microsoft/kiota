@@ -355,7 +355,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name, StringComparer.Ordinal))
         {
-            writer.WriteLine($"{{ \"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            // When a property is required and non-nullable, the C# property type is T (not T?).
+            // Parse-node methods for value types and enums return T?, so we must unwrap with .Value.
+            var deserializeSuffix = !otherProp.Type.IsNullable && conventions.IsValueType(otherProp.Type) ? ".Value" : string.Empty;
+            writer.WriteLine($"{{ \"{otherProp.WireName}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}{deserializeSuffix}; }} }},");
         }
         writer.CloseBlock("};");
     }
