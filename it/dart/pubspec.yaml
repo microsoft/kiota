@@ -8,7 +8,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  microsoft_kiota_abstractions: ^0.0.1
+  microsoft_kiota_abstractions: ^0.1.0
   microsoft_kiota_http: ^0.0.1
   microsoft_kiota_serialization_form: ^0.0.1
   microsoft_kiota_serialization_text: ^0.0.1
