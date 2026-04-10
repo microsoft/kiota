@@ -1298,6 +1298,19 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see \r\nmore";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[see more](https://foo.org/docs)", result);
+        Assert.DoesNotContain($"{Environment.NewLine}more", result);
+    }
+    [Fact]
     public void Defensive()
     {
         setup();
@@ -1638,6 +1651,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("@Deprecated", result);
+    }
+    [Fact]
+    public void EscapesDeprecationInformationStringLiteral()
+    {
+        setup();
+        method.Deprecation = new("line1\"\nline2$danger");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("line1\\\"line2\\$danger", result);
+        Assert.DoesNotContain("line1\"\nline2$danger", result);
     }
     [Fact]
     public void WritesDeprecationInformationFromBuilder()

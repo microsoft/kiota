@@ -1616,6 +1616,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see */ more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("see */ more", result);
+        Assert.Contains("see  more", result);
+        Assert.Contains("@see <a href=", result);
+    }
+    [Fact]
     public void Defensive()
     {
         setup();

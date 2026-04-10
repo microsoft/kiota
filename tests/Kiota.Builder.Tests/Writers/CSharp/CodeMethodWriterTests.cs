@@ -1691,6 +1691,18 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see <more>";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("see &lt;more&gt; <see href=", result);
+    }
+    [Fact]
     public void Defensive()
     {
         setup();
@@ -2281,6 +2293,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("[Obsolete", result);
+    }
+    [Fact]
+    public void EscapesDeprecationInformationStringLiteral()
+    {
+        setup();
+        method.Deprecation = new("line1\"\nline2");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("line1\\\"\\nline2", result);
+        Assert.DoesNotContain("line1\"\nline2", result);
     }
 
     [Fact]

@@ -29,6 +29,8 @@ public class DartConventionService : CommonLanguageConventionService
         originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
             .Replace("\n", string.Empty, StringComparison.Ordinal)
             .Replace("\t", " ", StringComparison.Ordinal);
+    internal static string SanitizeDartDoubleQuoteLiteral(string? value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeDoubleQuote().Replace("$", "\\$", StringComparison.Ordinal);
 
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
@@ -84,7 +86,11 @@ public class DartConventionService : CommonLanguageConventionService
                     writer.WriteLine($"{DocCommentPrefix}{additionalComment}");
 
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix} [{documentation.DocumentationLabel}]({documentation.DocumentationLink})");
+            {
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                writer.WriteLine($"{DocCommentPrefix} [{documentationLabel}]({documentationLink})");
+            }
         }
     }
 
@@ -276,7 +282,8 @@ public class DartConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"@Deprecated(\"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}\")";
+        var deprecationMessage = $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}";
+        return $"@Deprecated(\"{SanitizeDartDoubleQuoteLiteral(deprecationMessage)}\")";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {

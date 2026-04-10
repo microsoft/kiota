@@ -192,7 +192,10 @@ public class PythonConventionService : CommonLanguageConventionService
             foreach (var additionalRemark in additionalRemarksArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{additionalRemark}");
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{documentation.DocumentationLabel}: {documentation.DocumentationLink}");
+            {
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                writer.WriteLine($"{documentationLabel}: {documentation.DocumentationLink}");
+            }
             writer.WriteLine(DocCommentEnd);
         }
     }
@@ -214,12 +217,12 @@ public class PythonConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}";
+        return $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}";
     }
     internal void WriteDeprecationWarning(IDeprecableElement element, LanguageWriter writer)
     {
         var deprecationMessage = GetDeprecationInformation(element);
         if (!string.IsNullOrEmpty(deprecationMessage))
-            writer.WriteLine($"warn(\"{deprecationMessage}\", DeprecationWarning)");
+            writer.WriteLine($"warn(\"{deprecationMessage.SanitizeDoubleQuote()}\", DeprecationWarning)");
     }
 }

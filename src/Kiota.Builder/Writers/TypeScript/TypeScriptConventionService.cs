@@ -317,7 +317,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                 writer.WriteLine($"{DocCommentPrefix}{deprecationComment}");
 
             if (documentedElement.Documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentedElement.Documentation.DocumentationLink}|{documentedElement.Documentation.DocumentationLabel}}}");
+            {
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentedElement.Documentation.DocumentationLink?.ToString() ?? string.Empty);
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentedElement.Documentation.DocumentationLabel);
+                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentationLink}|{documentationLabel}}}");
+            }
             writer.WriteLine(DocCommentEnd);
         }
     }

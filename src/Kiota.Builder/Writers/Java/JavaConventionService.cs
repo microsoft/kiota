@@ -141,7 +141,11 @@ public partial class JavaConventionService : CommonLanguageConventionService
                     writer.WriteLine($"{DocCommentPrefix}{additionalComment}");
 
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentation.DocumentationLink}\">{documentation.DocumentationLabel}</a>");
+            {
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentationLink}\">{documentationLabel}</a>");
+            }
             writer.WriteLine(DocCommentEnd);
         }
     }

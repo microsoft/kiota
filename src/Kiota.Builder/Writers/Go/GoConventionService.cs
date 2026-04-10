@@ -206,9 +206,11 @@ public class GoConventionService : CommonLanguageConventionService
         if (documentation is null) return;
         if (documentation.ExternalDocumentationAvailable)
         {
-            WriteDescriptionItem($"[{documentation.DocumentationLabel}]", writer);
+            var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+            var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+            WriteDescriptionItem($"[{documentationLabel}]", writer);
             WriteDescriptionItem(string.Empty, writer);
-            WriteDescriptionItem($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
+            WriteDescriptionItem($"[{documentationLabel}]: {documentationLink}", writer);
         }
     }
 #pragma warning disable CA1822 // Method should be static

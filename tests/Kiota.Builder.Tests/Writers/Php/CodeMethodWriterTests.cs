@@ -251,7 +251,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 DescriptionTemplate = "This will send a POST request",
                 DocumentationLink = new Uri("https://learn.microsoft.com/"),
-                DocumentationLabel = "Learning"
+                DocumentationLabel = "Learning */ docs"
             },
             Kind = CodeMethodKind.RequestExecutor
         };
@@ -288,7 +288,8 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("public function post(): Promise", result);
         Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
-        Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
+        Assert.DoesNotContain("@link https://learn.microsoft.com/ Learning */ docs", result);
+        Assert.Contains("@link https://learn.microsoft.com/ Learning  docs", result);
         Assert.Contains("'401' => [Error401::class, 'createFromDiscriminatorValue']", result);
         Assert.Contains("$result = $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $errorMappings);", result);
         Assert.Contains("return $result;", result);

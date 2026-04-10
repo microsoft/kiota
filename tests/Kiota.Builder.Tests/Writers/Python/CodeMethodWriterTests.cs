@@ -1094,6 +1094,18 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("await", result);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see\"\"\"more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("see\\\"\\\"\\\"more:", result);
+    }
+    [Fact]
     public void Defensive()
     {
         setup();
@@ -2452,6 +2464,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("warn(", result);
+    }
+    [Fact]
+    public void EscapesDeprecationWarningStringLiteral()
+    {
+        setup();
+        method.Deprecation = new("line1\"\nline2");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("warn(\"line1\\\"\\nline2", result);
+        Assert.DoesNotContain("line1\"\nline2", result);
     }
     [Fact]
     public void WritesDeprecationInformationFromBuilder()

@@ -175,7 +175,11 @@ public class PhpConventionService : CommonLanguageConventionService
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@link {documentation.DocumentationLink} {documentation.DocumentationLabel}");
+            {
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                writer.WriteLine($"{DocCommentPrefix}@link {documentationLink} {documentationLabel}");
+            }
             writer.WriteLine(DocCommentEnd);
         }
 

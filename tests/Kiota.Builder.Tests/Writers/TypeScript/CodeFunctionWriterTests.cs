@@ -1044,6 +1044,28 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Documentation.DescriptionTemplate = "description";
+        method.Documentation.DocumentationLabel = "see */ more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("see */ more", result);
+        Assert.Contains("see * / more", result);
+        Assert.Contains("@see {@link", result);
+    }
+    [Fact]
     public void WritesReturnType()
     {
         var parentClass = root.AddClass(new CodeClass
