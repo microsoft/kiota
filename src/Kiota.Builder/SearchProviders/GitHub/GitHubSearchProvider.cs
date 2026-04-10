@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Caching;
@@ -15,8 +15,9 @@ using Kiota.Builder.SearchProviders.GitHub.Index;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
+using Microsoft.OpenApi.YamlReader;
 using SharpYaml;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace Kiota.Builder.SearchProviders.GitHub;
 
@@ -112,7 +113,7 @@ public partial class GitHubSearchProvider : ISearchProvider
 #pragma warning disable CA2007
             await using var document = await documentCachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2007
-            var deserialized = deserializeDocumentFromYaml<BlockList>(document);
+            var deserialized = deserializeDocumentFromYaml(document, indexRootContext.BlockList);
             return new Tuple<HashSet<string>, HashSet<string>>(
                 new HashSet<string>(deserialized.Organizations.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase),
                 new HashSet<string>(deserialized.Repositories.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase));
@@ -126,19 +127,21 @@ public partial class GitHubSearchProvider : ISearchProvider
         }
     }
     private const string OpenApiPropertyKey = "X-openapi";
-    private static readonly Lazy<IDeserializer> _deserializer = new(() => new DeserializerBuilder()
-                .WithNamingConvention(new YamlNamingConvention())
-                .IgnoreUnmatchedProperties()
-                .Build());
     private static async Task<IndexRoot?> deserializeDocumentFromJsonAsync(Stream document, CancellationToken cancellationToken) => await JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot, cancellationToken).ConfigureAwait(false);
     private static readonly IndexRootJsonContext indexRootContext = new(new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
     });
-    private static T deserializeDocumentFromYaml<T>(Stream document)
+    private static T deserializeDocumentFromYaml<T>(Stream document, JsonTypeInfo<T> typeInfo)
     {
         using var reader = new StreamReader(document);
-        return _deserializer.Value.Deserialize<T>(reader);
+        var yamlStream = new YamlStream();
+        yamlStream.Load(reader);
+        var jsonNode = yamlStream is { Documents.Count: > 0 }
+            ? yamlStream.Documents[0].ToJsonNode()
+            : throw new InvalidOperationException("No documents found in the YAML stream.");
+        return JsonSerializer.Deserialize(jsonNode, typeInfo) ??
+            throw new InvalidOperationException("Unable to deserialize the YAML document into the target type.");
     }
     private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepoAsync(GitHubClient.GitHubClient gitHubClient, string? org, string? repo, string fileName, string accept, CancellationToken cancellationToken)
     {
@@ -156,7 +159,7 @@ public partial class GitHubSearchProvider : ISearchProvider
             var indexFile = accept.ToLowerInvariant() switch
             {
                 "application/json" => await deserializeDocumentFromJsonAsync(document, cancellationToken).ConfigureAwait(false),
-                "text/yaml" => deserializeDocumentFromYaml<IndexRoot>(document),
+                "text/yaml" => deserializeDocumentFromYaml(document, indexRootContext.IndexRoot),
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };
             if (indexFile is null || indexFile.Apis is null)
