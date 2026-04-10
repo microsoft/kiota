@@ -20,14 +20,14 @@
   "devDependencies": {
     "@es-exec/esbuild-plugin-start": "^0.0.5",
     "@stylistic/eslint-plugin-ts": "^4.4.1",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.32.1",
     "esbuild": "^0.28.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "minimist": "^1.2.8",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "typescript": "^5.8.2"
   },
   "dependencies": {
