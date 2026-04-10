@@ -44,7 +44,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         foreach (var item in enumOptions)
         {
             if (item.Documentation.DescriptionAvailable)
-                writer.WriteLine($"// {item.Documentation.DescriptionTemplate}");
+                writer.WriteLine($"// {GoConventionService.RemoveInvalidDescriptionCharacters(item.Documentation.DescriptionTemplate)}");
 
             if (isMultiValue)
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");

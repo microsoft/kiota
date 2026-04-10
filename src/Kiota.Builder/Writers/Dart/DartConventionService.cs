@@ -24,6 +24,11 @@ public class DartConventionService : CommonLanguageConventionService
 
     private const string ReferenceTypePrefix = "[";
     private const string ReferenceTypeSuffix = "]";
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
 
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
@@ -32,7 +37,7 @@ public class DartConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix);
+        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, codeElement), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
         writer.WriteLine($"{DocCommentPrefix} {description}");
 
         return true;
@@ -41,7 +46,7 @@ public class DartConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix);
+        var description = element.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
         writer.WriteLine($"{DocCommentPrefix} {ReferenceTypePrefix}{element.Name}{ReferenceTypeSuffix} {description}");
     }
 
@@ -69,7 +74,7 @@ public class DartConventionService : CommonLanguageConventionService
         {
             if (documentation.DescriptionAvailable)
             {
-                var description = documentedElement.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix);
+                var description = documentedElement.Documentation.GetDescription(x => GetTypeReferenceForDocComment(x, element), ReferenceTypePrefix, ReferenceTypeSuffix, RemoveInvalidDescriptionCharacters);
                 writer.WriteLine($"{DocCommentPrefix}{description}");
             }
             foreach (var additionalRemark in remarks)
@@ -99,7 +104,7 @@ public class DartConventionService : CommonLanguageConventionService
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         return [
             $"@deprecated",
-            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}"
+            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}"
         ];
     }
 

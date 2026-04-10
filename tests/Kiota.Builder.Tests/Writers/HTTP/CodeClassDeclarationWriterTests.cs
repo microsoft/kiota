@@ -265,4 +265,48 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         // Check HTTP operations 
         Assert.Contains("GET {{hostAddress}}/posts HTTP/1.1", result);
     }
+    [Fact]
+    public async Task SanitizesMethodDocumentationComments()
+    {
+        var codeClass = new CodeClass
+        {
+            Name = "TestClass",
+            Kind = CodeClassKind.RequestBuilder,
+        };
+        codeClass.AddProperty(new CodeProperty
+        {
+            Name = "urlTemplate",
+            Kind = CodePropertyKind.UrlTemplate,
+            DefaultValue = "\"{+baseurl}/posts\"",
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            },
+        });
+        codeClass.AddProperty(new CodeProperty
+        {
+            Name = "BaseUrl",
+            Kind = CodePropertyKind.Custom,
+            Access = AccessModifier.Private,
+            DefaultValue = "https://example.com",
+            Type = new CodeType { Name = "string", IsExternal = true },
+        });
+        codeClass.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            Documentation = new CodeDocumentation { DescriptionTemplate = "GET method\r\ninjected" },
+            ReturnType = new CodeType { Name = "void" },
+        });
+        root.AddClass(codeClass);
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.HTTP }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        writer.Write(codeClass.StartBlock);
+        var result = tw.ToString();
+
+        Assert.Contains("# GET methodinjected", result);
+        Assert.DoesNotContain($"{Environment.NewLine}injected", result);
+    }
 }

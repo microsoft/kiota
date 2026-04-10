@@ -157,6 +157,24 @@ public sealed class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void SanitizesEnumOptionDescription()
+    {
+        var option = new CodeEnumOption
+        {
+            Documentation = new()
+            {
+                DescriptionTemplate = "Some option\r\ninjected",
+            },
+            Name = "option1",
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+
+        Assert.Contains("// Some optioninjected", result);
+        Assert.DoesNotContain($"{Environment.NewLine}injected", result);
+    }
+    [Fact]
     public void DoesNotWriteImportOnEmptyImports()
     {
         var option = new CodeEnumOption

@@ -22,11 +22,16 @@ public class HttpConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement));
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
         writer.WriteLine($"{DocCommentPrefix} {prefix}{description}{prefix}");
 
         return true;
     }
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
     public override string GetAccessModifier(AccessModifier access)
     {
         return access switch
