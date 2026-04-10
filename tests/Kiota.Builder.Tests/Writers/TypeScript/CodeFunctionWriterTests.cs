@@ -518,6 +518,30 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains($"if (!{parentClass.Name.ToFirstCharacterLowerCase()} || isSerializingDerivedType) {{ return; }}", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
+    [Fact]
+    public async Task EscapesWireNamesInSerializerAndDeserializerBodyAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nline2";
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializerFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializerFunction);
+        var parentNS = serializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializerFunction);
+        writer.Write(serializerFunction);
+        var serializerResult = tw.ToString();
+        Assert.Contains("writer.writeStringValue(\"line1\\\"\\nline2\", parentClass.dummyProp", serializerResult);
+        tw.GetStringBuilder().Clear();
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        parentNS.TryAddCodeFile("foo-deserializer", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("\"line1\\\"\\nline2\": n => { parentClass.dummyProp = n.getStringValue(); }", deserializerResult);
+    }
 
     [Fact]
     public async Task WritesSerializerBodyWithDiscriminatorAsync()
@@ -555,6 +579,41 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("switch (parentClass.odataType) {", result);
         Assert.Contains("case \"ns.childclass\":", result);
         Assert.Contains("serializeChildClass(writer, parentClass, true);", result);
+    }
+    [Fact]
+    public async Task EscapesSerializerBodyWithDiscriminatorAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nclass", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "childClass", true),
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "odataType",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+            SerializationName = "@odata.type",
+        });
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.Contains("case \"ns.chi\\\"ld\\nclass\":", result);
     }
 
     [Fact]
@@ -776,6 +835,54 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains($"\"baseurl\": requestAdapter.baseUrl", result);
         Assert.Contains($"apiClientProxifier<", result);
         Assert.Contains($"pathParameters", result);
+    }
+    [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ApiClient",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var requestAdapterProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestAdapter",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = requestAdapterProp.Type,
+        });
+        method.DeserializerModules = ["com.microsoft.kiota.serialization.Deserializer"];
+        method.SerializerModules = ["com.microsoft.kiota.serialization.Serializer"];
+        method.IsStatic = true;
+        root.RemoveChildElement(parentClass);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function, CodeInterface.FromRequestBuilder(parentClass));
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.Contains("baseUrl = \"https://graph.microsoft.com/v1.0/\\\"evil\\npath\"", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()

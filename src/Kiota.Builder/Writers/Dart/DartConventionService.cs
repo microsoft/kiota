@@ -31,6 +31,8 @@ public class DartConventionService : CommonLanguageConventionService
             .Replace("\t", " ", StringComparison.Ordinal);
     internal static string SanitizeDartDoubleQuoteLiteral(string? value) =>
         string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeDoubleQuote().Replace("$", "\\$", StringComparison.Ordinal);
+    internal static string SanitizeDartSingleQuoteLiteral(string? value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeSingleQuote().Replace("$", "\\$", StringComparison.Ordinal);
 
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
@@ -143,7 +145,7 @@ public class DartConventionService : CommonLanguageConventionService
                 urlTplRef = TempDictionaryVarName;
                 writer.WriteLine($"var {urlTplRef} = Map.of({pathParametersProp.Name.ToFirstCharacterLowerCase()});");
                 foreach (var param in customParameters)
-                    writer.WriteLine($"{urlTplRef}.putIfAbsent('{param.SerializationName}', () => {param.Name.ToFirstCharacterLowerCase()});");
+                    writer.WriteLine($"{urlTplRef}.putIfAbsent('{SanitizeDartSingleQuoteLiteral(param.SerializationName)}', () => {param.Name.ToFirstCharacterLowerCase()});");
             }
             writer.WriteLine($"{prefix}{returnType}({urlTplRef}, {requestAdapterProp.Name.ToFirstCharacterLowerCase()}{pathParametersSuffix});");
         }
@@ -170,7 +172,7 @@ public class DartConventionService : CommonLanguageConventionService
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }
-                return $"{nullCheck}{varName}[\"{name}\"]={identName};";
+                return $"{nullCheck}{varName}[\"{SanitizeDartDoubleQuoteLiteral(name)}\"]={identName};";
             }).ToArray());
         }
     }

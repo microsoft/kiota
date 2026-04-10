@@ -268,8 +268,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
+            var sanitizedBaseUrl = SanitizeDartSingleQuoteLiteral(method.BaseUrl);
             writer.StartBlock($"if ({requestAdapterPropertyName}.baseUrl == null || {requestAdapterPropertyName}.baseUrl!.isEmpty) {{");
-            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = '{method.BaseUrl}';");
+            writer.WriteLine($"{requestAdapterPropertyName}.baseUrl = '{sanitizedBaseUrl}';");
             writer.CloseBlock();
             if (pathParametersProperty != null)
                 writer.WriteLine($"{pathParametersProperty.Name}['baseurl'] = {requestAdapterPropertyName}.baseUrl;");
@@ -427,7 +428,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     .Where(x => !x.ExistsInBaseType && !conventions.ErrorClassPropertyExistsInSuperClass(x))
                     .OrderBy(static x => x.Name)
                     .Select(x =>
-                        $"{DeserializerVarName}['{x.WireName}'] = (node) => {x.Name} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
+                        $"{DeserializerVarName}['{SanitizeDartSingleQuoteLiteral(x.WireName)}'] = (node) => {x.Name} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
         }
@@ -507,7 +508,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride}'" : GetPropertyCall(urlTemplateProperty, "''");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{SanitizeDartSingleQuoteLiteral(codeElement.UrlTemplateOverride)}'" : GetPropertyCall(urlTemplateProperty, "''");
         writer.WriteLine($"var {RequestInfoVarName} = RequestInformation(httpMethod : HttpMethod.{operationName?.ToLowerInvariant()}, {urlTemplateProperty.Name} : {urlTemplateValue}, {urlTemplateParamsProperty.Name} :  {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null && requestParams.requestConfiguration.Type is CodeType paramType)
@@ -567,7 +568,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             {
                 secondArgument = $", (e) => e?.value";
             }
-            writer.WriteLine($"writer.{serializationMethodName}('{otherProp.WireName}', {booleanValue}{otherProp.Name}{secondArgument});");
+            writer.WriteLine($"writer.{serializationMethodName}('{SanitizeDartSingleQuoteLiteral(otherProp.WireName)}', {booleanValue}{otherProp.Name}{secondArgument});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -787,7 +788,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         foreach (CodeProperty property in parentClass.Properties)
         {
             var key = property.IsNameEscaped ? property.SerializationName : property.Name;
-            writer.WriteLine($"'{key}' : {property.Name},");
+            writer.WriteLine($"'{SanitizeDartSingleQuoteLiteral(key)}' : {property.Name},");
         }
         writer.CloseBlock("};");
     }

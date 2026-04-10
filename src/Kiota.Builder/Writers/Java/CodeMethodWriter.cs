@@ -307,8 +307,9 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         WriteSerializationRegistration(method.DeserializerModules, writer, "registerDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
+            var sanitizedBaseUrl = method.BaseUrl.SanitizeDoubleQuote();
             writer.StartBlock($"if ({requestAdapterPropertyName}.getBaseUrl() == null || {requestAdapterPropertyName}.getBaseUrl().isEmpty()) {{");
-            writer.WriteLine($"{requestAdapterPropertyName}.setBaseUrl(\"{method.BaseUrl}\");");
+            writer.WriteLine($"{requestAdapterPropertyName}.setBaseUrl(\"{sanitizedBaseUrl}\");");
             writer.CloseBlock();
             if (pathParametersProperty != null)
                 writer.WriteLine($"{pathParametersProperty.Name}.put(\"baseurl\", {requestAdapterPropertyName}.getBaseUrl());");
@@ -427,7 +428,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         foreach (var queryParam in allQueryParams)
         {
             var keyValue = queryParam.IsNameEscaped ? queryParam.SerializationName : queryParam.Name;
-            writer.WriteLine($"allQueryParams.put(\"{keyValue}\", {queryParam.Name});");
+            writer.WriteLine($"allQueryParams.put(\"{(keyValue ?? string.Empty).SanitizeDoubleQuote()}\", {queryParam.Name});");
         }
         writer.WriteLine("return allQueryParams;");
     }
@@ -507,7 +508,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                     .Where(static x => !x.ExistsInBaseType && x.Setter != null)
                     .OrderBy(static x => x.Name)
                     .Select(x =>
-                        $"{DeserializerVarName}.put(\"{x.WireName}\", (n) -> {{ this.{x.Setter!.Name}(n.{GetDeserializationMethodName(x.Type, method)}); }});")
+                        $"{DeserializerVarName}.put(\"{x.WireName.SanitizeDoubleQuote()}\", (n) -> {{ this.{x.Setter!.Name}(n.{GetDeserializationMethodName(x.Type, method)}); }});")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
         }
@@ -586,7 +587,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("url template params property cannot be null");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride.SanitizeDoubleQuote()}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
         writer.WriteLine($"final RequestInformation {RequestInfoVarName} = new RequestInformation(HttpMethod.{codeElement.HttpMethod.ToString()?.ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "null")});");
 
         if (requestParams.requestConfiguration != null)
@@ -701,7 +702,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         if (inherits)
             writer.WriteLine("super.serialize(writer);");
         foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly))
-            WriteSerializationMethodCall(otherProp, method, writer, $"\"{otherProp.WireName}\"");
+            WriteSerializationMethodCall(otherProp, method, writer, $"\"{otherProp.WireName.SanitizeDoubleQuote()}\"");
     }
     private void WriteSerializationMethodCall(CodeProperty otherProp, CodeMethod method, LanguageWriter writer, string serializationKey, string? dataToSerialize = default)
     {

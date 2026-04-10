@@ -176,7 +176,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
         }
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"{varName}.put(\"{p.Item2}\", {p.Item3});"
+                $"{varName}.put(\"{(p.Item2 ?? string.Empty).SanitizeDoubleQuote()}\", {p.Item3});"
             ).ToArray());
     }
 #pragma warning restore CA1822 // Method should be static

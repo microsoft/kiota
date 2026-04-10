@@ -293,9 +293,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
+            var sanitizedBaseUrl = method.BaseUrl.SanitizeDoubleQuote();
             writer.StartBlock(
                 $"if ({requestAdapterArgumentName}.baseUrl === undefined || {requestAdapterArgumentName}.baseUrl === null || {requestAdapterArgumentName}.baseUrl === \"\") {{");
-            writer.WriteLine($"{requestAdapterArgumentName}.baseUrl = \"{method.BaseUrl}\";");
+            writer.WriteLine($"{requestAdapterArgumentName}.baseUrl = \"{sanitizedBaseUrl}\";");
             writer.CloseBlock();
         }
 
@@ -493,7 +494,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             foreach (var mapping in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
             {
                 var mappedType = mapping.Value;
-                writer.StartBlock($"case \"{mapping.Key}\":");
+                writer.StartBlock($"case \"{mapping.Key.SanitizeDoubleQuote()}\":");
                 writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType)}(writer, {param.Name.ToFirstCharacterLowerCase()}, true);");
                 writer.CloseBlock("break;");
             }
@@ -533,7 +534,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             if (GetOriginalComposedType(propType.TypeDefinition) is { } ct && (ct.IsComposedOfPrimitives(IsPrimitiveType) || ct.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
                 WriteSerializationStatementForComposedTypeProperty(ct, modelParamName, codeFunction, writer, codeProperty, serializeName);
             else
-                writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
+                writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
         }
         else
         {
@@ -552,7 +553,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (composedType is not null && (composedType.IsComposedOfPrimitives(IsPrimitiveType) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
             WriteSerializationStatementForComposedTypeProperty(composedType, modelParamName, codeFunction, writer, codeProperty, string.Empty);
         else
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
 
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
@@ -578,7 +579,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 ? $"{isElse}if (Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}')) {{"
                 : $"{isElse}if ( typeof {modelParamName}.{codePropertyName} === \"{nodeType}\") {{");
 
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
             writer.CloseBlock();
             isFirst = false;
         }
@@ -601,7 +602,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 var propertyTypes = collectionCodeType.IsNullable ? " | undefined | null" : string.Empty;
                 var groupSymbol = groupedTypes.Key ? "[]" : string.Empty;
 
-                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
+                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
             }
             writer.CloseBlock();
         }
@@ -725,13 +726,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         else if (GetOriginalComposedType(otherProp.Type) is { } composedType)
         {
             var expression = string.Join(" ?? ", SortTypesByInheritance(composedType.Types).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
-            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {paramName}.{propName} = {expression};{suffix} }},");
+            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = {expression};{suffix} }},");
         }
         else
         {
             var objectSerializationMethodName = conventions.GetDeserializationMethodName(otherProp.Type, codeFile);
             var defaultValueSuffix = GetDefaultValueSuffix(otherProp);
-            writer.WriteLine($"\"{otherProp.WireName}\": n => {{ {paramName}.{propName} = n.{objectSerializationMethodName}{defaultValueSuffix};{suffix} }},");
+            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = n.{objectSerializationMethodName}{defaultValueSuffix};{suffix} }},");
         }
     }
 

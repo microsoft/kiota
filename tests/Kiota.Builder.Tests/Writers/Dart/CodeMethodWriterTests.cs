@@ -1093,6 +1093,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        method.UrlTemplateOverride = "{baseurl+}/foo/'bar\nbaz";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo = RequestInformation(httpMethod : HttpMethod.get, urlTemplate : '{baseurl+}/foo/\\'bar\\nbaz', pathParameters :  pathParameters)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesUnionDeSerializerBody()
     {
         setup();
@@ -1270,6 +1285,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("writeEnumValue", result);
         Assert.Contains("writeAdditionalData(additionalData);", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1'\nline2";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains("writer.writeStringValue('line1\\'\\nline2', dummyProp);", serializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("deserializerMap['line1\\'\\nline2'] = (node) => dummyProp = node.getStringValue();", deserializerResult);
     }
     [Fact]
     public void WritesMethodDescriptionLink()
@@ -1580,6 +1612,64 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("registerDefaultDeserializer", result);
         Assert.Contains($"pathParameters['baseurl'] = core.baseUrl", result);
         Assert.Contains($"core.baseUrl = '{method.BaseUrl}'", result);
+    }
+    [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/'evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
+        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("core.baseUrl = 'https://graph.microsoft.com/v1.0/\\'evil\\npath'", result);
+    }
+    [Fact]
+    public void EscapesQueryParametersExtractor()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        parentClass.Kind = CodeClassKind.QueryParameters;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultValue",
+            SerializationName = "line1'\nline2",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "String"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("'line1\\'\\nline2' : propWithDefaultValue,", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()
