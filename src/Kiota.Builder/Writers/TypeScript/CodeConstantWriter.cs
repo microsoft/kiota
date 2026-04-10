@@ -58,7 +58,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         {
             writer.StartBlock($"{navigationMethod.Name.ToFirstCharacterLowerCase()}: {{");
             var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
-            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom).Select(static x => $"\"{x.WireName}\"").ToArray());
+            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom).Select(static x => $"\"{x.WireName.SanitizeDoubleQuote()}\"").ToArray());
             writer.CloseBlock("},");
         }
         foreach (var navigationProperty in navigationProperties)
@@ -106,7 +106,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             var isPrimitive = IsPrimitiveType(returnTypeWithoutCollectionSymbol) || IsKiotaPrimitive(returnTypeWithoutCollectionSymbol);
             var isPrimitiveAlias = GetPrimitiveAlias(returnTypeWithoutCollectionSymbol) is not null;
             writer.StartBlock($"{executorMethod.Name.ToFirstCharacterLowerCase()}: {{");
-            var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
+            var urlTemplateValue = executorMethod.HasUrlTemplateOverride ? $"\"{executorMethod.UrlTemplateOverride.SanitizeDoubleQuote()}\"" : uriTemplateConstant.Name.ToFirstCharacterUpperCase();
             writer.WriteLine($"uriTemplate: {urlTemplateValue},");
             if (codeClass.Methods.FirstOrDefault(x => x.Kind is CodeMethodKind.RequestGenerator && x.HttpMethod == executorMethod.HttpMethod) is { } generatorMethod &&
                  generatorMethod.AcceptHeaderValue is string acceptHeader && !string.IsNullOrEmpty(acceptHeader))
@@ -214,7 +214,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         writer.StartBlock($"const {codeElement.Name.ToFirstCharacterUpperCase()}: Record<string, string> = {{");
         foreach (var property in properties)
         {
-            writer.WriteLine($"\"{property.Name.ToFirstCharacterLowerCase()}\": \"{property.SerializationName}\",");
+            writer.WriteLine($"\"{property.Name.ToFirstCharacterLowerCase().SanitizeDoubleQuote()}\": \"{property.SerializationName.SanitizeDoubleQuote()}\",");
         }
         writer.CloseBlock("};");
     }
@@ -228,7 +228,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         codeEnum.Options.ToList().ForEach(x =>
         {
             conventions.WriteShortDescription(x, writer);
-            writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName}\",");
+            writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName.SanitizeDoubleQuote()}\",");
         });
         writer.CloseBlock("} as const;");
     }

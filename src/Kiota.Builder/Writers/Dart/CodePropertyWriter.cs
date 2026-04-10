@@ -48,7 +48,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
-                var backingStoreKey = codeElement.WireName;
+                var backingStoreKey = DartConventionService.SanitizeDartSingleQuoteLiteral(codeElement.WireName);
                 var defaultIfNotNullable = propertyType.EndsWith('?') ? string.Empty : codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? {}" : $" ?? {codeElement.DefaultValue}";
                 writer.StartBlock($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
@@ -62,7 +62,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
                 writer.WriteLine("@override");
                 goto default;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                writer.WriteLine($"/// @QueryParameter('{codeElement.SerializationName}')");
+                writer.WriteLine($"/// @QueryParameter('{DartConventionService.SanitizeDartSingleQuoteLiteral(codeElement.SerializationName)}')");
                 goto default;
             case CodePropertyKind.QueryParameters:
                 defaultValue = $" = {propertyType}()";

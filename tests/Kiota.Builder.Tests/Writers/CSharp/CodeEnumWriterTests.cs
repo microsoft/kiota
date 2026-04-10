@@ -72,6 +72,18 @@ public sealed class CodeEnumWriterTests : IDisposable
     }
 
     [Fact]
+    public void EscapesEnumMemberValue()
+    {
+        currentEnum.Flags = true;
+        var serializationName = "line1\"\nline2";
+        currentEnum.AddOption(Option);
+        currentEnum.AddOption(new CodeEnumOption { Name = "InvalidName", SerializationName = serializationName });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"[EnumMember(Value = \"{serializationName.SanitizeDoubleQuote()}\")]", result);
+    }
+
+    [Fact]
     public void NamesDontDiffer_DoesntWriteEnumMember()
     {
         currentEnum.Flags = true;

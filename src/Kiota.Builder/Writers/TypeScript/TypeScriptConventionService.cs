@@ -69,7 +69,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         }
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"{varName}[\"{p.Item2}\"] = {p.Item3}"
+                $"{varName}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {p.Item3}"
             ).ToArray());
     }
     public override string GetAccessModifier(AccessModifier access)

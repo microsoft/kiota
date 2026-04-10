@@ -140,7 +140,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }
-                return $"{nullCheck}{varName}.Add(\"{name}\", {identName});";
+                return $"{nullCheck}{varName}.Add(\"{name.SanitizeDoubleQuote()}\", {identName});";
             }).ToArray());
         }
     }

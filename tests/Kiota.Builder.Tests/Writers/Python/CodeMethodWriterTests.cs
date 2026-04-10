@@ -1106,6 +1106,18 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("see\\\"\\\"\\\"more:", result);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLink()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs#\\\\test");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("see more: https://example.org/docs#//test", result);
+    }
+    [Fact]
     public void Defensive()
     {
         setup();

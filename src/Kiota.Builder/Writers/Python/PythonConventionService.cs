@@ -194,7 +194,8 @@ public class PythonConventionService : CommonLanguageConventionService
             if (documentation.ExternalDocumentationAvailable)
             {
                 var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
-                writer.WriteLine($"{documentationLabel}: {documentation.DocumentationLink}");
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                writer.WriteLine($"{documentationLabel}: {documentationLink}");
             }
             writer.WriteLine(DocCommentEnd);
         }
