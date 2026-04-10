@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- C#, Java, Go, PHP, Dart, TypeScript, Python and Ruby client: default value initialization in model classes for DateTime/Date/Time/UUID properties did not compile [#7404](https://github.com/microsoft/kiota/issues/7404)
+- All languages: default value initialization in model classes for numeric/boolean properties was missing [#7404](https://github.com/microsoft/kiota/issues/7404)
 - Fixed a potential NullReferenceException in union model discriminator factory methods when a discriminator mapping key is null or empty across C#, Dart, Go, Java, PHP, and Python writers. [#7641](https://github.com/microsoft/kiota/pull/7641)
 - Fixed `kiota download` returning exit code 0 (success) when no results are found or multiple ambiguous matches exist. [#7643](https://github.com/microsoft/kiota/pull/7643)
 - Fixed incorrect command hints and telemetry in `kiota plugin generate` handler referencing "client" instead of "plugin". [#7642](https://github.com/microsoft/kiota/pull/7642)

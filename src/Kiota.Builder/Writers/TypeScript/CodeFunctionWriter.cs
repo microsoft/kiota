@@ -759,8 +759,17 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return enumDefault;
         }
 
-        // only string primitive should keep quotes
-        return codeProperty.Type.Name.Equals("string", StringComparison.Ordinal) ? codeProperty.DefaultValue.SanitizeQuotedStringLiteral() : codeProperty.DefaultValue.Trim('"');
+        string defaultValue = codeProperty.DefaultValue;
+        defaultValue = defaultValue.SanitizeQuotedStringLiteral();
+        return codeProperty.Type.Name.ToLowerInvariant() switch
+        {
+            "string" => defaultValue, // string primitive should keep quotes
+            "dateonly" => $"DateOnly.parse({defaultValue})", //date default is in quotes
+            "date" => $"new Date({defaultValue})", //datetime default is in quotes
+            "timeonly" => $"TimeOnly.parse({defaultValue})", //time default is in quotes
+            "guid" => defaultValue, //uuid default is in quotes
+            _ => defaultValue.TrimQuotes()  // Any other type: remove quotes (though primitive types should not have any).
+        };
     }
     private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {

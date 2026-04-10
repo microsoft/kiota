@@ -2022,6 +2022,73 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
+    public void WritesModelClassesWithDefaultValuesThatRequireParsing()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.Model;
+
+        //DateTime with timezone and DateTime without timezone are handled the same way, so test only one version.
+        var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
+        var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimeWithTimeZonePropName,
+            DefaultValue = defaultValueDateTimeWithTimeZone,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "datetime.datetime"
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "datetime.date"
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "UUID"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "datetime.time"
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains($"{dateTimeWithTimeZonePropName}: Optional[datetime.datetime] = datetime.datetime.fromisoformat({defaultValueDateTimeWithTimeZone})", result);
+        Assert.Contains($"{datePropName}: Optional[datetime.date] = datetime.date.fromisoformat({defaultValueDate})", result);
+        Assert.Contains($"{uuidPropName}: Optional[UUID] = UUID({defaultValueUuid})", result);
+        Assert.Contains($"{timePropName}: Optional[datetime.time] = datetime.time.fromisoformat({defaultValueTime})", result);
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         setup();

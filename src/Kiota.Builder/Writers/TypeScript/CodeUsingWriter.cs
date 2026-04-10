@@ -16,6 +16,7 @@ public class CodeUsingWriter
     {
         ArgumentNullException.ThrowIfNull(writer);
         var enumeratedUsings = usings.ToArray();
+
         var externalImportSymbolsAndPaths = enumeratedUsings
                                                 .Where(static x => x.IsExternal)
                                                 .Select(static x => new { Symbol = x.Name, Alias = string.Empty, Path = x.Declaration?.Name ?? string.Empty, ShouldUseTypeImport = GetShouldUseTypeImport(x) });

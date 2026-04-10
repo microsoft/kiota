@@ -1,3 +1,6 @@
 pubspec.lock
 .dart_tool/
 src/
+
+#generated api code if integration test is run locally
+lib/

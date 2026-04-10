@@ -325,6 +325,24 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             foreach (var module in serializationModules)
                 writer.WriteLine($"ApiClientBuilder.{methodName}(() -> new {module}());");
     }
+    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
+    {
+        return propertyType.Name.ToLowerInvariant() switch
+        {
+            "boolean" => defaultValue.TrimQuotes(),
+            "localdate" => $"LocalDate.parse({defaultValue})",
+            //OffsetDateTime can only parse a date string that contains a timezone or "Z" (format "DateTimeFormatter.ISO_OFFSET_DATE_TIME").
+            "offsetdatetime" when defaultValue.TrimQuotes().IsDateTimeWithOffset() => $"OffsetDateTime.parse({defaultValue})",
+            //Otherwise: consider it a local date/time value. Create a OffsetDateDateTime in the current timezone.
+            "offsetdatetime" => $"java.time.LocalDateTime.parse({defaultValue}).atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime()",
+            "localtime" => $"LocalTime.parse({defaultValue})",
+            "uuid" => $"UUID.fromString({defaultValue})",
+            "double" => $"{defaultValue}d", //Append "d" to the double value (required if it is a plain int and has no decimal separator)
+            "float" => $"{defaultValue}f", //Append "f" to the float value
+            "int64" => $"{defaultValue}L", //Append "L" to the long value
+            _ => null,
+        };
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
@@ -367,9 +385,9 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             {// avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            else if (propWithDefault.Type is CodeType propertyType2 && GetDefaultValue(defaultValue, propertyType2) is string convertedDefaultValue)
             {
-                defaultValue = defaultValue.TrimQuotes();
+                defaultValue = convertedDefaultValue;
             }
             writer.WriteLine($"this.{setterName}({defaultValue});");
         }

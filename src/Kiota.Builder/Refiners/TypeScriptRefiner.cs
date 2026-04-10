@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers.TypeScript;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
@@ -80,7 +81,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             DisableActionOf(generatedCode,
                 CodeParameterKind.RequestConfiguration);
             cancellationToken.ThrowIfCancellationRequested();
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, updateUsings: SetUsingsNotErasable);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             ReplaceBinaryByNativeType(generatedCode, "ArrayBuffer", string.Empty, isNullable: true);
             cancellationToken.ThrowIfCancellationRequested();
@@ -174,11 +175,61 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }, cancellationToken);
     }
 
+    private static void SetUsingsNotErasable(CodeClass currentClass)
+    {
+        //Update usings for a model class: some types (DateOnly, TimeOnly) require parsing if a default value is set.
+        //In this case, the import cannot be "type DateOnly", but must be "DateOnly". 
+        //So set "IsErasable = false" for this type.
+        //Parsing can only happen for properties with a default value.
+        var propertiesWithDefault = currentClass.Properties.Where(prop => !string.IsNullOrEmpty(prop.DefaultValue));
+        foreach (CodeProperty prop in propertiesWithDefault)
+        {
+            string erasableUsing = string.Empty;
+            if (prop.Type.Name.Equals(TypeScriptConventionService.TYPE_DATE_ONLY, StringComparison.OrdinalIgnoreCase))
+            {
+                erasableUsing = "DateOnly";
+            }
+            else if (prop.Type.Name.Equals(TypeScriptConventionService.TYPE_TIME_ONLY, StringComparison.OrdinalIgnoreCase))
+            {
+                erasableUsing = "TimeOnly";
+            }
+            if (!string.IsNullOrEmpty(erasableUsing))
+            {
+                //Find all usings for this type (might occur multiple times) and set the using to "Erasable = false":
+                var erasableUsings = currentClass.Usings.Where(currentUsing => currentUsing.Name.Equals(erasableUsing, StringComparison.Ordinal));
+                foreach (var currentUsing in erasableUsings)
+                {
+                    currentUsing.IsErasable = false;
+                }
+            }
+        }
+    }
+
     private static void AddAliasToCodeFileUsings(CodeElement currentElement)
     {
         if (currentElement is CodeFile codeFile)
         {
             var enumeratedUsings = codeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement).ToArray();
+
+            //Can happen for model classes: If the property type occurs multiple times in different model classes and one of the
+            //occurences has "erasable = false" (because it defines a default value that requires parsing),
+            //then set "erasable = false" to all other occurences of the same type 
+            //Otherwise, a type might be rendered twice: "import { DateOnly, type DateOnly, ...} from ..."
+            var groups = enumeratedUsings.GroupBy(x => x.Name);
+            foreach (var group in groups)
+            {
+                //Is any using set to "IsErasable = false"?
+                bool anyNotErasable = group.Any(x => !x.IsErasable);
+                if (anyNotErasable)
+                {
+                    //Copy to all other usings of this type:
+                    foreach (CodeUsing currentUsing in group)
+                    {
+                        currentUsing.IsErasable = false;
+                    }
+                }
+            }
+
             var duplicatedUsings = enumeratedUsings.Where(static x => !x.IsExternal)
                 .Where(static x => x.Declaration != null && x.Declaration.TypeDefinition != null)
                 .Where(static x => string.IsNullOrEmpty(x.Alias))
@@ -806,7 +857,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
-                            IsErasable = true, // the import is used only for the type, not for the value
+                            IsErasable = true, // the import is used only for the type, not for the value. Might be modified later if a default value is parsed.
                         })},
     {"TimeOnly", (string.Empty, new CodeUsing {
                             Name = "TimeOnly",
@@ -814,7 +865,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                                 Name = AbstractionsPackageName,
                                 IsExternal = true,
                             },
-                            IsErasable = true, // the import is used only for the type, not for the value
+                            IsErasable = true, // the import is used only for the type, not for the value. Might be modified later if a default value is parsed.
                         })},
     {"Guid", (string.Empty, new CodeUsing {
                             Name = "Guid",

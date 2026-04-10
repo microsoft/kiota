@@ -998,6 +998,69 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"@{propName.ToSnakeCase()} = \"line1\\nline2\"", result);
     }
     [Fact]
+    public void WritesConstructorWithDefaultValuesThatRequireParsing()
+    {
+        // property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
+        var dateTimePropName = "propWithDefaultDateTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimePropName,
+            DefaultValue = defaultValueDateTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "DateTime"
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Date"
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Guid"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Time"
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains($"@{dateTimePropName.ToSnakeCase()} = DateTime.parse({defaultValueDateTime})", result);
+        Assert.Contains($"@{datePropName.ToSnakeCase()} = Date.parse({defaultValueDate})", result);
+        Assert.Contains($"@{uuidPropName.ToSnakeCase()} = UUIDTools::UUID.parse({defaultValueUuid})", result);
+        Assert.Contains($"@{timePropName.ToSnakeCase()} = Time.parse({defaultValueTime})", result);
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();
@@ -1017,6 +1080,32 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new", result);
+    }
+    [Fact]
+    public void WritesConstructorWithEnumValue()
+    {
+        setup();
+        var modelsNamespace = root.AddNamespace("models");
+        method.Kind = CodeMethodKind.Constructor;
+        var serializationName = "1024x1024";
+        var defaultValue = "TENTWENTYFOUR_BY_TENTWENTYFOUR";
+        var propName = "size";
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
+        {
+            Name = "pictureSize"
+        }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            SerializationName = serializationName,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains($"@{propName.ToSnakeCase()} = {modelsNamespace.Name.ToFirstCharacterUpperCase()}::{codeEnum.Name.ToFirstCharacterUpperCase()}[:{defaultValue.CleanupSymbolName()}]", result);//ensure symbol is cleaned up
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()

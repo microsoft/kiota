@@ -451,6 +451,7 @@ reports/
 
 samples/
 it/openapi.yaml
+it/openapi.json
 
 idempotency-results/
 vscode/npm-package/dist/*

@@ -18,7 +18,9 @@
     <PackageReference Include="Microsoft.kiota.Serialization.Multipart" Version="1.22.1" />
     <PackageReference Include="Microsoft.Kiota.Serialization.Text" Version="1.22.1" />
 
+    <!-- Exclude code from subprojects, that might be used for MockServer tests -->
     <Compile Remove="basic\**" />
+    <Compile Remove="defaultvalues\**" />
   </ItemGroup>
 
 </Project>

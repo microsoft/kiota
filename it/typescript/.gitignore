@@ -1,2 +1,4 @@
 dist
 node_modules
+#generated api code if integration test is run locally
+src

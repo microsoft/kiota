@@ -36,7 +36,10 @@ elseif ($language -eq "ruby") {
     $command = " --output `"./it/$language/lib/integration_test/client`" --namespace-name `"integration_test.client`""
 }
 elseif ($language -eq "php") {
-    $command = " --output `"./it/$language/src/client`" --namespace-name `"integration.test.client`""
+    #Destination Path: use upper case "Client" here, as the test imports the namespace "Integration\Test\Client\...",
+    #and as composer.json defines the autoload/psr-4 path "Integration\Test\", PHP would search the sub-namespaces in subdirs with the same casing.
+    #That's might be relevant when running on Linux, though it did not cause problems.
+    $command = " --output `"./it/$language/src/Client`" --namespace-name `"integration.test.client`""
 }
 elseif ($language -eq "python") {
     $command = " --output `"./it/$language/integration_test/client`" --namespace-name `"integration_test.client`""
