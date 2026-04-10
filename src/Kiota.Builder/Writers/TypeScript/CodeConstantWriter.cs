@@ -199,7 +199,8 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
 
     private void WriteUriTemplateConstant(CodeConstant codeElement, LanguageWriter writer)
     {
-        writer.WriteLine($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {codeElement.UriTemplate};");
+        var uriTemplateValue = string.IsNullOrEmpty(codeElement.UriTemplate) ? string.Empty : codeElement.UriTemplate.SanitizeQuotedStringLiteral();
+        writer.WriteLine($"export const {codeElement.Name.ToFirstCharacterUpperCase()} = {uriTemplateValue};");
     }
 
     private static void WriteQueryParametersMapperConstant(CodeConstant codeElement, LanguageWriter writer)

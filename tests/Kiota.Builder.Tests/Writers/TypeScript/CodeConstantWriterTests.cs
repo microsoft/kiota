@@ -81,6 +81,20 @@ public sealed class CodeConstantWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesEscapedUriTemplateConstant()
+    {
+        var constant = new CodeConstant
+        {
+            Name = "parentClassUriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "\"{baseurl+}/foo/\"bar\nbaz\"",
+        };
+        codeConstantWriter.WriteCodeElement(constant, writer);
+        var result = tw.ToString();
+        Assert.Contains($"export const ParentClassUriTemplate = {constant.UriTemplate.SanitizeQuotedStringLiteral()};", result);
+    }
+
+    [Fact]
     public void WritesEnumOptionDescription()
     {
         AddCodeEnum();

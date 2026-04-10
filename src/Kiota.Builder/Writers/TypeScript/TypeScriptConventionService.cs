@@ -97,6 +97,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: false, inlineComposedTypeString: true);
         }
         var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
 
         // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
         var parsableTypes = (
@@ -111,9 +112,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
-                => $" | null = {parameter.DefaultValue}",
-            (false, CodeParameterKind.DeserializationTarget or CodeParameterKind.SerializingDerivedType, false) => $" = {parameter.DefaultValue}",
-            (false, _, false) => $" = {parameter.DefaultValue} as {paramType}",
+                => $" | null = {sanitizedDefaultValue}",
+            (false, CodeParameterKind.DeserializationTarget or CodeParameterKind.SerializingDerivedType, false) => $" = {sanitizedDefaultValue}",
+            (false, _, false) => $" = {sanitizedDefaultValue} as {paramType}",
             _ => string.Empty,
         };
         var (partialPrefix, partialSuffix) = (isComposedOfPrimitives, parameter.Kind) switch

@@ -431,6 +431,32 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
     [Fact]
+    public async Task WritesDeSerializerBodyWithEscapedDefaultValueAsync()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        var defaultValue = "\"line1\"\nline2\"";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultValue",
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+        Assert.Contains($"?? {defaultValue.SanitizeQuotedStringLiteral()}", result);
+    }
+    [Fact]
     public async Task WritesSerializerBodyEnumCollectionAsync()
     {
         var parentClass = TestHelper.CreateModelClass(root, "parentClass");

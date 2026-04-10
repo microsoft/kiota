@@ -603,15 +603,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 else if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParameter)
                     thirdParameterName = $", {rawUrlParameter.Name}";
                 else if (parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty && !string.IsNullOrEmpty(pathParametersProperty.DefaultValue))
-                    thirdParameterName = $", {pathParametersProperty.DefaultValue}";
+                    thirdParameterName = $", {pathParametersProperty.DefaultValue.SanitizeQuotedStringLiteral()}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
                 {
-                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
                 }
                 else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
                     // CLI uses a different base class.
-                    return $" : base({urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                    return $" : base({urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
                 }
             }
             return " : base()";

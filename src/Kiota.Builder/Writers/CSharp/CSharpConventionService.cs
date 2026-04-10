@@ -248,9 +248,10 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
         var defaultValue = parameter switch
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {sanitizedDefaultValue}",
             _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
             _ when parameter.Optional => " = default",
             _ => string.Empty,

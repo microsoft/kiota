@@ -2352,6 +2352,46 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
     }
     [Fact]
+    public void WritesMethodWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ra",
+            Kind = CodeParameterKind.Custom,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = false
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "sampleParam",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = true,
+            DefaultValue = "\"line1\"\nline2\"",
+        });
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"string sampleParam = {"\"line1\"\nline2\"".SanitizeQuotedStringLiteral()}", result);
+    }
+    [Fact]
     public void WritesDeprecationInformation()
     {
         setup();

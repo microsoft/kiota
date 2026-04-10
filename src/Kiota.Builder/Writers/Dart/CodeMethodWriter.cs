@@ -321,7 +321,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     defaultValue = defaultValue.Trim('"');
                     if (propertyType2.Name.Equals("String", StringComparison.Ordinal))
                     {
-                        defaultValue = $"'{defaultValue}'";
+                        if (defaultValue.StartsWith('\'') && defaultValue.EndsWith('\'') && defaultValue.Length > 1)
+                            defaultValue = defaultValue[1..^1];
+                        defaultValue = $"'{SanitizeDartSingleQuoteLiteral(defaultValue)}'";
                     }
                 }
                 writer.WriteLine($"{propWithDefault.Name} = {defaultValue}{separator}");
@@ -679,15 +681,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 else if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParameter)
                     thirdParameterName = $", {{RequestInformation.rawUrlKey : {rawUrlParameter.Name}}}";
                 else if (parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty && !string.IsNullOrEmpty(pathParametersProperty.DefaultValue))
-                    thirdParameterName = $", {pathParametersProperty.DefaultValue}";
+                    thirdParameterName = $", {pathParametersProperty.DefaultValue.SanitizeQuotedStringLiteral()}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
                 {
-                    return $" : super({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                    return $" : super({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
                 }
                 else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
                     // CLI uses a different base class.
-                    return $" : super({urlTemplateProperty.DefaultValue}{thirdParameterName})";
+                    return $" : super({urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
                 }
             }
             return " : super()";

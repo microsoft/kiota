@@ -336,7 +336,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                     thirdParameterName = $", {pathParametersParameter.Name}";
                 else if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParameter)
                     thirdParameterName = $", {rawUrlParameter.Name}";
-                writer.WriteLine($"super({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue}{thirdParameterName});");
+                writer.WriteLine($"super({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName});");
             }
             else
                 writer.WriteLine("super();");
@@ -346,7 +346,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name} = {propWithDefault.DefaultValue};");
+            writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -355,7 +355,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                         .OrderBy(static x => x.Name))
         {
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
-            var defaultValue = propWithDefault.DefaultValue;
+            var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
                 defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
@@ -410,7 +410,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             {
                 writer.WriteLine($"{conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement)} value = this.{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\");");
                 writer.StartBlock("if(value == null) {");
-                writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue};",
+                writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()};",
                     $"this.set{codeElement.AccessedProperty?.Name.ToFirstCharacterUpperCase()}(value);");
                 writer.CloseBlock();
                 writer.WriteLine("return value;");

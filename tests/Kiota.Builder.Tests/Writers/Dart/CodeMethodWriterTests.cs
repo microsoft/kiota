@@ -1468,10 +1468,42 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name, result);
-        Assert.Contains($"{propName} = '{defaultValue}'", result);
+        Assert.Contains($"{propName} = '{DartConventionService.SanitizeDartSingleQuoteLiteral(defaultValue.Trim('\''))}'", result);
         Assert.Contains($"{nullPropName} = {defaultValueNull}", result);
         Assert.Contains($"{boolPropName} = {defaultValueBool}", result);
         Assert.Contains("super", result);
+    }
+    [Fact]
+    public void WritesConstructorWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"line1'\n$line2\"";
+        var propName = "propWithDefaultValue";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "String"
+            }
+        });
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Map<String, String>"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"{propName} = '{DartConventionService.SanitizeDartSingleQuoteLiteral("line1'\n$line2")}'", result);
     }
     [Fact]
     public void WritesWithUrl()

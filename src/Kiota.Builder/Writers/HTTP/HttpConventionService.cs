@@ -81,9 +81,10 @@ public class HttpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
         var defaultValue = parameter switch
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {sanitizedDefaultValue}",
             _ when parameter.Optional => " = default",
             _ => string.Empty,
         };

@@ -138,7 +138,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         var backingStoreProperty = parentClass.GetPropertyOfKind(CodePropertyKind.BackingStore);
         if (backingStoreProperty != null && !string.IsNullOrEmpty(backingStoreProperty.DefaultValue))
-            writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue};");
+            writer.WriteLine($"$this->{backingStoreProperty.Name.ToFirstCharacterLowerCase()} = {backingStoreProperty.DefaultValue.ReplaceDoubleQuoteWithSingleQuote()};");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
             .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
             // do not apply the default value if the type is composed as the default value may not necessarily which type to use

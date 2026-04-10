@@ -760,7 +760,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
 
         // only string primitive should keep quotes
-        return codeProperty.Type.Name.Equals("string", StringComparison.Ordinal) ? codeProperty.DefaultValue : codeProperty.DefaultValue.Trim('"');
+        return codeProperty.Type.Name.Equals("string", StringComparison.Ordinal) ? codeProperty.DefaultValue.SanitizeQuotedStringLiteral() : codeProperty.DefaultValue.Trim('"');
     }
     private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
     {

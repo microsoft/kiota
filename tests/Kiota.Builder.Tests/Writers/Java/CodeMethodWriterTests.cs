@@ -1829,6 +1829,24 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(defaultValue, result);
     }
     [Fact]
+    public void WritesGetterToBackingStoreWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.AddAccessedProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
+        method.AccessedProperty.Type = new CodeType
+        {
+            Name = "String",
+            IsNullable = false,
+        };
+        var defaultValue = "\"line1\"\nline2\"";
+        method.AccessedProperty.DefaultValue = defaultValue;
+        method.Kind = CodeMethodKind.Getter;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"value = {defaultValue.SanitizeQuotedStringLiteral()};", result);
+    }
+    [Fact]
     public void WritesSetterToBackingStore()
     {
         setup();
@@ -1964,6 +1982,38 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"this.set{nullPropName.ToFirstCharacterUpperCase()}({defaultValueNull.TrimQuotes()})", result);
         Assert.Contains($"this.set{boolPropName.ToFirstCharacterUpperCase()}({defaultValueBool.TrimQuotes()})", result);
         Assert.Contains("super", result);
+    }
+    [Fact]
+    public void WritesConstructorWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"line1\"\nline2\"";
+        var propName = "propWithDefaultValue";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "String"
+            }
+        });
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Map<String, String>"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue.SanitizeQuotedStringLiteral()})", result);
     }
     [Fact]
     public void WritesWithUrl()
