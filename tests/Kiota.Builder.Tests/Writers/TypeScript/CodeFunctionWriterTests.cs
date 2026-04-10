@@ -135,6 +135,60 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public async Task EscapesModelFactoryBodyAsync()
+    {
+        var parentModel = TestHelper.CreateModelClass(root, "parentModel");
+        var childModel = TestHelper.CreateModelClass(root, "childModel");
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var modelInterface = root.FindChildByName<CodeInterface>("childModel");
+        Assert.NotNull(modelInterface);
+        var parentNS = modelInterface.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        var factoryFunction = parentNS.FindChildByName<CodeFunction>("createParentModelFromDiscriminatorValue", false);
+        parentNS.TryAddCodeFile("foo", factoryFunction);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.ty\\\"pe\\nx\")", result);
+        Assert.Contains("case \"ns.chi\\\"ld\\nmodel\":", result);
+    }
+    [Fact]
     public async Task DoesntWriteFactorySwitchOnMissingParameterAsync()
     {
         var parentModel = TestHelper.CreateModelClass(root, "parentModel");

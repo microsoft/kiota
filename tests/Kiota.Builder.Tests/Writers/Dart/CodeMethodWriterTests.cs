@@ -794,6 +794,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesModelFactoryBody()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "ParentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "ChildModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "ParentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "ParentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.$chi'ld\nmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "$odata.ty'pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("var mappingValue = parseNode.getChildNode('\\$odata.ty\\'pe\\nx')", result);
+        Assert.Contains("'ns.\\$chi\\'ld\\nmodel' => ChildModel(),", result);
+    }
+    [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
     {
         setup();
@@ -1619,5 +1675,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("'application/json; profile=\"CamelCase\"'", result);
+    }
+    [Fact]
+    public void EscapesRequestGeneratorAcceptHeaderAndContentType()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.AcceptedResponseTypes.Add("application/json; profile='Cam$el'\nCase");
+        method.RequestBodyContentType = "application/json; profile='Cam$el'\nCase";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("requestInfo.headers.put('Accept', 'application/json; profile=\\'Cam\\$el\\'\\nCase')", result);
+        Assert.Contains("'application/json; profile=\\'Cam\\$el\\'\\nCase'", result);
     }
 }

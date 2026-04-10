@@ -851,6 +851,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesModelFactoryBody()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "ParentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "ChildModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "ParentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "ParentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("final ParseNode mappingValueNode = parseNode.getChildNode(\"@odata.ty\\\"pe\\nx\")", result);
+        Assert.Contains("case \"ns.chi\\\"ld\\nmodel\": return new ChildModel();", result);
+    }
+    [Fact]
     public void WritesModelSplitFactoryBody()
     {
         setup();

@@ -124,7 +124,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if (writeDiscriminatorValueRead)
         {
-            writer.WriteLine($"final ParseNode mappingValueNode = {parseNodeParameter.Name}.getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");");
+            writer.WriteLine($"final ParseNode mappingValueNode = {parseNodeParameter.Name}.getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\");");
             writer.StartBlock("if (mappingValueNode != null) {");
             writer.WriteLine($"final String {DiscriminatorMappingVarName} = mappingValueNode.getStringValue();");
         }
@@ -184,7 +184,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         writer.StartBlock($"switch ({varName}) {{");
         foreach (var mappedType in discriminatorMappings)
         {
-            writer.WriteLine($"case \"{mappedType.Key}\": return new {mappedType.Value.AllTypes.First().TypeDefinition?.Name}();");
+            writer.WriteLine($"case \"{mappedType.Key.SanitizeDoubleQuote()}\": return new {mappedType.Value.AllTypes.First().TypeDefinition?.Name}();");
         }
         writer.CloseBlock();
     }
@@ -246,7 +246,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                     IsNullable = propertyType.IsNullable,
                 };
             var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Type.Name, StringComparison.OrdinalIgnoreCase));
-            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if (\"{mappedType.Key}\".equalsIgnoreCase({DiscriminatorMappingVarName})) {{");
+            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if (\"{mappedType.Key.SanitizeDoubleQuote()}\".equalsIgnoreCase({DiscriminatorMappingVarName})) {{");
             writer.WriteLine($"{ResultVarName}.{property.Setter!.Name}(new {conventions.GetTypeString(property.Type, codeElement, false)}());");
             writer.DecreaseIndent();
             if (!includeElse)

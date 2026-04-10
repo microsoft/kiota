@@ -118,7 +118,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.StartBlock();
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
-            writer.WriteLine($"\"{mappedType.Key}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
+            writer.WriteLine($"\"{mappedType.Key.SanitizeDoubleQuote()}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
         }
         writer.WriteLine($"_ => new {parentClass.GetFullName()}(),");
         writer.CloseBlock("};");
@@ -136,7 +136,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase))");
+                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key.SanitizeDoubleQuote()}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase))");
                     writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(propertyType, codeElement)}();");
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
@@ -202,7 +202,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
 
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")?.GetStringValue();");
+            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")?.GetStringValue();");
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);

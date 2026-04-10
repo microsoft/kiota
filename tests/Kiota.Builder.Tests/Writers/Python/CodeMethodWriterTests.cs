@@ -1225,6 +1225,51 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return ParentClass()", result);
     }
     [Fact]
+    public void EscapesModelFactoryBodyForInheritedModels()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        childClass.Kind = CodeClassKind.Model;
+        childClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.IsStatic = true;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = childClass,
+        });
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        AddCodeUsings();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parse_node",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.ty\\\"pe\\nx\")", result);
+        Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.chi\\\"ld\\nmodel\".casefold()", result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForUnionModels()
     {
         setup();

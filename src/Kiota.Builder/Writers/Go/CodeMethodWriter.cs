@@ -125,7 +125,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if (writeDiscriminatorValueRead)
         {
-            writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
             WriteReturnError(writer, codeElement.ReturnType.Name);
             writer.StartBlock("if mappingValueNode != nil {");
             writer.WriteLines($"{DiscriminatorMappingVarName}, err := mappingValueNode.GetStringValue()");
@@ -166,7 +166,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         writer.StartBlock($"switch *{DiscriminatorMappingVarName} {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
-            writer.WriteLine($"case \"{mappedType.Key}\":");
+            writer.WriteLine($"case \"{mappedType.Key.SanitizeDoubleQuote()}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, parentClass)}(), nil");
             writer.DecreaseIndent();
@@ -254,7 +254,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     IsNullable = propertyType.IsNullable,
                 };
             var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
+            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key.SanitizeDoubleQuote()}\") {{");
             writer.WriteLine($"{ResultVarName}.{property.Setter!.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
             writer.DecreaseIndent();
             if (!includeElse)

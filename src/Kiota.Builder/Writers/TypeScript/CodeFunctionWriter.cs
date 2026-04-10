@@ -243,7 +243,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {
-            writer.StartBlock($"case \"{mappedType.Key}\":");
+            writer.StartBlock($"case \"{mappedType.Key.SanitizeDoubleQuote()}\":");
             writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType.Value)}(writer, {paramName} as {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()});");
             writer.WriteLine("break;");
             writer.DecreaseIndent();
@@ -383,7 +383,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (!string.IsNullOrEmpty(discriminatorPropertyName))
         {
-            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}?.getChildNode(\"{discriminatorPropertyName}\");",
+            writer.WriteLines($"const mappingValueNode = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}?.getChildNode(\"{discriminatorPropertyName.SanitizeDoubleQuote()}\");",
                                 "if (mappingValueNode) {");
             writer.IncreaseIndent();
             writer.WriteLines("const mappingValue = mappingValueNode.getStringValue();",
@@ -393,7 +393,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.StartBlock("switch (mappingValue) {");
             foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
             {
-                writer.StartBlock($"case \"{mappedType.Key}\":");
+                writer.StartBlock($"case \"{mappedType.Key.SanitizeDoubleQuote()}\":");
                 writer.WriteLine($"return {GetDeserializerFunctionName(codeElement, mappedType.Value)};");
                 writer.DecreaseIndent();
             }

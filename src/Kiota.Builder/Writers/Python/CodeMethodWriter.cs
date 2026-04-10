@@ -128,7 +128,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
         {
-            writer.StartBlock($"if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key}\".casefold():");
+            writer.StartBlock($"if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
             var mappedTypeName = mappedType.Value.AllTypes.First().Name;
             _codeUsingWriter.WriteDeferredImport(parentClass, mappedTypeName, writer);
             writer.WriteLine($"return {mappedTypeName}()");
@@ -149,7 +149,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key}\".casefold():");
+                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
                     _codeUsingWriter.WriteDeferredImport(parentClass, propertyType.Name, writer);
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {propertyType.Name}()");
                     writer.DecreaseIndent();
@@ -214,7 +214,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
         {
             writer.StartBlock("try:");
-            writer.WriteLine($"child_node = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.WriteLine($"child_node = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
             writer.WriteLine($"{DiscriminatorMappingVarName} = child_node.get_str_value() if child_node else {NoneKeyword}");
             writer.DecreaseIndent();
             writer.StartBlock("except AttributeError:");

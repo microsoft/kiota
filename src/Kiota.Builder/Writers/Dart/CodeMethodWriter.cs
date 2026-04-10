@@ -68,6 +68,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
         return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
     }
+    private static string SanitizeDartSingleQuoteLiteral(string? value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeSingleQuote().Replace("$", "\\$", StringComparison.Ordinal);
 
     protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool doesInherit, CodeClass parentClass, bool isVoid)
     {
@@ -148,7 +150,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         writer.StartBlock($"return switch({DiscriminatorMappingVarName}) {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
-            writer.WriteLine($"'{mappedType.Key}' => {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
+            writer.WriteLine($"'{SanitizeDartSingleQuoteLiteral(mappedType.Key)}' => {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
         }
         writer.WriteLine($"_ => {parentClass.Name}(),");
         writer.CloseBlock("};");
@@ -160,8 +162,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
         if (parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => x.Type is CodeType cType && cType.TypeDefinition is CodeClass && !cType.IsCollection).Any())
         {
-            var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
-            discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
+            var discriminatorPropertyName = SanitizeDartSingleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName);
             writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name}.getChildNode('{discriminatorPropertyName}')?.getStringValue();");
         }
         var includeElse = false;
@@ -173,7 +174,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if('{mappedType.Key}' == {DiscriminatorMappingVarName}) {{");
+                    writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if('{SanitizeDartSingleQuoteLiteral(mappedType.Key)}' == {DiscriminatorMappingVarName}) {{");
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {conventions.GetTypeString(propertyType, codeElement)}();");
                     writer.CloseBlock();
                 }
@@ -236,8 +237,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
         {
-            var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
-            discriminatorPropertyName = discriminatorPropertyName.StartsWith('$') ? "\\" + discriminatorPropertyName : discriminatorPropertyName;
+            var discriminatorPropertyName = SanitizeDartSingleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName);
             writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name}.getChildNode('{discriminatorPropertyName}')?.getStringValue();");
             WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
         }
@@ -517,22 +517,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.headers.put('Accept', '{codeElement.AcceptHeaderValue}');");
+            writer.WriteLine($"{RequestInfoVarName}.headers.put('Accept', '{SanitizeDartSingleQuoteLiteral(codeElement.AcceptHeaderValue)}');");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
+            var requestBodyContentType = SanitizeDartSingleQuoteLiteral(codeElement.RequestBodyContentType);
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, {requestParams.requestContentType.Name});");
                 else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
-                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, '{codeElement.RequestBodyContentType}');");
+                    writer.WriteLine($"{RequestInfoVarName}.setStreamContent({requestParams.requestBody.Name}, '{requestBodyContentType}');");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
                 if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable{suffix}({requestAdapterProperty.Name}, '{codeElement.RequestBodyContentType}', {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromParsable{suffix}({requestAdapterProperty.Name}, '{requestBodyContentType}', {requestParams.requestBody.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{suffix}({requestAdapterProperty.Name}, '{codeElement.RequestBodyContentType}', {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.setContentFromScalar{suffix}({requestAdapterProperty.Name}, '{requestBodyContentType}', {requestParams.requestBody.Name});");
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");

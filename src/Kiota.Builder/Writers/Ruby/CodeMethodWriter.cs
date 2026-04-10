@@ -90,13 +90,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if (writeDiscriminatorValueRead)
         {
-            writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
             writer.StartBlock($"unless {NodeVarName}.nil? then");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
             writer.StartBlock($"case {DiscriminatorMappingVarName}");
             foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
             {
-                writer.StartBlock($"when \"{mappedType.Key}\"");
+                writer.StartBlock($"when \"{mappedType.Key.SanitizeDoubleQuote()}\"");
                 writer.WriteLine($"return {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}.new");
                 writer.DecreaseIndent();
             }

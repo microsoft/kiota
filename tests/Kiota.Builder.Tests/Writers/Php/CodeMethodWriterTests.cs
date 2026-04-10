@@ -1750,6 +1750,63 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
     }
     [Fact]
+    public async Task EscapesFactoryMethodAsync()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("chi'ld\nModel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "ParseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
+        languageWriter.Write(factoryMethod);
+        var result = stringWriter.ToString();
+        Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.ty\\\"pe\\nx\");", result);
+        Assert.Contains("case 'chi\\'ld\\nModel': return new ChildModel();", result);
+    }
+    [Fact]
     public async Task WriteApiConstructorAsync()
     {
         setup();

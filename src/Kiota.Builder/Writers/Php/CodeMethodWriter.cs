@@ -871,7 +871,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (writeDiscriminatorValueRead &&
             codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParameter)
         {
-            writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\");",
+            writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\");",
                 "if ($mappingValueNode !== null) {");
             writer.IncreaseIndent();
             writer.WriteLines($"{DiscriminatorMappingVarName} = $mappingValueNode->getStringValue();");
@@ -959,7 +959,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                     IsNullable = propertyType.IsNullable,
                 };
             var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ('{mappedType.Key}' === {DiscriminatorMappingVarName}) {{");
+            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ('{mappedType.Key.SanitizeSingleQuote()}' === {DiscriminatorMappingVarName}) {{");
             writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}(new {conventions.GetTypeString(propertyType, codeElement, false)}());");
             writer.DecreaseIndent();
             if (!includeElse)
@@ -1007,7 +1007,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         writer.StartBlock($"switch ({varName}) {{");
         foreach (var mappedType in discriminatorMappings)
         {
-            writer.WriteLine($"case '{mappedType.Key}': return new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), method, false, writer)}();");
+            writer.WriteLine($"case '{mappedType.Key.SanitizeSingleQuote()}': return new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), method, false, writer)}();");
         }
         writer.CloseBlock();
     }
