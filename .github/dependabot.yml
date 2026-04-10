@@ -89,6 +89,15 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
+  - package-ecosystem: pub
+    directory: "/it/dart"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
   - package-ecosystem: npm
     directory: "/it/typescript"
     schedule:
