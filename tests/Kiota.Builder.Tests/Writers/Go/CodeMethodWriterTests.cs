@@ -1918,6 +1918,27 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("NewBaseRequestBuilder", result);
     }
     [Fact]
+    public void EscapesStringDefaultsInConstructor()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultValue",
+            DefaultValue = "\"line1\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("propWithDefaultValueValue := \"line1\\nline2\"", result);
+        Assert.Contains("m.SetPropWithDefaultValue(&propWithDefaultValueValue)", result);
+    }
+    [Fact]
     public void WritesConstructorWithEnumValue()
     {
         setup();

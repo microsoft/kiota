@@ -54,7 +54,7 @@ public class PythonConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         ArgumentNullException.ThrowIfNull(targetElement);
-        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
+        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue.SanitizeQuotedStringLiteral()}";
         var deprecationInfo = GetDeprecationInformation(parameter);
         var deprecationSuffix = string.IsNullOrEmpty(deprecationInfo) ? string.Empty : $"# {deprecationInfo}";
         return $"{parameter.Name}: {(parameter.Optional ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Optional ? "] = None" : string.Empty)}{defaultValueSuffix}{deprecationSuffix}";

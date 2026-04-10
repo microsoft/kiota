@@ -335,6 +335,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
             parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
             {
+                var urlTemplate = (urlTemplateProperty.DefaultValue ?? string.Empty).SanitizeQuotedStringLiteral();
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                 {
                     var pathParameters = currentMethod.Parameters
@@ -351,10 +352,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                         }
                         writer.DecreaseIndent();
                     }
-                    writer.WriteLine($"super().__init__({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue ?? ""}, {pathParametersParameter.Name})");
+                    writer.WriteLine($"super().__init__({requestAdapterParameter.Name}, {urlTemplate}, {pathParametersParameter.Name})");
                 }
                 else
-                    writer.WriteLine($"super().__init__({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue ?? ""}, {NoneKeyword})");
+                    writer.WriteLine($"super().__init__({requestAdapterParameter.Name}, {urlTemplate}, {NoneKeyword})");
             }
             else
                 writer.WriteLine("super().__init__()");
@@ -384,7 +385,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
-            var defaultValue = propWithDefault.DefaultValue;
+            var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
             switch (propWithDefault.Type)
             {
                 case CodeType { TypeDefinition: CodeEnum enumDefinition }:
@@ -417,7 +418,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name))
         {
-            var defaultValue = propWithDefault.DefaultValue;
+            var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
             switch (propWithDefault.Type)
             {
                 case CodeType { TypeDefinition: CodeEnum enumDefinition }:
@@ -484,7 +485,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement, true, writer)} = self.{backingStore.NamePrefix}{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\")",
                         "if not value:");
                     writer.IncreaseIndent();
-                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue}",
+                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()}",
                         $"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name} = value");
                     writer.DecreaseIndent();
                     writer.WriteLines("return value");

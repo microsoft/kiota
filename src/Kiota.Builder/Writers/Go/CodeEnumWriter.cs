@@ -72,7 +72,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock($"func (i {typeName}) String() string {{");
             writer.WriteLine("var values []string");
             var literalOptions = enumOptions
-                .Select(x => $"\"{x.WireName}\"")
+                .Select(x => $"\"{x.WireName.SanitizeDoubleQuote()}\"")
                 .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"options := []string{{{literalOptions}}}");
             writer.StartBlock($"for p := 0; p < {enumOptions.Count}; p++ {{");
@@ -88,7 +88,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         {
             writer.StartBlock($"func (i {typeName}) String() string {{");
             var literalOptions = enumOptions
-                .Select(x => $"\"{x.WireName}\"")
+                .Select(x => $"\"{x.WireName.SanitizeDoubleQuote()}\"")
                 .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"return []string{{{literalOptions}}}[i]");
             writer.CloseBlock();
@@ -110,7 +110,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock("switch str {");
             foreach (var item in enumOptions)
             {
-                writer.StartBlock($"case \"{item.WireName}\":");
+                writer.StartBlock($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
                 writer.WriteLine($"result |= {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
@@ -121,7 +121,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock("switch v {");
             foreach (var item in enumOptions)
             {
-                writer.StartBlock($"case \"{item.WireName}\":");
+                writer.StartBlock($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
                 writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }

@@ -1163,6 +1163,31 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->setPropWithDefaultBoolValue(true)", result);
     }
     [Fact]
+    public async Task EscapesStringDefaultsInConstructorAsync()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        var constructor = new CodeMethod
+        {
+            Name = "constructor",
+            Access = AccessModifier.Public,
+            ReturnType = new CodeType { Name = "void" },
+            Kind = CodeMethodKind.Constructor
+        };
+        parentClass.AddMethod(constructor);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "type",
+            DefaultValue = "\"line1'\\\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string" },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+        _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("$this->setType('line1\\'\\\\\\nline2')", result);
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         setup();

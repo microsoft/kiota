@@ -173,4 +173,17 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.DoesNotContain("import", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Fact]
+    public void EscapesEnumWireValues()
+    {
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "option1",
+            SerializationName = "line1\"\nline2",
+        });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("return []string{\"line1\\\"\\nline2\"}[i]", result);
+        Assert.Contains("case \"line1\\\"\\nline2\":", result);
+    }
 }

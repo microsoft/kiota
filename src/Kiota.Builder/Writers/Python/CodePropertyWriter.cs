@@ -44,7 +44,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 var defaultValue = isNonNullableCollection ? "[]" : "None";
                 if (!string.IsNullOrEmpty(codeElement.DefaultValue))
                 {
-                    defaultValue = codeElement.DefaultValue;
+                    defaultValue = codeElement.DefaultValue.SanitizeQuotedStringLiteral();
                 }
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)}{codeElement.NamePrefix}{codeElement.Name}: {(codeElement.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(codeElement.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
                 writer.WriteLine();

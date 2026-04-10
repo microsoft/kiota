@@ -164,7 +164,44 @@ public static partial class StringExtensions
     public static string ReplaceDoubleQuoteWithSingleQuote(this string? current)
     {
         if (string.IsNullOrEmpty(current)) return string.Empty;
-        return current.StartsWith('"') ? current.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase).Replace('\"', '\'') : current;
+        if (!current.StartsWith('"')) return current;
+        var builder = new StringBuilder(current.Length);
+        builder.Append('\'');
+        for (var i = 1; i < current.Length; i++)
+        {
+            var character = current[i];
+            if (i == current.Length - 1 && character == '"')
+                break;
+            switch (character)
+            {
+                case '\\':
+                    builder.Append("\\\\");
+                    break;
+                case '\'':
+                    builder.Append("\\'");
+                    break;
+                case '\r':
+                    builder.Append("\\r");
+                    break;
+                case '\n':
+                    builder.Append("\\n");
+                    break;
+                case '\t':
+                    builder.Append("\\t");
+                    break;
+                case '\0':
+                    builder.Append("\\0");
+                    break;
+                default:
+                    if (char.IsControl(character))
+                        builder.Append(@"\u").Append(((int)character).ToString("x4", CultureInfo.InvariantCulture));
+                    else
+                        builder.Append(character);
+                    break;
+            }
+        }
+        builder.Append('\'');
+        return builder.ToString();
     }
 
     public static string ReplaceDotsWithSlashInNamespaces(this string? namespaced)

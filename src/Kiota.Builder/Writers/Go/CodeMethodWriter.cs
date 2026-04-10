@@ -491,7 +491,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
                 writer.WriteBlock("if err != nil {", "}", "panic(err)");
                 writer.WriteBlock("if val == nil {", "}",
-                    $"var value = {codeElement.AccessedProperty.DefaultValue};",
+                    $"var value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()};",
                     $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
 
                 writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
@@ -553,7 +553,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 var pathParametersValue = ", map[string]string{}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     pathParametersValue = $", {pathParametersParameter.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{parentClassName}: *{newMethodName}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{pathParametersValue}),");
+                writer.WriteLine($"{parentClassName}: *{newMethodName}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{pathParametersValue}),");
             }
             else
                 writer.WriteLine($"{parentClassName}: *{newMethodName}(),");
@@ -565,7 +565,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue};");
+            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -593,6 +593,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
                 {
                     defaultValue = defaultValue.TrimQuotes();
+                }
+                else
+                {
+                    defaultValue = defaultValue.SanitizeQuotedStringLiteral();
                 }
                 writer.WriteLine($"{defaultValueReference} := {defaultValue}");
                 defaultValueReference = $"&{defaultValueReference}";

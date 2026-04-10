@@ -1810,6 +1810,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
+    public void EscapesModelClassStringDefaults()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop_with_default_value",
+            DefaultValue = "\"line1\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("prop_with_default_value: Optional[str] = \"line1\\nline2\"", result);
+    }
+    [Fact]
     public void WritesModelClasses()
     {
         setup();

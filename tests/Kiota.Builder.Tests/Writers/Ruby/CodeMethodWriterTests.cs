@@ -863,6 +863,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"@{propName.ToSnakeCase()} = {defaultValue}", result);
     }
     [Fact]
+    public void EscapesStringDefaultsInConstructor()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var propName = "propWithDefaultValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = "\"line1\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"@{propName.ToSnakeCase()} = \"line1\\nline2\"", result);
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();
