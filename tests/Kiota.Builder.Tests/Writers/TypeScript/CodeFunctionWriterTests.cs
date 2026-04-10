@@ -858,6 +858,25 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("@deprecated", result);
     }
     [Fact]
+    public void SanitizesDeprecationVersionInComments()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ODataError",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z", CultureInfo.InvariantCulture), DateTimeOffset.Parse("2021-01-01T00:00:00Z", CultureInfo.InvariantCulture), $"v2.0 */{Environment.NewLine}VERSION_MARKER");
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function);
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("as of v2.0 */", result);
+        Assert.Contains("as of v2.0 * /VERSION_MARKER", result);
+    }
+    [Fact]
     public void WritesDeprecationInformationFromBuilder()
     {
         var parentClass = root.AddClass(new CodeClass

@@ -2173,6 +2173,17 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("@Deprecated", result);
     }
     [Fact]
+    public void SanitizesDeprecationVersionInComments()
+    {
+        setup();
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), $"v2.0 */{Environment.NewLine}VERSION_MARKER");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("as of v2.0 */", result);
+        Assert.DoesNotContain($"{Environment.NewLine}VERSION_MARKER", result);
+        Assert.Contains("VERSION_MARKER", result);
+    }
+    [Fact]
     public void WritesDeprecationInformationFromBuilder()
     {
         setup();
