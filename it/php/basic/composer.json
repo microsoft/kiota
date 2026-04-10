@@ -1,0 +1,29 @@
+{
+    "name": "kiota/basic",
+    "description": "Template project for unit testing Kiota generated clients",
+    "type": "library",
+    "require": {
+        "microsoft/kiota-abstractions": "*",
+        "microsoft/kiota-serialization-text": "*",
+        "symfony/http-client": "*",
+        "microsoft/kiota-http-guzzle": "*",
+        "microsoft/kiota-serialization-json": "*",
+        "microsoft/kiota-serialization-form": "*",
+        "microsoft/kiota-serialization-multipart": "*"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "tbachert/spi": true
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Integration\\Test\\": "src/"
+        }
+    }
+}

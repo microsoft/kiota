@@ -1965,6 +1965,45 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueFloat = "15.5";
+        var floatPropName = "propWithDefaultFloatValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = floatPropName,
+            DefaultValue = defaultValueFloat,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "float",
+                IsNullable = true
+            }
+        });
+        var defaultValueDouble = "15.5";
+        var doublePropName = "propWithDefaultDoubleValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = doublePropName,
+            DefaultValue = defaultValueDouble,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "double",
+                IsNullable = true
+            }
+        });
+        var defaultValueLong = "255";
+        var longPropName = "propWithDefaultLongValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = longPropName,
+            DefaultValue = defaultValueLong,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int64",
+                IsNullable = true
+            }
+        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -1981,6 +2020,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains($"this.set{nullPropName.ToFirstCharacterUpperCase()}({defaultValueNull.TrimQuotes()})", result);
         Assert.Contains($"this.set{boolPropName.ToFirstCharacterUpperCase()}({defaultValueBool.TrimQuotes()})", result);
+        //float value must be followed by "f":
+        Assert.Contains($"this.set{floatPropName.ToFirstCharacterUpperCase()}({defaultValueFloat}f)", result);
+        //double must be followed by "d":
+        Assert.Contains($"this.set{doublePropName.ToFirstCharacterUpperCase()}({defaultValueDouble}d)", result);
+        //long value must be followed by "L":
+        Assert.Contains($"this.set{longPropName.ToFirstCharacterUpperCase()}({defaultValueLong}L)", result);
         Assert.Contains("super", result);
     }
     [Fact]
@@ -2014,6 +2059,86 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue.SanitizeQuotedStringLiteral()})", result);
+    }
+    [Fact]
+    public void WritesConstructorWithDefaultValuesThatRequireParsing()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
+        method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
+        //Java cannot parse a value without timezone. So it must be handled differently.
+        var defaultValueDateTimeLocalTime = "\"1900-01-01T00:00:00\"";
+        var dateTimeLocalTimePropName = "propWithDefaultDateTimeLocalTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimeLocalTimePropName,
+            DefaultValue = defaultValueDateTimeLocalTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "OffsetDateTime"
+            },
+        });
+        var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
+        var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimeWithTimeZonePropName,
+            DefaultValue = defaultValueDateTimeWithTimeZone,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "OffsetDateTime"
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "LocalDate"
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "UUID"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "LocalTime"
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        //Original value without timezone is parsed as "LocalDateTime", then convert to OffsetDateTime in current zone.
+        Assert.Contains($"this.set{dateTimeLocalTimePropName.ToFirstCharacterUpperCase()}(java.time.LocalDateTime.parse({defaultValueDateTimeLocalTime}).atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime());", result);
+        Assert.Contains($"this.set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}(OffsetDateTime.parse({defaultValueDateTimeWithTimeZone}));", result);
+        Assert.Contains($"this.set{datePropName.ToFirstCharacterUpperCase()}(LocalDate.parse({defaultValueDate}));", result);
+        Assert.Contains($"this.set{uuidPropName.ToFirstCharacterUpperCase()}(UUID.fromString({defaultValueUuid}));", result);
+        Assert.Contains($"this.set{timePropName.ToFirstCharacterUpperCase()}(LocalTime.parse({defaultValueTime}));", result);
     }
     [Fact]
     public void WritesWithUrl()
