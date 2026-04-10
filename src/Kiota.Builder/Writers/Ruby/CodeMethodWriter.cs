@@ -124,7 +124,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         foreach (var escapedProperty in escapedProperties)
         {
             writer.StartBlock($"when \"{escapedProperty.Name}\"");
-            writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
+            writer.WriteLine($"return \"{escapedProperty.SerializationName.SanitizeDoubleQuote()}\"");
             writer.DecreaseIndent();
         }
         writer.StartBlock("else");
@@ -147,7 +147,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
-            writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url('{method.BaseUrl}')");
+            writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url('{method.BaseUrl.SanitizeSingleQuote()}')");
             writer.CloseBlock("end");
             if (pathParametersProperty != null)
                 writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}['baseurl'] = @{requestAdapterPropertyName}.get_base_url");
@@ -218,7 +218,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.IndexParameter.SerializationName}\"] = {codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()}");
+                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.IndexParameter.SerializationName.SanitizeDoubleQuote()}\"] = {codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()}");
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer)
@@ -232,7 +232,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"\"{otherProp.WireName}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
         }
         writer.DecreaseIndent();
         if (parentClass.StartBlock.Inherits != null)
@@ -320,7 +320,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
             parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
         {
-            var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride}'" : GetPropertyCall(urlTemplateProperty, "''");
+            var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride.SanitizeSingleQuote()}'" : GetPropertyCall(urlTemplateProperty, "''");
             writer.WriteLines($"request_info.url_template = {urlTemplateValue}",
                             $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
         }
@@ -339,7 +339,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName}\", @{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName.SanitizeDoubleQuote()}\", @{otherProp.Name.ToSnakeCase()})");
         }
         if (additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");

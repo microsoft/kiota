@@ -37,7 +37,7 @@ public class PythonConventionService : CommonLanguageConventionService
         writer.WriteLine($"{TempDictionaryVarName} = get_path_parameters({pathParametersReference})");
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
+                $"{TempDictionaryVarName}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {p.Item3}"
             ));
     }
 

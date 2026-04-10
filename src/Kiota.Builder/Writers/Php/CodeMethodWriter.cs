@@ -248,7 +248,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 var key = string.IsNullOrEmpty(parameter.SerializationName)
                     ? parameter.Name
                     : parameter.SerializationName;
-                writer.WriteLine($"{UrlTemplateTempVarName}['{key}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
+                writer.WriteLine($"{UrlTemplateTempVarName}['{key.SanitizeSingleQuote()}'] = ${parameter.Name.ToFirstCharacterLowerCase()};");
             });
         if (pathParametersProperty != null)
             writer.WriteLine(
@@ -435,7 +435,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (extendsModelClass)
             writer.WriteLine("parent::serialize($writer);");
         foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => !x.ExistsInBaseType && !x.ReadOnly))
-            WriteSerializationMethodCall(otherProp, writer, $"'{otherProp.WireName}'");
+            WriteSerializationMethodCall(otherProp, writer, $"'{otherProp.WireName.SanitizeSingleQuote()}'");
     }
 
     private string GetSerializationMethodName(CodeTypeBase propType)
@@ -668,7 +668,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             && property.Type is CodeType currentType
             && currentType.TypeDefinition == null)
         {
-            writer.StartBlock($"'{property.WireName}' => function (ParseNode $n) {{");
+            writer.StartBlock($"'{property.WireName.SanitizeSingleQuote()}' => function (ParseNode $n) {{");
             writer.WriteLine("$val = $n->getCollectionOfPrimitiveValues();");
             writer.StartBlock($"if (is_array($val)) {{");
             var type = conventions.TranslateType(property.Type);
@@ -680,7 +680,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine("},");
             return;
         }
-        writer.WriteLine($"'{property.WireName}' => fn(ParseNode $n) => $o->{property.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(property.Type, method).Item2}),");
+        writer.WriteLine($"'{property.WireName.SanitizeSingleQuote()}' => fn(ParseNode $n) => $o->{property.Setter!.Name.ToFirstCharacterLowerCase()}($n->{GetDeserializationMethodName(property.Type, method).Item2}),");
     }
 
     private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
@@ -817,7 +817,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (!string.IsNullOrEmpty(codeMethod.BaseUrl))
         {
             writer.StartBlock($"if (empty({GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl())) {{");
-            writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl}');");
+            writer.WriteLine($"{GetPropertyCall(requestAdapterProperty, string.Empty)}->setBaseUrl('{codeMethod.BaseUrl.SanitizeSingleQuote()}');");
             writer.CloseBlock();
             if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
                 writer.WriteLine($"{GetPropertyCall(pathParametersProperty, string.Empty)}['baseurl'] = {GetPropertyCall(requestAdapterProperty, string.Empty)}->getBaseUrl();");

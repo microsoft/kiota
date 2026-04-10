@@ -993,6 +993,36 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("NewSomecustomtypeInternal(urlTplParams, m.BaseRequestBuilder.RequestAdapter)", result); // checking the parameter is passed to the constructor
     }
     [Fact]
+    public void EscapesIndexerPathParameterName()
+    {
+        setup();
+        AddRequestProperties();
+        parentClass.AddIndexer(new CodeIndexer
+        {
+            Name = "indx",
+            ReturnType = new CodeType
+            {
+                Name = "Somecustomtype",
+            },
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "i\"d\nvalue",
+                Type = new CodeType
+                {
+                    Name = "UUID",
+                    IsNullable = true,
+                },
+            }
+        });
+        if (parentClass.Indexer is null)
+            throw new InvalidOperationException("Indexer is null");
+        var methodForTest = parentClass.AddMethod(CodeMethod.FromIndexer(parentClass.Indexer, static x => $"With{x.ToFirstCharacterUpperCase()}", static x => x.ToFirstCharacterLowerCase(), false)).First();
+        writer.Write(methodForTest);
+        var result = tw.ToString();
+        Assert.Contains("[\"i\\\"d\\nvalue\"] = id.String()", result);
+    }
+    [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
     {
         setup();
@@ -1281,6 +1311,34 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public async Task EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrodeAsync()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        var executor = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "executor",
+            HttpMethod = HttpMethod.Get,
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+            }
+        }).First();
+        AddRequestBodyParameters(executor, true);
+        AddRequestBodyParameters(useComplexTypeForBody: true);
+        AddRequestProperties();
+        method.UrlTemplateOverride = "{baseurl+}/foo/\"bar\nbaz";
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
+        method.AcceptedResponseTypes.Add("application/json");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"requestInfo := {AbstractionsPackageHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({AbstractionsPackageHash}.GET, \"{{baseurl+}}/foo/\\\"bar\\nbaz\", m.pathParameters)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public async Task WritesRequestGeneratorBodyForParsableCollectionAsync()
     {
         setup();
@@ -1435,6 +1493,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("m.SetDummyProp(val)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nbreak";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains("WriteStringValue(\"line1\\\"\\nbreak\", m.GetDummyProp())", serializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("res[\"line1\\\"\\nbreak\"] = func", deserializerResult);
     }
     [Fact]
     public void WritesUnionDeSerializerBody()
@@ -2129,6 +2204,44 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("RegisterDefaultDeserializer", result);
         Assert.Contains($"[\"baseurl\"] = m.BaseRequestBuilder.Core.GetBaseUrl", result);
         Assert.Contains($"SetBaseUrl(\"{method.BaseUrl}\")", result);
+    }
+    [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        method.DeserializerModules = new() { "github.com/microsoft/kiota/serialization/go/json.Deserializer" };
+        method.SerializerModules = new() { "github.com/microsoft/kiota/serialization/go/json.Serializer" };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("SetBaseUrl(\"https://graph.microsoft.com/v1.0/\\\"evil\\npath\")", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()

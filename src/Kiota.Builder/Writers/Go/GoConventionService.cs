@@ -247,7 +247,7 @@ public class GoConventionService : CommonLanguageConventionService
             };
             if (shouldCheckNullability)
                 writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
-            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
+            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
             if (shouldCheckNullability)
                 writer.CloseBlock();
         }

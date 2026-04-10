@@ -257,7 +257,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if not self.{requestAdapterPropertyName}.base_url:");
-            writer.WriteLine($"self.{requestAdapterPropertyName}.base_url = \"{method.BaseUrl}\"");
+            writer.WriteLine($"self.{requestAdapterPropertyName}.base_url = \"{method.BaseUrl.SanitizeDoubleQuote()}\"");
             writer.DecreaseIndent();
             if (pathParametersProperty != null)
                 writer.WriteLine($"self.{pathParametersProperty.Name}[\"base_url\"] = self.{requestAdapterPropertyName}.base_url");
@@ -275,7 +275,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         foreach (var escapedProperty in escapedProperties)
         {
             writer.StartBlock($"if {parameterName} == \"{escapedProperty.Name}\":");
-            writer.WriteLine($"return \"{escapedProperty.SerializationName}\"");
+            writer.WriteLine($"return \"{escapedProperty.SerializationName.SanitizeDoubleQuote()}\"");
             writer.DecreaseIndent();
         }
         foreach (var unescapedProperty in unescapedProperties.Select(x => x.Name))
@@ -348,7 +348,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                         foreach (var parameter in pathParameters)
                         {
                             var (name, identName) = parameter;
-                            writer.WriteLine($"{pathParametersParameter.Name}['{name}'] = {identName}");
+                            writer.WriteLine($"{pathParametersParameter.Name}['{name.SanitizeSingleQuote()}'] = {identName}");
                         }
                         writer.DecreaseIndent();
                     }
@@ -561,7 +561,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"\"{otherProp.WireName}\": lambda n : setattr(self, '{otherProp.Name}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)}),");
+            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": lambda n : setattr(self, '{otherProp.Name}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)}),");
         }
         writer.CloseBlock();
         if (inherits)
@@ -631,7 +631,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
         if (currentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is not CodeProperty urlTemplateParamsProperty) throw new InvalidOperationException("path parameters cannot be null");
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template cannot be null");
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride}'" : GetPropertyCall(urlTemplateProperty, "''");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride.SanitizeSingleQuote()}'" : GetPropertyCall(urlTemplateProperty, "''");
         writer.WriteLine($"{RequestInfoVarName} = RequestInformation(Method.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "''")})");
         if (requestParams.requestConfiguration != null)
             writer.WriteLine($"{RequestInfoVarName}.configure({requestParams.requestConfiguration.Name})");
@@ -664,7 +664,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type);
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName}\", self.{otherProp.Name})");
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName.SanitizeDoubleQuote()}\", self.{otherProp.Name})");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)

@@ -518,7 +518,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
-            writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
+            writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl.SanitizeDoubleQuote()}\")");
             writer.CloseBlock();
             if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
                 writer.WriteLine($"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
@@ -714,7 +714,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol)
     {
         if (property.Setter is null) return;
-        writer.StartBlock($"res[\"{property.WireName}\"] = func (n {parsableImportSymbol}) error {{");
+        writer.StartBlock($"res[\"{property.WireName.SanitizeDoubleQuote()}\"] = func (n {parsableImportSymbol}) error {{");
         var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
         var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
         writer.WriteLine($"val, err := n.{deserializationMethodName}");
@@ -900,7 +900,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride.SanitizeDoubleQuote()}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
         writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
 
         if (ExcludeBackwardCompatible && requestParams.requestConfiguration is not null)
@@ -1009,7 +1009,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteSerializationMethodCall(CodeTypeBase propType, CodeElement parentBlock, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer, bool addBlockForErrorScope = true)
     {
-        serializationKey = $"\"{serializationKey}\"";
+        serializationKey = $"\"{serializationKey.SanitizeDoubleQuote()}\"";
         var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
         var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
         var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface || cType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase));
