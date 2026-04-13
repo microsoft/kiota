@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug where local OpenAPI documents were opened with Read/Write instead of Read, briefly preventing concurrent kiota instances from running against the same file. [#7601](https://github.com/microsoft/kiota/pull/7601) 
+- Fixed a bug with default strings representations.
 
 ## [1.31.0] - 2026-04-09
 
