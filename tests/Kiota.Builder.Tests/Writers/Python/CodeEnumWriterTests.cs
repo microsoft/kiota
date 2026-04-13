@@ -54,4 +54,16 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("(str, Enum):", result);
         Assert.Contains("pass", result);
     }
+    [Fact]
+    public void EscapesEnumWireValues()
+    {
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "Option1",
+            SerializationName = "line1\"\nline2",
+        });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("Option1 = \"line1\\\"\\nline2\",", result);
+    }
 }

@@ -57,4 +57,18 @@ public sealed class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
         Assert.Contains(optionName, result);
     }
+    [Fact]
+    public async Task EscapesEnumWireValuesAsync()
+    {
+        var declaration = currentEnum.Parent as CodeNamespace;
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "option1",
+            SerializationName = "line1\"\nline2",
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains("public const OPTION1 = \"line1\\\"\\nline2\";", result);
+    }
 }

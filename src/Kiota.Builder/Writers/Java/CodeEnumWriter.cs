@@ -29,7 +29,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
         foreach (var enumOption in enumOptions)
         {
             conventions.WriteShortDescription(enumOption, writer);
-            writer.WriteLine($"{enumOption.Name}(\"{enumOption.SerializationName}\"){(enumOption == lastEnumOption ? ";" : ",")}");
+            writer.WriteLine($"{enumOption.Name}(\"{enumOption.SerializationName.SanitizeDoubleQuote()}\"){(enumOption == lastEnumOption ? ";" : ",")}");
         }
         writer.WriteLines("public final String value;",
             $"{enumName}(final String value) {{");
@@ -46,7 +46,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, JavaConventionService>
                         "switch(searchValue) {");
         writer.IncreaseIndent();
         writer.Write(enumOptions
-                    .Select(x => $"case \"{x.WireName}\": return {x.Name};")
+                    .Select(x => $"case \"{x.WireName.SanitizeDoubleQuote()}\": return {x.Name};")
                     .Aggregate((x, y) => $"{x}{LanguageWriter.NewLine}{writer.GetIndent()}{y}") + LanguageWriter.NewLine);
         writer.WriteLine("default: return null;");
         writer.CloseBlock();

@@ -214,7 +214,7 @@ public sealed class GenerateSample : IDisposable
                 Assert.Contains("'EndDateTime' : endDateTime", fullText);
                 break;
             case GenerationLanguage.Go:
-                Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
+                Assert.Contains("uriparametername:\\\"startDateTime\\\"", fullText);
                 break;
             case GenerationLanguage.Java:
                 Assert.Contains("allQueryParams.put(\"EndDateTime\", endDateTime)", fullText);

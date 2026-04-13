@@ -731,6 +731,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_info = RequestInformation(Method.GET, '{baseurl+}/foo/bar', self.path_parameters", result);
     }
     [Fact]
+    public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        method.UrlTemplateOverride = "{baseurl+}/foo/'bar\nbaz";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("request_info = RequestInformation(Method.GET, '{baseurl+}/foo/\\'bar\\nbaz', self.path_parameters", result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyKnownRequestBodyType()
     {
         setup();
@@ -1000,6 +1014,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("()", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummy_string", StringComparison.Ordinal)).SerializationName = "line1\"\nline2";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains("writer.write_str_value(\"line1\\\"\\nline2\", self.dummy_string)", serializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("\"line1\\\"\\nline2\": lambda n : setattr(self, 'dummy_string', n.get_str_value())", deserializerResult);
+    }
+    [Fact]
     public void WritesMethodAsyncDescription()
     {
         setup();
@@ -1061,6 +1092,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("https://example.org/docs", result);
         Assert.Contains("Returns: Optional[Somecustomtype]", result);
         Assert.DoesNotContain("await", result);
+    }
+    [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see\"\"\"more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("see\\\"\\\"\\\"more:", result);
+    }
+    [Fact]
+    public void SanitizesMethodDescriptionLink()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see more";
+        method.Documentation.DocumentationLink = new("https://example.org/docs#\\\\test");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("see more: https://example.org/docs#//test", result);
     }
     [Fact]
     public void Defensive()
@@ -1192,6 +1247,51 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("from .child_class import ChildClass", result);
         Assert.Contains("return ChildClass()", result);
         Assert.Contains("return ParentClass()", result);
+    }
+    [Fact]
+    public void EscapesModelFactoryBodyForInheritedModels()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        childClass.Kind = CodeClassKind.Model;
+        childClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType
+        {
+            Name = "parentClass",
+            TypeDefinition = parentClass,
+        };
+        method.IsStatic = true;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childClass",
+            TypeDefinition = childClass,
+        });
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        AddCodeUsings();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parse_node",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.ty\\\"pe\\nx\")", result);
+        Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.chi\\\"ld\\nmodel\".casefold()", result);
     }
     [Fact]
     public void WritesModelFactoryBodyForUnionModels()
@@ -1430,6 +1530,34 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("self.path_parameters", result);
         Assert.Contains("id", result);
         Assert.Contains("return", result);
+    }
+    [Fact]
+    public void EscapesIndexerPathParameterName()
+    {
+        setup();
+        AddRequestProperties();
+        method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
+        method.OriginalIndexer = new()
+        {
+            Name = "indx",
+            ReturnType = new CodeType
+            {
+                Name = "string",
+            },
+            IndexParameter = new()
+            {
+                Name = "id",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsNullable = true,
+                },
+                SerializationName = "i\"d\nvalue",
+            }
+        };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("url_tpl_params[\"i\\\"d\\nvalue\"] = id", result);
     }
     [Fact]
     public void WritesPathParameterRequestBuilder()
@@ -1810,6 +1938,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
+    public void EscapesModelClassStringDefaults()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "prop_with_default_value",
+            DefaultValue = "\"line1\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("prop_with_default_value: Optional[str] = \"line1\\nline2\"", result);
+    }
+    [Fact]
     public void WritesModelClasses()
     {
         setup();
@@ -2015,6 +2163,45 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("self.path_parameters[\"base_url\"] = self.core.base_url", result);
     }
     [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "path_parameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "dict[str, str]",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            },
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
+        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("self.core.base_url = \"https://graph.microsoft.com/v1.0/\\\"evil\\npath\"", result);
+    }
+    [Fact]
     public void WritesBackedModelConstructor()
     {
         setup();
@@ -2181,6 +2368,36 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return original_name", result);
     }
     [Fact]
+    public void EscapesNameMapperMethodSerializationNames()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "filter",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "li\"ne\nbreak",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "original_name",
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("if original_name == \"filter\":", result);
+        Assert.Contains("return \"li\\\"ne\\nbreak\"", result);
+    }
+    [Fact]
     public void MapperMethodFailsIfNoQueryParametersMapperParameter()
     {
         setup();
@@ -2259,6 +2476,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("warn(", result);
+    }
+    [Fact]
+    public void EscapesDeprecationWarningStringLiteral()
+    {
+        setup();
+        method.Deprecation = new("line1\"\nline2");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("warn(\"line1\\\"\\nline2", result);
+        Assert.DoesNotContain("line1\"\nline2", result);
     }
     [Fact]
     public void WritesDeprecationInformationFromBuilder()

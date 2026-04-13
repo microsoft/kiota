@@ -141,7 +141,11 @@ public partial class JavaConventionService : CommonLanguageConventionService
                     writer.WriteLine($"{DocCommentPrefix}{additionalComment}");
 
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentation.DocumentationLink}\">{documentation.DocumentationLabel}</a>");
+            {
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                writer.WriteLine($"{DocCommentPrefix}@see <a href=\"{documentationLink}\">{documentationLabel}</a>");
+            }
             writer.WriteLine(DocCommentEnd);
         }
     }
@@ -172,7 +176,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
         }
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"{varName}.put(\"{p.Item2}\", {p.Item3});"
+                $"{varName}.put(\"{(p.Item2 ?? string.Empty).SanitizeDoubleQuote()}\", {p.Item3});"
             ).ToArray());
     }
 #pragma warning restore CA1822 // Method should be static
@@ -180,12 +184,12 @@ public partial class JavaConventionService : CommonLanguageConventionService
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return Array.Empty<string>();
 
-        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {RemoveInvalidDescriptionCharacters(element.Deprecation.Version.CleanupDescription())}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         return [
             $"@deprecated",
-            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}"
+            $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}"
         ];
     }
     internal void WriteDeprecatedAnnotation(CodeElement element, LanguageWriter writer)

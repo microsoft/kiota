@@ -70,4 +70,10 @@ public sealed class HttpConventionServiceTest
         // Assert
         Assert.Equal("null", result);
     }
+    [Fact]
+    public void SanitizesInvalidDescriptionCharacters()
+    {
+        var result = HttpConventionService.RemoveInvalidDescriptionCharacters("line1\r\nline2\tline3");
+        Assert.Equal("line1line2 line3", result);
+    }
 }

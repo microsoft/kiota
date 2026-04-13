@@ -125,4 +125,10 @@ public class StringExtensionsTests
         Assert.True("".EqualsIgnoreCase(""));
         Assert.True("Joe_Doe".EqualsIgnoreCase("joe_doe"));
     }
+    [Fact]
+    public void ReplacesDoubleQuoteWithEscapedSingleQuoteLiteral()
+    {
+        const string input = "\"line1'\\\nline2\"";
+        Assert.Equal("'line1\\'\\\\\\nline2'", input.ReplaceDoubleQuoteWithSingleQuote());
+    }
 }
