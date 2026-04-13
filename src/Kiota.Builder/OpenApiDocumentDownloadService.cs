@@ -74,7 +74,7 @@ internal partial class OpenApiDocumentDownloadService
                 var inMemoryStream = new MemoryStream();
                 using (await localFilesLock.LockAsync(inputPath, cancellationToken).ConfigureAwait(false))
                 {// To avoid deadlocking on update with multiple clients for the same local description
-                    using var fileStream = new FileStream(inputPath, FileMode.Open);
+                    using var fileStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                     await fileStream.CopyToAsync(inMemoryStream, cancellationToken).ConfigureAwait(false);
                 }
                 inMemoryStream.Position = 0;
