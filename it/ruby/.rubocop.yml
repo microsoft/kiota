@@ -110,7 +110,7 @@ Metrics/AbcSize:
 Naming/ConstantName:
   Enabled: false
 
-Naming/PredicateName:
+Naming/PredicatePrefix:
   Enabled: false
 
 Metrics/ClassLength:
