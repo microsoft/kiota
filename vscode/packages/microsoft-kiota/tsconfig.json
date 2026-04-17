@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
-    "module": "CommonJS",
+    "module": "Node16",
     "target": "ES2020",
     "lib": [
       "ES2020"
@@ -14,6 +14,7 @@
     "types": [
       "node",
     ],
+    "moduleResolution": "node16",
     "skipLibCheck": true,
     "paths": {
       "glob": [
