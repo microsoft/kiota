@@ -15,6 +15,7 @@
       "node",
     ],
     "moduleResolution": "node16",
+    "rootDir": "./src",
     "skipLibCheck": true,
     "paths": {
       "glob": [
