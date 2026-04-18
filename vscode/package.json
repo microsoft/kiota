@@ -35,5 +35,10 @@
   "workspaces": [
     "packages/npm-package",
     "packages/microsoft-kiota"
-  ]
+  ],
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.5",
+    "@microsoft/applicationinsights-web-basic": "3.3.10"
+  }
 }
