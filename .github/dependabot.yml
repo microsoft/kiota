@@ -18,6 +18,9 @@ updates:
       MicrosoftExtensions:
         patterns:
           - "Microsoft.Extensions.*"
+      coverlet:
+        patterns:
+          - "coverlet.*"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
