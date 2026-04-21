@@ -73,7 +73,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                                             .ToArray();
                 if (clientEntries.Length == 0 && !clientNameWasNotProvided)
                 {
-                    DisplayError($"No client found with the provided name {className}");
+                    DisplayError($"No plugin found with the provided name {className}");
                     return 1;
                 }
                 foreach (var clientEntry in clientEntries)
@@ -102,7 +102,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     else
                     {
                         DisplayWarning($"Update of {clientEntry.Key} skipped, no changes detected");
-                        DisplayCleanHint("client generate", "--refresh");
+                        DisplayCleanHint("plugin generate", "--refresh");
                     }
                 }
 
@@ -137,7 +137,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
         } : null;
-        if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));
+        if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_name", TelemetryLabels.RedactedValuePlaceholder));
         if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }
