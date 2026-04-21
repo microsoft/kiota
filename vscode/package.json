@@ -25,7 +25,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.4.1",
     "@types/node": "^25.6.0",
-    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.39.4",
     "glob": "^13.0.6",
@@ -35,5 +35,10 @@
   "workspaces": [
     "packages/npm-package",
     "packages/microsoft-kiota"
-  ]
+  ],
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.5",
+    "@microsoft/applicationinsights-web-basic": "3.3.10"
+  }
 }

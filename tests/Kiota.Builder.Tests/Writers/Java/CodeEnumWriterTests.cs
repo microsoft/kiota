@@ -92,4 +92,18 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains($"plus_1(\"+1\")", result);
     }
+    [Fact]
+    public void EscapesEnumSerializationValue()
+    {
+        var option = new CodeEnumOption
+        {
+            Name = "plus_1",
+            SerializationName = "plu\"s\n1"
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("plus_1(\"plu\\\"s\\n1\")", result);
+        Assert.Contains("case \"plu\\\"s\\n1\": return plus_1;", result);
+    }
 }

@@ -151,4 +151,10 @@ public class TypeScriptConventionServiceTests
         // Assert - should be camelCase, not PascalCase
         Assert.Equal("createPolicyFromDiscriminatorValue", result);
     }
+    [Fact]
+    public void RemoveInvalidDescriptionCharacters_SanitizesCommentBreakoutCharacters()
+    {
+        var result = TypeScriptConventionService.RemoveInvalidDescriptionCharacters("line1*/\r\nline2");
+        Assert.Equal("line1* /line2", result);
+    }
 }

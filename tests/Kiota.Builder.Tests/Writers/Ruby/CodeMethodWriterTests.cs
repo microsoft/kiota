@@ -359,6 +359,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesModelFactoryBody()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.ty\\\"pe\\nx\")", result);
+        Assert.Contains("when \"ns.chi\\\"ld\\nmodel\"", result);
+    }
+    [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
     {
         setup();
@@ -540,6 +596,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_info.url_template = '{baseurl+}/foo/bar'", result);
     }
     [Fact]
+    public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        method.AcceptedResponseTypes.Add("application/json");
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.UrlTemplateOverride = "{baseurl+}/foo/'bar\nbaz";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("request_info.url_template = '{baseurl+}/foo/\\'bar\\nbaz'", result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyKnownRequestBodyType()
     {
         setup();
@@ -644,6 +714,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_additional_data", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nbreak";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains("write_string_value(\"line1\\\"\\nbreak\",", serializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("\"line1\\\"\\nbreak\" => lambda", deserializerResult);
     }
     [Fact]
     public void WritesTranslatedTypesDeSerializerBody()
@@ -810,6 +897,34 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return Somecustomtype.new", result);
     }
     [Fact]
+    public void EscapesIndexerPathParameterName()
+    {
+        setup();
+        AddRequestProperties();
+        method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
+        method.OriginalIndexer = new()
+        {
+            Name = "indx",
+            ReturnType = new CodeType
+            {
+                Name = "string",
+            },
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "i\"d\nvalue",
+                Type = new CodeType
+                {
+                    Name = "string",
+                    IsNullable = true,
+                },
+            }
+        };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("url_tpl_params[\"i\\\"d\\nvalue\"] = id", result);
+    }
+    [Fact]
     public void WritesPathParameterRequestBuilder()
     {
         setup();
@@ -861,6 +976,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"@{propName.ToSnakeCase()} = {defaultValue}", result);
+    }
+    [Fact]
+    public void EscapesStringDefaultsInConstructor()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var propName = "propWithDefaultValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = "\"line1\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"@{propName.ToSnakeCase()} = \"line1\\nline2\"", result);
     }
     [Fact]
     public void WritesWithUrl()
@@ -965,6 +1100,42 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"set_base_url('{method.BaseUrl}')", result);
     }
     [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/'evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("set_base_url('https://graph.microsoft.com/v1.0/\\'evil\\npath')", result);
+    }
+    [Fact]
     public void WritesApiConstructorWithBackingStore()
     {
         setup();
@@ -1054,6 +1225,36 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("when \"select\"", result);
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("else", result);
+    }
+    [Fact]
+    public void EscapesNameMapperMethodSerializationNames()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "filter",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "li\"ne\nbreak",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "originalName",
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("when \"filter\"", result);
+        Assert.Contains("return \"li\\\"ne\\nbreak\"", result);
     }
     [Fact]
     public void DoesntWriteReadOnlyPropertiesInSerializerBody()

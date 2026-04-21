@@ -40,7 +40,7 @@ public sealed class KiotaSearcherTests : IDisposable
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata", string.Empty, new CancellationToken());
         Assert.Equal(2, results.Count);
     }
-    [Fact]
+    [RetryFact]
     public async Task GetsMicrosoftGraphAsync()
     {
         var searchConfiguration = searchConfigurationFactory;

@@ -176,7 +176,7 @@ public class GoConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false));
+        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false), normalizationFunc: RemoveInvalidDescriptionCharacters);
         if (!string.IsNullOrEmpty(prefix))
         {
             description = description.ToFirstCharacterLowerCase();
@@ -184,6 +184,11 @@ public class GoConventionService : CommonLanguageConventionService
         WriteDescriptionItem($"{prefix}{description}{suffix}", writer);
         return true;
     }
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
     public void WriteGeneratorComment(LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
@@ -201,9 +206,11 @@ public class GoConventionService : CommonLanguageConventionService
         if (documentation is null) return;
         if (documentation.ExternalDocumentationAvailable)
         {
-            WriteDescriptionItem($"[{documentation.DocumentationLabel}]", writer);
+            var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+            var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+            WriteDescriptionItem($"[{documentationLabel}]", writer);
             WriteDescriptionItem(string.Empty, writer);
-            WriteDescriptionItem($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
+            WriteDescriptionItem($"[{documentationLabel}]: {documentationLink}", writer);
         }
     }
 #pragma warning disable CA1822 // Method should be static
@@ -247,7 +254,7 @@ public class GoConventionService : CommonLanguageConventionService
             };
             if (shouldCheckNullability)
                 writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
-            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
+            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
             if (shouldCheckNullability)
                 writer.CloseBlock();
         }
@@ -274,9 +281,9 @@ public class GoConventionService : CommonLanguageConventionService
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return;
 
-        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {RemoveInvalidDescriptionCharacters(element.Deprecation.Version)}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        WriteDescriptionItem($"Deprecated: {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).TrimStart('*'))}{versionComment}{dateComment}{removalComment}", writer);
+        WriteDescriptionItem($"Deprecated: {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).TrimStart('*'), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}", writer);
     }
 }

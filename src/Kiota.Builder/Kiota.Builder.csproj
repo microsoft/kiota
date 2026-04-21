@@ -15,7 +15,7 @@
     <Title>Microsoft.OpenApi.Kiota.Builder</Title>
     <PackageId>Microsoft.OpenApi.Kiota.Builder</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.31.0</VersionPrefix>
+    <VersionPrefix>1.31.1</VersionPrefix>
     <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <PackageReleaseNotes>
       https://github.com/microsoft/kiota/releases
@@ -37,18 +37,17 @@
   <ItemGroup>
     <PackageReference Include="AsyncKeyedLock" Version="8.0.2" />
     <PackageReference Include="DotNet.Glob" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
     <PackageReference Include="Microsoft.Kiota.Bundle" Version="1.22.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="3.5.1" />
+    <PackageReference Include="Microsoft.OpenApi" Version="3.5.2" />
     <PackageReference Include="Microsoft.OpenApi.ApiManifest" Version="3.0.0-preview.1" />
-    <PackageReference Include="Microsoft.OpenApi.YamlReader" Version="3.5.1" />
+    <PackageReference Include="Microsoft.OpenApi.YamlReader" Version="3.5.2" />
     <PackageReference Include="Microsoft.DeclarativeAgents.Manifest" Version="5.0.0-rc.2" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.201" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.202" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>

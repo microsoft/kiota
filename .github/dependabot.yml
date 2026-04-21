@@ -18,6 +18,9 @@ updates:
       MicrosoftExtensions:
         patterns:
           - "Microsoft.Extensions.*"
+      coverlet:
+        patterns:
+          - "coverlet.*"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -82,6 +85,15 @@ updates:
     directories:
       - "/it/java"
       - "/it/java/basic"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
+  - package-ecosystem: pub
+    directory: "/it/dart"
     schedule:
       interval: daily
     open-pull-requests-limit: 10

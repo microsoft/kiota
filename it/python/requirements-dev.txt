@@ -34,7 +34,7 @@ mypy==1.19.1
 
 mypy-extensions==1.1.0 ; python_version >= '3.5'
 
-packaging==26.0 ; python_version >= '3.7'
+packaging==26.1 ; python_version >= '3.7'
 
 platformdirs==4.5.1 ; python_version >= '3.7'
 
@@ -64,7 +64,7 @@ wrapt==2.1.2 ; python_version < '3.11'
 
 yapf==0.43.0
 
-zipp==3.23.0 ; python_version >= '3.7'
+zipp==3.23.1 ; python_version >= '3.7'
 
 aiohttp==3.13.5 ; python_version >= '3.6'
 

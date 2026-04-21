@@ -36,7 +36,7 @@ jobs:
         run: cat ./reports/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       - name: Add coverage PR comment
         uses: marocchino/sticky-pull-request-comment@v3
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
         with:
           recreate: true
           path: ./reports/coverage/SummaryGithub.md

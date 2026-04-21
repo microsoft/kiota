@@ -251,7 +251,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             {
                 DescriptionTemplate = "This will send a POST request",
                 DocumentationLink = new Uri("https://learn.microsoft.com/"),
-                DocumentationLabel = "Learning"
+                DocumentationLabel = "Learning */ docs"
             },
             Kind = CodeMethodKind.RequestExecutor
         };
@@ -288,7 +288,8 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         Assert.Contains("public function post(): Promise", result);
         Assert.Contains("$requestInfo = $this->createPostRequestInformation();", result);
-        Assert.Contains("@link https://learn.microsoft.com/ Learning", result);
+        Assert.DoesNotContain("@link https://learn.microsoft.com/ Learning */ docs", result);
+        Assert.Contains("@link https://learn.microsoft.com/ Learning  docs", result);
         Assert.Contains("'401' => [Error401::class, 'createFromDiscriminatorValue']", result);
         Assert.Contains("$result = $this->requestAdapter->sendPrimitiveAsync($requestInfo, StreamInterface::class, $errorMappings);", result);
         Assert.Contains("return $result;", result);
@@ -634,6 +635,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("$requestInfo->urlTemplate = '{baseurl+}/foo/bar';", result);
     }
+    [Fact]
+    public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        method.Name = "createPostRequestInformation";
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.ReturnType = new CodeType()
+        {
+            Name = "RequestInformation",
+            IsNullable = false
+        };
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.UrlTemplateOverride = "{baseurl+}/foo/'bar\nbaz";
+        _codeMethodWriter.WriteCodeElement(method, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("$requestInfo->urlTemplate = '{baseurl+}/foo/\\'bar\\nbaz';", result);
+    }
 
     [Fact]
     public void WritesRequestGeneratorBodyForParsableCollection()
@@ -821,6 +842,97 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return new MessageRequestBuilder($urlTplParams, $this->requestAdapter, $id);", result);
 
     }
+    [Fact]
+    public async Task EscapesIndexerPathParameterNameAsync()
+    {
+        setup();
+        parentClass.AddProperty(
+            new CodeProperty
+            {
+                Name = "pathParameters",
+                Kind = CodePropertyKind.PathParameters,
+                Type = new CodeType { Name = "array" },
+                DefaultValue = "[]"
+            },
+            new CodeProperty
+            {
+                Name = "requestAdapter",
+                Kind = CodePropertyKind.RequestAdapter,
+                Type = new CodeType
+                {
+                    Name = "requestAdapter"
+                }
+            },
+            new CodeProperty
+            {
+                Name = "urlTemplate",
+                Kind = CodePropertyKind.UrlTemplate,
+                Type = new CodeType
+                {
+                    Name = "string"
+                }
+            }
+        );
+        var codeMethod = new CodeMethod
+        {
+            Name = "messageById",
+            Access = AccessModifier.Public,
+            Kind = CodeMethodKind.IndexerBackwardCompatibility,
+            OriginalIndexer = new CodeIndexer
+            {
+                Name = "messageById",
+                ReturnType = new CodeType
+                {
+                    Name = "MessageRequestBuilder"
+                },
+                IndexParameter = new()
+                {
+                    Name = "id",
+                    SerializationName = "mess'age\nid",
+                    Type = new CodeType
+                    {
+                        Name = "MessageRequestBuilder"
+                    },
+                }
+            },
+            OriginalMethod = new CodeMethod
+            {
+                Name = "messageById",
+                Access = AccessModifier.Public,
+                Kind = CodeMethodKind.IndexerBackwardCompatibility,
+                ReturnType = new CodeType
+                {
+                    Name = "MessageRequestBuilder"
+                }
+            },
+            ReturnType = new CodeType
+            {
+                Name = "MessageRequestBuilder",
+                IsNullable = false,
+                TypeDefinition = new CodeClass
+                {
+                    Name = "MessageRequestBuilder",
+                    Kind = CodeClassKind.RequestBuilder,
+                    Parent = parentClass.Parent
+                }
+            }
+        };
+        codeMethod.AddParameter(new CodeParameter
+        {
+            Name = "id",
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = false
+            },
+            Kind = CodeParameterKind.Path
+        });
+        parentClass.AddMethod(codeMethod);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
+        languageWriter.Write(codeMethod);
+        var result = stringWriter.ToString();
+        Assert.Contains("$urlTplParams['mess\\'age\\nid'] = $id;", result);
+    }
 
     public static IEnumerable<object[]> DeserializerProperties => new List<object[]>
     {
@@ -937,6 +1049,24 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("parent::methodName()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1'\nbreak";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        method.ReturnType.Name = "void";
+        languageWriter.Write(method);
+        var serializerResult = stringWriter.ToString();
+        Assert.Contains("$writer->writeStringValue('line1\\'\\nbreak', $this->getDummyProp());", serializerResult);
+        stringWriter.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        languageWriter.Write(method);
+        var deserializerResult = stringWriter.ToString();
+        Assert.Contains("'line1\\'\\nbreak' => fn(ParseNode $n) => $o->setDummyProp($n->getStringValue())", deserializerResult);
     }
 
     [Fact]
@@ -1161,6 +1291,31 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->setCountryCode(new CountryCode('+254'));", result);
         Assert.Contains("$this->setPropWithDefaultNullValue(null)", result);
         Assert.Contains("$this->setPropWithDefaultBoolValue(true)", result);
+    }
+    [Fact]
+    public async Task EscapesStringDefaultsInConstructorAsync()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        var constructor = new CodeMethod
+        {
+            Name = "constructor",
+            Access = AccessModifier.Public,
+            ReturnType = new CodeType { Name = "void" },
+            Kind = CodeMethodKind.Constructor
+        };
+        parentClass.AddMethod(constructor);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "type",
+            DefaultValue = "\"line1'\\\nline2\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string" },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+        _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("$this->setType('line1\\'\\\\\\nline2')", result);
     }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
@@ -1596,6 +1751,63 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.type\");", result);
     }
     [Fact]
+    public async Task EscapesFactoryMethodAsync()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("chi'ld\nModel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "ParseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
+        languageWriter.Write(factoryMethod);
+        var result = stringWriter.ToString();
+        Assert.Contains("$mappingValueNode = $parseNode->getChildNode(\"@odata.ty\\\"pe\\nx\");", result);
+        Assert.Contains("case 'chi\\'ld\\nModel': return new ChildModel();", result);
+    }
+    [Fact]
     public async Task WriteApiConstructorAsync()
     {
         setup();
@@ -1646,6 +1858,56 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
         Assert.Contains("public function __construct(RequestAdapter $requestAdapter)", result);
         Assert.Contains($"$this->pathParameters['baseurl'] = $this->requestAdapter->getBaseUrl();", result);
+    }
+    [Fact]
+    public async Task EscapesApiConstructorBaseUrlAsync()
+    {
+        setup();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType { Name = "RequestAdapter" }
+        });
+        var codeMethod = new CodeMethod
+        {
+            ReturnType = new CodeType
+            {
+                Name = "void",
+                IsNullable = false
+            },
+            Name = "construct",
+            Parent = parentClass,
+            Kind = CodeMethodKind.ClientConstructor
+        };
+        codeMethod.BaseUrl = "https://graph.microsoft.com/v1.0/'evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "array",
+                IsExternal = true,
+            }
+        });
+        codeMethod.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.RequestAdapter,
+            Name = "requestAdapter",
+            Type = new CodeType
+            {
+                Name = "RequestAdapter"
+            },
+            SerializationName = "rawUrl"
+        });
+        codeMethod.DeserializerModules = new() { "Microsoft\\Kiota\\Serialization\\Deserializer" };
+        codeMethod.SerializerModules = new() { "Microsoft\\Kiota\\Serialization\\Serializer" };
+        parentClass.AddMethod(codeMethod);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, parentClass.Parent as CodeNamespace, cancellationToken: TestContext.Current.CancellationToken);
+        languageWriter.Write(codeMethod);
+        var result = stringWriter.ToString();
+        Assert.Contains("$this->requestAdapter->setBaseUrl('https://graph.microsoft.com/v1.0/\\'evil\\npath');", result);
     }
 
     [Fact]
