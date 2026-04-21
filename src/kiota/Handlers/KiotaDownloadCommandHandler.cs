@@ -116,7 +116,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
     {
         if (!results.Any())
+        {
             DisplayError("No matching result found, use the search command to find the right key");
+            return 1;
+        }
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
             var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
@@ -129,9 +132,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             return statusCode;
         }
         else
+        {
             DisplayError("Multiple matches found, use the key to select a specific description. You can find the key by using the search command.");
-
-        return 0;
+            return 1;
+        }
     }
     private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, ILogger logger, CancellationToken cancellationToken)
     {
