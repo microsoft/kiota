@@ -136,7 +136,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key.SanitizeDoubleQuote()}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase))");
+                    if (!string.IsNullOrEmpty(mappedType.Key))
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key.SanitizeDoubleQuote()}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase))");
                     writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(propertyType, codeElement)}();");
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
