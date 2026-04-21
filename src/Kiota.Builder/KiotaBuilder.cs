@@ -1265,7 +1265,7 @@ public partial class KiotaBuilder
     private const string RequestBodyOctetStreamContentType = "application/octet-stream";
     private const string DefaultResponseIndicator = "default";
     private static readonly HashSet<string> redirectStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "301", "302", "303", "307" };
-    private static readonly HashSet<string> noContentStatusCodes = new(redirectStatusCodes, StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "304" };
+    private static readonly HashSet<string> noContentStatusCodes = new(StringComparer.OrdinalIgnoreCase) { "201", "202", "204", "205", "304" };
     private static readonly HashSet<string> errorStatusCodes = new(Enumerable.Range(400, 599).Select(static x => x.ToString(CultureInfo.InvariantCulture))
                                                                                  .Concat([CodeMethod.ErrorMappingClientRange, CodeMethod.ErrorMappingServerRange]), StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> errorStatusCodesWithDefault = new(errorStatusCodes, StringComparer.OrdinalIgnoreCase) { DefaultResponseIndicator };
