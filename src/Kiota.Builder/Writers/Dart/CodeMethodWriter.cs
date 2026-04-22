@@ -174,9 +174,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if('{SanitizeDartSingleQuoteLiteral(mappedType.Key)}' == {DiscriminatorMappingVarName}) {{");
-                    writer.WriteLine($"{ResultVarName}.{property.Name} = {conventions.GetTypeString(propertyType, codeElement)}();");
-                    writer.CloseBlock();
+                    if (!string.IsNullOrEmpty(mappedType.Key))
+                    {
+                        writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if('{SanitizeDartSingleQuoteLiteral(mappedType.Key)}' == {DiscriminatorMappingVarName}) {{");
+                        writer.WriteLine($"{ResultVarName}.{property.Name} = {conventions.GetTypeString(propertyType, codeElement)}();");
+                        writer.CloseBlock();
+                        includeElse = true;
+                    }
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
@@ -185,9 +189,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     writer.StartBlock($"{(includeElse ? "else " : string.Empty)}if({parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)}{check}) {{");
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement)};");
                     writer.CloseBlock();
+                    includeElse = true;
                 }
-            if (!includeElse)
-                includeElse = true;
         }
         writer.WriteLine($"return {ResultVarName};");
     }
