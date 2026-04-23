@@ -63,7 +63,7 @@
     <PackageReference Include="Spectre.Console" Version="0.55.2" />
     <PackageReference Include="StreamJsonRpc" Version="2.24.84" />
     <PackageReference Include="System.CommandLine" Version="2.0.7" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.202" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.203" PrivateAssets="All" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
