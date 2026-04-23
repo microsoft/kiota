@@ -160,7 +160,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     {
         writer.WriteLine($"var {ResultVarName} = {parentClass.Name}();");
 
-        if (parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Where(static x => x.Type is CodeType cType && cType.TypeDefinition is CodeClass && !cType.IsCollection).Any())
+        if (parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+            .Any(x => x.Type is CodeType cType && cType.TypeDefinition is CodeClass && !cType.IsCollection &&
+                      parentClass.DiscriminatorInformation.DiscriminatorMappings.Any(m => m.Value.Name.Equals(cType.Name, StringComparison.OrdinalIgnoreCase))))
         {
             var discriminatorPropertyName = SanitizeDartSingleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName);
             writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name}.getChildNode('{discriminatorPropertyName}')?.getStringValue();");
