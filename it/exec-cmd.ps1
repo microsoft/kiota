@@ -256,10 +256,10 @@ elseif ($language -eq "php") {
     if ($mockServerTest) {
         Push-Location $itTestPath
 
-        $itTestPathSources = Join-Path -Path $testPath -ChildPath "src/client"
-        #Destination Path: use upper case "Client" here, as the test imports the namespace "Integration\Test\Client\...",
+        #use upper case "Client" here, as the test imports the namespace "Integration\Test\Client\...",
         #and as composer.json defines the autoload/psr-4 path "Integration\Test\", PHP would search the sub-namespaces in subdirs with the same casing.
         #That's relevant for the Github CI testsuite running on Linux.
+        $itTestPathSources = Join-Path -Path $testPath -ChildPath "src/Client"
         $itTestPathDest = Join-Path -Path $itTestPath -ChildPath "src/Client"
         if (Test-Path $itTestPathDest) {
             Remove-Item $itTestPathDest -Force -Recurse
