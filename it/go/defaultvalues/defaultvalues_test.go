@@ -41,15 +41,12 @@ func TestMockServerBasic(t *testing.T) {
 		t.Errorf("dateOnlyValue is not 1900-01-01 but %v\n", serialization.DateOnly.String(*(model.GetDateOnlyValue())))
 	}
 
-	if model.GetDateValueLocalTime() == nil {
-		t.Errorf("dateValueLocalTime is null\n")
+	if model.GetDateValue() == nil {
+		t.Errorf("dateValue is null\n")
 	}
-	//Format the datetime in the local format:
-	if (*(model.GetDateValueLocalTime())).Format("2006-01-02T15:04:05") != "1900-01-01T00:00:00" {
-		t.Errorf("dateValueLocalTime is not 1900-01-01T00:00:00 but %v\n", (*(model.GetDateValueLocalTime())).Format("2006-01-02T15:04:05"))
-	}
-	if (*(model.GetDateValueLocalTime())).Location() != time.Now().Location() {
-		t.Errorf("dateValueLocalTime does not have location %v but %v\n", (*(model.GetDateValueLocalTime())).Location(), time.Now().Location())
+	//Format the datetime in RFC3339 format:
+	if (*(model.GetDateValue())).Format(time.RFC3339) != "1900-01-01T00:00:00Z" {
+		t.Errorf("dateValue is not 1900-01-01T00:00:00Z but %v\n", (*(model.GetDateValue())).Format(time.RFC3339))
 	}
 
 	if *(model.GetDecimalValue()) != 25.5 {

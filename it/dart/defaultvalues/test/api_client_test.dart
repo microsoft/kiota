@@ -33,10 +33,6 @@ void main() {
       //default format: the timezone is "Z".
       expect(model.dateValue!.toString(), "1900-01-01 00:00:00.000Z");
 
-      expect(model.dateValueLocalTime, isNotNull);
-      //default format: no timezone.
-      expect(model.dateValueLocalTime!.toString(), "1900-01-01 00:00:00.000");
-
       expect(model.decimalValue!, 25.5);
       expect(model.doubleValue!, 25.5);
       expect(model.enumValue!, WeatherForecastEnumValue.one);

@@ -42,11 +42,6 @@
       "WeatherForecast": {
         "type": "object",
         "properties": {
-          "dateValueLocalTime": {
-            "type": "string",
-            "format": "date-time",
-            "default": "1900-01-01T00:00:00"
-          },
           "dateValue": {
             "type": "string",
             "format": "date-time",

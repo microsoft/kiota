@@ -81,17 +81,4 @@ public static class StringExtensions
         }
         return builder.ToString();
     }
-
-    /// <summary>
-    /// The argument is a DateTime value in RFC3339 format with offset: check whether a TimeZoneOffset is specified (
-    /// string ends with "Z" or "+00:00" or "-00:00")
-    /// or it is a local time.
-    /// </summary>
-    /// <param name="dateTime">A datetime string, might be null/empty</param>
-    /// <returns>true if a timezone offset is found. false otherwise</returns>
-    public static bool IsDateTimeWithOffset(this string dateTime)
-    {
-        if (string.IsNullOrEmpty(dateTime)) return false;
-        return dateTime.EndsWith('Z') || dateTime.EndsWith('z') || Regex.IsMatch(dateTime, "[+-]\\d{2}:\\d{2}$");
-    }
 }

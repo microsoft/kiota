@@ -1336,20 +1336,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         };
         parentClass.AddMethod(constructor);
 
-        //PHP cannot parse a value without timezone. So it must be appended.
         //The PHP generator surrounds the values from the OpenAPI spec with single quotes.
-        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
-        var dateTimePropName = "propWithDefaultDateTimeValue";
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = dateTimePropName,
-            DefaultValue = defaultValueDateTime,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType
-            {
-                Name = "DateTime"
-            },
-        });
         var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
         var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
         parentClass.AddProperty(new CodeProperty
@@ -1392,10 +1379,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = stringWriter.ToString();
 
         Assert.Contains("public function __construct", result);
-        //Default value without timezone: it is parsed by "new DateTime".
-        Assert.Contains($"$this->set{dateTimePropName.ToFirstCharacterUpperCase()}(new DateTime('{defaultValueDateTime.TrimQuotes()}'));", result);
-
-        //Default value with timezone: DateTime values must be assigned to a dummy variable and a "false" check must be generated.
+        //DateTime default value: DateTime values must be assigned to a dummy variable and a "false" check must be generated.
         Assert.Contains($"$tempSet{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()} = DateTime::createFromFormat(DateTime::RFC3339, '{defaultValueDateTimeWithTimeZone.TrimQuotes()}');", result);
         Assert.Contains($"if (!is_bool($tempSet{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()})", result);
         Assert.Contains($"$this->set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}($tempSet{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()});", result);

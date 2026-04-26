@@ -34,10 +34,6 @@ public class BasicAPITest {
         //No seconds are printed, and the timezone is "Z".
         assertEquals("1900-01-01T00:00Z", model.getDateValue().toString());
 
-        assertNotNull(model.getDateValueLocalTime());
-        //Local time in API description is converted to OffsetDateTime in local time zone, which differs. So check only the parts of the value.
-        assertTrue(model.getDateValueLocalTime().toString().startsWith("1900-01-01T00:00"), "LocalDateTime value (" + model.getDateValueLocalTime().toString() + ") does not start with \"1900-01-01T00:00\"");
-
         assertEquals(25.5, model.getDecimalValue());
         assertEquals(25.5, model.getDoubleValue());
         assertEquals(WeatherForecastEnumValue.One, model.getEnumValue());

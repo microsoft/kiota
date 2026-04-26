@@ -36,12 +36,7 @@ class DefaultValuesTest extends TestCase {
         $this->assertEquals('1900-01-01', strval($model->getDateOnlyValue()));
 
         $this->assertNotNull($model->getDateValue());
-        //Format the value in ISO8601 (the original value in the model is RFC3339, which has a colon in the timezone offset - this difference is not relevant for the test):
-        $this->assertEquals('1900-01-01T00:00:00+0000', $model->getDateValue()->format(DateTime::ISO8601));
-
-        $this->assertNotNull($model->getDateValueLocalTime());
-        //Local time in API description is converted to DateTime in local time zone, which depends on the current system. So check only the date/time parts of the value.
-        $this->assertStringStartsWith('1900-01-01T00:00:00', $model->getDateValueLocalTime()->format(DateTime::ISO8601));
+        $this->assertEquals('1900-01-01T00:00:00+00:00', $model->getDateValue()->format(DateTime::RFC3339));
 
         $this->assertEquals(25.5, $model->getDecimalValue());
         $this->assertEquals(25.5, $model->getDoubleValue());

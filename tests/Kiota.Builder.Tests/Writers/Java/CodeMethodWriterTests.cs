@@ -2068,19 +2068,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Constructor;
         method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
         method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
-        //Java cannot parse a value without timezone. So it must be handled differently.
-        var defaultValueDateTimeLocalTime = "\"1900-01-01T00:00:00\"";
-        var dateTimeLocalTimePropName = "propWithDefaultDateTimeLocalTimeValue";
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = dateTimeLocalTimePropName,
-            DefaultValue = defaultValueDateTimeLocalTime,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType
-            {
-                Name = "OffsetDateTime"
-            },
-        });
         var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
         var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
         parentClass.AddProperty(new CodeProperty
@@ -2133,8 +2120,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
-        //Original value without timezone is parsed as "LocalDateTime", then convert to OffsetDateTime in current zone.
-        Assert.Contains($"this.set{dateTimeLocalTimePropName.ToFirstCharacterUpperCase()}(java.time.LocalDateTime.parse({defaultValueDateTimeLocalTime}).atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime());", result);
         Assert.Contains($"this.set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}(OffsetDateTime.parse({defaultValueDateTimeWithTimeZone}));", result);
         Assert.Contains($"this.set{datePropName.ToFirstCharacterUpperCase()}(LocalDate.parse({defaultValueDate}));", result);
         Assert.Contains($"this.set{uuidPropName.ToFirstCharacterUpperCase()}(UUID.fromString({defaultValueUuid}));", result);

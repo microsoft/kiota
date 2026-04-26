@@ -143,14 +143,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 return defaultValue.TrimQuotes();
             case "date":
                 return $"new Date({defaultValue})";
-            case "datetime" when defaultValue.Contains('+', StringComparison.InvariantCulture) || defaultValue.Contains('Z', StringComparison.OrdinalIgnoreCase):
-                //We use "DateTime::createFromFormat" for format RFC3339, if the default value contains a timezone.
+            case "datetime":
+                //We use "DateTime::createFromFormat" for format RFC3339.
                 //"createFromFormat" can return "false" if parsing failed. PHPStan level 9 requires a check for boolean values.
                 checkParsedValue = true;
                 return $"DateTime::createFromFormat(DateTime::RFC3339, {defaultValue})";
-            case "datetime":
-                //Fallback: the default value has no timezone. Just create a new DateTime, this can handle this format and sets the local timezone.
-                return $"new DateTime({defaultValue})";
             case "time":
                 return $"new Time({defaultValue})";
             default:
