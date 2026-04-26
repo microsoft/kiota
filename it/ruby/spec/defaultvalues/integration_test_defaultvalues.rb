@@ -35,13 +35,6 @@ RSpec.describe Integration_test do
     expect(model.date_value).to_not be nil
     expect(model.date_value.to_s()).to eq("1900-01-01T00:00:00+00:00")
     
-    expect(model.date_value_local_time).to_not be nil
-    # Parsing a DateTime without timezone to a value in local time is not possible. The following code will result in a UTC value.
-    # It could be possible like this: "Time.local(2026, 6, 1, 13, 0, 5, 0).to_datetime"
-    # And it might work with ActiveSupport extensions and the "change" method.
-    # So, here we just expected a UTC value:
-    expect(model.date_value_local_time.to_s()).to eq("1900-01-01T00:00:00+00:00")
-    
     expect(model.decimal_value()).to be 25.5
     expect(model.double_value()).to be 25.5
     expect(model.enum_value()).to be Integration_test::Client::Models::WeatherForecastEnumValue[:One]

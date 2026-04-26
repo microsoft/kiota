@@ -553,19 +553,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 isPointer = true; //"ParseDateOnly" returns a pointer var.
                 //Type "DateOnly" is defined in a module "github.com/microsoft/kiota-abstractions-go/serialization" that has this import hash:
                 return $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})";
-            case "time" when defaultValue.TrimQuotes().IsDateTimeWithOffset():
+            case "time":
                 //DateTime value with timezone. Parse with format "RFC3339"
                 discardError = true;
                 isPointer = false;
                 //Module "time" has this hash:
                 return $"{GoConventionService.TimeFormatHash}.Parse({GoConventionService.TimeFormatHash}.RFC3339, {defaultValue})";
-            case "time":
-                //DateTime value without TimeZone is considered "Local time".
-                discardError = true;
-                isPointer = false;
-                //We need a custom format "2006-01-02T15:04:05".
-                //Then call the method "ParseInLocation" to parse it in the location of the current system time.
-                return $"{GoConventionService.TimeFormatHash}.ParseInLocation(\"2006-01-02T15:04:05\", {defaultValue}, {GoConventionService.TimeFormatHash}.Now().Location())";
             case "timeonly":
                 discardError = true;
                 isPointer = true; //"ParseTimeOnly" returns a pointer var.

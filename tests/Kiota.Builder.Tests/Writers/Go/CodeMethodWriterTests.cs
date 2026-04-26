@@ -2178,19 +2178,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.Constructor;
         method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
         method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
-        //Go cannot parse a value without timezone. So it must be appended.
-        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
-        var dateTimePropName = "propWithDefaultDateTimeValue";
-        parentClass.AddProperty(new CodeProperty
-        {
-            Name = dateTimePropName,
-            DefaultValue = defaultValueDateTime,
-            Kind = CodePropertyKind.Custom,
-            Type = new CodeType
-            {
-                Name = "Time"
-            },
-        });
         var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
         var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
         parentClass.AddProperty(new CodeProperty
@@ -2247,10 +2234,6 @@ public sealed class CodeMethodWriterTests : IDisposable
         GoConventionService conventionService = new GoConventionService();
         //All parse methods return an error variable that is discarded.
         //And some return a pointer, others don't.
-
-        //Original value without timezone: It was parsed in a custom format and with the timezone location of the current system time:
-        Assert.Contains($"{dateTimePropName}Value, _ := {GoConventionService.TimeFormatHash}.ParseInLocation(\"2006-01-02T15:04:05\", {defaultValueDateTime}, {GoConventionService.TimeFormatHash}.Now().Location())", result);
-        Assert.Contains($"m.Set{dateTimePropName.ToFirstCharacterUpperCase()}(&{dateTimePropName}Value)", result);
 
         Assert.Contains($"{dateTimeWithTimeZonePropName}Value, _ := {GoConventionService.TimeFormatHash}.Parse({GoConventionService.TimeFormatHash}.RFC3339, {defaultValueDateTimeWithTimeZone})", result);
         Assert.Contains($"m.Set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}(&{dateTimeWithTimeZonePropName}Value)", result);

@@ -36,17 +36,4 @@ public class StringExtensionsTests
         const string input = "\"line1\\\nline2\"";
         Assert.Equal("\"line1\\\\\\nline2\"", input.SanitizeQuotedStringLiteral());
     }
-
-    [Fact]
-    public void DetectsDateTimeOffset()
-    {
-        Assert.True("1900-01-01T00:00:00+00:00".IsDateTimeWithOffset());
-        Assert.True("1900-01-01T00:00:00-00:00".IsDateTimeWithOffset());
-        Assert.True("1900-01-01T00:00:00Z".IsDateTimeWithOffset());
-        //Local time:
-        Assert.False("1900-01-01T00:00:00".IsDateTimeWithOffset());
-        //Empty/null return "false".
-        Assert.False(StringExtensions.IsDateTimeWithOffset(null));
-        Assert.False(StringExtensions.IsDateTimeWithOffset(""));
-    }
 }

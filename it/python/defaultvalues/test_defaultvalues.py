@@ -34,10 +34,6 @@ async def test_defaultvalues():
     assert model.date_value != None
     assert model.date_value.isoformat() == '1900-01-01T00:00:00+00:00'
 
-    assert model.date_value_local_time != None
-    #As the datetime has no timezone (local time), the iso formatted string also has no timezone.
-    assert model.date_value_local_time.isoformat() == '1900-01-01T00:00:00'
-
     assert model.decimal_value == 25.5
     assert model.double_value == 25.5
     assert model.enum_value ==  WeatherForecast_enumValue("one")
