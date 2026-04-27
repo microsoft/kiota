@@ -1,18 +1,8 @@
 # frozen_string_literal: true
 
-# Workaround for https://github.com/microsoft/kiota-abstractions-ruby/issues/82 
-# can be removed if this issue is fixed
-class MyAuthenticationProvider
-  include MicrosoftKiotaAbstractions::AuthenticationProvider
-  def authenticate_request(_request)
-    Fiber.new do        
-    end
-  end
-end
-      
 RSpec.describe Integration_test do
   it "test default value initialization of model class" do
-    auth_provider = MyAuthenticationProvider.new()
+    auth_provider = MicrosoftKiotaAbstractions::AnonymousAuthenticationProvider.new()
     request_adapter = MicrosoftKiotaFaraday::FaradayRequestAdapter.new(auth_provider)
     request_adapter.set_base_url('http://127.0.0.1:1080')
     client = Integration_test::Client::ApiClient.new(request_adapter)
