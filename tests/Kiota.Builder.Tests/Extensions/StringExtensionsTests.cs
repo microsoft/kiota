@@ -47,6 +47,25 @@ public class StringExtensionsTests
         Assert.Equal("Toto", "toto".ToPascalCase());
         Assert.Equal("TotoPascalCase", "toto-pascal-case".ToPascalCase());
     }
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
+    [InlineData("A", "A")]
+    [InlineData("Ab", "Ab")]
+    [InlineData("ComplianceDLPApplicationsAuditRecord", "ComplianceDlpApplicationsAuditRecord")]
+    [InlineData("PowerBIAuditRecord", "PowerBiAuditRecord")]
+    [InlineData("PowerBIDlpAuditRecord", "PowerBiDlpAuditRecord")]
+    [InlineData("OnPremisesSharePointScannerDLPAuditRecord", "OnPremisesSharePointScannerDlpAuditRecord")]
+    [InlineData("ComplianceDLPExchangeClassificationCdpRecord", "ComplianceDlpExchangeClassificationCdpRecord")]
+    [InlineData("XMLHTTPRequest", "XmlhttpRequest")]
+    [InlineData("AuditRecord", "AuditRecord")]
+    [InlineData("somemodel", "somemodel")]
+    [InlineData("ABC", "Abc")]
+    [InlineData("ABCDef", "AbcDef")]
+    public void NormalizePascalCaseAcronyms(string input, string expected)
+    {
+        Assert.Equal(expected, input.NormalizePascalCaseAcronyms());
+    }
     [Fact]
     public void ToPascalCaseCustomSeparator()
     {

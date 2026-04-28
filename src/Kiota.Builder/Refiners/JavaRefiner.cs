@@ -60,6 +60,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 else
                     return s;
             });
+            CorrectNames(generatedCode, s => s.NormalizePascalCaseAcronyms());
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
