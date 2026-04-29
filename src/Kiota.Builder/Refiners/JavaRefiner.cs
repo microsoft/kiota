@@ -60,6 +60,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
                 else
                     return s;
             });
+            NormalizeAcronymCasing(generatedCode);
             RemoveClassNamePrefixFromNestedClasses(generatedCode);
             InsertOverrideMethodForRequestExecutorsAndBuildersAndConstructors(generatedCode);
             ReplaceIndexersByMethodsWithParameter(generatedCode,
@@ -551,5 +552,28 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             });
         }
         CrawlTree(currentElement, x => AddQueryParameterExtractorMethod(x, methodName));
+    }
+    /// <summary>
+    /// Normalizes acronym casing in class and enum names to prevent file name mismatches
+    /// when upstream metadata changes acronym casing (e.g., powerBi → powerBI).
+    /// Unlike CorrectNames, this allows case-only renames since InnerChildElements uses OrdinalIgnoreCase.
+    /// </summary>
+    private static void NormalizeAcronymCasing(CodeElement current)
+    {
+        if (current is CodeClass currentClass &&
+            currentClass.Name.NormalizePascalCaseAcronyms() is string refinedClassName &&
+            !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal) &&
+            currentClass.Parent is IBlock classParentBlock)
+        {
+            classParentBlock.RenameChildElement(currentClass.Name, refinedClassName);
+        }
+        else if (current is CodeEnum currentEnum &&
+            currentEnum.Name.NormalizePascalCaseAcronyms() is string refinedEnumName &&
+            !currentEnum.Name.Equals(refinedEnumName, StringComparison.Ordinal) &&
+            currentEnum.Parent is IBlock enumParentBlock)
+        {
+            enumParentBlock.RenameChildElement(currentEnum.Name, refinedEnumName);
+        }
+        CrawlTree(current, NormalizeAcronymCasing);
     }
 }

@@ -20,6 +20,30 @@ public static partial class StringExtensions
     public static string ToFirstCharacterUpperCase(this string? input)
         => string.IsNullOrEmpty(input) ? string.Empty : char.ToUpperInvariant(input[0]) + input[1..];
 
+    /// <summary>
+    /// Normalizes PascalCase names by lowering consecutive uppercase acronyms so that only
+    /// the first letter of each acronym remains uppercase (e.g., "ComplianceDLPApplications" becomes
+    /// "ComplianceDlpApplications"). When the last uppercase letter in a run is followed by a
+    /// lowercase letter, it is kept uppercase because it starts a new word.
+    /// </summary>
+    public static string NormalizePascalCaseAcronyms(this string? input)
+    {
+        if (string.IsNullOrEmpty(input) || input.Length < 2) return input ?? string.Empty;
+
+        var result = input.ToCharArray();
+        for (var i = 1; i < input.Length; i++)
+        {
+            if (char.IsUpper(input[i]) && char.IsUpper(input[i - 1]))
+            {
+                // Keep uppercase if this is the last uppercase letter before a lowercase letter (new word start)
+                if (i + 1 < input.Length && char.IsLower(input[i + 1]))
+                    continue;
+                result[i] = char.ToLowerInvariant(input[i]);
+            }
+        }
+        return new string(result);
+    }
+
     private static readonly char[] defaultSeparators = ['-'];
     /// <summary>
     /// Converts a string delimited by a symbol to camel case, conserving the casing for the first character

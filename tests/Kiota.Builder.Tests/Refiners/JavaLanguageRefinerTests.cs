@@ -616,6 +616,33 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(string.IsNullOrEmpty(model.Properties.First(static x => "custom".Equals(x.Name))!.NamePrefix));
     }
+    [Theory]
+    [InlineData("ComplianceDLPApplicationsAuditRecord", "ComplianceDlpApplicationsAuditRecord")]
+    [InlineData("PowerBIAuditRecord", "PowerBiAuditRecord")]
+    [InlineData("OnPremisesSharePointScannerDLPAuditRecord", "OnPremisesSharePointScannerDlpAuditRecord")]
+    [InlineData("SimpleModel", "SimpleModel")]
+    public async Task NormalizesModelClassAcronymCasingAsync(string originalName, string expectedName)
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = originalName,
+            Kind = CodeClassKind.Model
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(expectedName, model.Name);
+    }
+    [Theory]
+    [InlineData("AuditLogRecordDLP", "AuditLogRecordDlp")]
+    [InlineData("SimpleEnum", "SimpleEnum")]
+    public async Task NormalizesEnumAcronymCasingAsync(string originalName, string expectedName)
+    {
+        var model = root.AddEnum(new CodeEnum
+        {
+            Name = originalName,
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(expectedName, model.Name);
+    }
     [Fact]
     public async Task AddsMethodsOverloadsAsync()
     {
