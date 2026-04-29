@@ -107,6 +107,7 @@ public class GenerationConfiguration : ICloneable
     }
     private static readonly HashSet<GenerationLanguage> BarreledLanguages = [
         GenerationLanguage.Ruby,
+        GenerationLanguage.Rust,
     ];
     private static readonly HashSet<GenerationLanguage> BarreledLanguagesWithConstantFileName = [];
     public bool CleanOutput
