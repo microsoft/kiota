@@ -149,4 +149,17 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("return '' if self.error.message is None else self.error.message", result);
     }
+
+    [Fact]
+    public void WritesRequiredNonNullableCustomProperty_NoOptional_NoNoneDefault()
+    {
+        // A required, non-nullable custom property must not be wrapped in Optional[...] and must have no '= None' default
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = false;
+        property.IsRequired = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.DoesNotContain("Optional[", result);
+        Assert.DoesNotContain("= None", result);
+    }
 }

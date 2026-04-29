@@ -11061,4 +11061,362 @@ components:
         var replyWithQuoteRb = replyWithQuoteNs.FindChildByName<CodeClass>("ReplyWithQuoteRequestBuilder", false);
         Assert.NotNull(replyWithQuoteRb);
     }
+
+    #region Issue-3911 — required/nullable OAS properties → IsNullable / IsRequired
+
+    [Fact]
+    public async Task RequiredNonNullableStringProperty_IsNullableFalse_IsRequiredTrue()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var nameProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        Assert.False(nameProp.Type.IsNullable);
+        Assert.True(nameProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNullableStringProperty_IsNullableTrue_IsRequiredTrue()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          nullable: true");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var nameProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        Assert.True(nameProp.Type.IsNullable);
+        Assert.True(nameProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task OptionalNonNullableStringProperty_IsNullableTrue_IsRequiredFalse()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        name:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var nameProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        Assert.True(nameProp.Type.IsNullable);
+        Assert.False(nameProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task OptionalNullableStringProperty_IsNullableTrue_IsRequiredFalse()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var nameProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        Assert.True(nameProp.Type.IsNullable);
+        Assert.False(nameProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableIntegerProperty_IsNullableFalse_IsRequiredTrue()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var countProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("count", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(countProp);
+        Assert.False(countProp.Type.IsNullable);
+        Assert.True(countProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableObjectRefProperty_IsNullableFalse_IsRequiredTrue()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - owner
+      properties:
+        owner:
+          $ref: '#/components/schemas/Owner'
+    Owner:
+      type: object
+      properties:
+        id:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var ownerProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("owner", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(ownerProp);
+        Assert.False(ownerProp.Type.IsNullable);
+        Assert.True(ownerProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableEnumProperty_IsNullableFalse_IsRequiredTrue()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+    Status:
+      type: string
+      enum:
+        - active
+        - inactive");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var statusProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("status", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(statusProp);
+        Assert.False(statusProp.Type.IsNullable);
+        Assert.True(statusProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableCollectionProperty_IsNullableFalse_IsRequiredTrue()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          type: array
+          items:
+            type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var tagsProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("tags", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(tagsProp);
+        Assert.False(tagsProp.Type.IsNullable);
+        Assert.True(tagsProp.IsRequired);
+    }
+
+    #endregion
 }
