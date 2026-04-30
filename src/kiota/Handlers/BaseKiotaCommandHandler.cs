@@ -106,6 +106,11 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
                                     new List<string> { Configuration.Search.GitHub.ApiBaseUrl.Host },
                                     logger,
                                     GetGitHubPatStorageService(logger));
+
+    // TODO: implement me
+    private IAuthenticationProvider GetApicurioAuthenticationProvider(ILogger logger) =>
+        new Microsoft.Kiota.Abstractions.Authentication.AnonymousAuthenticationProvider();
+
     protected async Task<KiotaSearcher> GetKiotaSearcherAsync(ILoggerFactory loggerFactory, CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger<KiotaSearcher>();
@@ -119,7 +124,7 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
             (_, true) => (GetGitHubPatAuthenticationProvider(logger), patSignInCallBack),
             (_, _) => (null, (CancellationToken cts) => Task.FromResult(false))
         };
-        return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback);
+        return new KiotaSearcher(logger, Configuration.Search, httpClient, provider, callback, GetApicurioAuthenticationProvider(logger));
     }
     protected async Task CheckForNewVersionAsync(ILogger logger, CancellationToken cancellationToken)
     {
