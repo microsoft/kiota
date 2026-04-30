@@ -49,7 +49,9 @@ updates:
         patterns:
           - "*kiota*"
   - package-ecosystem: composer
-    directory: "/it/php"
+    directories:
+      - "/it/php"
+      - "/it/php/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10

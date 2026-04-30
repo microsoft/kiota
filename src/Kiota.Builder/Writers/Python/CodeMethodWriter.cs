@@ -428,9 +428,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
                     defaultValue = $"{enumDefinition.Name}({defaultValue})";
                     break;
-                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
-                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
-                    break;
+                case CodeType propType:
+                    {
+                        defaultValue = propType.Name.ToLowerInvariant() switch
+                        {
+                            "boolean" => defaultValue.TrimQuotes().ToFirstCharacterUpperCase(),
+                            "datetime.datetime" => $"datetime.datetime.fromisoformat({defaultValue})",
+                            "datetime.date" => $"datetime.date.fromisoformat({defaultValue})",
+                            "datetime.time" => $"datetime.time.fromisoformat({defaultValue})",
+                            "uuid" => $"UUID({defaultValue})",
+                            _ => defaultValue
+                        };
+                        break;
+                    }
             }
             var returnType = conventions.GetTypeString(propWithDefault.Type, propWithDefault, true, writer);
             conventions.WriteInLineDescription(propWithDefault, writer);

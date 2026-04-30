@@ -164,7 +164,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.WriteLine($"MicrosoftKiotaAbstractions::ApiClientBuilder.{methodName}({prefix}{serializationClassName})");
             }
     }
-    private static void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
+    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
@@ -194,7 +194,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()}");
+            string defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                // generates "Rootnamespace::Subnamespace::EnumType[:DefaultValue]"
+                defaultValue = $"{conventions.GetNormalizedNamespacePrefixForType(propWithDefault.Type)}{conventions.GetTypeString(propWithDefault.Type, currentMethod)}[:{defaultValue.TrimQuotes().ToFirstCharacterUpperCase()}]";
+            }
+            else
+            {
+                defaultValue = propWithDefault.Type.Name.ToLowerInvariant() switch
+                {
+                    "datetime" => $"DateTime.parse({defaultValue})",
+                    "date" => $"Date.parse({defaultValue})",
+                    "time" => $"Time.parse({defaultValue})",
+                    "guid" => $"UUIDTools::UUID.parse({defaultValue})",
+                    _ => defaultValue
+                };
+            }
+            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {defaultValue}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer)

@@ -5,3 +5,6 @@ target
 /query-params/src/main
 /query-params/src/kiota-lock.json
 
+#generated api client is copied from "src" to the mock server folder. Ignore it there, too.
+/defaultvalues/src/main
+

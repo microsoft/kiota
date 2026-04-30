@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+#generated api code if integration test is run locally
+client/
+
 # User-specific files
 *.rsuser
 *.suo
