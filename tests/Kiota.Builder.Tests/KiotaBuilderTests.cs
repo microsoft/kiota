@@ -11061,4 +11061,100 @@ components:
         var replyWithQuoteRb = replyWithQuoteNs.FindChildByName<CodeClass>("ReplyWithQuoteRequestBuilder", false);
         Assert.NotNull(replyWithQuoteRb);
     }
+
+    /// <summary>
+    /// Regression test for https://github.com/microsoft/kiota/issues/7292
+    /// Required query parameters on one operation must not leak into the path-item URL template
+    /// and must not be visible as required for sibling operations on the same path.
+    /// Both the request-generator and request-executor methods must carry the per-operation URL template override.
+    /// </summary>
+    [Fact]
+    public async Task PerOperationUrlTemplateOverrideSetOnBothGeneratorAndExecutorMethodsAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(
+            """
+            openapi: 3.0.1
+            info:
+              title: Test
+              version: '1.0'
+            servers:
+              - url: https://graph.microsoft.com/v1.0
+            paths:
+              /resource:
+                get:
+                  description: Gets the resource
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                delete:
+                  description: Deletes the resource (requires confirm)
+                  parameters:
+                    - name: confirm
+                      in: query
+                      required: true
+                      schema:
+                        type: boolean
+                  responses:
+                    '204':
+                      description: No content
+            """);
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "Graph",
+                OpenAPIFilePath = "https://localhost",
+                ClientNamespaceName = "GraphSdk",
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Locate the ResourceRequestBuilder class
+        var resourceNs = codeModel.FindNamespaceByName("GraphSdk.Resource");
+        Assert.NotNull(resourceNs);
+        var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
+        Assert.NotNull(resourceRb);
+
+        // The path-item URL template property must be empty because GET and DELETE have unique templates
+        var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(urlTemplateProperty);
+        Assert.Equal("\"\"", urlTemplateProperty.DefaultValue);
+
+        // GET executor method must carry a URL template override (no required params)
+        var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getExecutor);
+        Assert.True(getExecutor.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource", getExecutor.UrlTemplateOverride);
+
+        // GET generator method must also carry the same URL template override
+        var getGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getGenerator);
+        Assert.True(getGenerator.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource", getGenerator.UrlTemplateOverride);
+
+        // DELETE executor must carry an override with the required confirm parameter
+        var deleteExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
+        Assert.NotNull(deleteExecutor);
+        Assert.True(deleteExecutor.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource?confirm={confirm}", deleteExecutor.UrlTemplateOverride);
+
+        // DELETE generator must also carry the override
+        var deleteGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
+        Assert.NotNull(deleteGenerator);
+        Assert.True(deleteGenerator.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource?confirm={confirm}", deleteGenerator.UrlTemplateOverride);
+    }
 }
