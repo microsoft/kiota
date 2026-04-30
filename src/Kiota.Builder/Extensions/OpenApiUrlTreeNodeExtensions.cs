@@ -254,6 +254,51 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 SanitizePathParameterNamesForUrlTemplate(currentNode.Path.Replace('\\', '/'), pathReservedPathParametersIds) +
                 queryStringParameters;
     }
+    /// <summary>
+    /// Gets the URL template for a path item by selecting the most representative template across all operations.
+    /// This prevents required query parameters from one operation leaking into the path-item-level template
+    /// and appearing as required for operations that do not need them.
+    /// </summary>
+    /// <param name="currentNode">The URL tree node to generate a template for.</param>
+    /// <returns>
+    /// A URL template that best represents the path item:
+    /// <list type="bullet">
+    ///   <item>If all operations share the same template, that template is returned.</item>
+    ///   <item>If templates differ, the template shared by the most operations is returned.</item>
+    ///   <item>If every operation has a unique template, an empty string is returned so each operation uses its own URL template override.</item>
+    /// </list>
+    /// </returns>
+    public static string GetUrlTemplateForPathItem(this OpenApiUrlTreeNode currentNode)
+    {
+        ArgumentNullException.ThrowIfNull(currentNode);
+        if (!currentNode.HasOperations(Constants.DefaultOpenApiLabel))
+            return currentNode.GetUrlTemplate();
+
+        var pathItem = currentNode.PathItems[Constants.DefaultOpenApiLabel];
+        if (pathItem.Operations is not { Count: > 0 })
+            return currentNode.GetUrlTemplate();
+
+        var operationTemplates = pathItem.Operations.Keys
+            .Select(operationType => currentNode.GetUrlTemplate(operationType))
+            .ToArray();
+
+        var groups = operationTemplates
+            .GroupBy(static template => template, StringComparer.Ordinal)
+            .OrderByDescending(static g => g.Count())
+            .ToArray();
+
+        // All operations share the same template — use it directly as the path item template
+        if (groups.Length == 1)
+            return groups[0].Key;
+
+        // Every operation has a unique template — use empty so each operation gets its own override
+        if (groups.Length == operationTemplates.Length)
+            return string.Empty;
+
+        // Multiple groups exist — use the template shared by the greatest number of operations
+        return groups[0].Key;
+    }
+
     public static IEnumerable<KeyValuePair<string, HashSet<string>>> GetRequestInfo(this OpenApiUrlTreeNode currentNode)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
