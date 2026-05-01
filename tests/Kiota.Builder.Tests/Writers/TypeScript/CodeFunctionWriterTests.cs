@@ -2009,5 +2009,92 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(deviceIndex > 0, "Should contain Device deserialization");
         Assert.True(managedDeviceIndex < deviceIndex, "ManagedPrivilegedDevice should appear before Device in the deserialization chain");
     }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionPropertyType_UsesBaseFactoryMethodAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var modelNameSpace = root.AddNamespace("ApiSdk.models");
+
+        var baseClass = TestHelper.CreateModelClass(modelNameSpace, "WeatherForecast");
+        baseClass.DiscriminatorInformation.DiscriminatorPropertyName = "forecastType";
+        var rainyClass = TestHelper.CreateModelClass(modelNameSpace, "RainyDayForecast");
+        var sunnyClass = TestHelper.CreateModelClass(modelNameSpace, "SunnyDayForecast");
+        baseClass.DiscriminatorInformation.AddDiscriminatorMapping("rain", new CodeType { Name = "RainyDayForecast", TypeDefinition = rainyClass });
+        baseClass.DiscriminatorInformation.AddDiscriminatorMapping("sunny", new CodeType { Name = "SunnyDayForecast", TypeDefinition = sunnyClass });
+
+        var composedType = new CodeUnionType { Name = "WeatherForecast" };
+        composedType.AddType(
+            new CodeType { Name = "RainyDayForecast", TypeDefinition = rainyClass },
+            new CodeType { Name = "SunnyDayForecast", TypeDefinition = sunnyClass });
+        baseClass.OriginalComposedType = composedType;
+
+        var containerClass = TestHelper.CreateModelClass(modelNameSpace, "WeatherSummary");
+        containerClass.AddProperty(new CodeProperty
+        {
+            Name = "forecasts",
+            Type = new CodeType
+            {
+                Name = "WeatherForecast",
+                TypeDefinition = baseClass,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        containerClass.AddProperty(new CodeProperty
+        {
+            Name = "primaryForecast",
+            Type = new CodeType
+            {
+                Name = "WeatherForecast",
+                TypeDefinition = baseClass,
+            },
+        });
+
+        TestHelper.AddSerializationPropertiesToModelClass(containerClass);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"DeserializeIntoWeatherSummary");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("n.getCollectionOfObjectValues<WeatherForecast>(createWeatherForecastFromDiscriminatorValue)", result);
+        Assert.Contains("n.getObjectValue<WeatherForecast>(createWeatherForecastFromDiscriminatorValue)", result);
+        Assert.DoesNotContain("createRainyDayForecastFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createSunnyDayForecastFromDiscriminatorValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionPropertyType_UsesBaseFactoryMethod_IntegrationAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, DiscriminatedUnionPropertySample.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Forecast", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        File.Delete(tempFilePath);
+
+        var deserializerFunction = rootNS.FindChildByName<CodeFunction>("deserializeIntoWeatherSummary");
+        Assert.NotNull(deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("createWeatherForecastFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createRainyDayForecastFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createSunnyDayForecastFromDiscriminatorValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
 }
 
