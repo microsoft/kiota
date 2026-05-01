@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `kiota download` returning exit code 0 (success) when no results are found or multiple ambiguous matches exist. [#7643](https://github.com/microsoft/kiota/pull/7643)
 - Fixed incorrect command hints and telemetry in `kiota plugin generate` handler referencing "client" instead of "plugin". [#7642](https://github.com/microsoft/kiota/pull/7642)
 - Fixed Ruby `isStream` always evaluating to false in `CodeMethodWriter`, causing stream/binary responses to never use `send_primitive_async`. [#7639](https://github.com/microsoft/kiota/pull/7639)
+- Fixed C# codegen emitting invalid initializer expressions for properties with date/time default values (`Time`, `Date`, `DateTimeOffset`, `TimeSpan`); invalid values (e.g. `24:00:00`) are now silently skipped rather than generating uncompilable code. [#6251](https://github.com/microsoft/kiota/issues/6251)
 
 ## [1.31.1] - 2026-04-13
 
