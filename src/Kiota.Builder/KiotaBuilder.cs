@@ -2418,7 +2418,17 @@ public partial class KiotaBuilder
                             LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                             return null;
                         }
-                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                        var prop = CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                        if (prop is not null)
+                        {
+                            var isRequired = schema.Required?.Contains(x.Key, StringComparer.OrdinalIgnoreCase) ?? false;
+                            // OAS 3.1 style: type includes the Null bit (e.g. type: [string, null])
+                            var isNullableInSchema = propertySchema.Type.HasValue
+                                && (propertySchema.Type.Value & JsonSchemaType.Null) == JsonSchemaType.Null;
+                            // A property is non-nullable only when it is required AND not explicitly nullable in the schema
+                            prop.Type.IsNullable = isNullableInSchema || !isRequired;
+                        }
+                        return prop;
                     })
                     .OfType<CodeProperty>()
                     .ToArray() ?? [];

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11156,5 +11157,296 @@ components:
         Assert.NotNull(deleteGenerator);
         Assert.True(deleteGenerator.HasUrlTemplateOverride);
         Assert.Equal("{+baseurl}/resource?confirm={confirm}", deleteGenerator.UrlTemplateOverride);
+    }
+
+    // === NullableAndRequiredTests ===
+
+    /// <summary>
+    /// Builds a <see cref="CodeNamespace"/> source model from an inline component schema so that
+    /// nullable/required tests do not need to repeat the full OpenApiDocument boilerplate.
+    /// </summary>
+    private CodeNamespace BuildModelFromSchema(OpenApiSchema schema, string schemaName = "TestModel")
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/test"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference(schemaName)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent(schemaName, schema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        return builder.CreateSourceModel(node);
+    }
+
+    [Fact]
+    public void NullableRequired_RequiredNonNullableProperty_IsNullableFalse()
+    {
+        // Test 1: required: ["name"] + type: string (non-nullable) → IsNullable = false
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "name", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+            Required = new HashSet<string> { "name" }
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+        var prop = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        Assert.False(prop.Type.IsNullable); // required + non-nullable → must not emit ?
+    }
+
+    [Fact]
+    public void NullableRequired_RequiredNullableProperty_IsNullableTrue()
+    {
+        // Test 2: required: ["name"] + type: [string, null] (nullable) → IsNullable = true
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "name", new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null } }
+            },
+            Required = new HashSet<string> { "name" }
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+        var prop = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        Assert.True(prop.Type.IsNullable); // required + nullable → must emit ?
+    }
+
+    [Fact]
+    public void NullableRequired_NonRequiredNonNullableProperty_IsNullableTrue()
+    {
+        // Test 3: non-required + type: string → IsNullable = true
+        // Property may be absent in the payload, so it is nullable by default.
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "description", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+        var prop = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("description", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        Assert.True(prop.Type.IsNullable); // non-required → nullable (may be absent)
+    }
+
+    [Fact]
+    public void NullableRequired_NonRequiredNullableProperty_IsNullableTrue()
+    {
+        // Test 4: non-required + type: [string, null] → IsNullable = true
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "tag", new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null } }
+            },
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+        var prop = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("tag", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        Assert.True(prop.Type.IsNullable); // non-required + nullable → must emit ?
+    }
+
+    [Fact]
+    public void NullableRequired_RequiredNonNullableIntegerProperty_IsNullableFalse()
+    {
+        // Test 5: required: ["count"] + type: integer → IsNullable = false
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "count", new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" } }
+            },
+            Required = new HashSet<string> { "count" }
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+        var prop = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("count", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        Assert.False(prop.Type.IsNullable); // required + non-nullable integer → must not emit ?
+    }
+
+    [Fact]
+    public void NullableRequired_Oas31NullTypeUnion_IsNullableTrue()
+    {
+        // Test 6: OAS 3.1 type: [string, null] with required → IsNullable = true
+        // JsonSchemaType.String | JsonSchemaType.Null is the OAS 3.1 style for nullable.
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "name", new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null } }
+            },
+            Required = new HashSet<string> { "name" }
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+        var prop = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        Assert.True(prop.Type.IsNullable); // nullable in schema overrides required
+    }
+
+    [Fact]
+    public void NullableRequired_EndToEnd_CSharpOutputRespectsNullability()
+    {
+        // Test 7: end-to-end — the C# writer emits the correct nullable annotations.
+        // "name" is required+non-nullable  → generated as  string  (no ?)
+        // "description" is non-required   → generated as  string? (with ?)
+        var schema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                { "name", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "description", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+            Required = new HashSet<string> { "name" }
+        };
+        var codeModel = BuildModelFromSchema(schema);
+        var modelClass = codeModel.FindChildByName<CodeClass>("TestModel");
+        Assert.NotNull(modelClass);
+
+        var nameProp = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        var descProp = modelClass.Properties.FirstOrDefault(p => p.Name.Equals("description", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        Assert.NotNull(descProp);
+
+        // Verify the CodeDOM IsNullable flag
+        Assert.False(nameProp.Type.IsNullable);
+        Assert.True(descProp.Type.IsNullable);
+
+        // Verify the actual C# written output using LanguageWriter
+        using var nameWriter = new StringWriter();
+        var languageWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, "./", "TestModel");
+        languageWriter.SetTextWriter(nameWriter);
+        languageWriter.Write(nameProp);
+        var nameOutput = nameWriter.ToString();
+
+        using var descWriter = new StringWriter();
+        var descLanguageWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, "./", "TestModel");
+        descLanguageWriter.SetTextWriter(descWriter);
+        descLanguageWriter.Write(descProp);
+        var descOutput = descWriter.ToString();
+
+        // required + non-nullable: no ? in the property type
+        Assert.Contains("string Name", nameOutput);
+        Assert.DoesNotContain("string? Name", nameOutput);
+
+        // non-required: ? is present (either directly in the type or in the #nullable enable block)
+        Assert.Contains("string?", descOutput);
+    }
+
+    [Fact]
+    public void NullableRequired_PathAndQueryParameters_NotAffected()
+    {
+        // Test 8: regression — path/query parameters do not go through
+        // CreatePropertiesForModelClass and must not be affected by this change.
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/users/{userId}"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Parameters =
+                            [
+                                new OpenApiParameter
+                                {
+                                    Name = "userId",
+                                    In = ParameterLocation.Path,
+                                    Required = true,
+                                    Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                                },
+                                new OpenApiParameter
+                                {
+                                    Name = "filter",
+                                    In = ParameterLocation.Query,
+                                    Required = false,
+                                    Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                                }
+                            ],
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        // Building the source model must complete without exceptions — the
+        // parameters code path is independent of the nullable/required fix.
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var usersNs = codeModel.FindNamespaceByName("ApiSdk.users.item");
+        Assert.NotNull(usersNs);
     }
 }
