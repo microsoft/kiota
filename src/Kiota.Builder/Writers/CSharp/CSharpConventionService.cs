@@ -253,6 +253,11 @@ public class CSharpConventionService : CommonLanguageConventionService
         var typeName = TranslateType(codeType);
         return NullableTypes.Contains(typeName);
     }
+    /// <summary>
+    /// When true (default), required non-nullable OAS properties are generated as non-nullable C# types.
+    /// Set to false to revert to the previous all-nullable behavior.
+    /// </summary>
+    public bool MakeRequiredPropertiesNonNullable { get; set; } = true;
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);

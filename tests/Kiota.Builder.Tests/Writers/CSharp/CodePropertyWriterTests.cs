@@ -316,5 +316,27 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("MyEnum?", result);
     }
+
+    [Fact]
+    public void WritesRequiredProperty_FlagFalse_HasNullableBlock()
+    {
+        // When MakeRequiredPropertiesNonNullable = false, a required property with IsNullable = true
+        // should still get the #nullable enable block (old all-nullable behavior).
+        var flagOffWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName, makeRequiredPropertiesNonNullable: false);
+        using var sw = new StringWriter();
+        flagOffWriter.SetTextWriter(sw);
+
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = true;  // flag=false: stays nullable
+        property.IsRequired = true;        // IsRequired is still set accurately
+        writer.Write(property);            // control: default writer suppresses ? for required
+        var defaultResult = tw.ToString();
+        Assert.DoesNotContain("#nullable enable", defaultResult); // flag=true suppresses it
+
+        flagOffWriter.Write(property);     // flag=false: should emit nullable block
+        var flagOffResult = sw.ToString();
+        Assert.Contains("#nullable enable", flagOffResult);       // opt-out restores it
+        Assert.Contains($"{TypeName}?", flagOffResult);
+    }
 }
 

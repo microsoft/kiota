@@ -11420,6 +11420,97 @@ components:
         Assert.True(tagsProp.IsRequired);
     }
 
+    [Fact]
+    public async Task RequiredNonNullableProperty_FlagFalse_IsNullableTrue()
+    {
+        // When MakeRequiredPropertiesNonNullable = false, required non-nullable properties keep IsNullable = true
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, MakeRequiredPropertiesNonNullable = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var nameProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        // Flag off: IsNullable stays true (old behavior)
+        Assert.True(nameProp.Type.IsNullable);
+        // IsRequired is always set accurately regardless of flag
+        Assert.True(nameProp.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableProperty_FlagTrue_IsNullableFalse()
+    {
+        // When MakeRequiredPropertiesNonNullable = true (default), required non-nullable properties get IsNullable = false
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, MakeRequiredPropertiesNonNullable = true }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var nameProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nameProp);
+        // Flag on: required non-nullable scalar gets IsNullable = false
+        Assert.False(nameProp.Type.IsNullable);
+        Assert.True(nameProp.IsRequired);
+    }
+
     #endregion
 
     /// <summary>

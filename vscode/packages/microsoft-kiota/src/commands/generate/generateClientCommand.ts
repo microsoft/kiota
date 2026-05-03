@@ -306,6 +306,7 @@ export class GenerateClientCommand extends Command {
           deserializers: settings.languagesSerializationConfiguration[language].deserializers,
           structuredMimeTypes: settings.structuredMimeTypes,
           includeAdditionalData: settings.includeAdditionalData,
+          makeRequiredPropertiesNonNullable: settings.makeRequiredPropertiesNonNullable,
           operation: ConsumerOperation.Add,
           workingDirectory: config.workingDirectory ? config.workingDirectory : getWorkspaceJsonDirectory()
         });
