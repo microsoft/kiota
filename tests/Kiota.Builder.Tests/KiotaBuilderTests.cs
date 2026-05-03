@@ -11414,7 +11414,9 @@ components:
         Assert.NotNull(item);
         var tagsProp = item.Properties.FirstOrDefault(static p => p.Name.Equals("tags", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(tagsProp);
-        Assert.False(tagsProp.Type.IsNullable);
+        // Collections keep IsNullable = true so enum element types stay T? (required by serializer API).
+        // The outer collection ? is suppressed in the C# writer via IsRequired.
+        Assert.True(tagsProp.Type.IsNullable);
         Assert.True(tagsProp.IsRequired);
     }
 

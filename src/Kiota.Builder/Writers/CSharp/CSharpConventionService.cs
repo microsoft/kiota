@@ -247,6 +247,8 @@ public class CSharpConventionService : CommonLanguageConventionService
     internal bool IsValueType(CodeTypeBase type)
     {
         if (type is not CodeType codeType) return false;
+        // Collections are reference types regardless of element type — never use .Value on them
+        if (codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) return false;
         if (codeType.TypeDefinition is CodeEnum) return true;
         var typeName = TranslateType(codeType);
         return NullableTypes.Contains(typeName);

@@ -1214,9 +1214,17 @@ public partial class KiotaBuilder
             !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
             prop.DefaultValue = $"\"{stringDefaultValue}\"";
 
-        // If the property is required and the schema does not explicitly allow null,
+        // If the property is required and the schema explicitly does not allow null,
         // mark the type as non-nullable. We clone existingType to avoid mutating a shared reference.
-        if (kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable())
+        // Collections are excluded: IsNullable on a collection type controls both the outer
+        // collection ? AND the enum element ? (e.g. List<Status?> vs List<Status>). Setting
+        // IsNullable = false on a required collection breaks the serialization API which always
+        // expects IEnumerable<T?>?. The outer collection ? is suppressed via IsRequired in
+        // CodePropertyWriter instead.
+        var isCollection = existingType != null
+            ? existingType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
+            : propertySchema.IsArray();
+        if (kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable() && !isCollection)
         {
             if (existingType != null)
                 prop.Type = (CodeTypeBase)existingType.Clone();

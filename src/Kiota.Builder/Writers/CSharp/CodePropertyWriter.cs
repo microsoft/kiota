@@ -15,6 +15,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isNullableReferenceType = !propertyType.EndsWith('?')
                                       && codeElement.Type.IsNullable
+                                      && !codeElement.IsRequired // required properties (incl. required collections) don't get outer ?
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
