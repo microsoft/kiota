@@ -1110,6 +1110,144 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             return GetChildNodeByPath(currentNode, string.Join('/', pathSegments.Skip(1)));
         return null;
     }
+
+    // Tests for GetUrlTemplateForPathItem (issue #7292)
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsCommonTemplate_WhenAllOperationsShareSameTemplate()
+    {
+        // GET /resource?$select={$select} and POST /resource?$select={$select} share the same template
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                {
+                    HttpMethod.Get, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                {
+                    HttpMethod.Post, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // Both operations share the same template → return it directly
+        Assert.Equal(childNode.GetUrlTemplate(HttpMethod.Get), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsEmptyString_WhenAllOperationsHaveUniqueTemplates()
+    {
+        // Issue #7292: GET /resource (no required params) + DELETE /resource?confirm={confirm} (required)
+        // → path item template must be empty so each operation provides its own override
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                {
+                    HttpMethod.Delete, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "confirm",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // All templates are unique → return empty string
+        Assert.Equal(string.Empty, childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsHighestCardinalityTemplate_WhenMultipleGroupsExist()
+    {
+        // GET and POST share no-param template (cardinality 2)
+        // DELETE has required confirm param (cardinality 1)
+        // Highest cardinality group is GET/POST → return their template
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                { HttpMethod.Post, new() },
+                {
+                    HttpMethod.Delete, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "confirm",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // GET and POST share the no-param template; DELETE has its own → highest cardinality wins
+        var expectedTemplate = childNode.GetUrlTemplate(HttpMethod.Get);
+        Assert.Equal(expectedTemplate, childNode.GetUrlTemplateForPathItem());
+        Assert.NotEqual(childNode.GetUrlTemplate(HttpMethod.Delete), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_FallsBackToDefaultTemplate_WhenNoOperations()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem());
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        Assert.Equal(childNode.GetUrlTemplate(), childNode.GetUrlTemplateForPathItem());
+    }
+
     public void Dispose()
     {
         _httpClient.Dispose();

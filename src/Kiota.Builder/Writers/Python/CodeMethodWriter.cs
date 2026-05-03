@@ -149,10 +149,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
-                    _codeUsingWriter.WriteDeferredImport(parentClass, propertyType.Name, writer);
-                    writer.WriteLine($"{ResultVarName}.{property.Name} = {propertyType.Name}()");
-                    writer.DecreaseIndent();
+                    if (!string.IsNullOrEmpty(mappedType.Key))
+                    {
+                        writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
+                        _codeUsingWriter.WriteDeferredImport(parentClass, propertyType.Name, writer);
+                        writer.WriteLine($"{ResultVarName}.{property.Name} = {propertyType.Name}()");
+                        writer.DecreaseIndent();
+                        includeElse = true;
+                    }
                 }
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
@@ -160,9 +164,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {valueVarName} := {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}:");
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {valueVarName}");
                     writer.DecreaseIndent();
+                    includeElse = true;
                 }
-            if (!includeElse)
-                includeElse = true;
         }
         writer.WriteLine($"return {ResultVarName}");
     }

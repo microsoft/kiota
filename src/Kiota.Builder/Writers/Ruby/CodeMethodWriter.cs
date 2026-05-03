@@ -266,7 +266,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.DecreaseIndent();
         }
         writer.WriteLine(")");
-        var isStream = conventions.StreamTypeName.Equals(StringComparison.OrdinalIgnoreCase);
+        var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
         var errorMappingVarName = "nil";
         if (codeElement.ErrorMappings.Any())

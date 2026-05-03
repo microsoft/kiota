@@ -246,13 +246,15 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                     IsNullable = propertyType.IsNullable,
                 };
             var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(property.Type.Name, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(mappedType.Key))
+                continue;
             writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if (\"{mappedType.Key.SanitizeDoubleQuote()}\".equalsIgnoreCase({DiscriminatorMappingVarName})) {{");
             writer.WriteLine($"{ResultVarName}.{property.Setter!.Name}(new {conventions.GetTypeString(property.Type, codeElement, false)}());");
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherProps.Length != 0)
+        if (includeElse)
             writer.CloseBlock(decreaseIndent: false);
     }
     private void WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(CodeMethod currentElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)

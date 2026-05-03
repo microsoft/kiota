@@ -628,6 +628,106 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithUnmappedComplexType()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType1",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var unmappedType = root.AddClass(new CodeClass
+        {
+            Name = "UnmappedType",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = complexType1
+        };
+        var uType = new CodeType
+        {
+            Name = "UnmappedType",
+            TypeDefinition = unmappedType
+        };
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        // Only add mapping for ComplexType1, NOT for UnmappedType
+        unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = cType1
+        });
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.OriginalComposedType.AddType(uType);
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType1Value",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "UnmappedTypeValue",
+            Type = uType,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "StringValue",
+            Type = sType,
+            Kind = CodePropertyKind.Custom
+        });
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("var result = new UnionTypeWrapper()", result);
+        // Should emit discriminator check for the mapped type
+        Assert.Contains("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
+        Assert.Contains("ComplexType1Value = new ComplexType1()", result);
+        // Should NOT emit a discriminator check for the unmapped type (null key)
+        Assert.DoesNotContain("UnmappedType", result);
+        // Should still emit the string check
+        Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
+        Assert.Contains("return result", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForUnionPrimitiveTypes()
     {
         setup();

@@ -254,13 +254,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     IsNullable = propertyType.IsNullable,
                 };
             var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(mappedType.Key))
+                continue;
             writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key.SanitizeDoubleQuote()}\") {{");
             writer.WriteLine($"{ResultVarName}.{property.Setter!.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherProps.Length != 0)
+        if (includeElse)
             writer.CloseBlock(decreaseIndent: false);
     }
     private void WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
