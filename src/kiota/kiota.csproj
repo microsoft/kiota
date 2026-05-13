@@ -65,7 +65,7 @@
     <!-- Pinned to mitigate GHSA-2cwq-pwfr-wcw3 in transitive Nerdbank.MessagePack via StreamJsonRpc.
          See https://github.com/AArnott/Nerdbank.MessagePack/security/advisories/GHSA-2cwq-pwfr-wcw3 -->
     <PackageReference Include="Nerdbank.MessagePack" Version="1.1.62" />
-    <PackageReference Include="System.CommandLine" Version="2.0.7" />
+    <PackageReference Include="System.CommandLine" Version="2.0.8" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.203" PrivateAssets="All" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
