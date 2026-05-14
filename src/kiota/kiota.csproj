@@ -61,7 +61,7 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageReference Include="Spectre.Console" Version="0.55.2" />
-    <PackageReference Include="StreamJsonRpc" Version="2.24.84" />
+    <PackageReference Include="StreamJsonRpc" Version="2.24.92" />
     <!-- Pinned to mitigate GHSA-2cwq-pwfr-wcw3 in transitive Nerdbank.MessagePack via StreamJsonRpc.
          See https://github.com/AArnott/Nerdbank.MessagePack/security/advisories/GHSA-2cwq-pwfr-wcw3 -->
     <PackageReference Include="Nerdbank.MessagePack" Version="1.1.62" />
