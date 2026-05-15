@@ -725,8 +725,17 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else if (GetOriginalComposedType(otherProp.Type) is { } composedType)
         {
-            var expression = string.Join(" ?? ", SortTypesByInheritance(composedType.Types).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
-            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = {expression};{suffix} }},");
+            if (TypeHasBasicDiscriminatorInformation(otherProp.Type))
+            {
+                var deserializationMethodName = conventions.GetDeserializationMethodName(otherProp.Type, codeFile);
+                var defaultValueSuffix = GetDefaultValueSuffix(otherProp);
+                writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = n.{deserializationMethodName}{defaultValueSuffix};{suffix} }},");
+            }
+            else
+            {
+                var expression = string.Join(" ?? ", SortTypesByInheritance(composedType.Types).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
+                writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = {expression};{suffix} }},");
+            }
         }
         else
         {
@@ -741,6 +750,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var defaultValue = GetDefaultValueLiteralForProperty(otherProp);
         return !string.IsNullOrEmpty(defaultValue) && !defaultValue.EqualsIgnoreCase("\"null\"") ? $" ?? {defaultValue}" : string.Empty;
     }
+
+    private static bool TypeHasBasicDiscriminatorInformation(CodeTypeBase codeType) =>
+        codeType switch
+        {
+            CodeType { TypeDefinition: CodeInterface codeInterface } => codeInterface.OriginalClass?.DiscriminatorInformation.HasBasicDiscriminatorInformation == true,
+            CodeType { TypeDefinition: CodeClass codeClass } => codeClass.DiscriminatorInformation.HasBasicDiscriminatorInformation,
+            _ => false,
+        };
 
     private static string GetDefaultValueLiteralForProperty(CodeProperty codeProperty)
     {
