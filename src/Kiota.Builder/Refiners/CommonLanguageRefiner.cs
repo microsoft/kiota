@@ -1618,4 +1618,58 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(codeElement, DeduplicateErrorMappings);
     }
+    /// <summary>
+    /// Shortens overly-long namespace segments and class names in the CodeDOM to avoid exceeding
+    /// file system path limits. Uses truncation + hash suffix for human readability and uniqueness.
+    /// Should be called from refiners for languages where package/namespace must match directory structure (Java, Python, PHP).
+    /// </summary>
+    protected static void ShortenOversizedNamespaceSegments(CodeElement currentElement, int maxSegmentLength = 64)
+    {
+        if (currentElement is CodeNamespace codeNamespace && !string.IsNullOrEmpty(codeNamespace.Name))
+        {
+            var segments = codeNamespace.Name.Split('.');
+            var shortened = false;
+            for (var i = 0; i < segments.Length; i++)
+            {
+                if (segments[i].Length > maxSegmentLength)
+                {
+                    segments[i] = segments[i].ShortenNameSegment(maxSegmentLength);
+                    shortened = true;
+                }
+            }
+            if (shortened)
+                codeNamespace.Name = string.Join('.', segments);
+
+            // Shorten class, enum, and interface names and enrich their doc comments
+            foreach (var codeClass in codeNamespace.GetChildElements(true).OfType<CodeClass>())
+            {
+                ShortenCodeElementNameIfOversized(codeClass, codeClass.Documentation, maxSegmentLength);
+            }
+            foreach (var codeEnum in codeNamespace.GetChildElements(true).OfType<CodeEnum>())
+            {
+                ShortenCodeElementNameIfOversized(codeEnum, codeEnum.Documentation, maxSegmentLength);
+            }
+            foreach (var codeInterface in codeNamespace.GetChildElements(true).OfType<CodeInterface>())
+            {
+                ShortenCodeElementNameIfOversized(codeInterface, codeInterface.Documentation, maxSegmentLength);
+            }
+        }
+        CrawlTree(currentElement, x => ShortenOversizedNamespaceSegments(x, maxSegmentLength));
+    }
+    private static void ShortenCodeElementNameIfOversized(CodeElement codeElement, CodeDocumentation? documentation, int maxSegmentLength)
+    {
+        if (codeElement.Name.Length > maxSegmentLength)
+        {
+            var originalName = codeElement.Name;
+            codeElement.Name = originalName.ShortenNameSegment(maxSegmentLength);
+            // Add original name to doc comment for disambiguation
+            if (documentation is not null)
+            {
+                var existingDesc = documentation.DescriptionTemplate ?? string.Empty;
+                documentation.DescriptionTemplate = string.IsNullOrEmpty(existingDesc)
+                    ? $"Original name: {originalName}"
+                    : $"{existingDesc} Original name: {originalName}";
+            }
+        }
+    }
 }

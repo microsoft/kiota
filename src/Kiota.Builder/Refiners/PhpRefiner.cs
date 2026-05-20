@@ -138,6 +138,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToCamelCase(UnderscoreArray));
+            ShortenOversizedNamespaceSegments(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)

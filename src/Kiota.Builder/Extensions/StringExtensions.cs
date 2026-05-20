@@ -75,6 +75,26 @@ public static partial class StringExtensions
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;
 #pragma warning restore CA1308
 
+    private const int DefaultMaxNameSegmentLength = 64;
+    private const int HashSuffixLength = 8;
+    /// <summary>
+    /// Shortens a name segment to the specified maximum length by truncating and appending a short hash suffix.
+    /// Preserves human readability by keeping the first part of the original name.
+    /// </summary>
+    /// <param name="name">The name to potentially shorten</param>
+    /// <param name="maxLength">The maximum allowed length. Default is 64.</param>
+    /// <returns>The original name if within limits, or a truncated name with hash suffix for uniqueness</returns>
+    public static string ShortenNameSegment(this string name, int maxLength = DefaultMaxNameSegmentLength)
+    {
+        if (string.IsNullOrEmpty(name) || name.Length <= maxLength)
+            return name;
+        var prefixLength = maxLength - HashSuffixLength - 1; // -1 for the underscore separator
+#pragma warning disable CA1308
+        var hashSuffix = HashString(name).ToLowerInvariant()[..HashSuffixLength];
+#pragma warning restore CA1308
+        return $"{name[..prefixLength]}_{hashSuffix}";
+    }
+
     public static string EscapeSuffix(this string? name, HashSet<string> specialFileNameSuffixes, char separator = '_')
     {
         ArgumentNullException.ThrowIfNull(specialFileNameSuffixes);
@@ -147,7 +167,7 @@ public static partial class StringExtensions
         return prefix + HashString(importName).ToLowerInvariant();
 #pragma warning restore CA1308
     }
-    private static string HashString(string? input)
+    internal static string HashString(string? input)
     {
         if (string.IsNullOrEmpty(input)) return string.Empty;
         var hash = (sha.Value ?? throw new InvalidOperationException("unable to get hash algorithm")).ComputeHash(Encoding.UTF8.GetBytes(input));

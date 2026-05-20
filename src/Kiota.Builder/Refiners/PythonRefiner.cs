@@ -154,6 +154,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
                 true
             );
+            ShortenOversizedNamespaceSegments(generatedCode);
         }, cancellationToken);
     }
 

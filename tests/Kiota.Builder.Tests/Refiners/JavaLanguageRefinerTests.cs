@@ -769,4 +769,121 @@ public class JavaLanguageRefinerTests
         Assert.Equal("com.microsoft.kiota.serialization", nodeUsing[0].Declaration.Name);
     }
     #endregion
+    #region NameShortening
+    [Fact]
+    public async Task ShortensOversizedNamespaceSegmentsAsync()
+    {
+        // Simulate the problematic long namespace segment from OData functions with many parameters
+        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentidapplicationidapplicationidaiagentidaiagentidaiagentnameaiagentnamecloudapplicationnamecloudapplicationname";
+        var childNs = root.AddNamespace($"com.microsoft.graph.beta.networkaccess.reports.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Documentation = new()
+            {
+                DescriptionTemplate = "Builds and executes requests for operations under /networkAccess/reports/...",
+            },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Namespace segment should be shortened
+        var nameSegments = childNs.Name.Split('.');
+        foreach (var segment in nameSegments)
+        {
+            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+        }
+
+        // Class name should be shortened
+        Assert.True(requestBuilderClass.Name.Length <= 64, $"Class name '{requestBuilderClass.Name}' exceeds 64 chars (length: {requestBuilderClass.Name.Length})");
+
+        // Doc comment should contain original name for disambiguation
+        Assert.Contains("Original name:", requestBuilderClass.Documentation.DescriptionTemplate);
+    }
+    [Fact]
+    public async Task DoesNotShortenNormalLengthNamespacesAsync()
+    {
+        var childNs = root.AddNamespace("com.microsoft.graph.beta.users");
+        childNs.AddClass(new CodeClass
+        {
+            Name = "UsersRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("com.microsoft.graph.beta.users", childNs.Name);
+    }
+    [Fact]
+    public async Task ShorteningIsDeterministicAsync()
+    {
+        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentid";
+        var root2 = CodeNamespace.InitRootNamespace();
+        var childNs1 = root.AddNamespace($"com.microsoft.graph.beta.{longSegment}");
+        var childNs2 = root2.AddNamespace($"com.microsoft.graph.beta.{longSegment}");
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root2, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(childNs1.Name, childNs2.Name);
+    }
+    [Fact]
+    public async Task ShortenedClassNameIsReflectedInMethodReturnTypeAsync()
+    {
+        // Simulate: parent request builder has a method returning a child request builder with a long name
+        var longClassName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeRequestBuilder";
+        var parentNs = root.AddNamespace("com.microsoft.graph.beta.networkaccess.reports");
+        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetime";
+        var childNs = root.AddNamespace($"com.microsoft.graph.beta.networkaccess.reports.{longSegment}");
+
+        // Create the target request builder class (the one that will be shortened)
+        var targetClass = childNs.AddClass(new CodeClass
+        {
+            Name = longClassName,
+            Kind = CodeClassKind.RequestBuilder,
+            Documentation = new() { DescriptionTemplate = "Test request builder" },
+        }).First();
+
+        // Create the parent request builder class with a method returning the target class
+        var parentClass = parentNs.AddClass(new CodeClass
+        {
+            Name = "ReportsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+
+        var returnType = new CodeType { TypeDefinition = targetClass, IsExternal = false };
+        parentClass.AddMethod(new CodeMethod
+        {
+            Name = "deviceReport",
+            Kind = CodeMethodKind.RequestBuilderWithParameters,
+            ReturnType = returnType,
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // The class should be shortened
+        Assert.True(targetClass.Name.Length <= 64, $"Class name '{targetClass.Name}' exceeds 64 chars");
+
+        // The method's return type should automatically reflect the shortened name via TypeDefinition
+        Assert.Equal(targetClass.Name, returnType.Name);
+        Assert.True(returnType.Name.Length <= 64, $"Return type name '{returnType.Name}' exceeds 64 chars");
+    }
+    [Fact]
+    public async Task ShorteningWorksWhenDocumentationIsNullAsync()
+    {
+        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentid";
+        var childNs = root.AddNamespace($"com.microsoft.graph.beta.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        // Explicitly set Documentation to null to test the defensive null guard
+        requestBuilderClass.Documentation = null!;
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Should shorten without throwing
+        Assert.True(requestBuilderClass.Name.Length <= 64);
+    }
+    #endregion
 }
