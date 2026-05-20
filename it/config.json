@@ -272,6 +272,10 @@
       {
         "Pattern": "/networkAccess/reports/microsoft.graph.networkaccess.deviceReport*",
         "Rationale": "Leads to names that are too long for most languages to compile"
+      },
+      {
+        "Pattern": "/networkAccess/reports/microsoft.graph.networkaccess.userReport*",
+        "Rationale": "Leads to names that are too long for most languages to compile"
       }
     ],
     "Suppressions": [
