@@ -113,6 +113,7 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode, [$@"{AbstractionsNamespaceName}\ApiClientBuilder"], null, '\\');
             cancellationToken.ThrowIfCancellationRequested();
+            ShortenOversizedNamespaceSegments(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectBackingStoreSetterParam(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");
@@ -138,7 +139,6 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToCamelCase(UnderscoreArray));
-            ShortenOversizedNamespaceSegments(generatedCode);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)

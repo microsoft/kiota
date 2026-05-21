@@ -70,6 +70,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
+            ShortenOversizedNamespaceSegments(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             cancellationToken.ThrowIfCancellationRequested();
@@ -154,7 +155,6 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
                 true
             );
-            ShortenOversizedNamespaceSegments(generatedCode);
         }, cancellationToken);
     }
 
