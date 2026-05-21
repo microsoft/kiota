@@ -409,7 +409,7 @@
         "command": "kiota.openApiExplorer.filterDescription",
         "category": "Kiota",
         "title": "%kiota.openApiExplorer.filterDescription.title%",
-        "enablement": "kiota.openApiExplorer.showIcons",
+        "enablement": "kiota.openApiExplorer.showIcons || kiota.openApiExplorer.showRegenerateIcon",
         "icon": "$(filter)"
       },
       {
