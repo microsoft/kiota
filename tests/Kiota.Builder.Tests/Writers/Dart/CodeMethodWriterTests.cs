@@ -1609,7 +1609,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains(parentClass.Name, result);
         Assert.Contains($"{propName} = '{DartConventionService.SanitizeDartSingleQuoteLiteral(defaultValue.Trim('\''))}'", result);
-        Assert.Contains($"{nullPropName} = {defaultValueNull}", result);
+        Assert.Contains($"{nullPropName} = null", result); //Quotes were removed.
         Assert.Contains($"{boolPropName} = {defaultValueBool}", result);
         Assert.Contains("super", result);
     }
@@ -1644,6 +1644,71 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains($"{propName} = '{DartConventionService.SanitizeDartSingleQuoteLiteral("line1'\n$line2")}'", result);
+    }
+    [Fact]
+    public void WritesConstructorWithDefaultValuesThatRequireParsing()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        //method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
+        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
+        var dateTimePropName = "propWithDefaultDateTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimePropName,
+            DefaultValue = defaultValueDateTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "DateTime"
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "DateOnly"
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "UuidValue"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "TimeOnly"
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        //A initializer list is created, so all assignments end with a comma.
+        Assert.Contains($"{dateTimePropName} = DateTime.parse('{defaultValueDateTime.TrimQuotes()}'),", result);
+        Assert.Contains($"{datePropName} = DateOnly.fromDateTimeString('{defaultValueDate.TrimQuotes()}'),", result);
+        //Only last property has an ending semicolon. As the property are sorted by name, the "propWithDefaultUuidValue" is the last one.
+        Assert.Contains($"{uuidPropName} = UuidValue.fromString('{defaultValueUuid.TrimQuotes()}');", result);
+        Assert.Contains($"{timePropName} = TimeOnly.fromDateTimeString('{defaultValueTime.TrimQuotes()}'),", result);
     }
     [Fact]
     public void WritesWithUrl()

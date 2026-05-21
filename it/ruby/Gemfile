@@ -11,10 +11,10 @@ gem "rspec", "~> 3.0"
 
 gem "rubocop", "~> 1.21"
 
-gem "microsoft_kiota_abstractions", "~> 0.14.3"
+gem "microsoft_kiota_abstractions", "~> 0.15.1"
 
-gem "microsoft_kiota_faraday", "~> 0.15.0"
+gem "microsoft_kiota_faraday", "~> 0.16.0"
 
-gem "microsoft_kiota_serialization_json", "~> 0.9.1"
+gem "microsoft_kiota_serialization_json", "~> 0.10.0"
 
-gem "microsoft_kiota_authentication_oauth", "~> 0.8.0"
+gem "microsoft_kiota_authentication_oauth", "~> 0.9.0"

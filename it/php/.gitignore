@@ -1,2 +1,9 @@
+#generated api code if integration test is run locally
+src/Client/
+
 vendor
 composer.lock
+
+#generated api client is copied from "src" to the mock server folder. Ignore it there, too.
+/basic/src/Client/
+/defaultvalues/src/Client/

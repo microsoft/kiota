@@ -399,6 +399,19 @@ public sealed class CodeFunctionWriterTests : IDisposable
                 Name = "string",
             },
         });
+        //GUID is not parsed in TypeScript.
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Guid"
+            }
+        });
         var propertyEnum = new CodeEnum
         {
             Name = "EnumTypeWithOption",
@@ -428,6 +441,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(deserializerFunction);
         var result = tw.ToString();
         Assert.Contains("?? \"Test Value\"", result);
+        Assert.Contains($"?? {defaultValueUuid}", result);
         Assert.Contains("?? EnumTypeWithOptionObject.SomeOption", result);
     }
     [Fact]
@@ -455,6 +469,63 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(deserializerFunction);
         var result = tw.ToString();
         Assert.Contains($"?? {defaultValue.SanitizeQuotedStringLiteral()}", result);
+    }
+    [Fact]
+    public async Task WritesDeSerializerBodyWithDefaultValueThatRequireParsingAsync()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+
+        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
+        var dateTimePropName = "propWithDefaultDateTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimePropName,
+            DefaultValue = defaultValueDateTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Date",
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "DateOnly"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "TimeOnly"
+            }
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+        Assert.Contains($"?? new Date({defaultValueDateTime})", result);
+        Assert.Contains($"?? DateOnly.parse({defaultValueDate})", result);
+        Assert.Contains($"?? TimeOnly.parse({defaultValueTime})", result);
+
     }
     [Fact]
     public async Task WritesSerializerBodyEnumCollectionAsync()
