@@ -118,3 +118,7 @@ Metrics/ClassLength:
 
 Metrics/ModuleLength:
   Enabled: false
+
+# Don't raise an error if block is longer than 25 lines. This happens in "spec\defaultvalues\integration_test_defaultvalues.rb"
+Metrics/BlockLength:
+  Enabled: false

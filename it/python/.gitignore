@@ -1,3 +1,8 @@
+#generated api code if integration test is run locally
+integration_test/client
+defaultvalues/client
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
