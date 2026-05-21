@@ -37,7 +37,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            if (isConstructor && !inherits && parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.BackingStore).Any())
+            //Initializer list is created if "AdditionalData" is present or any custom property contains a default value.
+            if (isConstructor && !inherits && parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData || (x.Kind is CodePropertyKind.Custom && !string.IsNullOrEmpty(x.DefaultValue))).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.BackingStore).Any())
             {
                 writer.DecreaseIndent();
             }
@@ -293,6 +294,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}({serializationClassName}.new);");
     }
+    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
+    {
+        return propertyType.Name.ToLowerInvariant() switch
+        {
+            "string" => $"'{defaultValue}'",
+            "dateonly" => $"DateOnly.fromDateTimeString('{defaultValue}')",
+            "datetime" => $"DateTime.parse('{defaultValue}')",
+            "timeonly" => $"TimeOnly.fromDateTimeString('{defaultValue}')",
+            "uuidvalue" => $"UuidValue.fromString('{defaultValue}')",
+            _ => null,
+        };
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
         if (parentClass.IsErrorDefinition)
@@ -324,11 +337,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                 else if (propWithDefault.Type is CodeType propertyType2)
                 {
                     defaultValue = defaultValue.Trim('"');
-                    if (propertyType2.Name.Equals("String", StringComparison.Ordinal))
+                    if (defaultValue.StartsWith('\'') && defaultValue.EndsWith('\'') && defaultValue.Length > 1)
+                        defaultValue = defaultValue[1..^1];
+                    defaultValue = SanitizeDartSingleQuoteLiteral(defaultValue);
+                    if (GetDefaultValue(defaultValue, propertyType2) is string convertedDefaultValue)
                     {
-                        if (defaultValue.StartsWith('\'') && defaultValue.EndsWith('\'') && defaultValue.Length > 1)
-                            defaultValue = defaultValue[1..^1];
-                        defaultValue = $"'{SanitizeDartSingleQuoteLiteral(defaultValue)}'";
+                        defaultValue = convertedDefaultValue;
                     }
                 }
                 writer.WriteLine($"{propWithDefault.Name} = {defaultValue}{separator}");
@@ -699,8 +713,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
-        else if (isConstructor && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+        else if (isConstructor && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData) || (x.IsOfKind(CodePropertyKind.Custom) && !string.IsNullOrEmpty(x.DefaultValue))).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {
+            //Initializer list is created if "AdditionalData" is present or any custom property contains a default value.
             return " : ";
         }
 

@@ -747,7 +747,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected readonly GenerationConfiguration _configuration;
 #pragma warning restore CA1051 // Do not declare visible instance fields
 
-    protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration, Func<IEnumerable<CodeTypeBase>, IEnumerable<CodeTypeBase>>? codeTypeFilter = default)
+    protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration, Func<IEnumerable<CodeTypeBase>, IEnumerable<CodeTypeBase>>? codeTypeFilter = default, Action<CodeClass>? updateUsings = default)
     {
         if (current is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration currentClassDeclaration &&
@@ -801,11 +801,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
                             .ToArray();
 
-
             if (usingsToAdd.Length != 0)
                 (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
+
+            //Give the refiner the chance to update the usings for this class:
+            if (updateUsings != null)
+            {
+                updateUsings(currentClass);
+            }
         }
-        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
+        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter, updateUsings));
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = true)
     {
