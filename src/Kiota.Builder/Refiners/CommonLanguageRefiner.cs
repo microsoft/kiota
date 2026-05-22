@@ -1652,16 +1652,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
 
             // Shorten class, enum, and interface names and enrich their doc comments
-            // Materialize with ToList() since RenameChildElement modifies the dictionary
-            foreach (var codeClass in codeNamespace.GetChildElements(true).OfType<CodeClass>().ToList())
+            // Materialize with ToArray() since RenameChildElement modifies the dictionary
+            foreach (var codeClass in codeNamespace.GetChildElements(true).OfType<CodeClass>().ToArray())
             {
                 ShortenCodeElementNameIfOversized(codeNamespace, codeClass, codeClass.Documentation, maxSegmentLength);
             }
-            foreach (var codeEnum in codeNamespace.GetChildElements(true).OfType<CodeEnum>().ToList())
+            foreach (var codeEnum in codeNamespace.GetChildElements(true).OfType<CodeEnum>().ToArray())
             {
                 ShortenCodeElementNameIfOversized(codeNamespace, codeEnum, codeEnum.Documentation, maxSegmentLength);
             }
-            foreach (var codeInterface in codeNamespace.GetChildElements(true).OfType<CodeInterface>().ToList())
+            foreach (var codeInterface in codeNamespace.GetChildElements(true).OfType<CodeInterface>().ToArray())
             {
                 ShortenCodeElementNameIfOversized(codeNamespace, codeInterface, codeInterface.Documentation, maxSegmentLength);
             }
