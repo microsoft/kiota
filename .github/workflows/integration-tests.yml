@@ -90,6 +90,7 @@ jobs:
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json"
           - "oas::petstore"
           - "apisguru::twitter.com:current"
           - "apisguru::notion.com"
@@ -145,7 +146,7 @@ jobs:
         if: matrix.language == 'ruby'
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2"
+          ruby-version: "3.3"
           bundler-cache: true
       - name: Setup PHP
         if: matrix.language == 'php'
@@ -157,7 +158,7 @@ jobs:
         if: matrix.language == 'python'
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - name: Setup Dart
         if: matrix.language == 'dart'
         uses: dart-lang/setup-dart@v1

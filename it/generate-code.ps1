@@ -45,7 +45,13 @@ switch ($dev) {
     }
 }
 
-$targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
+#api description might be a JSON or a yaml file (or a apigurus name, which is hopefully a json file).
+if ($descriptionUrl.ToLower().EndsWith(".json")) {
+    $targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.json"
+}
+else {
+    $targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
+}
 if (Test-Path $targetOpenapiPath) {
     Remove-Item $targetOpenapiPath
 }
