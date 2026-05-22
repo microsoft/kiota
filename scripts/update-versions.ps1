@@ -64,6 +64,15 @@ function Get-LatestRubygemVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.version
 }
+# Get the latest version of a Dart pub.dev package
+function Get-LatestPubVersion {
+    param(
+        [string]$packageId
+    )
+    $url = "https://pub.dev/api/packages/$($packageId.ToLowerInvariant())"
+    $response = Invoke-RestMethod -Uri $url -Method Get -Headers @{ "Accept" = "application/vnd.pub.v2+json" }
+    $response.latest.version
+}
 
 function Retry-Command {
     [CmdletBinding()]
@@ -204,6 +213,19 @@ foreach ($languageName in ($appSettings.Languages | Get-Member -MemberType NoteP
             }
             Retry-Command -ScriptBlock {
                 $latestVersion = Get-LatestRubygemVersion -packageId (Get-QueryName -dependency $dependency)
+                Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
+                $dependency.Version = $latestVersion
+            }
+        }
+    }
+    elseif ($languageName -eq "Dart") {
+        foreach ($dependency in $language.Dependencies) {
+            if ($null -ne $dependency.MaximumVersion -and $dependency.MaximumVersion -eq $dependency.Version) {
+                Write-Information "Skipping $($dependency.Name) as it's already at the maximum version"
+                continue
+            }
+            Retry-Command -ScriptBlock {
+                $latestVersion = Get-LatestPubVersion -packageId (Get-QueryName -dependency $dependency)
                 Write-Information "Updating $($dependency.Name) from $($dependency.Version) to $latestVersion"
                 $dependency.Version = $latestVersion
             }
