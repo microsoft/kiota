@@ -113,6 +113,7 @@ public class PhpRefiner : CommonLanguageRefiner
             cancellationToken.ThrowIfCancellationRequested();
             AddSerializationModulesImport(generatedCode, [$@"{AbstractionsNamespaceName}\ApiClientBuilder"], null, '\\');
             cancellationToken.ThrowIfCancellationRequested();
+            ShortenOversizedNamespaceSegments(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
             CorrectBackingStoreSetterParam(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton::getInstance()->createBackingStore()");

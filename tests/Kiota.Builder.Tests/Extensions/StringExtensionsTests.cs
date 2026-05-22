@@ -131,4 +131,71 @@ public class StringExtensionsTests
         const string input = "\"line1'\\\nline2\"";
         Assert.Equal("'line1\\'\\\\\\nline2'", input.ReplaceDoubleQuoteWithSingleQuote());
     }
+    [Fact]
+    public void ShortenNameSegmentReturnsOriginalWhenUnderLimit()
+    {
+        var shortName = "MyShortClassName";
+        Assert.Equal(shortName, shortName.ShortenNameSegment());
+    }
+    [Fact]
+    public void ShortenNameSegmentReturnsOriginalAtExactLimit()
+    {
+        var name = new string('a', 64);
+        Assert.Equal(name, name.ShortenNameSegment());
+    }
+    [Fact]
+    public void ShortenNameSegmentTruncatesAndAppendsHashWhenOverLimit()
+    {
+        var longName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
+        var result = longName.ShortenNameSegment();
+        Assert.Equal(64, result.Length);
+        // First 55 chars are preserved (64 - 8 hash - 1 underscore)
+        Assert.StartsWith("MicrosoftGraphNetworkaccessDeviceReportWithStartDateTim", result);
+        Assert.Contains("_", result);
+    }
+    [Fact]
+    public void ShortenNameSegmentIsDeterministic()
+    {
+        var longName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
+        var result1 = longName.ShortenNameSegment();
+        var result2 = longName.ShortenNameSegment();
+        Assert.Equal(result1, result2);
+    }
+    [Fact]
+    public void ShortenNameSegmentProducesDifferentResultsForDifferentInputs()
+    {
+        var name1 = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
+        var name2 = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithApplicationId";
+        var result1 = name1.ShortenNameSegment();
+        var result2 = name2.ShortenNameSegment();
+        Assert.NotEqual(result1, result2);
+    }
+    [Fact]
+    public void ShortenNameSegmentHandlesNullAndEmpty()
+    {
+        Assert.Null(((string)null).ShortenNameSegment());
+        Assert.Equal(string.Empty, string.Empty.ShortenNameSegment());
+    }
+    [Fact]
+    public void ShortenNameSegmentRespectsCustomMaxLength()
+    {
+        var name = "SomeVeryLongNameThatExceedsThirtyCharacters";
+        var result = name.ShortenNameSegment(30);
+        Assert.Equal(30, result.Length);
+        Assert.StartsWith("SomeVeryLongNameThatE", result);
+        Assert.Contains("_", result);
+    }
+    [Fact]
+    public void HashStringReturnsEmptyForNullOrEmpty()
+    {
+        Assert.Equal(string.Empty, StringExtensions.HashString(null));
+        Assert.Equal(string.Empty, StringExtensions.HashString(string.Empty));
+    }
+    [Fact]
+    public void HashStringReturnsConsistentHashForInput()
+    {
+        var result = StringExtensions.HashString("test");
+        Assert.False(string.IsNullOrEmpty(result));
+        Assert.Equal(result, StringExtensions.HashString("test"));
+    }
 }
