@@ -66,4 +66,44 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("Option1 = \"line1\\\"\\nline2\",", result);
     }
+    [Fact]
+    public void SanitizesEnumOptionDescriptionWithNewlines()
+    {
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "Option1",
+            SerializationName = "option1",
+            Documentation = new()
+            {
+                DescriptionTemplate = "line1\nimport os; os.system('evil')\r\nline3",
+            },
+        });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        // Newlines replaced with spaces: entire payload is on one comment line, not executable code
+        Assert.Contains("# line1 import os; os.system('evil') line3", result);
+        // Verify no raw newlines exist within the comment content itself
+        var commentLine = result.Split('\n').First(l => l.TrimStart().StartsWith("# line1")).TrimEnd('\r');
+        Assert.DoesNotContain("\n", commentLine);
+        Assert.DoesNotContain("\r", commentLine);
+    }
+    [Fact]
+    public void SanitizesEnumOptionDescriptionWithTripleQuotes()
+    {
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "Option1",
+            SerializationName = "option1",
+            Documentation = new()
+            {
+                DescriptionTemplate = "before\"\"\"\nimport os\nafter",
+            },
+        });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        // Triple quotes escaped, newlines replaced with spaces — all on one comment line
+        Assert.Contains("# before\\\"\\\"\\\" import os after", result);
+        var commentLine = result.Split('\n').First(l => l.TrimStart().StartsWith("# before"));
+        Assert.DoesNotContain("\"\"\"", commentLine);
+    }
 }
