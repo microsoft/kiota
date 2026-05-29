@@ -244,6 +244,20 @@ public class CSharpConventionService : CommonLanguageConventionService
             _ => false,
         };
     }
+    internal bool IsValueType(CodeTypeBase type)
+    {
+        if (type is not CodeType codeType) return false;
+        // Collections are reference types regardless of element type — never use .Value on them
+        if (codeType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None) return false;
+        if (codeType.TypeDefinition is CodeEnum) return true;
+        var typeName = TranslateType(codeType);
+        return NullableTypes.Contains(typeName);
+    }
+    /// <summary>
+    /// When true (default), required non-nullable OAS properties are generated as non-nullable C# types.
+    /// Set to false to revert to the previous all-nullable behavior.
+    /// </summary>
+    public bool MakeRequiredPropertiesNonNullable { get; set; } = true;
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);

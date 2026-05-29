@@ -661,7 +661,7 @@ public partial class KiotaBuilder
 
     public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore, config.ExcludeBackwardCompatible);
+        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore, config.ExcludeBackwardCompatible, config.MakeRequiredPropertiesNonNullable);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
@@ -1174,7 +1174,7 @@ public partial class KiotaBuilder
     }
     private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
-    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom, bool isRequired = false)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
@@ -1196,6 +1196,7 @@ public partial class KiotaBuilder
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = resultType,
             Deprecation = propertySchema?.GetDeprecationInformation(),
+            IsRequired = isRequired,
             IsPrimaryErrorMessage = kind == CodePropertyKind.Custom &&
                                         propertySchema is { Extensions: not null } &&
                                         propertySchema.Extensions.TryGetValue(OpenApiPrimaryErrorMessageExtension.Name, out var openApiExtension) &&
@@ -1219,6 +1220,23 @@ public partial class KiotaBuilder
         {
             //Values not placed in quotes (number and boolean): just forward the value.
             prop.DefaultValue = stringDefaultJsonValue2.ToString();
+        }
+
+        // If the property is required and the schema explicitly does not allow null,
+        // mark the type as non-nullable. We clone existingType to avoid mutating a shared reference.
+        // Collections are excluded: IsNullable on a collection type controls both the outer
+        // collection ? AND the enum element ? (e.g. List<Status?> vs List<Status>). Setting
+        // IsNullable = false on a required collection breaks the serialization API which always
+        // expects IEnumerable<T?>?. The outer collection ? is suppressed via IsRequired in
+        // CodePropertyWriter instead.
+        var isCollection = existingType != null
+            ? existingType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
+            : propertySchema.IsArray();
+        if (kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable() && !isCollection)
+        {
+            if (existingType != null)
+                prop.Type = (CodeTypeBase)existingType.Clone();
+            prop.Type.IsNullable = false;
         }
 
         if (existingType == null)
@@ -2426,7 +2444,8 @@ public partial class KiotaBuilder
                             LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                             return null;
                         }
-                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                        var isRequired = schema.Required?.Contains(x.Key) ?? false;
+                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition, isRequired: isRequired);
                     })
                     .OfType<CodeProperty>()
                     .ToArray() ?? [];

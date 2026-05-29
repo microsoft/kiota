@@ -4,10 +4,13 @@ namespace Kiota.Builder.Writers.CSharp;
 
 public class CSharpWriter : LanguageWriter
 {
-    public CSharpWriter(string rootPath, string clientNamespaceName)
+    public CSharpWriter(string rootPath, string clientNamespaceName, bool makeRequiredPropertiesNonNullable = true)
     {
         PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
-        var conventionService = new CSharpConventionService();
+        var conventionService = new CSharpConventionService
+        {
+            MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable
+        };
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
