@@ -2053,6 +2053,58 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{escapedQuotesPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedQuotes}", result);
     }
     [Fact]
+    public void WritesConstructorWithDateTimeTypeDefaults()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "startTime",
+            DefaultValue = "\"13:00:00\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "Time" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "startDate",
+            DefaultValue = "\"2023-04-19\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "Date" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "createdAt",
+            DefaultValue = "\"2023-04-19T13:00:00Z\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "DateTimeOffset" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "duration",
+            DefaultValue = "\"PT1H\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "TimeSpan" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "invalidTime",
+            DefaultValue = "\"24:00:00\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "Time" },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("StartTime = new Time(13, 0, 0)", result);
+        Assert.Contains("StartDate = new Date(2023, 4, 19)", result);
+        Assert.Contains("CreatedAt = DateTimeOffset.Parse(\"2023-04-19T13:00:00Z\", null, global::System.Globalization.DateTimeStyles.RoundtripKind)", result);
+        Assert.Contains("Duration = global::System.Xml.XmlConvert.ToTimeSpan(\"PT1H\")", result);
+        Assert.DoesNotContain("InvalidTime", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();
