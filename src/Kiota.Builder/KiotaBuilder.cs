@@ -2082,7 +2082,7 @@ public partial class KiotaBuilder
                                 SerializationName = x,
                                 Documentation = new()
                                 {
-                                    DescriptionTemplate = optionDescription?.Description ?? string.Empty,
+                                    DescriptionTemplate = optionDescription?.Description?.CleanupDescription() ?? string.Empty,
                                 },
                             };
                         })
