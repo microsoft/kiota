@@ -44,6 +44,8 @@ Sanitizers are in `src/Kiota.Builder/Writers/StringExtensions.cs` and `DartConve
 
 ## Test expectations
 
-Changes to writer emission paths should include regression tests in `tests/Kiota.Builder.Tests/Writers/` that:
+Always follow `.github/instructions/pre-commit-testing.instructions.md` for test execution, scoping, and pass/fail validation before commit.
+
+For writer emission changes, include regression tests in `tests/Kiota.Builder.Tests/Writers/` that:
 - Use hostile payloads containing `"`, `'`, `\n`, `\r`, `\t`, `\\`, and `$`.
 - Assert the output contains **escaped** characters, not raw injection payloads.
