@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -283,6 +284,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             {
                 defaultValue = convertedDefaultValue;
             }
+            else if (propWithDefault.Type is CodeType dateTimePropType &&
+                DateTimeTypeNames.Contains(dateTimePropType.Name) &&
+                defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
+            {
+                var expression = GetDateTimeDefaultValueExpression(dateTimePropType.Name, defaultValue.TrimQuotes());
+                if (string.IsNullOrEmpty(expression))
+                    continue;
+                defaultValue = expression;
+            }
             else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
             {
                 defaultValue = defaultValue.SanitizeQuotedStringLiteral();
@@ -309,6 +319,31 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     }
 
     private const string NullValueString = "null";
+    private static readonly HashSet<string> DateTimeTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Date", "Time", "DateTimeOffset", "TimeSpan"
+    };
+    private static string GetDateTimeDefaultValueExpression(string typeName, string rawValue)
+    {
+        if (typeName.Equals("Time", StringComparison.OrdinalIgnoreCase) &&
+            TimeOnly.TryParse(rawValue, CultureInfo.InvariantCulture, out var timeValue))
+            return $"new Time({timeValue.Hour}, {timeValue.Minute}, {timeValue.Second})";
+
+        if (typeName.Equals("Date", StringComparison.OrdinalIgnoreCase) &&
+            DateOnly.TryParse(rawValue, CultureInfo.InvariantCulture, out var dateValue))
+            return $"new Date({dateValue.Year}, {dateValue.Month}, {dateValue.Day})";
+
+        var escapedRawValue = rawValue.Replace("\"", "\\\"", StringComparison.Ordinal);
+        if (typeName.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) &&
+            DateTimeOffset.TryParse(rawValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind | DateTimeStyles.AssumeUniversal, out _))
+            return $"DateTimeOffset.Parse(\"{escapedRawValue}\", null, global::System.Globalization.DateTimeStyles.RoundtripKind)";
+
+        if (typeName.Equals("TimeSpan", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrEmpty(rawValue))
+            return $"global::System.Xml.XmlConvert.ToTimeSpan(\"{escapedRawValue}\")";
+
+        return string.Empty;
+    }
     private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
