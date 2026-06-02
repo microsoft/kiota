@@ -90,13 +90,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if (writeDiscriminatorValueRead)
         {
-            writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
+            writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
             writer.StartBlock($"unless {NodeVarName}.nil? then");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
             writer.StartBlock($"case {DiscriminatorMappingVarName}");
             foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
             {
-                writer.StartBlock($"when \"{mappedType.Key.SanitizeDoubleQuote()}\"");
+                writer.StartBlock($"when \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedType.Key)}\"");
                 writer.WriteLine($"return {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}.new");
                 writer.DecreaseIndent();
             }
@@ -124,7 +124,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         foreach (var escapedProperty in escapedProperties)
         {
             writer.StartBlock($"when \"{escapedProperty.Name}\"");
-            writer.WriteLine($"return \"{escapedProperty.SerializationName.SanitizeDoubleQuote()}\"");
+            writer.WriteLine($"return \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(escapedProperty.SerializationName)}\"");
             writer.DecreaseIndent();
         }
         writer.StartBlock("else");
@@ -172,7 +172,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&
                 !string.IsNullOrEmpty(urlTemplateProperty.DefaultValue))
             {
-                var sanitizedUrlTemplate = urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral();
+                var sanitizedUrlTemplate = RubyConventionService.SanitizeRubyDoubleQuoteLiteral(urlTemplateProperty.DefaultValue);
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     writer.WriteLine($"super({pathParametersParameter.Name.ToSnakeCase()}, {requestAdapterParameter.Name.ToSnakeCase()}, {sanitizedUrlTemplate})");
                 else
@@ -185,7 +185,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()}");
+            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {RubyConventionService.SanitizeRubyDoubleQuoteLiteral(propWithDefault.DefaultValue)}");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData,
                                                                         CodePropertyKind.Custom) //additional data and custom properties rely on accessors
@@ -194,7 +194,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderBy(static x => x.Name))
         {
-            string defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
+            string defaultValue = RubyConventionService.SanitizeRubyDoubleQuoteLiteral(propWithDefault.DefaultValue);
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
                 // generates "Rootnamespace::Subnamespace::EnumType[:DefaultValue]"
@@ -235,7 +235,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{conventions.TempDictionaryVarName}[\"{codeElement.OriginalIndexer.IndexParameter.SerializationName.SanitizeDoubleQuote()}\"] = {codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()}");
+                            $"{conventions.TempDictionaryVarName}[\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(codeElement.OriginalIndexer.IndexParameter.SerializationName)}\"] = {codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()}");
         conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer)
@@ -249,7 +249,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+            writer.WriteLine($"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
         }
         writer.DecreaseIndent();
         if (parentClass.StartBlock.Inherits != null)
@@ -356,7 +356,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{otherProp.WireName.SanitizeDoubleQuote()}\", @{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\", @{otherProp.Name.ToSnakeCase()})");
         }
         if (additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");

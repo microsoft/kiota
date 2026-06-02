@@ -720,17 +720,17 @@ public sealed class CodeMethodWriterTests : IDisposable
     {
         setup();
         AddSerializationProperties();
-        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nbreak";
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"#\nbreak";
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         writer.Write(method);
         var serializerResult = tw.ToString();
-        Assert.Contains("write_string_value(\"line1\\\"\\nbreak\",", serializerResult);
+        Assert.Contains("write_string_value(\"line1\\\"\\#\\nbreak\",", serializerResult);
         tw.GetStringBuilder().Clear();
         method.Kind = CodeMethodKind.Deserializer;
         writer.Write(method);
         var deserializerResult = tw.ToString();
-        Assert.Contains("\"line1\\\"\\nbreak\" => lambda", deserializerResult);
+        Assert.Contains("\"line1\\\"\\#\\nbreak\" => lambda", deserializerResult);
     }
     [Fact]
     public void WritesTranslatedTypesDeSerializerBody()
@@ -986,7 +986,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         parentClass.AddProperty(new CodeProperty
         {
             Name = propName,
-            DefaultValue = "\"line1\nline2\"",
+            DefaultValue = "\"line1#\nline2\"",
             Kind = CodePropertyKind.Custom,
             Type = new CodeType
             {
@@ -995,7 +995,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"@{propName.ToSnakeCase()} = \"line1\\nline2\"", result);
+        Assert.Contains($"@{propName.ToSnakeCase()} = \"line1\\#\\nline2\"", result);
+    }
+    [Fact]
+    public void EscapesParameterDefaultsInSignature()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "displayName",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+            Optional = true,
+            DefaultValue = "\"#{`id`}\"",
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("def initialize(display_name=\"\\#{`id`}\")", result);
     }
     [Fact]
     public void WritesConstructorWithDefaultValuesThatRequireParsing()
@@ -1325,7 +1344,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         {
             Name = "filter",
             Kind = CodePropertyKind.QueryParameter,
-            SerializationName = "li\"ne\nbreak",
+            SerializationName = "li\"ne#\nbreak",
             Type = new CodeType
             {
                 Name = "string",
@@ -1343,7 +1362,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("when \"filter\"", result);
-        Assert.Contains("return \"li\\\"ne\\nbreak\"", result);
+        Assert.Contains("return \"li\\\"ne\\#\\nbreak\"", result);
     }
     [Fact]
     public void DoesntWriteReadOnlyPropertiesInSerializerBody()
