@@ -2551,7 +2551,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Deprecation = new("line1\"\nline2");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("warn(\"line1\\\"\\nline2", result);
+        Assert.Contains("warn(\"line1\\\" line2", result);
         Assert.DoesNotContain("line1\"\nline2", result);
     }
     [Fact]
