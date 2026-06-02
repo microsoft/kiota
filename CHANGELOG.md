@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.32.0] - 2026-06-02
+
+### Added
+
+### Changed
+
 - C#, Java, Go, PHP, Dart, TypeScript, Python and Ruby client: default value initialization in model classes for DateTime/Date/Time/UUID properties did not compile [#7404](https://github.com/microsoft/kiota/issues/7404)
 - All languages: default value initialization in model classes for numeric/boolean properties was missing [#7404](https://github.com/microsoft/kiota/issues/7404)
 - Fixed a bug where required query parameters from one HTTP operation were leaking into the path-item-level URL template, making them appear required for sibling operations on the same path. [#7292](https://github.com/microsoft/kiota/issues/7292)
@@ -1729,6 +1735,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
 
 
 
