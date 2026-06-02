@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.32.0] - 2026-06-02
+
+### Added
+
+### Changed
+
 - C#, Java, Go, PHP, Dart, TypeScript, Python and Ruby client: default value initialization in model classes for DateTime/Date/Time/UUID properties did not compile [#7404](https://github.com/microsoft/kiota/issues/7404)
 - All languages: default value initialization in model classes for numeric/boolean properties was missing [#7404](https://github.com/microsoft/kiota/issues/7404)
 - Fixed a bug where required query parameters from one HTTP operation were leaking into the path-item-level URL template, making them appear required for sibling operations on the same path. [#7292](https://github.com/microsoft/kiota/issues/7292)
@@ -20,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `kiota download` returning exit code 0 (success) when no results are found or multiple ambiguous matches exist. [#7643](https://github.com/microsoft/kiota/pull/7643)
 - Fixed incorrect command hints and telemetry in `kiota plugin generate` handler referencing "client" instead of "plugin". [#7642](https://github.com/microsoft/kiota/pull/7642)
 - Fixed Ruby `isStream` always evaluating to false in `CodeMethodWriter`, causing stream/binary responses to never use `send_primitive_async`. [#7639](https://github.com/microsoft/kiota/pull/7639)
+- Fixed a code injection vulnerability in Python generation by sanitizing `x-ms-enum` descriptions before emitting comments/docstrings. [#7735](https://github.com/microsoft/kiota/pull/7735)
+- Fixed a code injection vulnerability in Ruby generation by escaping interpolation markers in generated double-quoted string literals. [#7746](https://github.com/microsoft/kiota/pull/7746)
 
 ## [1.31.1] - 2026-04-13
 
