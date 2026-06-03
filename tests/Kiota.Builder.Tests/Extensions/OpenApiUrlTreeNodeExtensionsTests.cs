@@ -1198,6 +1198,38 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
     }
 
     [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsEmptyString_WhenAllOperationsHaveUniqueOptionalOnlyTemplates()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                {
+                    HttpMethod.Get, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                { HttpMethod.Post, new() }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        Assert.Equal(string.Empty, childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
     public void GetUrlTemplateForPathItem_ReturnsHighestCardinalityTemplate_WhenMultipleGroupsExist()
     {
         // GET and POST share no-param template (cardinality 2)
@@ -1235,6 +1267,41 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         var expectedTemplate = childNode.GetUrlTemplate(HttpMethod.Get);
         Assert.Equal(expectedTemplate, childNode.GetUrlTemplateForPathItem());
         Assert.NotEqual(childNode.GetUrlTemplate(HttpMethod.Delete), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsHighestCardinalityTemplate_WhenOptionalOnlyOutlierExists()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                { HttpMethod.Post, new() },
+                {
+                    HttpMethod.Patch, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$filter",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        var expectedTemplate = childNode.GetUrlTemplate(HttpMethod.Get);
+        Assert.Equal(expectedTemplate, childNode.GetUrlTemplateForPathItem());
+        Assert.NotEqual(childNode.GetUrlTemplate(HttpMethod.Patch), childNode.GetUrlTemplateForPathItem());
     }
 
     [Fact]
