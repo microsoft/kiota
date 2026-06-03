@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a regression where operations with only optional query-parameter differences could lose their URL template override, yielding empty or incomplete request builder URL templates after the #7292 fix. [#7754](https://github.com/microsoft/kiota/issues/7754) [#7755](https://github.com/microsoft/kiota/issues/7755)
+
 ## [1.32.0] - 2026-06-02
 
 ### Added
@@ -1737,6 +1739,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
 
 
