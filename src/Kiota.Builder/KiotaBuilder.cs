@@ -1478,9 +1478,9 @@ public partial class KiotaBuilder
                 Parent = parentClass,
                 Deprecation = deprecationInformation,
             };
+            var pathItemUrlTemplate = currentNode.GetUrlTemplateForPathItem();
             var operationUrlTemplate = currentNode.GetUrlTemplate(operationType);
-            if (!operationUrlTemplate.Equals(parentClass.Properties.FirstOrDefault(static x => x.Kind is CodePropertyKind.UrlTemplate)?.DefaultValue?.Trim('"'), StringComparison.Ordinal)
-                && currentNode.HasRequiredQueryParametersAcrossOperations())// no need to generate extra strings/templates as optional parameters will have no effect on resolved url.
+            if (!operationUrlTemplate.Equals(pathItemUrlTemplate, StringComparison.Ordinal))
             {
                 generatorMethod.UrlTemplateOverride = operationUrlTemplate;
                 executorMethod.UrlTemplateOverride = operationUrlTemplate;
@@ -2082,7 +2082,7 @@ public partial class KiotaBuilder
                                 SerializationName = x,
                                 Documentation = new()
                                 {
-                                    DescriptionTemplate = optionDescription?.Description ?? string.Empty,
+                                    DescriptionTemplate = optionDescription?.Description?.CleanupDescription() ?? string.Empty,
                                 },
                             };
                         })

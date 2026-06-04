@@ -17,6 +17,21 @@ public class RubyConventionService : CommonLanguageConventionService
     internal string DocCommentStart = "## ";
     internal string DocCommentEnd = "## ";
     public override string TempDictionaryVarName => "url_tpl_params";
+    internal static string SanitizeRubyDoubleQuoteLiteral(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+
+        if (value.Length > 1)
+        {
+            if (value[0] == '"' && value[^1] == '"')
+                return $"\"{value[1..^1].SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal)}\"";
+
+            if (value[0] == '\'' && value[^1] == '\'')
+                return $"'{value[1..^1].SanitizeSingleQuote().Replace("#", "\\#", StringComparison.Ordinal)}'";
+        }
+
+        return value.SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal);
+    }
     public override string GetAccessModifier(AccessModifier access)
     {
         return access switch
@@ -30,7 +45,7 @@ public class RubyConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
-            $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : parameter.DefaultValue.SanitizeQuotedStringLiteral())}" :
+            $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : SanitizeRubyDoubleQuoteLiteral(parameter.DefaultValue))}" :
             string.Empty;
         return $"{parameter.Name}{defaultValue}";
     }

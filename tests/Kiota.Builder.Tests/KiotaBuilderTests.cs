@@ -11157,4 +11157,177 @@ components:
         Assert.True(deleteGenerator.HasUrlTemplateOverride);
         Assert.Equal("{+baseurl}/resource?confirm={confirm}", deleteGenerator.UrlTemplateOverride);
     }
+
+    [Fact]
+    public async Task PerOperationUrlTemplateOverrideSetWhenAllTemplatesAreUniqueWithOptionalQueryParametersAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(
+            """
+            openapi: 3.0.1
+            info:
+              title: Test
+              version: '1.0'
+            servers:
+              - url: https://graph.microsoft.com/v1.0
+            paths:
+              /resource:
+                get:
+                  description: Gets the resource
+                  parameters:
+                    - name: $select
+                      in: query
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                post:
+                  description: Creates the resource
+                  responses:
+                    '201':
+                      description: Created
+            """);
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "Graph",
+                OpenAPIFilePath = "https://localhost",
+                ClientNamespaceName = "GraphSdk",
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var resourceNs = codeModel.FindNamespaceByName("GraphSdk.Resource");
+        Assert.NotNull(resourceNs);
+        var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
+        Assert.NotNull(resourceRb);
+
+        var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(urlTemplateProperty);
+        Assert.Equal("\"\"", urlTemplateProperty.DefaultValue);
+
+        var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getExecutor);
+        Assert.True(getExecutor.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource{?%24select*}", getExecutor.UrlTemplateOverride);
+
+        var getGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getGenerator);
+        Assert.True(getGenerator.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource{?%24select*}", getGenerator.UrlTemplateOverride);
+
+        var postExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.NotNull(postExecutor);
+        Assert.True(postExecutor.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource", postExecutor.UrlTemplateOverride);
+
+        var postGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.NotNull(postGenerator);
+        Assert.True(postGenerator.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource", postGenerator.UrlTemplateOverride);
+    }
+
+    [Fact]
+    public async Task PerOperationUrlTemplateOverrideSetForOptionalQueryOutlierAgainstHighestCardinalityTemplateAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(
+            """
+            openapi: 3.0.1
+            info:
+              title: Test
+              version: '1.0'
+            servers:
+              - url: https://graph.microsoft.com/v1.0
+            paths:
+              /resource:
+                get:
+                  description: Gets the resource
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                post:
+                  description: Creates the resource
+                  responses:
+                    '201':
+                      description: Created
+                patch:
+                  description: Updates the resource
+                  parameters:
+                    - name: $filter
+                      in: query
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+            """);
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "Graph",
+                OpenAPIFilePath = "https://localhost",
+                ClientNamespaceName = "GraphSdk",
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var resourceNs = codeModel.FindNamespaceByName("GraphSdk.Resource");
+        Assert.NotNull(resourceNs);
+        var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
+        Assert.NotNull(resourceRb);
+
+        var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(urlTemplateProperty);
+        Assert.Equal("\"{+baseurl}/resource\"", urlTemplateProperty.DefaultValue);
+
+        var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getExecutor);
+        Assert.False(getExecutor.HasUrlTemplateOverride);
+
+        var postExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.NotNull(postExecutor);
+        Assert.False(postExecutor.HasUrlTemplateOverride);
+
+        var patchExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
+        Assert.NotNull(patchExecutor);
+        Assert.True(patchExecutor.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource{?%24filter*}", patchExecutor.UrlTemplateOverride);
+
+        var patchGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
+        Assert.NotNull(patchGenerator);
+        Assert.True(patchGenerator.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource{?%24filter*}", patchGenerator.UrlTemplateOverride);
+    }
 }
