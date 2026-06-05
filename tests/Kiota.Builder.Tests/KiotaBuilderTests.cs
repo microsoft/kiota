@@ -11124,24 +11124,21 @@ components:
         var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
         Assert.NotNull(resourceRb);
 
-        // The path-item URL template property must be empty because GET and DELETE have unique templates
+        // The path-item URL template excludes operation-specific required params (confirm)
         var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
         Assert.NotNull(urlTemplateProperty);
-        Assert.Equal("\"\"", urlTemplateProperty.DefaultValue);
+        Assert.Equal("\"{+baseurl}/resource\"", urlTemplateProperty.DefaultValue);
 
-        // GET executor method must carry a URL template override (no required params)
+        // GET has no operation-specific required params → no override needed (uses class-level UrlTemplate)
         var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(getExecutor);
-        Assert.True(getExecutor.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource", getExecutor.UrlTemplateOverride);
+        Assert.False(getExecutor.HasUrlTemplateOverride);
 
-        // GET generator method must also carry the same URL template override
         var getGenerator = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(getGenerator);
-        Assert.True(getGenerator.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource", getGenerator.UrlTemplateOverride);
+        Assert.False(getGenerator.HasUrlTemplateOverride);
 
         // DELETE executor must carry an override with the required confirm parameter
         var deleteExecutor = resourceRb.Methods.FirstOrDefault(static m =>
@@ -11214,31 +11211,29 @@ components:
 
         var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
         Assert.NotNull(urlTemplateProperty);
-        Assert.Equal("\"\"", urlTemplateProperty.DefaultValue);
+        // Class-level template includes the union of optional params ($select) — no required params to exclude
+        Assert.Equal("\"{+baseurl}/resource{?%24select*}\"", urlTemplateProperty.DefaultValue);
 
+        // No operation-specific required params → no overrides needed for any operation
         var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(getExecutor);
-        Assert.True(getExecutor.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource{?%24select*}", getExecutor.UrlTemplateOverride);
+        Assert.False(getExecutor.HasUrlTemplateOverride);
 
         var getGenerator = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(getGenerator);
-        Assert.True(getGenerator.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource{?%24select*}", getGenerator.UrlTemplateOverride);
+        Assert.False(getGenerator.HasUrlTemplateOverride);
 
         var postExecutor = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
         Assert.NotNull(postExecutor);
-        Assert.True(postExecutor.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource", postExecutor.UrlTemplateOverride);
+        Assert.False(postExecutor.HasUrlTemplateOverride);
 
         var postGenerator = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
         Assert.NotNull(postGenerator);
-        Assert.True(postGenerator.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource", postGenerator.UrlTemplateOverride);
+        Assert.False(postGenerator.HasUrlTemplateOverride);
     }
 
     [Fact]
@@ -11306,8 +11301,10 @@ components:
 
         var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
         Assert.NotNull(urlTemplateProperty);
-        Assert.Equal("\"{+baseurl}/resource\"", urlTemplateProperty.DefaultValue);
+        // Class-level template includes the union of optional params ($filter) — no required params to exclude
+        Assert.Equal("\"{+baseurl}/resource{?%24filter*}\"", urlTemplateProperty.DefaultValue);
 
+        // No operation-specific required params → no overrides needed for any operation
         var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
         Assert.NotNull(getExecutor);
@@ -11321,13 +11318,11 @@ components:
         var patchExecutor = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.NotNull(patchExecutor);
-        Assert.True(patchExecutor.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource{?%24filter*}", patchExecutor.UrlTemplateOverride);
+        Assert.False(patchExecutor.HasUrlTemplateOverride);
 
         var patchGenerator = resourceRb.Methods.FirstOrDefault(static m =>
             m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.NotNull(patchGenerator);
-        Assert.True(patchGenerator.HasUrlTemplateOverride);
-        Assert.Equal("{+baseurl}/resource{?%24filter*}", patchGenerator.UrlTemplateOverride);
+        Assert.False(patchGenerator.HasUrlTemplateOverride);
     }
 }
