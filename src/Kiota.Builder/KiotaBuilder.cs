@@ -1478,9 +1478,8 @@ public partial class KiotaBuilder
                 Parent = parentClass,
                 Deprecation = deprecationInformation,
             };
-            var pathItemUrlTemplate = currentNode.GetUrlTemplateForPathItem();
             var operationUrlTemplate = currentNode.GetUrlTemplate(operationType);
-            if (!operationUrlTemplate.Equals(pathItemUrlTemplate, StringComparison.Ordinal))
+            if (currentNode.HasOperationSpecificRequiredQueryParameters(operationType))
             {
                 generatorMethod.UrlTemplateOverride = operationUrlTemplate;
                 executorMethod.UrlTemplateOverride = operationUrlTemplate;
