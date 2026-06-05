@@ -1093,7 +1093,7 @@ extends:
             dependsOn:
               - github_release
             steps:
-              - task: EsrpRelease@9
+              - task: EsrpRelease@12
                 inputs:
                   connectedservicename: "Federated DevX ESRP Managed Identity Connection"
                   usemanagedidentity: false
