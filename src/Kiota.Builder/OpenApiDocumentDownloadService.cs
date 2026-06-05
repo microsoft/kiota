@@ -145,7 +145,7 @@ internal partial class OpenApiDocumentDownloadService
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Error parsing specification {Path}", config.OpenAPIFilePath);
+            LogOpenApiParsingCriticalError(ex, config.OpenAPIFilePath);
             throw;
         }
         stopwatch.Stop();
@@ -197,6 +197,9 @@ internal partial class OpenApiDocumentDownloadService
 
     [LoggerMessage(Level = LogLevel.Error, Message = "OpenAPI error: {Pointer} - {Message}")]
     private partial void LogOpenApiError(string? pointer, string message);
+
+    [LoggerMessage(Level = LogLevel.Critical, Message = "Error parsing specification {Path}")]
+    private partial void LogOpenApiParsingCriticalError(Exception exception, string path);
 
     [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.")]
     private partial void LogParsedOpenApiSuccessfully(long timestamp, int count);
