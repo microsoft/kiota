@@ -14,11 +14,66 @@ Generate the code:
 ./it/generate-code.ps1 -descriptionUrl ${FILE/URL} -language ${LANG}
 ```
 
+Instead of publishing, you could also build the project and use the "-Dev" switch that executes Kiota from "src\kiota\bin\Debug\net8.0":
+
+```bash
+./it/generate-code.ps1 -descriptionUrl ${FILE/URL} -language ${LANG} -Dev
+```
+
 And finally run the test:
 
 ```bash
 ./it/exec-cmd.ps1 -descriptionUrl ${FILE/URL} -language ${LANG}
 ```
+
+# Suppressions
+
+Some API files do not work for a specific target language. There are two ways to define suppressions:
+
+## Suppress the full test
+
+This will execute the test in Github CI anyway and maybe an error will happen, but the test will not be marked as "failed" (see "integration-tests.yml" and "get-is-suppressed.ps1")
+
+```
+  "https://www.sample.com/sample-api.json": {
+    "MockServerITFolder": "sampleapi",
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "Feature x in file is not supported for ruby."
+      }
+    ]
+  }
+```
+ 
+## Suppress creating certain API paths
+
+This will tell Kiota not to generate the code for the specified endpoint. Use it if something inside this endpoint definition is either invalid OpenAPI
+or Kiota cannot handle it.
+
+```
+  "https://www.sample.com/sample-api.json": {
+    "MockServerITFolder": "sampleapi",
+    "ExcludePatterns": [
+      {
+        "Pattern": "/users/*/gpg_keys",
+        "Rationale": "invalid data type for argument XYZ"
+      },
+      {
+        "Pattern": "/repos/{owner}/{repo}/releases#POST",
+        "Rationale": "here is something wrong, too"
+      },
+      {
+        "Language": "typescript",
+        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
+        "Rationale": "an error only for typescript"
+      }
+    ]
+  }
+```
+
+The second snippet demonstrates that you can suppress also creating a method for just one of the HTTP methods of an endpoint.
+The third sample shows a suppression only for a single language.
 
 # MockServer tests
 
