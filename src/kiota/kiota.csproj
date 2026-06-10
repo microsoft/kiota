@@ -62,7 +62,7 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageReference Include="Spectre.Console" Version="0.56.0" />
     <PackageReference Include="StreamJsonRpc" Version="2.25.25" />
-    <PackageReference Include="System.CommandLine" Version="2.0.8" />
+    <PackageReference Include="System.CommandLine" Version="2.0.9" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
     <ProjectReference Include="..\Kiota.Generated\KiotaGenerated.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
