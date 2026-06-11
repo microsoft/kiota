@@ -7,7 +7,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/4262 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/59)" 
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/59" 
       }
     ]
   },
@@ -28,7 +28,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/73)"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
       }
     ]
   },
@@ -36,7 +36,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/66)"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ]
   },
@@ -46,7 +46,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/66)"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ],
     "IdempotencySuppressions": []
@@ -55,7 +55,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/66). The API of 06/2026 reports an error 'The element to rename was not found available_phone_number_countryModelModelModelModel'"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66. The API of 06/2026 reports an error 'The element to rename was not found available_phone_number_countryModelModelModelModel'"
       }
     ],
     "IdempotencySuppressions": [
@@ -95,7 +95,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/66)"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ]
   },
@@ -105,7 +105,7 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816 (moved to https://github.com/microsoft/kiota-abstractions-ruby/issues/73)"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
       }
     ],
     "IdempotencySuppressions": []
