@@ -1817,6 +1817,15 @@ public partial class KiotaBuilder
         {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
+            // CreateModelDeclarations so the allOf entries get merged. Calling AddModelDeclarationIfDoesntExist
+            // directly with the raw schema would only set the base class (from the single allOf $ref) but drop
+            // the inline allOf member's properties, producing an empty model that then wins the name-based dedup.
+            if ((targetSchema.IsInherited() || targetSchema.IsIntersection()) &&
+                CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType inheritedType)
+            {
+                return inheritedType;
+            }
             return new CodeType
             {
                 TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),

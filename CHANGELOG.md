@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug that generares an empty model when allOf inheritance schema is reached via a composed type [#7791](https://github.com/microsoft/kiota/issues/7791)
+
 ## [1.32.2] - 2026-06-05
 
 ### Added
@@ -1754,6 +1756,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
 
 

@@ -8550,6 +8550,82 @@ components:
         Assert.Equal(4, modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
     }
     [Fact]
+    public async Task AllOfInheritanceModelReferencedViaComposedTypeKeepsItsPropertiesAsync()
+    {
+        // Regression test: a model defined as allOf [ $ref base, { inline properties } ] that is also reached
+        // as a member of a composed (anyOf/oneOf) type used to be generated with its base class but WITHOUT the
+        // inline allOf properties. CreateComposedModelDeclaration passed the raw $ref straight to
+        // AddModelDeclarationIfDoesntExist, bypassing the allOf merge, and the resulting empty class then won
+        // the name-based dedup over the correctly-merged one.
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: repro
+  version: 1.0.1
+servers:
+  - url: https://example.com
+paths:
+  /things/{id}:
+    get:
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer.jsonld-read'
+components:
+  schemas:
+    ItemBase:
+      type: object
+      required: ['@id', '@type']
+      properties:
+        '@id':
+          type: string
+          readOnly: true
+        '@type':
+          type: string
+          readOnly: true
+    Offer.jsonld-read:
+      allOf:
+        - $ref: '#/components/schemas/ItemBase'
+        - type: object
+          properties:
+            name:
+              type: [string, 'null']
+            amount:
+              type: [integer, 'null']
+            product:
+              anyOf:
+                - $ref: '#/components/schemas/Product.jsonld-read'
+                - type: 'null'
+    Product.jsonld-read:
+      allOf:
+        - $ref: '#/components/schemas/ItemBase'
+        - type: object
+          properties:
+            label:
+              type: [string, 'null']
+            offer:
+              anyOf:
+                - $ref: '#/components/schemas/Offer.jsonld-read'
+                - type: 'null'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var offerClass = codeModel.FindNamespaceByName("ApiSdk.models.Offer")?.FindChildByName<CodeClass>("JsonldRead", false);
+        Assert.NotNull(offerClass);
+        Assert.NotNull(offerClass.StartBlock.Inherits); // still inherits ItemBase
+        Assert.Equal("ItemBase", offerClass.StartBlock.Inherits!.Name);
+        // the inline allOf properties must be present (regression: they were dropped, leaving an empty class)
+        Assert.Contains(offerClass.Properties, static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(offerClass.Properties, static p => p.Name.Equals("amount", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(offerClass.Properties, static p => p.Name.Equals("product", StringComparison.OrdinalIgnoreCase));
+    }
+    [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaChildClassAsync()
     {
         var tempFilePath = Path.GetTempFileName();
