@@ -23,7 +23,7 @@
   "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json": {
     "MockServerITFolder": "defaultvalues"
   },
-  "https://github.com/github/rest-api-description/raw/refs/heads/main/descriptions/api.github.com/api.github.com.json": {
+  "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json": {
     "MockServerITFolder": "gh",
     "Suppressions": [
       {

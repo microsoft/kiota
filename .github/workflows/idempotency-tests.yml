@@ -47,7 +47,7 @@ jobs:
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
           - "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml"
           - "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json"
-          - "https://github.com/github/rest-api-description/raw/refs/heads/main/descriptions/api.github.com/api.github.com.json"
+          - "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v6
@@ -94,7 +94,7 @@ jobs:
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
           - "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml"
           - "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json"
-          - "https://github.com/github/rest-api-description/raw/refs/heads/main/descriptions/api.github.com/api.github.com.json"
+          - "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v6
