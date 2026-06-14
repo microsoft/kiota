@@ -246,6 +246,7 @@ export interface GenerationConfiguration {
   excludeBackwardCompatible: boolean;
   excludePatterns: string[];
   includeAdditionalData: boolean;
+  makeRequiredPropertiesNonNullable: boolean;
   includePatterns: string[];
   language: KiotaGenerationLanguage;
   openAPIFilePath: string;
@@ -278,6 +279,7 @@ export interface ClientObjectProperties extends WorkspaceObjectProperties {
   clientNamespaceName: string;
   usesBackingStore: boolean;
   includeAdditionalData: boolean;
+  makeRequiredPropertiesNonNullable: boolean;
   excludeBackwardCompatible: boolean;
   disabledValidationRules: string[];
 }
@@ -300,7 +302,7 @@ export interface KiotaResult extends KiotaLoggedResult {
   isSuccess: boolean;
 }
 
-export interface ValidateOpenApiResult extends KiotaLoggedResult {}
+export interface ValidateOpenApiResult extends KiotaLoggedResult { }
 
 export interface GeneratePluginResult extends KiotaResult {
   aiPlugin: string;

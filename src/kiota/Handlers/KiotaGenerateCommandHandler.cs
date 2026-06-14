@@ -86,6 +86,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         bool excludeBackwardCompatible = parseResult.GetValue(ExcludeBackwardCompatibleOption);
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
+        bool makeRequiredPropertiesNonNullable = parseResult.GetValue(MakeRequiredPropertiesNonNullableOption);
         bool includeAdditionalData = parseResult.GetValue(AdditionalDataOption);
         string? className = parseResult.GetValue(ClassOption);
         AccessModifier typeAccessModifier = parseResult.GetValue(TypeAccessModifierOption);
@@ -152,6 +153,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
         Configuration.Generation.DisableSSLValidation = disableSSLValidation;
+        Configuration.Generation.MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
         using (loggerFactory)
@@ -230,6 +232,10 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         set;
     }
     public required Option<bool> DisableSSLValidationOption
+    {
+        get; init;
+    }
+    public required Option<bool> MakeRequiredPropertiesNonNullableOption
     {
         get; init;
     }

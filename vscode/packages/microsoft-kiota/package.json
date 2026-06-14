@@ -38,6 +38,11 @@
           "default": true,
           "description": "%kiota.generate.includeAdditionalData.description%"
         },
+        "kiota.generate.makeRequiredPropertiesNonNullable.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%kiota.generate.makeRequiredPropertiesNonNullable.description%"
+        },
         "kiota.generate.backingStore.enabled": {
           "type": "boolean",
           "default": false,

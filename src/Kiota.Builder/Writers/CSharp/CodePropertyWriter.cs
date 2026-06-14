@@ -14,9 +14,11 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         if (codeElement.ExistsInExternalBaseType) return;
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
         var isNullableReferenceType = !propertyType.EndsWith('?')
+                                      && codeElement.Type.IsNullable
+                                      && !(conventions.MakeRequiredPropertiesNonNullable && codeElement.IsRequired)
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
-                                            CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
+                                            CodePropertyKind.QueryParameter);
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
@@ -26,7 +28,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
             CSharpConventionService.WriteNullableMiddle(writer);
         }
 
-        WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
+        WritePropertyInternal(codeElement, writer, propertyType);
 
         if (isNullableReferenceType)
             CSharpConventionService.WriteNullableClosing(writer);

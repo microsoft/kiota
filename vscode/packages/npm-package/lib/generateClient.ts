@@ -18,6 +18,7 @@ export interface ClientGenerationOptions {
   excludeBackwardCompatible?: boolean;
   excludePatterns?: string[];
   includeAdditionalData?: boolean;
+  makeRequiredPropertiesNonNullable?: boolean;
   includePatterns?: string[];
   clearCache?: boolean;
   cleanOutput?: boolean;
@@ -75,6 +76,7 @@ export async function generateClient(clientGenerationOptions: ClientGenerationOp
         excludeBackwardCompatible: clientGenerationOptions.excludeBackwardCompatible ?? false,
         excludePatterns: clientGenerationOptions.excludePatterns ?? [],
         includeAdditionalData: clientGenerationOptions.includeAdditionalData ?? false,
+        makeRequiredPropertiesNonNullable: clientGenerationOptions.makeRequiredPropertiesNonNullable ?? true,
         cleanOutput: clientGenerationOptions.cleanOutput ?? false,
         clearCache: clientGenerationOptions.clearCache ?? false,
         includePatterns: clientGenerationOptions.includePatterns ?? [],

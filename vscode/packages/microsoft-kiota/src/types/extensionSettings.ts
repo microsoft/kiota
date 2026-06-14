@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 export function getExtensionSettings(extensionId: string): ExtensionSettings {
     return {
         includeAdditionalData: getBooleanConfiguration(extensionId, "generate.includeAdditionalData.enabled"),
+        makeRequiredPropertiesNonNullable: getBooleanConfiguration(extensionId, "generate.makeRequiredPropertiesNonNullable.enabled"),
         backingStore: getBooleanConfiguration(extensionId, "generate.backingStore.enabled"),
         excludeBackwardCompatible: getBooleanConfiguration(extensionId, "generate.excludeBackwardCompatible.enabled"),
         cleanOutput: getBooleanConfiguration(extensionId, "cleanOutput.enabled"),
@@ -44,6 +45,7 @@ export interface ExtensionSettings {
     disableValidationRules: string[];
     structuredMimeTypes: string[];
     includeAdditionalData: boolean;
+    makeRequiredPropertiesNonNullable: boolean;
     languagesSerializationConfiguration: Record<KiotaGenerationLanguage, LanguageSerializationConfiguration>;
 }
 
