@@ -1,19 +1,13 @@
 {
   "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
-    "MockServerITFolder": "basic",
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
-      }
-    ]
+    "MockServerITFolder": "basic"
   },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
     "MockServerITFolder": "query-params",
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/4262"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/59" 
       }
     ]
   },
@@ -22,174 +16,46 @@
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ]
   },
   "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json": {
     "MockServerITFolder": "defaultvalues"
   },
-  "apisguru::github.com:api.github.com": {
+  "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json": {
     "MockServerITFolder": "gh",
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
-      }
-    ],
-    "ExcludePatterns": [
-      {
-        "Pattern": "/users/*/gpg_keys",
-        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
-      },
-      {
-        "Pattern": "/user/gpg_keys",
-        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
-      },
-      {
-        "Pattern": "/user/gpg_keys/**",
-        "Rationale": "https://github.com/github/rest-api-description/issues/2247"
-      },
-      {
-        "Pattern": "/repos/{owner}/{repo}/releases/{release_id}#PATCH",
-        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 and https://github.com/github/rest-api-description/issues/6100 (default value for enum is not quoted)"
-      },
-      {
-        "Pattern": "/repos/{owner}/{repo}/releases#POST",
-        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 (default value for enum is not quoted, fixed in recent file as of 03/2026 but not updated to APIGurus)"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
       }
     ]
   },
-  "apisguru::notion.com": {
-    "ExcludePatterns": [
-      {
-        "Pattern": "/v1/databases/**",
-        "Rationale": "next_cursor in commentResponse is invalid"
-      },
-      {
-        "Pattern": "/v1/blocks/**",
-        "Rationale": "next_cursor in commentResponse is invalid"
-      },
-      {
-        "Pattern": "/v1/comments",
-        "Rationale": "next_cursor in commentResponse is invalid"
-      },
-      {
-        "Pattern": "/v1/users/*",
-        "Rationale": "avatar_url in usersResponse is invalid"
-      },
-      {
-        "Pattern": "/v1/pages/*",
-        "Rationale": "code in pageResponse is invalid"
-      }
-    ],
+  "https://developers.notion.com/openapi.json": {
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ]
   },
   "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
-    "ExcludePatterns": [
-      {
-        "Pattern": "/maps/api/directions/json",
-        "Rationale": "DirectionsGeocodedWaypoint.partial_match is invalid"
-      }
-    ],
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
-      }
-    ]
   },
   "https://developers.pipedrive.com/docs/api/v1/openapi.yaml": {
-    "ExcludePatterns": [
-      {
-        "Pattern": "/itemSearch/field",
-        "Rationale": "$field_key for fieldResponse_data is invalid"
-      },
-      {
-        "Pattern": "/subscriptions/*/payments",
-        "Rationale": "data for model paymentsResponse is invalid"
-      },
-      {
-        "Pattern": "/permissionSets/**",
-        "Rationale": "error 404 is invalid"
-      },
-      {
-        "Pattern": "/oauth/token/",
-        "Rationale": "Duplicate path exists in the spec without the trailing '/'"
-      }
-    ],
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ],
     "IdempotencySuppressions": []
   },
-  "apisguru::twilio.com:api": {
-    "ExcludePatterns": [
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Addresses/*/DependentPhoneNumbers.json",
-        "Rationale": "dependent_phone_number is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Recordings.json",
-        "Rationale": "encryption_details is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Recordings/*.json",
-        "Rationale": "encryption_details is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Conferences/*/Recordings.json",
-        "Rationale": "encryption_details is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Recordings.json",
-        "Rationale": "encryption_details is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Recordings/*.json",
-        "Rationale": "encryption_details is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Conferences/*/Recordings/*.json",
-        "Rationale": "encryption_details is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Calls/FeedbackSummary.json",
-        "Rationale": "issues is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Calls/FeedbackSummary/*.json",
-        "Rationale": "issues is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Events.json",
-        "Rationale": "request is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/IncomingPhoneNumbers/*/AssignedAddOns.json",
-        "Rationale": "configuration is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/IncomingPhoneNumbers/*/AssignedAddOns/*.json",
-        "Rationale": "configuration is invalid"
-      },
-      {
-        "Pattern": "/2010-04-01/Accounts/*/Calls/*/Payments.json",
-        "Rationale": "Parameter is invalid"
-      }
-    ],
+  "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml": {
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66. The API of 06/2026 reports an error 'The element to rename was not found available_phone_number_countryModelModelModelModel'"
       }
     ],
     "IdempotencySuppressions": [
@@ -199,14 +65,10 @@
       }
     ]
   },
-  "apisguru::stripe.com": {
+  "https://raw.githubusercontent.com/stripe/openapi/refs/heads/master/latest/openapi.spec3.json": {
     "Suppressions": [
       {
         "Language": "java",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2842"
-      },
-      {
-        "Language": "python",
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
       },
       {
@@ -224,36 +86,26 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
       },
       {
-        "Language": "python",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2842"
-      },
-      {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
     ]
   },
-  "apisguru::meraki.com": {
+  "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json": {
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
       }
     ]
   },
-  "apisguru::docusign.net": {
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/2484"
-      }
-    ]
+  "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json": {
   },
-  "apisguru::twitter.com:current": {
+  "https://api.twitter.com/2/openapi.json": {
     "Suppressions": [
       {
         "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
       }
     ],
     "IdempotencySuppressions": []
