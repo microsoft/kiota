@@ -137,7 +137,17 @@ internal partial class OpenApiDocumentDownloadService
         {
             // couldn't parse the URL, it's probably a local file
         }
-        var readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        ReadResult readResult;
+        try
+        {
+            readResult = await OpenApiDocument.LoadAsync(input, settings: settings, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            LogOpenApiParsingCriticalError(ex, config.OpenAPIFilePath);
+            throw;
+        }
         stopwatch.Stop();
         if (generatingMode && readResult.Diagnostic?.Warnings is { Count: > 0 })
             foreach (var warning in readResult.Diagnostic.Warnings)
@@ -187,6 +197,9 @@ internal partial class OpenApiDocumentDownloadService
 
     [LoggerMessage(Level = LogLevel.Error, Message = "OpenAPI error: {Pointer} - {Message}")]
     private partial void LogOpenApiError(string? pointer, string message);
+
+    [LoggerMessage(Level = LogLevel.Critical, Message = "Error parsing specification {Path}")]
+    private partial void LogOpenApiParsingCriticalError(Exception exception, string path);
 
     [LoggerMessage(Level = LogLevel.Trace, Message = "{Timestamp}ms: Parsed OpenAPI successfully. {Count} paths found.")]
     private partial void LogParsedOpenApiSuccessfully(long timestamp, int count);
