@@ -11401,4 +11401,165 @@ components:
         Assert.NotNull(patchGenerator);
         Assert.False(patchGenerator.HasUrlTemplateOverride);
     }
+
+    #region Issue-3911 — required/nullable OAS properties → IsRequired / IsNullable
+
+    private async Task<CodeProperty> GetItemPropertyAsync(string schemasYaml, string propertyName, bool makeRequiredPropertiesNonNullable)
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+" + schemasYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var item = modelsNS.FindChildByName<CodeClass>("Item", false);
+        Assert.NotNull(item);
+        var prop = item.Properties.FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        return prop;
+    }
+
+    private const string RequiredNonNullableStringSchema = @"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string";
+
+    [Fact]
+    public async Task RequiredNonNullableString_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(RequiredNonNullableStringSchema, "name", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableString_FlagOff_IsNullableTrue_IsRequiredTrue()
+    {
+        // Opt-out: IsNullable stays true (historical behavior), but IsRequired is still set accurately.
+        var prop = await GetItemPropertyAsync(RequiredNonNullableStringSchema, "name", makeRequiredPropertiesNonNullable: false);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNullableString_FlagOn_IsNullableTrue_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          nullable: true", "name", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task OptionalNonNullableString_FlagOn_IsNullableTrue_IsRequiredFalse()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      properties:
+        name:
+          type: string", "name", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.False(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableInteger_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer", "count", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableObjectRef_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - owner
+      properties:
+        owner:
+          $ref: '#/components/schemas/Owner'
+    Owner:
+      type: object
+      properties:
+        id:
+          type: string", "owner", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableEnum_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+    Status:
+      type: string
+      enum:
+        - active
+        - inactive", "status", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredCollection_FlagOn_IsNullableTrue_IsRequiredTrue()
+    {
+        // Collections keep IsNullable = true: the element nullability and serializer API depend on it.
+        // Only scalar/object/enum required properties are made non-nullable.
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          type: array
+          items:
+            type: string", "tags", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    #endregion
 }

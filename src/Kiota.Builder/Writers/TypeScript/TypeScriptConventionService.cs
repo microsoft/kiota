@@ -12,6 +12,13 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class TypeScriptConventionService : CommonLanguageConventionService
 {
+    /// <summary>
+    /// When true, required and not-explicitly-nullable properties are rendered as non-optional
+    /// (no <c>?</c>) and non-nullable (no <c>| null</c>). Defaults to false to preserve the
+    /// historical behavior where every model property is optional and nullable.
+    /// </summary>
+    public bool MakeRequiredPropertiesNonNullable { get; init; }
+
 #pragma warning disable CA1707 // Remove the underscores
     public const string TYPE_INTEGER = "integer";
     public const string TYPE_INT64 = "int64";

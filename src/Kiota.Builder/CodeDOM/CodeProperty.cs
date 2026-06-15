@@ -122,6 +122,14 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    /// <summary>
+    /// Indicates that this property appeared in the parent schema's <c>required</c> array.
+    /// Set during Code DOM construction in KiotaBuilder; should not be modified by refiners.
+    /// </summary>
+    public bool IsRequired
+    {
+        get; set;
+    }
 
     public object Clone()
     {
@@ -143,6 +151,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
             Deprecation = Deprecation,
             IsPrimaryErrorMessage = IsPrimaryErrorMessage,
+            IsRequired = IsRequired,
         };
         return property;
     }

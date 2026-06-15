@@ -65,6 +65,15 @@ public class GenerationConfiguration : ICloneable
     {
         get; set;
     }
+    /// <summary>
+    /// When enabled, properties marked as required in the OpenAPI description and not explicitly nullable
+    /// are generated as non-nullable (and non-optional, for languages that distinguish the two).
+    /// Defaults to false to preserve the historical all-nullable behavior for existing clients.
+    /// </summary>
+    public bool MakeRequiredPropertiesNonNullable
+    {
+        get; set;
+    }
     public bool ExcludeBackwardCompatible
     {
         get; set;
@@ -184,6 +193,7 @@ public class GenerationConfiguration : ICloneable
             DisableSSLValidation = DisableSSLValidation,
             ExportPublicApi = ExportPublicApi,
             PluginAuthInformation = PluginAuthInformation,
+            MakeRequiredPropertiesNonNullable = MakeRequiredPropertiesNonNullable,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();

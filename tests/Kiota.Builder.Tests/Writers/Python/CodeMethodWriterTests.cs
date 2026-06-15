@@ -1720,6 +1720,60 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("get_path_parameters(", result);
     }
     [Fact]
+    public void WritesModelRequiredNonNullableProperty_NoOptional_KeepsNoneDefault()
+    {
+        // A required, non-nullable model property renders as a non-Optional dataclass field while KEEPING
+        // its `= None` default — the default is what allows no-arg construction (Model()) and a valid
+        // dataclass field ordering (a field with no default cannot follow defaulted fields). Dropping the
+        // default would break generation, so only the Optional[...] wrapper is removed.
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var propName = "product_id";
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            Kind = CodePropertyKind.Custom,
+            IsRequired = true,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = false,
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"{propName}: str = None", result);
+        Assert.DoesNotContain("Optional[", result);
+    }
+
+    [Fact]
+    public void WritesModelNullableProperty_Optional_KeepsNoneDefault()
+    {
+        // Opt-out / nullable: a nullable model property keeps the historical Optional[...] = None form.
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var propName = "product_id";
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            Kind = CodePropertyKind.Custom,
+            IsRequired = true,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsNullable = true,
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"{propName}: Optional[str] = None", result);
+    }
+
+    [Fact]
     public void EscapesCommentCharactersInDescription()
     {
         setup();

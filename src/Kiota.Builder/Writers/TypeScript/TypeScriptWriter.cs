@@ -4,10 +4,13 @@ namespace Kiota.Builder.Writers.TypeScript;
 
 public class TypeScriptWriter : LanguageWriter
 {
-    public TypeScriptWriter(string rootPath, string clientNamespaceName)
+    public TypeScriptWriter(string rootPath, string clientNamespaceName, bool makeRequiredPropertiesNonNullable = false)
     {
         PathSegmenter = new TypeScriptPathSegmenter(rootPath, clientNamespaceName);
-        var conventionService = new TypeScriptConventionService();
+        var conventionService = new TypeScriptConventionService
+        {
+            MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable
+        };
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));

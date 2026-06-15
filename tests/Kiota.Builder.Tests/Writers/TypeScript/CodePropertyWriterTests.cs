@@ -145,4 +145,63 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Empty(result);
     }
+
+    private (LanguageWriter, StringWriter) GetFlagOnWriter()
+    {
+        var flagOnWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName, makeRequiredPropertiesNonNullable: true);
+        var sw = new StringWriter();
+        flagOnWriter.SetTextWriter(sw);
+        return (flagOnWriter, sw);
+    }
+
+    [Fact]
+    public void WritesRequiredNonNullableProperty_FlagOn_NoOptionalNoNull()
+    {
+        var (flagOnWriter, sw) = GetFlagOnWriter();
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = false;
+        property.IsRequired = true;
+        flagOnWriter.Write(property);
+        var result = sw.ToString();
+        Assert.Contains($"{PropertyName}: {TypeName};", result);
+        Assert.DoesNotContain($"{PropertyName}?:", result);
+        Assert.DoesNotContain("| null", result);
+    }
+
+    [Fact]
+    public void WritesRequiredNullableProperty_FlagOn_NoOptionalKeepsNull()
+    {
+        var (flagOnWriter, sw) = GetFlagOnWriter();
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = true;
+        property.IsRequired = true;
+        flagOnWriter.Write(property);
+        var result = sw.ToString();
+        Assert.Contains($"{PropertyName}: {TypeName} | null;", result);
+        Assert.DoesNotContain($"{PropertyName}?:", result);
+    }
+
+    [Fact]
+    public void WritesOptionalProperty_FlagOn_OptionalAndNull()
+    {
+        var (flagOnWriter, sw) = GetFlagOnWriter();
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = false;
+        property.IsRequired = false;
+        flagOnWriter.Write(property);
+        var result = sw.ToString();
+        Assert.Contains($"{PropertyName}?: {TypeName} | null;", result);
+    }
+
+    [Fact]
+    public void WritesRequiredProperty_FlagOff_OptionalAndNull()
+    {
+        // Opt-out: with the flag off, a required non-nullable property keeps the historical optional+nullable form.
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = false;
+        property.IsRequired = true;
+        writer.Write(property); // default writer has the flag off
+        var result = tw.ToString();
+        Assert.Contains($"{PropertyName}?: {TypeName} | null;", result);
+    }
 }

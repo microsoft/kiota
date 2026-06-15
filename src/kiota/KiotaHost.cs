@@ -589,6 +589,8 @@ public static partial class KiotaHost
 
         var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
 
+        var makeRequiredPropertiesNonNullableOption = GetMakeRequiredPropertiesNonNullableOption(defaultConfiguration.MakeRequiredPropertiesNonNullable);
+
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
             manifestOption,
@@ -610,6 +612,7 @@ public static partial class KiotaHost
             dvrOption,
             clearCacheOption,
             disableSSLValidationOption,
+            makeRequiredPropertiesNonNullableOption,
         };
         command.Action = new KiotaGenerateCommandHandler
         {
@@ -633,6 +636,7 @@ public static partial class KiotaHost
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
             DisableSSLValidationOption = disableSSLValidationOption,
+            MakeRequiredPropertiesNonNullableOption = makeRequiredPropertiesNonNullableOption,
             ServiceProvider = serviceProvider,
         };
         return command;
@@ -717,6 +721,17 @@ public static partial class KiotaHost
         };
         disableSSLValidationOption.Aliases.Add("--dsv");
         return disableSSLValidationOption;
+    }
+
+    internal static Option<bool> GetMakeRequiredPropertiesNonNullableOption(bool defaultValue = false)
+    {
+        var option = new Option<bool>("--make-required-properties-non-nullable")
+        {
+            DefaultValueFactory = _ => defaultValue,
+            Description = "When enabled, properties marked as required in the OpenAPI description and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Disabled by default to preserve the previous behavior where all properties are nullable.",
+        };
+        option.Aliases.Add("--mrpnn");
+        return option;
     }
 
     private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName, bool allowEmpty = false)
