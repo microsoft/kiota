@@ -98,6 +98,16 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var composedType = GetOriginalComposedType(codeMethod.ReturnType);
         var isComposedOfPrimitives = composedType is not null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
 
+        // A primitive(-composed) discriminator factory's body is `parseNode?.get*Value()`, which is
+        // always `T | undefined`. Force its declared return type nullable so the `| undefined` suffix is
+        // emitted (see CodeMethodWriter.WriteMethodPrototypeInternal, which reads ReturnType.IsNullable).
+        // Independent of MakeRequiredPropertiesNonNullable, which can otherwise flip this composed return
+        // type to non-nullable — via a required, non-nullable reference to a scalar alias like
+        // `DisputeStatus = string` — and emit `: string` over a `string | undefined` body. No-op when the
+        // flag is off, since these factory return types are already nullable.
+        if (codeMethod.Kind is CodeMethodKind.Factory && isComposedOfPrimitives)
+            codeMethod.ReturnType.IsNullable = true;
+
         var returnType = codeMethod.Kind is CodeMethodKind.Factory && !isComposedOfPrimitives ?
             FactoryMethodReturnType :
             GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);

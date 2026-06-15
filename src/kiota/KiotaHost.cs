@@ -733,6 +733,15 @@ public static partial class KiotaHost
         option.Aliases.Add("--mrpnn");
         return option;
     }
+    internal static Option<bool?> GetOptionalMakeRequiredPropertiesNonNullableOption()
+    {
+        var option = new Option<bool?>("--make-required-properties-non-nullable")
+        {
+            Description = "When enabled, properties marked as required in the OpenAPI description and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Disabled by default to preserve the previous behavior where all properties are nullable.",
+        };
+        option.Aliases.Add("--mrpnn");
+        return option;
+    }
 
     private static void AddStringRegexValidator(Option<string> option, Regex validator, string parameterName, bool allowEmpty = false)
     {

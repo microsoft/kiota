@@ -51,6 +51,13 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         get; set;
     }
     /// <summary>
+    /// Whether required, non-explicitly-nullable properties were generated as non-nullable for this client.
+    /// </summary>
+    public bool MakeRequiredPropertiesNonNullable
+    {
+        get; set;
+    }
+    /// <summary>
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -73,6 +80,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         ClientNamespaceName = config.ClientNamespaceName;
         UsesBackingStore = config.UsesBackingStore;
         ExcludeBackwardCompatible = config.ExcludeBackwardCompatible;
+        MakeRequiredPropertiesNonNullable = config.MakeRequiredPropertiesNonNullable;
         IncludeAdditionalData = config.IncludeAdditionalData;
         StructuredMimeTypes = config.StructuredMimeTypes.ToList();
         DisabledValidationRules = config.DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -94,6 +102,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
             config.TypeAccessModifier = parsedTypeAccessModifier;
         config.UsesBackingStore = UsesBackingStore;
         config.ExcludeBackwardCompatible = ExcludeBackwardCompatible;
+        config.MakeRequiredPropertiesNonNullable = MakeRequiredPropertiesNonNullable;
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.StructuredMimeTypes = new(StructuredMimeTypes);
         config.DisabledValidationRules = DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -111,6 +120,7 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
             UsesBackingStore = UsesBackingStore,
             IncludeAdditionalData = IncludeAdditionalData,
             ExcludeBackwardCompatible = ExcludeBackwardCompatible,
+            MakeRequiredPropertiesNonNullable = MakeRequiredPropertiesNonNullable,
             DisabledValidationRules = new(DisabledValidationRules, StringComparer.OrdinalIgnoreCase),
         };
         CloneBase(result);

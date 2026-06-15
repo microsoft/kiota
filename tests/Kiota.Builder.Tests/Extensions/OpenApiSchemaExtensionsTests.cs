@@ -74,6 +74,30 @@ public class OpenApiSchemaExtensionsTests
         }.IsExclusiveUnion());
     }
     [Fact]
+    public void IsExplicitlyNullableDetectsNullMarkers()
+    {
+        // OAS 3.1 type includes null
+        Assert.True(new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null }.IsExplicitlyNullable());
+        // OAS 3.1 anyOf [ { type: null }, ... ]
+        Assert.True(new OpenApiSchema
+        {
+            AnyOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, new OpenApiSchema { Type = JsonSchemaType.String }]
+        }.IsExplicitlyNullable());
+        // OAS 3.1 oneOf [ { type: null }, ... ]
+        Assert.True(new OpenApiSchema
+        {
+            OneOf = [new OpenApiSchema { Type = JsonSchemaType.Null }, new OpenApiSchema { Type = JsonSchemaType.String }]
+        }.IsExplicitlyNullable());
+        // Non-nullable scalar
+        Assert.False(new OpenApiSchema { Type = JsonSchemaType.String }.IsExplicitlyNullable());
+        // anyOf without a null member
+        Assert.False(new OpenApiSchema
+        {
+            AnyOf = [new OpenApiSchema { Type = JsonSchemaType.String }, new OpenApiSchema { Type = JsonSchemaType.Number }]
+        }.IsExplicitlyNullable());
+        Assert.False(((IOpenApiSchema?)null).IsExplicitlyNullable());
+    }
+    [Fact]
     public void ExternalReferencesAreSupported()
     {
         var mockSchema = new OpenApiSchemaReference("example.json#/path/to/component", null, "http://example.com/example.json");

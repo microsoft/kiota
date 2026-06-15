@@ -66,6 +66,11 @@ internal class EditHandler : BaseKiotaCommandHandler
         get;
         set;
     }
+    public required Option<bool?> MakeRequiredPropertiesNonNullableOption
+    {
+        get;
+        set;
+    }
     public required Option<List<string>> IncludePatternsOption
     {
         get; init;
@@ -91,6 +96,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         string? openapi0 = parseResult.GetValue(DescriptionOption);
         bool? backingStore = parseResult.GetValue(BackingStoreOption);
         bool? excludeBackwardCompatible = parseResult.GetValue(ExcludeBackwardCompatibleOption);
+        bool? makeRequiredPropertiesNonNullable = parseResult.GetValue(MakeRequiredPropertiesNonNullableOption);
         bool? includeAdditionalData = parseResult.GetValue(AdditionalDataOption);
         bool skipGeneration = parseResult.GetValue(SkipGenerationOption);
         string? className0 = parseResult.GetValue(ClassOption);
@@ -152,6 +158,8 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.UsesBackingStore = backingStore.Value;
                 if (excludeBackwardCompatible.HasValue)
                     Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible.Value;
+                if (makeRequiredPropertiesNonNullable.HasValue)
+                    Configuration.Generation.MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable.Value;
                 if (includeAdditionalData.HasValue)
                     Configuration.Generation.IncludeAdditionalData = includeAdditionalData.Value;
                 AssignIfNotNullOrEmpty(output, (c, s) => c.OutputPath = s);

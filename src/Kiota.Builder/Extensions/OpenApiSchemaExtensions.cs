@@ -90,9 +90,10 @@ public static class OpenApiSchemaExtensions
         if (schema is null) return false;
         // OAS 3.0 nullable: true or OAS 3.1 type includes null
         if ((schema.Type & JsonSchemaType.Null) is JsonSchemaType.Null) return true;
-        // OAS 3.1 anyOf [ { type: null } ] pattern
-        return schema.AnyOf?.Any(static x =>
+        // OAS 3.1 anyOf/oneOf [ { type: null }, ... ] patterns
+        static bool HasNullMember(IList<IOpenApiSchema>? members) => members?.Any(static x =>
             (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null && !x.HasAnyProperty()) ?? false;
+        return HasNullMember(schema.AnyOf) || HasNullMember(schema.OneOf);
     }
     public static bool IsInclusiveUnion(this IOpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
