@@ -46,7 +46,7 @@ Selecting the language you want to generate an API client for in the Visual Stud
 
 You can find samples of clients generated with Kiota in the [Kiota samples](https://github.com/microsoft/kiota-samples) repository.
 
-An example of an application that is calling multiple API can be found in the [KiotaApp](https://github.com/darrelmiller/KiotaApp) repo
+An example of an application that is calling multiple APIs can be found in the [KiotaApp](https://github.com/darrelmiller/KiotaApp) repo.
 
 ## Contributing
 

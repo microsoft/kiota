@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a bug that generares an empty model when allOf inheritance schema is reached via a composed type [#7791](https://github.com/microsoft/kiota/issues/7791)
+
+## [1.32.2] - 2026-06-05
+
+### Added
+
+### Changed
+
+- Fixed per-operation URL template overrides being set too aggressively, causing generated methods to hardcode URL templates as string literals and bypass the class-level `UrlTemplate` field. Overrides are now only emitted when an operation has required query parameters not shared by all sibling operations on the same path, preserving downstream SDK customization of URL templates. [#7764](https://github.com/microsoft/kiota/pull/7764)
+- Updated kiota to ESRP v12. [#7765](https://github.com/microsoft/kiota/pull/7765)
+
 ## [1.32.1] - 2026-06-03
 
 ### Added
@@ -1745,6 +1756,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
 
 
