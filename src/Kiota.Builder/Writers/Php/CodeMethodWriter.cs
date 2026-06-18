@@ -122,6 +122,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var requestHeadersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Headers);
         var pathParametersProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters);
         var urlTemplateProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate);
+        var hasConstructor = parentClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor));
 
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
@@ -129,9 +130,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         }
         else if (parentClass.IsOfKind(CodeClassKind.RequestConfiguration))
             writer.WriteLine($"parent::__construct(${(requestHeadersParameter?.Name ?? "headers")} ?? [], ${(requestOptionParameter?.Name ?? "options")} ?? []);");
-        else
+        else if (hasConstructor)
             writer.WriteLine("parent::__construct();");
-
     }
 
     private static string? GetDefaultValue(string defaultValue, CodeType propertyType, out bool checkParsedValue)
