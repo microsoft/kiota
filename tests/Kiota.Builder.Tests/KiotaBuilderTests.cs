@@ -11404,10 +11404,11 @@ components:
 
     #region Issue-3911 — required/nullable OAS properties → IsRequired / IsNullable
 
-    private async Task<CodeProperty> GetItemPropertyAsync(string schemasYaml, string propertyName, bool makeRequiredPropertiesNonNullable)
+    private async Task<CodeProperty> GetItemPropertyAsync(string schemasYaml, string propertyName, bool makeRequiredPropertiesNonNullable, string openApiVersion = "3.0.1")
     {
         var tempFilePath = Path.GetTempFileName();
-        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+        _tempFiles.Add(tempFilePath);
+        await using var fs = await GetDocumentStreamAsync(@"openapi: " + openApiVersion + @"
 info:
   title: Test
   version: 1.0.0
@@ -11557,6 +11558,39 @@ components:
           type: array
           items:
             type: string", "tags", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableString_Oas31_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        // OAS 3.1 scalar type form: a required, non-nullable property is made non-nullable just like OAS 3.0.
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string", "name", makeRequiredPropertiesNonNullable: true, openApiVersion: "3.1.0");
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredExplicitlyNullableString_Oas31_FlagOn_IsNullableTrue_IsRequiredTrue()
+    {
+        // OAS 3.1 explicit-null form (`type: [string, "null"]`): the property is required but explicitly nullable,
+        // so it must stay nullable even with the flag on.
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type:
+            - string
+            - 'null'", "name", makeRequiredPropertiesNonNullable: true, openApiVersion: "3.1.0");
         Assert.True(prop.Type.IsNullable);
         Assert.True(prop.IsRequired);
     }

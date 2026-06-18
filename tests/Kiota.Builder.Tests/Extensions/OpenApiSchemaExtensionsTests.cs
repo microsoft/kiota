@@ -95,7 +95,7 @@ public class OpenApiSchemaExtensionsTests
         {
             AnyOf = [new OpenApiSchema { Type = JsonSchemaType.String }, new OpenApiSchema { Type = JsonSchemaType.Number }]
         }.IsExplicitlyNullable());
-        Assert.False(((IOpenApiSchema?)null).IsExplicitlyNullable());
+        Assert.False(((IOpenApiSchema)null).IsExplicitlyNullable());
     }
     [Fact]
     public void ExternalReferencesAreSupported()

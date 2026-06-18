@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an opt-in `--make-required-properties-non-nullable` (`--mrpnn`) generation option that generates properties marked as required in the OpenAPI description (and not explicitly nullable) as non-nullable and non-optional. Currently supported for TypeScript and Python. Disabled by default to preserve existing output. [#7795](https://github.com/microsoft/kiota/pull/7795)
+
 ### Changed
 
 - Fixed a bug that generares an empty model when allOf inheritance schema is reached via a composed type [#7791](https://github.com/microsoft/kiota/issues/7791)
