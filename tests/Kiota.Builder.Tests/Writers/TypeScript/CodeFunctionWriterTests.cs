@@ -383,6 +383,52 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
+    public async Task WritesDeSerializerBodyForPrimitiveCollectionsAsync()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        foreach (var primitiveType in new[] { "string", "integer", "boolean", "Date", "DateOnly", "TimeOnly", "Duration" })
+        {
+            parentClass.AddProperty(new CodeProperty
+            {
+                Name = $"{primitiveType.ToFirstCharacterLowerCase()}Collection",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType
+                {
+                    Name = primitiveType,
+                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                },
+            });
+        }
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "guidCollection",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "Guid",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("n.getCollectionOfPrimitiveValues<string>(\"string\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<number>(\"number\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<boolean>(\"boolean\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<Date>(\"Date\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<DateOnly>(\"DateOnly\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<TimeOnly>(\"TimeOnly\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<Duration>(\"Duration\")", result);
+        Assert.Contains("n.getCollectionOfPrimitiveValues<Guid>(\"string\")", result);
+    }
+    [Fact]
     public async Task WritesDeSerializerBodyWithDefaultValueAsync()
     {
         var parentClass = TestHelper.CreateModelClass(root, "parentClass");
