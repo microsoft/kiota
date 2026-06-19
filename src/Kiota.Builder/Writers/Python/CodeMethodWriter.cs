@@ -454,6 +454,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         }
     }
     private const string NoneKeyword = "None";
+    private static string GetNonNullableDefaultValue(string pythonType) => pythonType switch
+    {
+        "str" => "''",
+        "int" => "0",
+        "float" => "0.0",
+        "bool" => "False",
+        "bytes" => "b''",
+        _ => NoneKeyword,
+    };
     private void WriteSetterAccessPropertiesWithoutDefaults(CodeClass parentClass, LanguageWriter writer)
     {
         foreach (var propWithoutDefault in parentClass.GetPropertiesOfKind(SetterAccessProperties)
@@ -463,10 +472,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             var returnType = conventions.GetTypeString(propWithoutDefault.Type, propWithoutDefault, true, writer);
             conventions.WriteInLineDescription(propWithoutDefault, writer);
+            // A required, non-nullable property (set only when MakeRequiredPropertiesNonNullable is on) is rendered
+            // without Optional[...]. A dataclass still needs a default for no-arg construction, so use a type-correct
+            // zero-value for primitives (str -> '', int -> 0, ...) instead of None. For non-primitive types (objects,
+            // enums) no zero-value literal exists, so None is kept — an advisory non-null, matching Java's @Nonnull.
+            var defaultValue = !propWithoutDefault.Type.IsNullable && propWithoutDefault.IsRequired
+                ? GetNonNullableDefaultValue(returnType)
+                : NoneKeyword;
             if (parentClass.IsOfKind(CodeClassKind.Model))
-                writer.WriteLine($"{propWithoutDefault.Name}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = {NoneKeyword}");
+                writer.WriteLine($"{propWithoutDefault.Name}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
             else
-                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = {NoneKeyword}");
+                writer.WriteLine($"self.{conventions.GetAccessModifier(propWithoutDefault.Access)}{propWithoutDefault.NamePrefix}{propWithoutDefault.Name}: {(propWithoutDefault.Type.IsNullable ? "Optional[" : string.Empty)}{returnType}{(propWithoutDefault.Type.IsNullable ? "]" : string.Empty)} = {defaultValue}");
         }
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)

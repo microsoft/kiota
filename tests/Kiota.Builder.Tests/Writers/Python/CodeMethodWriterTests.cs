@@ -1720,10 +1720,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("get_path_parameters(", result);
     }
     [Fact]
-    public void WritesModelRequiredNonNullableProperty_NoOptional_KeepsNoneDefault()
+    public void WritesModelRequiredNonNullablePrimitive_NoOptional_TypeCorrectDefault()
     {
-        // A required, non-nullable property renders as a non-Optional dataclass field but KEEPS its `= None`
-        // default: the default enables no-arg construction (Model()) and valid field ordering. Only Optional[...] is dropped.
+        // A required, non-nullable primitive renders as a non-Optional dataclass field with a type-correct zero-value
+        // default (str -> ''). The default is needed for no-arg construction (Model()) and valid field ordering; using
+        // '' instead of None keeps the field type-correct (str = None would be rejected by mypy/pyright).
         setup();
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;
@@ -1742,7 +1743,35 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"{propName}: str = None", result);
+        Assert.Contains($"{propName}: str = ''", result);
+        Assert.DoesNotContain("Optional[", result);
+        Assert.DoesNotContain($"{propName}: str = None", result);
+    }
+
+    [Fact]
+    public void WritesModelRequiredNonNullableObject_NoOptional_NoneDefault()
+    {
+        // A required, non-nullable object/enum has no zero-value literal, so it renders non-Optional with a None
+        // default — an advisory non-null (the deserializer always overwrites it), matching Java's @Nonnull posture.
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var propName = "owner";
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            Kind = CodePropertyKind.Custom,
+            IsRequired = true,
+            Type = new CodeType
+            {
+                Name = "Owner",
+                IsNullable = false,
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"{propName}: Owner = None", result);
         Assert.DoesNotContain("Optional[", result);
     }
 
