@@ -377,12 +377,27 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
                 (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue()",
-                (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
+                (_, true, _) when currentType.TypeDefinition is null && GetPrimitiveCollectionDeserializationType(propertyType) is string primitiveType => $"getCollectionOfPrimitiveValues<{propertyType}>(\"{primitiveType}\")",
                 (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
                 _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
             };
         }
         return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement);
+    }
+
+    private static string? GetPrimitiveCollectionDeserializationType(string propertyTypeName)
+    {
+        return propertyTypeName switch
+        {
+            TYPE_LOWERCASE_STRING or TYPE_STRING or TYPE_GUID => TYPE_LOWERCASE_STRING,
+            TYPE_LOWERCASE_BOOLEAN or TYPE_BOOLEAN => TYPE_LOWERCASE_BOOLEAN,
+            TYPE_NUMBER => TYPE_NUMBER,
+            TYPE_DATE => TYPE_DATE,
+            TYPE_DATE_ONLY => TYPE_DATE_ONLY,
+            TYPE_TIME_ONLY => TYPE_TIME_ONLY,
+            TYPE_DURATION => TYPE_DURATION,
+            _ => null,
+        };
     }
 
     private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeElement targetElement)
