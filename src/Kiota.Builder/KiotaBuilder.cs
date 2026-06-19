@@ -2451,6 +2451,11 @@ public partial class KiotaBuilder
                             LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                             return null;
                         }
+                        // Required-ness is read from the (already allOf-merged) schema's own `required` array. Note that
+                        // MergeIntersectionSchemaEntries merges member *properties* but not their `required` arrays, so a
+                        // property declared required only inside an allOf member is treated as not-required here. This is a
+                        // safe under-application for MakeRequiredPropertiesNonNullable (such a property stays nullable) and
+                        // matches the pre-existing required handling; widening it would be a separate, cross-cutting change.
                         var isRequired = schema.Required?.Contains(x.Key) ?? false;
                         return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition, isRequired: isRequired);
                     })

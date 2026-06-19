@@ -723,12 +723,13 @@ public static partial class KiotaHost
         return disableSSLValidationOption;
     }
 
+    private const string MakeRequiredPropertiesNonNullableOptionDescription = "When enabled, properties marked as required in the OpenAPI description and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Currently supported for TypeScript, Python, and Java. Disabled by default to preserve the previous behavior where all properties are nullable.";
     internal static Option<bool> GetMakeRequiredPropertiesNonNullableOption(bool defaultValue = false)
     {
         var option = new Option<bool>("--make-required-properties-non-nullable")
         {
             DefaultValueFactory = _ => defaultValue,
-            Description = "When enabled, properties marked as required in the OpenAPI description and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Currently supported for TypeScript, Python, and Java. Disabled by default to preserve the previous behavior where all properties are nullable.",
+            Description = MakeRequiredPropertiesNonNullableOptionDescription,
         };
         option.Aliases.Add("--mrpnn");
         return option;
@@ -737,7 +738,7 @@ public static partial class KiotaHost
     {
         var option = new Option<bool?>("--make-required-properties-non-nullable")
         {
-            Description = "When enabled, properties marked as required in the OpenAPI description and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Currently supported for TypeScript, Python, and Java. Disabled by default to preserve the previous behavior where all properties are nullable.",
+            Description = MakeRequiredPropertiesNonNullableOptionDescription,
         };
         option.Aliases.Add("--mrpnn");
         return option;
