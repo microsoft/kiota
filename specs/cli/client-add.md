@@ -24,7 +24,7 @@ Once the `workspace.json` file is generated and the OpenAPI description file is 
 | `--namespace-name \| -n` | No | Contoso.GraphApp | The namespace of the client class. Defaults to `Microsoft.Graph`. | Yes, without its value |
 | `--backing-store \| -b` | No | | Defaults to `false` | Yes |
 | `--exclude-backward-compatible \| --ebc` | No |  | Whether to exclude the code generated only for backward compatibility reasons or not. Defaults to `false`. | Yes |
-| `--make-required-properties-non-nullable \| --mrpnn` | No |  | When enabled, properties marked as required and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Currently supported for TypeScript and Python. Defaults to `false`. | Yes |
+| `--make-required-properties-non-nullable \| --mrpnn` | No |  | When enabled, properties marked as required and not explicitly nullable are generated as non-nullable (and non-optional, for languages that distinguish the two). Currently supported for TypeScript, Python, and Java. Defaults to `false`. | Yes |
 | `--structured-media-types \| -m` | No | `application/json` | Any valid media type which will match a request body type or a response type in the OpenAPI description. Default are documented [here](https://learn.microsoft.com/en-us/openapi/kiota/using#--structured-mime-types--m). | Yes |
 | `--skip-generation \| --sg` | No | true | When specified, the generation would be skipped. Defaults to false. |Yes |
 | `--output \| -o` | No | ./generated/graph/csharp | The output directory or file path for the generated code files. This is relative to the location of `workspace.json`. Defaults to `./output`. | Yes, without its value |

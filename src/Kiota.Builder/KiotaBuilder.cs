@@ -1224,11 +1224,14 @@ public partial class KiotaBuilder
 
         // Required, non-explicitly-nullable properties are marked non-nullable so writers can drop the optional/nullable markers.
         // Collections are excluded: their IsNullable also drives element nullability, which the serialization APIs rely on.
+        // Scoped to the languages whose writers honor this safely (TypeScript, Python, Java); other languages keep the
+        // historical nullable rendering so their output is unchanged until support is added and validated for them.
         // Clone first to avoid mutating a shared/cached type reference.
         var isCollection = existingType != null
             ? existingType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
             : propertySchema.IsArray();
-        if (config.MakeRequiredPropertiesNonNullable && kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable() && !isCollection)
+        var languageSupportsNonNullableRequired = config.Language is GenerationLanguage.TypeScript or GenerationLanguage.Python or GenerationLanguage.Java;
+        if (config.MakeRequiredPropertiesNonNullable && languageSupportsNonNullableRequired && kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable() && !isCollection)
         {
             if (existingType != null)
                 prop.Type = (CodeTypeBase)existingType.Clone();

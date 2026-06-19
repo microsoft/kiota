@@ -106,6 +106,19 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("@jakarta.annotation.Nonnull", result);
     }
     [Fact]
+    public void WritesRequiredNonNullableProperty_FlagOn_Nonnull()
+    {
+        // With MakeRequiredPropertiesNonNullable on, the builder sets IsNullable=false on a required property; the Java
+        // writer renders it @Nonnull (and never @Nullable). @Nonnull is an annotation, so an uninitialized field is valid Java.
+        property.Kind = CodePropertyKind.Custom;
+        property.IsRequired = true;
+        (property.Type as CodeType).IsNullable = false;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("@jakarta.annotation.Nonnull", result);
+        Assert.DoesNotContain("@jakarta.annotation.Nullable", result);
+    }
+    [Fact]
     public void WritesCollectionFlagEnumsAsOneDimensionalArray()
     {
         property.Kind = CodePropertyKind.Custom;
