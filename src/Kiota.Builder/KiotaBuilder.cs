@@ -1222,13 +1222,9 @@ public partial class KiotaBuilder
             prop.DefaultValue = stringDefaultJsonValue2.ToString();
         }
 
-        // When the property is required and its schema does not explicitly allow null, mark the type as
-        // non-nullable so writers can drop the nullability/optionality markers. Gated on the configuration
-        // flag so the historical all-nullable behavior is preserved by default.
-        // Collections are excluded: IsNullable on a collection type controls both the outer collection
-        // nullability AND the element nullability (e.g. list of Status? vs list of Status), and the
-        // serialization APIs always expect a nullable element collection. The cloning avoids mutating a
-        // shared/cached type reference (the same definition can back multiple properties).
+        // Required, non-explicitly-nullable properties are marked non-nullable so writers can drop the optional/nullable markers.
+        // Collections are excluded: their IsNullable also drives element nullability, which the serialization APIs rely on.
+        // Clone first to avoid mutating a shared/cached type reference.
         var isCollection = existingType != null
             ? existingType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
             : propertySchema.IsArray();

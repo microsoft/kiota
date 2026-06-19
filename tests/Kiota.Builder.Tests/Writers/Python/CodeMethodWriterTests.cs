@@ -1722,10 +1722,8 @@ public sealed class CodeMethodWriterTests : IDisposable
     [Fact]
     public void WritesModelRequiredNonNullableProperty_NoOptional_KeepsNoneDefault()
     {
-        // A required, non-nullable model property renders as a non-Optional dataclass field while KEEPING
-        // its `= None` default — the default is what allows no-arg construction (Model()) and a valid
-        // dataclass field ordering (a field with no default cannot follow defaulted fields). Dropping the
-        // default would break generation, so only the Optional[...] wrapper is removed.
+        // A required, non-nullable property renders as a non-Optional dataclass field but KEEPS its `= None`
+        // default: the default enables no-arg construction (Model()) and valid field ordering. Only Optional[...] is dropped.
         setup();
         method.Kind = CodeMethodKind.Constructor;
         method.IsAsync = false;

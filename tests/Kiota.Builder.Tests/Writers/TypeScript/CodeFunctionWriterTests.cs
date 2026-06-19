@@ -1689,12 +1689,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
     [Fact]
     public async Task Writes_UnionOfPrimitiveValues_FactoryFunction_KeepsUndefinedWhenReturnTypeNonNullableAsync()
     {
-        // Regression for the MakeRequiredPropertiesNonNullable flag: a required reference to a scalar
-        // alias (e.g. a oneOf of string-enums that collapses to `type X = string`) can flip the
-        // primitive-composed factory's declared ReturnType to non-nullable. The factory body is always
-        // `parseNode?.get*Value()` (which yields `T | undefined`), so the declared return type must stay
-        // nullable or the emitted signature `: T` does not match the body and tsc fails. The writer forces
-        // primitive-composed factory return types nullable, independent of the flag.
+        // Regression for MakeRequiredPropertiesNonNullable: a required scalar-alias reference can flip a
+        // primitive-composed factory's ReturnType non-nullable. Its body is always `parseNode?.get*Value()`
+        // (`T | undefined`), so the signature must keep `| undefined` or tsc fails — the writer forces these
+        // factory return types nullable regardless of the flag.
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml, cancellationToken: TestContext.Current.CancellationToken);
