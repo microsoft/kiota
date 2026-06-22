@@ -1292,6 +1292,36 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("$this->setPropWithDefaultNullValue(null)", result);
         Assert.Contains("$this->setPropWithDefaultBoolValue(true)", result);
     }
+
+    [Fact]
+    public async Task DoesNotWriteParentConstructorCallWhenParentHasNoConstructorAsync()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        var constructor = new CodeMethod
+        {
+            Name = "constructor",
+            Access = AccessModifier.Public,
+            ReturnType = new CodeType { Name = "void" },
+            Kind = CodeMethodKind.Constructor
+        };
+        parentClass.AddMethod(constructor);
+        var baseClass = root.AddClass(new CodeClass
+        {
+            Name = "BaseClass",
+            Kind = CodeClassKind.Model
+        }).First();
+        parentClass.StartBlock.Inherits = new CodeType
+        {
+            Name = "BaseClass",
+            TypeDefinition = baseClass
+        };
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+        _codeMethodWriter.WriteCodeElement(constructor, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.Contains("public function __construct", result);
+        Assert.DoesNotContain("parent::__construct()", result);
+    }
     [Fact]
     public async Task EscapesStringDefaultsInConstructorAsync()
     {
