@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -51,7 +51,7 @@ jobs:
           - "apisguru::apis.guru"
           - "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: generator
@@ -105,7 +105,7 @@ jobs:
           - "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
