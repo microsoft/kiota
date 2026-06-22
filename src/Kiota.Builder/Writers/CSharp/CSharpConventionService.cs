@@ -62,7 +62,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(element);
         if (element is not CodeElement codeElement) return false;
         if (!element.Documentation.DescriptionAvailable) return false;
-        var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
+        var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => RemoveInvalidDescriptionCharacters(x.CleanupXMLString()));
         writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
         return true;
     }
@@ -83,13 +83,13 @@ public class CSharpConventionService : CommonLanguageConventionService
             writer.WriteLine($"{DocCommentPrefix}<summary>");
             if (documentation.DescriptionAvailable)
             {
-                var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
+                var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => RemoveInvalidDescriptionCharacters(x.CleanupXMLString()));
                 writer.WriteLine($"{DocCommentPrefix}{description}");
             }
             if (documentation.ExternalDocumentationAvailable)
             {
-                var documentationLabel = documentation.DocumentationLabel.CleanupXMLString();
-                var documentationLink = documentation.DocumentationLink?.ToString().CleanupXMLString();
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel.CleanupXMLString());
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString().CleanupXMLString() ?? string.Empty);
                 writer.WriteLine($"{DocCommentPrefix}{documentationLabel} <see href=\"{documentationLink}\" />");
             }
             writer.WriteLine($"{DocCommentPrefix}</summary>");
@@ -177,6 +177,11 @@ public class CSharpConventionService : CommonLanguageConventionService
                 yield return childNsSegment;
         }
     }
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
     public string GetTypeStringForDocumentation(CodeTypeBase code, CodeElement targetElement)
     {
         var typeString = GetTypeString(code, targetElement, true, false);// dont include nullable markers

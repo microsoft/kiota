@@ -1835,6 +1835,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("see &lt;more&gt; <see href=", result);
     }
     [Fact]
+    public void SanitizesMethodDescriptionLinkLabelNewlineInjection()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "See the docs.\nclass KiotaPwn{}//";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("\nclass KiotaPwn", result);
+        Assert.Contains("See the docs.class KiotaPwn{}//", result);
+        foreach (var line in result.Split('\n').Where(static l => l.Contains("KiotaPwn", StringComparison.Ordinal)))
+            Assert.StartsWith("///", line.TrimStart());
+    }
+    [Fact]
     public void Defensive()
     {
         setup();
