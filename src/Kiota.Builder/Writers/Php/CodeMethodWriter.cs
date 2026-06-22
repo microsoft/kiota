@@ -122,8 +122,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var requestHeadersParameter = currentMethod.Parameters.OfKind(CodeParameterKind.Headers);
         var pathParametersProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters);
         var urlTemplateProperty = parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate);
-        var hasConstructor = parentClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor));
-
+        var baseClass = parentClass.StartBlock.Inherits?.TypeDefinition as CodeClass;
+        var hasConstructor = baseClass?.Methods.Any(static x => x.IsOfKind(CodeMethodKind.Constructor)) ?? false;
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder))
         {
             writer.WriteLine($"parent::__construct(${(requestAdapterParameter?.Name ?? "requestAdapter")}, {(pathParametersProperty?.DefaultValue ?? "[]")}, {(urlTemplateProperty?.DefaultValue.ReplaceDoubleQuoteWithSingleQuote() ?? "")});");
