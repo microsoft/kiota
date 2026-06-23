@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a bug that generares an empty model when allOf inheritance schema is reached via a composed type [#7791](https://github.com/microsoft/kiota/issues/7791)
+- Fixed a bug in PHP generation where `parent::__construct()` was generated for parent classes without a constructor [#7809](https://github.com/microsoft/kiota/issues/7809) [#7810](https://github.com/microsoft/kiota/pull/7810) 
+
 
 ## [1.32.2] - 2026-06-05
 
