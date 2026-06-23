@@ -1,0 +1,51 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Recursive Category API
+  version: 0.1.0
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://api.dynamicref.test
+security: []
+paths:
+  /categories/tree:
+    get:
+      summary: Get category tree
+      operationId: getCategoryTree
+      tags: [Categories]
+      responses:
+        '200':
+          description: Localized recursive category tree
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalizedCategory'
+        default:
+          description: Error response
+components:
+  schemas:
+    BaseCategory:
+      $id: https://example.com/schemas/BaseCategory
+      $dynamicAnchor: category
+      type: object
+      required: [id, children]
+      properties:
+        id:
+          type: string
+        children:
+          type: array
+          items:
+            $dynamicRef: '#category'
+    LocalizedCategory:
+      $id: https://example.com/schemas/LocalizedCategory
+      $dynamicAnchor: category
+      allOf:
+        - $ref: '#/components/schemas/BaseCategory'
+        - type: object
+          required: [displayName, locale]
+          properties:
+            displayName:
+              type: string
+            locale:
+              type: string
