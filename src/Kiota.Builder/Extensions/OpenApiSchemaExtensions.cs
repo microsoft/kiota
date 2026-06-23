@@ -63,6 +63,111 @@ public static class OpenApiSchemaExtensions
         };
     }
 
+    /// <summary>
+    /// Returns the value of <c>$dynamicRef</c> on this schema, or on the target of an <see cref="OpenApiSchemaReference"/>.
+    /// Returns null when the keyword is absent.
+    /// </summary>
+    internal static string? GetDynamicRef(this IOpenApiSchema schema)
+    {
+        return schema switch
+        {
+            null => null,
+            OpenApiSchemaReference reference => reference.DynamicRef ?? reference.Target?.DynamicRef,
+            _ => schema.DynamicRef,
+        };
+    }
+
+    /// <summary>
+    /// Extracts the bare anchor name (without the leading <c>#</c>) from a schema's <c>$dynamicRef</c>.
+    /// Handles both fragment-only (<c>#meta</c>) and absolute-URI (<c>https://example.com/schema#meta</c>) forms
+    /// per JSON Schema 2020-12 §7.3.3. Returns null when the schema has no <c>$dynamicRef</c> or the value
+    /// has no fragment.
+    /// </summary>
+    internal static string? GetDynamicAnchorName(this IOpenApiSchema schema)
+    {
+        var dynRef = schema.GetDynamicRef();
+        if (string.IsNullOrEmpty(dynRef))
+            return null;
+        var hashIndex = dynRef.LastIndexOf('#');
+        // No fragment: the entire value is the anchor name (rare, but per spec allowed).
+        // Hash present: take everything after the last '#' to support absolute URIs.
+        return hashIndex >= 0 ? dynRef.Substring(hashIndex + 1) : dynRef;
+    }
+
+    /// <summary>
+    /// Returns the value of <c>$dynamicAnchor</c> on this schema, or on the target of an <see cref="OpenApiSchemaReference"/>.
+    /// Returns null when the keyword is absent.
+    /// </summary>
+    internal static string? GetDynamicAnchor(this IOpenApiSchema schema)
+    {
+        return schema switch
+        {
+            null => null,
+            OpenApiSchemaReference reference => reference.DynamicAnchor ?? reference.Target?.DynamicAnchor,
+            _ => schema.DynamicAnchor,
+        };
+    }
+
+    /// <summary>
+    /// Returns true when this schema declares a <c>$dynamicAnchor</c> whose value matches <paramref name="name"/> (without the leading <c>#</c>).
+    /// </summary>
+    internal static bool HasDynamicAnchor(this IOpenApiSchema schema, string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return false;
+        return schema.GetDynamicAnchor() is { } anchor && anchor.Equals(name, StringComparison.Ordinal);
+    }
+    /// <summary>
+    /// Returns true when this schema declares the given <c>$dynamicAnchor</c> directly OR in any of its <c>$defs</c> entries.
+    /// </summary>
+    internal static bool DeclaresDynamicAnchor(this IOpenApiSchema schema, string name)
+    {
+        if (string.IsNullOrEmpty(name) || schema is null)
+            return false;
+        if (schema.HasDynamicAnchor(name))
+            return true;
+        if (schema.Definitions is null)
+            return false;
+        foreach (var definition in schema.Definitions.Values)
+            if (definition.HasDynamicAnchor(name))
+                return true;
+        return false;
+    }
+    /// <summary>
+    /// Returns the schema that declares <paramref name="anchorName"/> as a <c>$dynamicAnchor</c> on this resource:
+    /// either the schema itself (if the anchor is top-level) or the matching <c>$defs</c> entry. Returns null if not declared.
+    /// </summary>
+    internal static IOpenApiSchema? GetDynamicAnchorTarget(this IOpenApiSchema schema, string anchorName)
+    {
+        if (string.IsNullOrEmpty(anchorName) || schema is null)
+            return null;
+        if (schema.HasDynamicAnchor(anchorName))
+            return schema;
+        if (schema.Definitions is null)
+            return null;
+        foreach (var definition in schema.Definitions.Values)
+            if (definition.HasDynamicAnchor(anchorName))
+                return definition;
+        return null;
+    }
+    /// <summary>
+    /// Returns true if this schema declares any <c>$dynamicAnchor</c> (top-level or in <c>$defs</c>).
+    /// Used to decide whether to push this schema onto the dynamic-scope stack.
+    /// </summary>
+    internal static bool DeclaresAnyDynamicAnchor(this IOpenApiSchema schema)
+    {
+        if (schema is null)
+            return false;
+        if (schema.GetDynamicAnchor() is not null)
+            return true;
+        if (schema.Definitions is null)
+            return false;
+        foreach (var definition in schema.Definitions.Values)
+            if (definition.GetDynamicAnchor() is not null)
+                return true;
+        return false;
+    }
+
     public static bool IsArray(this IOpenApiSchema? schema)
     {
         return schema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && schema.Items is not null &&
@@ -322,7 +427,8 @@ public static class OpenApiSchemaExtensions
                     ((ignoreNullableObjects && !schema.IsObjectType()) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||
-                !string.IsNullOrEmpty(schema.GetReferenceId());
+                !string.IsNullOrEmpty(schema.GetReferenceId()) ||
+                schema.GetDynamicRef() is not null;
     }
     public static IEnumerable<string> GetSchemaReferenceIds(this IOpenApiSchema schema, HashSet<IOpenApiSchema>? visitedSchemas = null)
     {
