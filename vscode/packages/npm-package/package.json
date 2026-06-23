@@ -61,7 +61,7 @@
     "adm-zip": "^0.5.17",
     "original-fs": "^1.2.0",
     "uuid": "^14.0.1",
-    "vscode-jsonrpc": "^8.2.1"
+    "vscode-jsonrpc": "^9.0.0"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",
