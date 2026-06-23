@@ -181,6 +181,9 @@ public class CSharpConventionService : CommonLanguageConventionService
         string.IsNullOrEmpty(originalDescription) ? string.Empty :
         originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
             .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\u0085", string.Empty, StringComparison.Ordinal) // NEXT LINE
+            .Replace("\u2028", string.Empty, StringComparison.Ordinal) // LINE SEPARATOR
+            .Replace("\u2029", string.Empty, StringComparison.Ordinal) // PARAGRAPH SEPARATOR
             .Replace("\t", " ", StringComparison.Ordinal);
     public string GetTypeStringForDocumentation(CodeTypeBase code, CodeElement targetElement)
     {

@@ -151,7 +151,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
         "yml",
         "txt",
     };
-    [GeneratedRegex(@"[\r\n\t]", RegexOptions.Singleline, 500)]
+    [GeneratedRegex(@"[\r\n\t\u0085\u2028\u2029]", RegexOptions.Singleline, 500)]
     private static partial Regex descriptionCleanupRegex();
     public static string CleanupDescription(this string? description) => string.IsNullOrEmpty(description) ? string.Empty : descriptionCleanupRegex().Replace(description, string.Empty);
     public static string GetPathItemDescription(this OpenApiUrlTreeNode currentNode, string label, string? defaultValue = default)

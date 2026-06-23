@@ -1849,6 +1849,27 @@ public sealed class CodeMethodWriterTests : IDisposable
         foreach (var line in result.Split('\n').Where(static l => l.Contains("KiotaPwn", StringComparison.Ordinal)))
             Assert.StartsWith("///", line.TrimStart());
     }
+    [Theory]
+    [InlineData("\r")]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\u0085")] // NEXT LINE
+    [InlineData("\u2028")] // LINE SEPARATOR
+    [InlineData("\u2029")] // PARAGRAPH SEPARATOR
+    public void SanitizesMethodDescriptionLinkLabelLineTerminatorInjection(string lineTerminator)
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = $"See the docs.{lineTerminator}class KiotaPwn{{}}//";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        // every C# line terminator (ECMA-334) must be stripped so the payload cannot
+        // break out of the single-line /// doc comment into namespace-level source
+        foreach (var line in result.Split('\n', '\r', '\u0085', '\u2028', '\u2029').Where(static l => l.Contains("KiotaPwn", StringComparison.Ordinal)))
+            Assert.StartsWith("///", line.TrimStart());
+    }
     [Fact]
     public void Defensive()
     {
