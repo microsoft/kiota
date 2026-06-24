@@ -1,0 +1,29 @@
+{
+  "exclude-paths": [".git", ".idea", ".github", ".vscode"],
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "separate-pull-requests": false,
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "bootstrap-sha": "eb0666c77234695508d65c00ab03827733d87557",
+  "packages": {
+    ".": {
+      "component": "kiota",
+      "release-type": "simple",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "src/kiota/kiota.csproj",
+          "xpath": "//Project/PropertyGroup/VersionPrefix"
+        },
+        {
+          "type": "xml",
+          "path": "src/Kiota.Builder/Kiota.Builder.csproj",
+          "xpath": "//Project/PropertyGroup/VersionPrefix"
+        }
+      ]
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}

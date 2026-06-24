@@ -1,0 +1,49 @@
+## -----------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See LICENSE.txt in the project root for license information.
+## -----------------------------------------------------------------------------
+#
+# Summary:
+# This GitHub Actions workflow automates the release process using Release Please.
+# It triggers on pushes to the main branch, generates a GitHub App token using organization
+# variables and secrets, and then runs the release-please-action to manage versioning and changelogs.
+
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      has-token: ${{ steps.check.outputs.has-token }}
+    steps:
+      - id: check
+        run: echo "has-token=${{ secrets.RELEASE_PLEASE_TOKEN_PROVIDER_PEM != '' }}" >> $GITHUB_OUTPUT
+  release:
+    needs: check-secret
+    if: needs.check-secret.outputs.has-token == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_TOKEN_PROVIDER_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_TOKEN_PROVIDER_PEM }}
+
+      - name: Release Please
+        uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
