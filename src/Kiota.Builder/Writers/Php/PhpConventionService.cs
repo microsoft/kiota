@@ -12,14 +12,6 @@ public class PhpConventionService : CommonLanguageConventionService
 {
     public override string TempDictionaryVarName => "urlTplParams";
 
-    /// <summary>
-    /// Sanitizes a string for safe inclusion inside a PHP double-quoted string literal.
-    /// In addition to the standard escaping performed by <see cref="StringExtensions.SanitizeDoubleQuote"/>,
-    /// this escapes the '$' character so that PHP does not interpolate variables or expressions
-    /// (for example "$var", "${...}" or "{$...}") embedded in attacker-controlled input such as
-    /// OpenAPI descriptions, enum values or content types. Failing to escape '$' allows arbitrary
-    /// PHP code injection when the generated client is compiled or executed.
-    /// </summary>
     internal static string SanitizePhpDoubleQuoteLiteral(string? value) =>
         string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeDoubleQuote().Replace("$", "\\$", StringComparison.Ordinal);
 
