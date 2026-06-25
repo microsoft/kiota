@@ -622,7 +622,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.EscapePhpDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
@@ -667,7 +667,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     private void WriteAcceptHeaderDef(CodeMethod codeMethod, LanguageWriter writer)
     {
         if (codeMethod.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{codeMethod.AcceptHeaderValue.SanitizeDoubleQuote()}\");");
+            writer.WriteLine($"{RequestInfoVarName}->tryAddHeader('Accept', \"{codeMethod.AcceptHeaderValue.EscapePhpDoubleQuote()}\");");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer, CodeMethod method, bool extendsModelClass = false)
     {
@@ -906,7 +906,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         if (writeDiscriminatorValueRead &&
             codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) is CodeParameter parseNodeParameter)
         {
-            writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\");",
+            writer.WriteLines($"$mappingValueNode = ${parseNodeParameter.Name.ToFirstCharacterLowerCase()}->getChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.EscapePhpDoubleQuote()}\");",
                 "if ($mappingValueNode !== null) {");
             writer.IncreaseIndent();
             writer.WriteLines($"{DiscriminatorMappingVarName} = $mappingValueNode->getStringValue();");
