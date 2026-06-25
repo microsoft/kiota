@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a DOM-surface regression integration test that diffs the kiota public API export between the published NuGet generator and the current changeset to catch breaking changes in generated SDKs. [#7858](https://github.com/microsoft/kiota/issues/7858)
+
 ### Changed
 
 ## [1.32.3] - 2026-06-24
