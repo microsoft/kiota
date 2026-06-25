@@ -25,6 +25,18 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         Assert.Empty(OpenApiUrlTreeNode.Create().GetPathItemDescription(Label));
     }
     private const string Label = "default";
+    [Theory]
+    [InlineData("a\rb", "ab")]
+    [InlineData("a\nb", "ab")]
+    [InlineData("a\r\nb", "ab")]
+    [InlineData("a\tb", "ab")]
+    [InlineData("a\u0085b", "ab")] // NEXT LINE
+    [InlineData("a\u2028b", "ab")] // LINE SEPARATOR
+    [InlineData("a\u2029b", "ab")] // PARAGRAPH SEPARATOR
+    public void CleanupDescriptionStripsLineTerminators(string input, string expected)
+    {
+        Assert.Equal(expected, input.CleanupDescription());
+    }
     [Fact]
     public void GetsDescription()
     {
