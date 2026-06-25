@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added support for the `isNonConsequential` confirmation property in the AI capabilities extension (`x-ai-capabilities`) and mapped it to the generated plugin manifest confirmation object (plugin manifest 2.4).
+
 ### Changed
 
 ## [1.32.3] - 2026-06-24

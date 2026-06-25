@@ -1220,6 +1220,7 @@ public partial class PluginsGenerationService
                     Type = capabilities.Confirmation.Type,
                     Title = capabilities.Confirmation.Title,
                     Body = capabilities.Confirmation.Body,
+                    IsNonConsequential = capabilities.Confirmation.IsNonConsequential,
                 };
                 functionCapabilities.Confirmation = confirmation;
             }
