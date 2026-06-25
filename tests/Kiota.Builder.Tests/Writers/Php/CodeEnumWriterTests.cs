@@ -71,4 +71,20 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("public const OPTION1 = \"line1\\\"\\nline2\";", result);
     }
+    [Fact]
+    public async Task EscapesDollarSignInEnumWireValuesToPreventPhpInterpolationAsync()
+    {
+        var declaration = currentEnum.Parent as CodeNamespace;
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "option1",
+            SerializationName = "${env('HOME')}",
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        // The '$' must be escaped so PHP does not interpolate the expression when the generated client runs.
+        Assert.Contains("public const OPTION1 = \"\\${env('HOME')}\";", result);
+        Assert.DoesNotContain("\"${env('HOME')}\"", result);
+    }
 }
