@@ -90,7 +90,7 @@ h11==0.16.0 ; python_version >= '3.7'
 
 h2==4.3.0
 
-hpack==4.1.0 ; python_full_version >= '3.6.1'
+hpack==4.2.0 ; python_full_version >= '3.6.1'
 
 httpcore==1.0.9 ; python_version >= '3.7'
 
