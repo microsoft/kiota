@@ -235,7 +235,7 @@ components:
         Assert.Contains("Confirm action", result);
         Assert.Contains("body", result);
         Assert.Contains("Do you want to proceed?", result);
-        Assert.Contains("isNonConsequential", result);
+        Assert.Contains("\"isNonConsequential\":true", result);
         Assert.Contains("\"security_info\":", result);
         Assert.Contains("data_handling", result);
         Assert.Contains("some data handling", result);
