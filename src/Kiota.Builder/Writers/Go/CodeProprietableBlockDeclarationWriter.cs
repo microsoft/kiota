@@ -39,7 +39,7 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
             {
                 writer.WriteLines(string.Empty, "import (");
                 writer.IncreaseIndent();
-                importSegments.ForEach(x => writer.WriteLine(string.IsNullOrEmpty(x.Item1) ? $"\"{x.Item2}\"" : $"{x.Item1} \"{x.Item2}\""));
+                importSegments.ForEach(x => writer.WriteLine(string.IsNullOrEmpty(x.Item1) || x.Item1.Equals(x.Item2, StringComparison.Ordinal) ? $"\"{x.Item2.SanitizeDoubleQuote()}\"" : $"{x.Item1} \"{x.Item2.SanitizeDoubleQuote()}\""));
                 writer.DecreaseIndent();
                 writer.WriteLines(")", string.Empty);
             }

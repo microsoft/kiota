@@ -199,7 +199,7 @@ public class GoConventionService : CommonLanguageConventionService
     public void WriteDescriptionItem(string description, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
-        // account for a trailing whitespace on comments then the description is empty
+        // account for a trailing whitespace on comments when the description is empty
         var comment = description switch
         {
             _ when string.IsNullOrEmpty(description) => DocCommentPrefix,

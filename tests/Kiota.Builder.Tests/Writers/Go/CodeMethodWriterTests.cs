@@ -635,7 +635,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("() {", result);
+        Assert.Contains("() error {", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

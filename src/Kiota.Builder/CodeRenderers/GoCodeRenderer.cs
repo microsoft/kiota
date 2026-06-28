@@ -41,9 +41,7 @@ public class GoCodeRenderer : CodeRenderer
 #pragma warning disable CA2007
         await using var stream = new FileStream(outputFile, FileMode.Create);
 #pragma warning restore CA2007
-#pragma warning disable CA2000 // the stream is owned and disposed by the enclosing await using block
-        var fileWriter = new StreamWriter(stream);
-#pragma warning restore CA2000
+        await using var fileWriter = new StreamWriter(stream, new UTF8Encoding(false), 1024, leaveOpen: true);
         await fileWriter.WriteAsync(formatted.AsMemory(), cancellationToken).ConfigureAwait(false);
         if (!cancellationToken.IsCancellationRequested)
             await fileWriter.FlushAsync(cancellationToken).ConfigureAwait(false);

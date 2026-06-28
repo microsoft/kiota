@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a generated-source code injection vulnerability (CWE-94) in the C# emitter where newlines in an OpenAPI `externalDocs.description` could break out of the `///` doc comment and inject arbitrary code. [#7831](https://github.com/microsoft/kiota/pull/7831)
 - Fixed a bug that generares an empty model when allOf inheritance schema is reached via a composed type [#7791](https://github.com/microsoft/kiota/issues/7791)
-- Fixed a bug in PHP generation where `parent::__construct()` was generated for parent classes without a constructor [#7809](https://github.com/microsoft/kiota/issues/7809) [#7810](https://github.com/microsoft/kiota/pull/7810) 
+- Fixed a bug in PHP generation where `parent::__construct()` was generated for parent classes without a constructor [#7809](https://github.com/microsoft/kiota/issues/7809) [#7810](https://github.com/microsoft/kiota/pull/7810)
 
 ## [1.32.2] - 2026-06-05
 
@@ -79,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed a bug where local OpenAPI documents were opened with Read/Write instead of Read, briefly preventing concurrent kiota instances from running against the same file. [#7601](https://github.com/microsoft/kiota/pull/7601) 
+- Fixed a bug where local OpenAPI documents were opened with Read/Write instead of Read, briefly preventing concurrent kiota instances from running against the same file. [#7601](https://github.com/microsoft/kiota/pull/7601)
 - Fixed a bug with default strings representations.
 
 ## [1.31.0] - 2026-04-09
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where migration from lock to workspace would fail because of stream management. [#6515](https://github.com/microsoft/kiota/issues/6515)
 - Fixed a bug where media types from error responses would be missing from the accept header. [#6572](https://github.com/microsoft/kiota/issues/6572)
 - Fixed a bug where serialization names for Dart were not correct [#6624](https://github.com/microsoft/kiota/issues/6624)
-- Fixed a bug where imports from **future** would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
+- Fixed a bug where imports from `__future__` would appear below other imports in python generated code. [#4600](https://github.com/microsoft/kiota/issues/4600)
 
 ## [1.26.1] - 2025-05-15
 
@@ -1781,5 +1781,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
 

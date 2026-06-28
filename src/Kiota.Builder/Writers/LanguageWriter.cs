@@ -21,7 +21,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentSiz
 {
     private TextWriter? writer;
     private readonly int indentSize = indentSize;
-    private readonly string indentString = Enumerable.Repeat(indentationChar, 1000).Aggregate(static (x, y) => x + y);
+    private readonly string indentString = string.Concat(Enumerable.Repeat(indentationChar, 1000));
     private int currentIndent;
 
     /// <summary>
