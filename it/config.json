@@ -26,6 +26,9 @@
       }
     ]
   },
+  "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json": {
+    "MockServerITFolder": "defaultvalues"
+  },
   "apisguru::github.com:api.github.com": {
     "MockServerITFolder": "gh",
     "Suppressions": [
@@ -46,6 +49,14 @@
       {
         "Pattern": "/user/gpg_keys/**",
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Pattern": "/repos/{owner}/{repo}/releases/{release_id}#PATCH",
+        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 and https://github.com/github/rest-api-description/issues/6100 (default value for enum is not quoted)"
+      },
+      {
+        "Pattern": "/repos/{owner}/{repo}/releases#POST",
+        "Rationale": "https://github.com/microsoft/kiota/pull/7414#issuecomment-4033965839 (default value for enum is not quoted, fixed in recent file as of 03/2026 but not updated to APIGurus)"
       }
     ]
   },
@@ -79,7 +90,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml": {
+  "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
     "ExcludePatterns": [
       {
         "Pattern": "/maps/api/directions/json",
@@ -250,5 +261,39 @@
   "apisguru::apis.guru": {
     "Suppressions": [],
     "IdempotencySuppressions": []
+  },
+  "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml": {
+    "ExcludePatterns": [
+      {
+        "Pattern": "/copilot",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/copilot/**",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/me",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/me/**",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      }
+    ],
+    "Suppressions": [
+      {
+        "Language": "ruby",
+        "Rationale": "Graph Beta generation not tested for Ruby, see https://github.com/microsoft/kiota/issues/7401"
+      },
+      {
+        "Language": "dart",
+        "Rationale": "Graph Beta generation not tested for Dart, see https://github.com/microsoft/kiota/issues/7401"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "Graph Beta generation for TypeScript currently fails due to a known issue, https://github.com/microsoft/kiota/issues/7409"
+      }
+    ]
   }
 }

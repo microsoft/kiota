@@ -126,7 +126,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if (writeDiscriminatorValueRead)
         {
-            writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName}\")");
+            writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
             WriteReturnError(writer, codeElement.ReturnType.Name);
             writer.StartBlock("if mappingValueNode != nil {");
             writer.WriteLines($"{DiscriminatorMappingVarName}, err := mappingValueNode.GetStringValue()");
@@ -167,7 +167,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         writer.WriteLine($"switch *{DiscriminatorMappingVarName} {{");
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
-            writer.WriteLine($"case \"{mappedType.Key}\":");
+            writer.WriteLine($"case \"{mappedType.Key.SanitizeDoubleQuote()}\":");
             writer.IncreaseIndent();
             writer.WriteLine($"return {conventions.GetImportedStaticMethodName(mappedType.Value, parentClass)}(), nil");
             writer.DecreaseIndent();
@@ -255,13 +255,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                     IsNullable = propertyType.IsNullable,
                 };
             var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key}\") {{");
+            if (string.IsNullOrEmpty(mappedType.Key))
+                continue;
+            writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if {conventions.StringsHash}.EqualFold(*{DiscriminatorMappingVarName}, \"{mappedType.Key.SanitizeDoubleQuote()}\") {{");
             writer.WriteLine($"{ResultVarName}.{property.Setter!.Name.ToFirstCharacterUpperCase()}({conventions.GetImportedStaticMethodName(propertyType, codeElement)}())");
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;
         }
-        if (otherProps.Length != 0)
+        if (includeElse)
             writer.CloseBlock(decreaseIndent: false);
     }
     private void WriteFactoryMethodBodyForUnionModelForUnDiscriminatedTypes(CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
@@ -501,27 +503,27 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 !(codeElement.AccessedProperty.Type?.IsNullable ?? true) &&
                 !codeElement.AccessedProperty.ReadOnly &&
                 !string.IsNullOrEmpty(codeElement.AccessedProperty.DefaultValue))
-        {
-            writer.WriteLines(
-                $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
-            writer.WriteBlock("if err != nil {", "}", "panic(err)");
-            writer.WriteBlock("if val == nil {", "}",
-                $"var value = {codeElement.AccessedProperty.DefaultValue}",
-                $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value)");
+            {
+                writer.WriteLines(
+                    $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                writer.WriteBlock("if val == nil {", "}",
+                    $"var value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()};",
+                    $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
 
-            writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
-        }
-        else
-        {
-            var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+                writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
+            }
+            else
+            {
+                var returnType = conventions.GetTypeString(codeElement.ReturnType, parentClass);
 
-            writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
+                writer.WriteLine($"val, err := m.Get{backingStore.Name.ToFirstCharacterUpperCase()}().Get(\"{codeElement.AccessedProperty?.Name?.ToFirstCharacterLowerCase()}\")");
 
-            writer.WriteBlock("if err != nil {", "}", "panic(err)");
-            writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
+                writer.WriteBlock("if err != nil {", "}", "panic(err)");
+                writer.WriteBlock("if val != nil {", "}", $"return val.({returnType})");
 
-            writer.WriteLine("return nil");
-        }
+                writer.WriteLine("return nil");
+            }
     }
     private void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
     {
@@ -533,7 +535,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if m.{requestAdapterPropertyName}.GetBaseUrl() == \"\" {{");
-            writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl}\")");
+            writer.WriteLine($"m.{requestAdapterPropertyName}.SetBaseUrl(\"{method.BaseUrl.SanitizeDoubleQuote()}\")");
             writer.CloseBlock();
             if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
                 writer.WriteLine($"m.{BaseRequestBuilderVarName}.{pathParametersProperty.Name.ToFirstCharacterUpperCase()}[\"baseurl\"] = m.{requestAdapterPropertyName}.GetBaseUrl()");
@@ -557,6 +559,55 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine("})");
             }
     }
+    private string? GetDefaultValue(string defaultValue, CodeType propertyType, out bool discardError, out bool isPointer)
+    {
+        switch (propertyType.Name.ToLowerInvariant())
+        {
+            case "boolean":
+                discardError = false;
+                isPointer = false;
+                return defaultValue.TrimQuotes();
+            case "dateonly":
+                discardError = true;
+                isPointer = true; //"ParseDateOnly" returns a pointer var.
+                //Type "DateOnly" is defined in a module "github.com/microsoft/kiota-abstractions-go/serialization" that has this import hash:
+                return $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})";
+            case "time":
+                //DateTime value with timezone. Parse with format "RFC3339"
+                discardError = true;
+                isPointer = false;
+                //Module "time" has this hash:
+                return $"{GoConventionService.TimeFormatHash}.Parse({GoConventionService.TimeFormatHash}.RFC3339, {defaultValue})";
+            case "timeonly":
+                discardError = true;
+                isPointer = true; //"ParseTimeOnly" returns a pointer var.
+                return $"{conventions.SerializationHash}.ParseTimeOnly({defaultValue})";
+            case "uuid":
+                discardError = true;
+                isPointer = false;
+                return $"{GoConventionService.UuidHash}.Parse({defaultValue})";
+            case "float":
+                discardError = false;
+                isPointer = false;
+                return $"float32({defaultValue})";  //set type to "float32" (in case the default value has no decimal separator)
+            case "double":
+                discardError = false;
+                isPointer = false;
+                return $"float64({defaultValue})";
+            case "integer":
+                discardError = false;
+                isPointer = false;
+                return $"int32({defaultValue})";
+            case "int64":
+                discardError = false;
+                isPointer = false;
+                return $"int64({defaultValue})";
+            default:
+                discardError = false;
+                isPointer = false;
+                return null;
+        }
+    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits || parentClass.IsErrorDefinition)
@@ -572,7 +623,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 var pathParametersValue = ", map[string]string{}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     pathParametersValue = $", {pathParametersParameter.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{parentClassName}: *{newMethodName}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue}{pathParametersValue}),");
+                writer.WriteLine($"{parentClassName}: *{newMethodName}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{pathParametersValue}),");
             }
             else
                 writer.WriteLine($"{parentClassName}: *{newMethodName}(),");
@@ -588,7 +639,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue}");
+            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -602,10 +653,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             {// avoid setting null as a string.
                 defaultValueReference = "nil";
             }
-            else if (defaultValueReference.StartsWith('"'))
+            else if (propWithDefault.Kind == CodePropertyKind.AdditionalData)
             {
+                //default value contains a code snippet. So create "m.SetAdditionalData(make(map[string]any))"
+                //Nothing to be done here - just forward the default value.
+            }
+            else
+            {
+                //default value with quotes or literal value (true/false, numeric)
                 defaultValueReference = $"{propWithDefault.Name.ToFirstCharacterLowerCase()}Value";
                 var defaultValue = propWithDefault.DefaultValue;
+                //Is a Parse method invoked that also returns an error string?
+                bool discardError = false;
+                //Is the variable that holds the converted value a pointer?
+                bool isPointer = false;
                 if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
                 {
                     defaultValue = defaultValue.Trim('"');
@@ -613,12 +674,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                         enumDefinition.Options.FirstOrDefault(x => x.SerializationName.Equals(defaultValue, StringComparison.OrdinalIgnoreCase))?.Name ?? defaultValue;
                     defaultValue = $"{defaultValue.ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
                 }
-                else if (propWithDefault.Type is CodeType propType && propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+                else if (propWithDefault.Type is CodeType propertyType2 && GetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType2, out discardError, out isPointer) is string convertedDefaultValue)
                 {
-                    defaultValue = defaultValue.TrimQuotes();
+                    defaultValue = convertedDefaultValue;
                 }
-                writer.WriteLine($"{defaultValueReference} := {defaultValue}");
-                defaultValueReference = $"&{defaultValueReference}";
+                else
+                {
+                    defaultValue = defaultValue.SanitizeQuotedStringLiteral();
+                }
+
+                //Some parse operations return the parsed value and a error string. Discard this one.
+                //Might be better to create a message?
+                if (discardError)
+                {
+                    writer.WriteLine($"{defaultValueReference}, _ := {defaultValue}");
+                }
+                else
+                {
+                    writer.WriteLine($"{defaultValueReference} := {defaultValue}");
+                }
+                if (isPointer)
+                {
+                    defaultValueReference = $"{defaultValueReference}";
+                }
+                else
+                {
+                    defaultValueReference = $"&{defaultValueReference}";
+                }
             }
             var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name.ToFirstCharacterUpperCase() is string sName && !string.IsNullOrEmpty(sName) ? sName : $"Set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
             writer.WriteLine($"m.{setterName}({defaultValueReference})");
@@ -733,7 +815,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private void WriteFieldDeserializer(CodeProperty property, LanguageWriter writer, CodeClass parentClass, string parsableImportSymbol)
     {
         if (property.Setter is null) return;
-        writer.StartBlock($"res[\"{property.WireName}\"] = func(n {parsableImportSymbol}) error {{");
+        writer.StartBlock($"res[\"{property.WireName.SanitizeDoubleQuote()}\"] = func (n {parsableImportSymbol}) error {{");
         var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
         var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
         writer.WriteLine($"val, err := n.{deserializationMethodName}");
@@ -919,7 +1001,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
         var requestAdapterPropertyName = BaseRequestBuilderVarName + "." + parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter)?.Name.ToFirstCharacterUpperCase();
         var contextParameterName = codeElement.Parameters.OfKind(CodeParameterKind.Cancellation)?.Name.ToFirstCharacterLowerCase();
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride.SanitizeDoubleQuote()}\"" : GetPropertyCall(urlTemplateProperty, "\"\"");
         writer.WriteLine($"{RequestInfoVarName} := {conventions.AbstractionsHash}.NewRequestInformationWithMethodAndUrlTemplateAndPathParameters({conventions.AbstractionsHash}.{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "\"\"")})");
 
         if (ExcludeBackwardCompatible && requestParams.requestConfiguration is not null)
@@ -1028,7 +1110,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteSerializationMethodCall(CodeTypeBase propType, CodeElement parentBlock, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer, bool addBlockForErrorScope = true)
     {
-        serializationKey = $"\"{serializationKey}\"";
+        serializationKey = $"\"{serializationKey.SanitizeDoubleQuote()}\"";
         var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
         var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
         var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface || cType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase));

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Dart;
 
 using Xunit;
 
@@ -97,6 +98,27 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("return backingStore.get<Somecustomtype>('propertyName') ?? {};", result);
         Assert.Contains("backingStore.set('propertyName', value);", result);
+    }
+    [Fact]
+    public void MapsCustomPropertiesToBackingStoreWithEscapedKey()
+    {
+        parentClass.AddBackingStoreProperty();
+        property.Kind = CodePropertyKind.Custom;
+        property.SerializationName = "line1'\n$line2";
+        writer.Write(property);
+        var result = tw.ToString();
+        var expectedSerializationName = DartConventionService.SanitizeDartSingleQuoteLiteral(property.SerializationName);
+        Assert.Contains($"return backingStore.get<Somecustomtype?>('{expectedSerializationName}');", result);
+        Assert.Contains($"backingStore.set('{expectedSerializationName}', value);", result);
+    }
+    [Fact]
+    public void WritesEscapedQueryParameterSerializationAttribute()
+    {
+        property.Kind = CodePropertyKind.QueryParameter;
+        property.SerializationName = "line1'\n$line2";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"/// @QueryParameter('{DartConventionService.SanitizeDartSingleQuoteLiteral(property.SerializationName)}')", result);
     }
     [Fact]
     public void DoesntWritePropertiesExistingInParentType()

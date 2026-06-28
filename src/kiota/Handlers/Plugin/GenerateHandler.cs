@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
 using kiota.Extension;
@@ -29,19 +27,16 @@ internal class GenerateHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string? className0 = context.ParseResult.GetValueForOption(ClassOption);
-        bool refresh = context.ParseResult.GetValueForOption(RefreshOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? className0 = parseResult.GetValue(ClassOption);
+        bool refresh = parseResult.GetValue(RefreshOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, refresh, className0, logLevel, out var tags);
@@ -56,7 +51,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var className = className0.OrEmpty();
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, $"./{DescriptionStorageService.KiotaDirectorySegment}");
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -78,7 +73,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                                             .ToArray();
                 if (clientEntries.Length == 0 && !clientNameWasNotProvided)
                 {
-                    DisplayError($"No client found with the provided name {className}");
+                    DisplayError($"No plugin found with the provided name {className}");
                     return 1;
                 }
                 foreach (var clientEntry in clientEntries)
@@ -107,7 +102,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     else
                     {
                         DisplayWarning($"Update of {clientEntry.Key} skipped, no changes detected");
-                        DisplayCleanHint("client generate", "--refresh");
+                        DisplayCleanHint("plugin generate", "--refresh");
                     }
                 }
 
@@ -142,7 +137,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
             new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
             new($"{TelemetryLabels.TagCommandParams}.refresh", refresh),
         } : null;
-        if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.client_name", TelemetryLabels.RedactedValuePlaceholder));
+        if (className is not null) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.plugin_name", TelemetryLabels.RedactedValuePlaceholder));
         if (logLevel is { } ll) tags?.Add(new KeyValuePair<string, object?>($"{TelemetryLabels.TagCommandParams}.log_level", ll.ToString("G")));
     }
 }

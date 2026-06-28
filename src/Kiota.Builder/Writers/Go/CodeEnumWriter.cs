@@ -43,7 +43,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         foreach (var item in enumOptions)
         {
             if (item.Documentation.DescriptionAvailable)
-                conventions.WriteDescriptionItem(item.Documentation.DescriptionTemplate, writer);
+                writer.WriteLine($"// {GoConventionService.RemoveInvalidDescriptionCharacters(item.Documentation.DescriptionTemplate)}");
 
             if (isMultiValue)
                 writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
@@ -71,7 +71,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.StartBlock($"func (i {typeName}) String() string {{");
             writer.WriteLine("var values []string");
             var literalOptions = enumOptions
-                .Select(x => $"\"{x.WireName}\"")
+                .Select(x => $"\"{x.WireName.SanitizeDoubleQuote()}\"")
                 .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"options := []string{{{literalOptions}}}");
             writer.StartBlock($"for p := 0; p < {enumOptions.Count}; p++ {{");
@@ -87,7 +87,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         {
             writer.StartBlock($"func (i {typeName}) String() string {{");
             var literalOptions = enumOptions
-                .Select(x => $"\"{x.WireName}\"")
+                .Select(x => $"\"{x.WireName.SanitizeDoubleQuote()}\"")
                 .Aggregate((x, y) => x + ", " + y);
             writer.WriteLine($"return []string{{{literalOptions}}}[i]");
             writer.CloseBlock();
@@ -109,7 +109,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine("switch str {");
             foreach (var item in enumOptions)
             {
-                writer.WriteLine($"case \"{item.WireName}\":");
+                writer.StartBlock($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"result |= {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
@@ -127,7 +127,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine("switch v {");
             foreach (var item in enumOptions)
             {
-                writer.WriteLine($"case \"{item.WireName}\":");
+                writer.StartBlock($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();

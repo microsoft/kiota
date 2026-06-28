@@ -11,15 +11,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added support for OpenAPI 3.2.0
+### Changed
+
 - golang: indent with tabs instead of spaces
 - golang: if there is only one return argument, omit the parentheses
 - golang: remove trailing spaces on comments
 - golang: fix import ordering
 - golang: correctly indent case statements inside a switch
 
+## [1.32.4] - 2026-06-26
+
+### Added
+
 ### Changed
 
+- Fixed a code injection vulnerability in PHP generation by escaping `$` in double-quoted string literals. [#7863](https://github.com/microsoft/kiota/pull/7863)
+
+## [1.32.3] - 2026-06-24
+
+### Added
+
+### Changed
+
+- Fixed a generated-source code injection vulnerability (CWE-94) in the C# emitter where newlines in an OpenAPI `externalDocs.description` could break out of the `///` doc comment and inject arbitrary code. [#7831](https://github.com/microsoft/kiota/pull/7831)
+- Fixed a bug that generares an empty model when allOf inheritance schema is reached via a composed type [#7791](https://github.com/microsoft/kiota/issues/7791)
+- Fixed a bug in PHP generation where `parent::__construct()` was generated for parent classes without a constructor [#7809](https://github.com/microsoft/kiota/issues/7809) [#7810](https://github.com/microsoft/kiota/pull/7810) 
+
+## [1.32.2] - 2026-06-05
+
+### Added
+
+### Changed
+
+- Fixed per-operation URL template overrides being set too aggressively, causing generated methods to hardcode URL templates as string literals and bypass the class-level `UrlTemplate` field. Overrides are now only emitted when an operation has required query parameters not shared by all sibling operations on the same path, preserving downstream SDK customization of URL templates. [#7764](https://github.com/microsoft/kiota/pull/7764)
+- Updated kiota to ESRP v12. [#7765](https://github.com/microsoft/kiota/pull/7765)
+
+## [1.32.1] - 2026-06-03
+
+### Added
+
+### Changed
+
+- Fixed a regression where operations with only optional query-parameter differences could lose their URL template override, yielding empty or incomplete request builder URL templates after the #7292 fix. [#7754](https://github.com/microsoft/kiota/issues/7754) [#7755](https://github.com/microsoft/kiota/issues/7755)
+
+## [1.32.0] - 2026-06-02
+
+### Added
+
+### Changed
+
+- C#, Java, Go, PHP, Dart, TypeScript, Python and Ruby client: default value initialization in model classes for DateTime/Date/Time/UUID properties did not compile [#7404](https://github.com/microsoft/kiota/issues/7404)
+- All languages: default value initialization in model classes for numeric/boolean properties was missing [#7404](https://github.com/microsoft/kiota/issues/7404)
+- Fixed a bug where required query parameters from one HTTP operation were leaking into the path-item-level URL template, making them appear required for sibling operations on the same path. [#7292](https://github.com/microsoft/kiota/issues/7292)
+- Fixed a potential NullReferenceException in union model discriminator factory methods when a discriminator mapping key is null or empty across C#, Dart, Go, Java, PHP, and Python writers. [#7641](https://github.com/microsoft/kiota/pull/7641)
+- Fixed `kiota download` returning exit code 0 (success) when no results are found or multiple ambiguous matches exist. [#7643](https://github.com/microsoft/kiota/pull/7643)
+- Fixed incorrect command hints and telemetry in `kiota plugin generate` handler referencing "client" instead of "plugin". [#7642](https://github.com/microsoft/kiota/pull/7642)
+- Fixed Ruby `isStream` always evaluating to false in `CodeMethodWriter`, causing stream/binary responses to never use `send_primitive_async`. [#7639](https://github.com/microsoft/kiota/pull/7639)
+- Fixed a code injection vulnerability in Python generation by sanitizing `x-ms-enum` descriptions before emitting comments/docstrings. [#7735](https://github.com/microsoft/kiota/pull/7735)
+- Fixed a code injection vulnerability in Ruby generation by escaping interpolation markers in generated double-quoted string literals. [#7746](https://github.com/microsoft/kiota/pull/7746)
+
+## [1.31.1] - 2026-04-13
+
+### Added
+
+### Changed
+
+- Fixed a bug where local OpenAPI documents were opened with Read/Write instead of Read, briefly preventing concurrent kiota instances from running against the same file. [#7601](https://github.com/microsoft/kiota/pull/7601) 
+- Fixed a bug with default strings representations.
+
+## [1.31.0] - 2026-04-09
+
+### Added
+
+### Changed
+
+- Fixed a bug where OpenAPI schemas with `format` but without `type` keyword would generate `UntypedNode` instead of proper types. [#7315](https://github.com/microsoft/kiota/issues/7315)
+- Fixed a bug where discriminator mappings for oneOf types with allOf-inherited schemas would incorrectly use schema names as keys instead of resolving the base type discriminator mappings. [#7339](https://github.com/microsoft/kiota/issues/7339)
+- Fixed TypeScript enum imports to use `import type` for type aliases to support `verbatimModuleSyntax`. [#7332](https://github.com/microsoft/kiota/pull/7332)
+
+## [1.30.0] - 2026-01-26
+
+### Added
+
+- Added support for OpenAPI 3.2.0
+- Added support for net10
+
+### Changed
+
+- Fixed a bug where C# code generated from OpenAPI union types (oneOf) was missing `using System;` and `using System.Collections.Generic;` statements when ImplicitUsings is disabled. [#7603](https://github.com/microsoft/kiota/issues/7603)
+- Fixed a bug where error responses including text/plain would cause binary responses to be generated as string responses [#3855](https://github.com/microsoft/kiota/issues/3855)
 - Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
 
 ## [1.29.0] - 2025-10-23
@@ -1698,3 +1778,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
+

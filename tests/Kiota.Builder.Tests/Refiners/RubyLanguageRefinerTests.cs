@@ -55,7 +55,7 @@ public class RubyLanguageRefinerTests
             Type = new CodeType { Name = "CancellationToken", IsExternal = true },
         };
         method.AddParameter(cancellationParam);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.False(method.Parameters.Any());
         Assert.DoesNotContain(cancellationParam, method.Parameters);
     }
@@ -81,7 +81,7 @@ public class RubyLanguageRefinerTests
                 Name = "string"
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.NotEmpty(requestBuilder.StartBlock.Usings);
 
@@ -107,7 +107,7 @@ public class RubyLanguageRefinerTests
             Kind = CodePropertyKind.PathParameters,
             DefaultValue = "wrongDefaultValue"
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("Hash.new", property.DefaultValue);
     }
     [Fact]
@@ -118,7 +118,7 @@ public class RubyLanguageRefinerTests
             Name = "break",
             Kind = CodeClassKind.Model
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual("break", model.Name);
         Assert.Contains("escaped", model.Name);
     }
@@ -129,7 +129,7 @@ public class RubyLanguageRefinerTests
         {
             Name = "foo_bar"
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual("foo_bar", model.Name);
         Assert.Contains("FooBar", model.Name);
     }
@@ -149,7 +149,7 @@ public class RubyLanguageRefinerTests
                 Name = "DateTimeOffset"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("DateTime", method.ReturnType.Name);
     }
@@ -169,7 +169,7 @@ public class RubyLanguageRefinerTests
                 Name = "DateOnly"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Date", method.ReturnType.Name);
     }
@@ -189,7 +189,7 @@ public class RubyLanguageRefinerTests
                 Name = "TimeOnly"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("Time", method.ReturnType.Name);
     }
@@ -209,7 +209,7 @@ public class RubyLanguageRefinerTests
                 Name = "TimeSpan"
             },
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
         Assert.Equal("MicrosoftKiotaAbstractions::ISODuration", method.ReturnType.Name);
     }
@@ -232,7 +232,7 @@ public class RubyLanguageRefinerTests
                 TypeDefinition = messageClassDef,
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(declaration.Usings, static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
         Assert.Single(declaration.Usings, static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
     }
@@ -245,7 +245,7 @@ public class RubyLanguageRefinerTests
             Name = "Message",
         };
         subNS.AddClass(messageClassDef);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Null(root.FindNamespaceByName($"{graphNS.Name}.microsoftGraphDoesUserHaveAccessUserIdUserIdTenantIdTenantIdUserPrincipalNameUserPrincipalName"));
         Assert.NotNull(root.FindNamespaceByName($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0"));
         Assert.Equal($"{graphNS.Name}.i7f5f9550ce583c5b890fd039add74646312e8d1fcdadf26872765e05988073b0", subNS.Name);
@@ -271,7 +271,7 @@ public class RubyLanguageRefinerTests
 
         Assert.Empty(model.Methods);
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
     }
     [Fact]
@@ -295,7 +295,7 @@ public class RubyLanguageRefinerTests
 
         Assert.Empty(model.Methods);
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, graphNS, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(model.Properties, x => x.Name.Equals("if_exists"));
         Assert.Single(model.Properties, x => x.IsNameEscaped);
         Assert.Single(model.Methods, x => x.IsOfKind(CodeMethodKind.QueryParametersMapper));
@@ -319,7 +319,7 @@ public class RubyLanguageRefinerTests
         Assert.Single(subModelsNS.Classes);
         Assert.Empty(modelsNS.Enums);
         Assert.Single(subModelsNS.Enums);
-        await ILanguageRefiner.RefineAsync(config, root);
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(modelsNS.Classes);
         Assert.Empty(subModelsNS.Classes);
         Assert.Single(modelsNS.Enums);
@@ -339,7 +339,7 @@ public class RubyLanguageRefinerTests
         {
             Name = "some_model",
         });
-        await ILanguageRefiner.RefineAsync(config, root);
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(modelsNS.Classes, x => x.Name.Equals("SomeModel"));
         Assert.Single(modelsNS.Enums, x => x.Name.Equals("some_model"));
     }

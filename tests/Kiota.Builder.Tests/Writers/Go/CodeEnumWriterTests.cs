@@ -157,6 +157,24 @@ public sealed class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void SanitizesEnumOptionDescription()
+    {
+        var option = new CodeEnumOption
+        {
+            Documentation = new()
+            {
+                DescriptionTemplate = "Some option\r\ninjected",
+            },
+            Name = "option1",
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+
+        Assert.Contains("// Some optioninjected", result);
+        Assert.DoesNotContain($"{Environment.NewLine}injected", result);
+    }
+    [Fact]
     public void DoesNotWriteImportOnEmptyImports()
     {
         var option = new CodeEnumOption
@@ -172,5 +190,18 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("import", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void EscapesEnumWireValues()
+    {
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "option1",
+            SerializationName = "line1\"\nline2",
+        });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("return []string{\"line1\\\"\\nline2\"}[i]", result);
+        Assert.Contains("case \"line1\\\"\\nline2\":", result);
     }
 }

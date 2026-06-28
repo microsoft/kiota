@@ -45,7 +45,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         var declaration = currentEnum.Parent as CodeNamespace;
         const string optionName = "option1";
         currentEnum.AddOption(new CodeEnumOption { Name = optionName });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
         _codeEnumWriter.WriteCodeElement(currentEnum, writer);
         var result = tw.ToString();
         Assert.Contains("<?php", result);
@@ -56,5 +56,35 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains($"public const {optionName.ToUpperInvariant()} = \"{optionName}\"", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
         Assert.Contains(optionName, result);
+    }
+    [Fact]
+    public async Task EscapesEnumWireValuesAsync()
+    {
+        var declaration = currentEnum.Parent as CodeNamespace;
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "option1",
+            SerializationName = "line1\"\nline2",
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains("public const OPTION1 = \"line1\\\"\\nline2\";", result);
+    }
+    [Fact]
+    public async Task EscapesDollarSignInEnumWireValuesToPreventPhpInterpolationAsync()
+    {
+        var declaration = currentEnum.Parent as CodeNamespace;
+        currentEnum.AddOption(new CodeEnumOption
+        {
+            Name = "option1",
+            SerializationName = "${env('HOME')}",
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        // The '$' must be escaped so PHP does not interpolate the expression when the generated client runs.
+        Assert.Contains("public const OPTION1 = \"\\${env('HOME')}\";", result);
+        Assert.DoesNotContain("\"${env('HOME')}\"", result);
     }
 }

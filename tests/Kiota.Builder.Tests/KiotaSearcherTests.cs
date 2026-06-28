@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.SearchProviders.GitHub;
+using Kiota.Builder.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -31,7 +32,7 @@ public sealed class KiotaSearcherTests : IDisposable
         {
         }
     };
-    [Fact]
+    [RetryFact]
     public async Task GetsMicrosoftGraphBothVersionsAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
@@ -39,7 +40,7 @@ public sealed class KiotaSearcherTests : IDisposable
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata", string.Empty, new CancellationToken());
         Assert.Equal(2, results.Count);
     }
-    [Fact]
+    [RetryFact]
     public async Task GetsMicrosoftGraphAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
@@ -48,7 +49,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Single(results);
         Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
     }
-    [Fact]
+    [RetryFact]
     public async Task GetsMicrosoftGraphBetaAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
@@ -81,7 +82,7 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.Single(results);
         var result = results.First();
         var resultUrl = result.Value.DescriptionUrl;
-        var bytes = await httpClient.GetByteArrayAsync(resultUrl);
+        var bytes = await httpClient.GetByteArrayAsync(resultUrl, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(bytes);
     }
     public void Dispose()

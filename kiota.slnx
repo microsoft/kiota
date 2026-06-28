@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kiota.Generated/KiotaGenerated.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kiota.Tests/Kiota.Tests.csproj" />
+  </Folder>
+  <Project Path="src/Kiota.Builder/Kiota.Builder.csproj" />
+  <Project Path="src/kiota/kiota.csproj" />
+  <Project Path="tests/Kiota.Builder.IntegrationTests/Kiota.Builder.IntegrationTests.csproj" />
+  <Project Path="tests/Kiota.Builder.Tests/Kiota.Builder.Tests.csproj" />
+</Solution>

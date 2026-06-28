@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
 using kiota.Extension;
@@ -62,26 +60,23 @@ internal class EditHandler : BaseKiotaCommandHandler
         get; init;
     }
 
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string? output = context.ParseResult.GetValueForOption(OutputOption);
-        List<PluginType>? pluginTypes = context.ParseResult.GetValueForOption(PluginTypesOption);
-        SecuritySchemeType? pluginAuthType = context.ParseResult.GetValueForOption(PluginAuthTypeOption);
-        string? pluginAuthRefId0 = context.ParseResult.GetValueForOption(PluginAuthRefIdOption);
-        string? openapi = context.ParseResult.GetValueForOption(DescriptionOption);
-        bool skipGeneration = context.ParseResult.GetValueForOption(SkipGenerationOption);
-        string? className0 = context.ParseResult.GetValueForOption(ClassOption);
-        List<string>? includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption);
-        List<string>? excludePatterns = context.ParseResult.GetValueForOption(ExcludePatternsOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string? output = parseResult.GetValue(OutputOption);
+        List<PluginType>? pluginTypes = parseResult.GetValue(PluginTypesOption);
+        SecuritySchemeType? pluginAuthType = parseResult.GetValue(PluginAuthTypeOption);
+        string? pluginAuthRefId0 = parseResult.GetValue(PluginAuthRefIdOption);
+        string? openapi = parseResult.GetValue(DescriptionOption);
+        bool skipGeneration = parseResult.GetValue(SkipGenerationOption);
+        string? className0 = parseResult.GetValue(ClassOption);
+        List<string>? includePatterns = parseResult.GetValue(IncludePatternsOption);
+        List<string>? excludePatterns = parseResult.GetValue(ExcludePatternsOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, pluginTypes, pluginAuthType, pluginAuthRefId0, skipGeneration, output, includePatterns, excludePatterns,
@@ -104,7 +99,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         if (pluginAuthType.HasValue && !string.IsNullOrWhiteSpace(pluginAuthRefId0))
             Configuration.Generation.PluginAuthInformation = PluginAuthConfiguration.FromParameters(pluginAuthType, pluginAuthRefId);
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);

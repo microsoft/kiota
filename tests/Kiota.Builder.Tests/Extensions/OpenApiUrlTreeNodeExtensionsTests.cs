@@ -25,6 +25,18 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         Assert.Empty(OpenApiUrlTreeNode.Create().GetPathItemDescription(Label));
     }
     private const string Label = "default";
+    [Theory]
+    [InlineData("a\rb", "ab")]
+    [InlineData("a\nb", "ab")]
+    [InlineData("a\r\nb", "ab")]
+    [InlineData("a\tb", "ab")]
+    [InlineData("a\u0085b", "ab")] // NEXT LINE
+    [InlineData("a\u2028b", "ab")] // LINE SEPARATOR
+    [InlineData("a\u2029b", "ab")] // PARAGRAPH SEPARATOR
+    public void CleanupDescriptionStripsLineTerminators(string input, string expected)
+    {
+        Assert.Equal(expected, input.CleanupDescription());
+    }
     [Fact]
     public void GetsDescription()
     {
@@ -1110,6 +1122,397 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
             return GetChildNodeByPath(currentNode, string.Join('/', pathSegments.Skip(1)));
         return null;
     }
+
+    // Tests for GetUrlTemplateForPathItem (issue #7292)
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsCommonTemplate_WhenAllOperationsShareSameTemplate()
+    {
+        // GET /resource?$select={$select} and POST /resource?$select={$select} share the same template
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                {
+                    HttpMethod.Get, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                {
+                    HttpMethod.Post, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // Both operations share the same template → return it directly
+        Assert.Equal(childNode.GetUrlTemplate(HttpMethod.Get), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsBasePathWithoutOperationSpecificRequiredParams_WhenOperationsHaveUniqueTemplates()
+    {
+        // Issue #7292: GET /resource (no required params) + DELETE /resource?confirm={confirm} (required)
+        // → path item template excludes operation-specific required params (confirm) but is still a valid template
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                {
+                    HttpMethod.Delete, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "confirm",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // confirm is operation-specific required → excluded from class template
+        // Result is the base path without query params (same as GET's template)
+        Assert.Equal(childNode.GetUrlTemplate(HttpMethod.Get), childNode.GetUrlTemplateForPathItem());
+        Assert.NotEqual(childNode.GetUrlTemplate(HttpMethod.Delete), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ReturnsUnionOfOptionalParams_WhenOperationsHaveUniqueOptionalOnlyTemplates()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                {
+                    HttpMethod.Get, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                { HttpMethod.Post, new() }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // No required params at all → class template includes the union of all optional params
+        // GET's $select is optional → included in class template
+        Assert.Equal(childNode.GetUrlTemplate(HttpMethod.Get), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_ExcludesOperationSpecificRequiredParams_WhenMultipleGroupsExist()
+    {
+        // GET and POST have no params, DELETE has required confirm param
+        // confirm is operation-specific → excluded from class template
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                { HttpMethod.Post, new() },
+                {
+                    HttpMethod.Delete, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "confirm",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // Class template = base path (same as GET/POST template since confirm is excluded)
+        var expectedTemplate = childNode.GetUrlTemplate(HttpMethod.Get);
+        Assert.Equal(expectedTemplate, childNode.GetUrlTemplateForPathItem());
+        Assert.NotEqual(childNode.GetUrlTemplate(HttpMethod.Delete), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_IncludesUnionOfOptionalParams_WhenOptionalOnlyOutlierExists()
+    {
+        // GET and POST have no params, PATCH has optional $filter
+        // No required params at all → class template includes the union of all optional params
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                { HttpMethod.Post, new() },
+                {
+                    HttpMethod.Patch, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$filter",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // Class template includes the union of optional params ($filter) from all operations
+        var expectedTemplate = childNode.GetUrlTemplate(HttpMethod.Patch);
+        Assert.Equal(expectedTemplate, childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_FallsBackToDefaultTemplate_WhenNoOperations()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem());
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        Assert.Equal(childNode.GetUrlTemplate(), childNode.GetUrlTemplateForPathItem());
+    }
+
+    [Fact]
+    public void GetUrlTemplateForPathItem_IncludesCommonRequiredParams_WhenRequiredByAllOperations()
+    {
+        // api-version is required by all operations → it should appear in the class-level template
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Parameters =
+            [
+                new OpenApiParameter
+                {
+                    Name = "api-version",
+                    In = ParameterLocation.Query,
+                    Required = true,
+                    Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                    Style = ParameterStyle.Simple,
+                }
+            ],
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                { HttpMethod.Post, new() },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // api-version is common to all operations → included in class template
+        var pathItemTemplate = childNode.GetUrlTemplateForPathItem();
+        Assert.Contains("api%2Dversion", pathItemTemplate);
+        Assert.Equal(childNode.GetUrlTemplate(HttpMethod.Get), pathItemTemplate);
+    }
+
+    [Fact]
+    public void HasOperationSpecificRequiredQueryParameters_ReturnsFalse_WhenNoRequiredParams()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                {
+                    HttpMethod.Get, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "$select",
+                                In = ParameterLocation.Query,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                { HttpMethod.Post, new() }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        Assert.False(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Get));
+        Assert.False(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Post));
+    }
+
+    [Fact]
+    public void HasOperationSpecificRequiredQueryParameters_ReturnsTrue_ForOperationWithUniqueRequiredParam()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                {
+                    HttpMethod.Delete, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "confirm",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        Assert.False(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Get));
+        Assert.True(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Delete));
+    }
+
+    [Fact]
+    public void HasOperationSpecificRequiredQueryParameters_ReturnsFalse_WhenRequiredParamIsCommonToAllOperations()
+    {
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Parameters =
+            [
+                new OpenApiParameter
+                {
+                    Name = "api-version",
+                    In = ParameterLocation.Query,
+                    Required = true,
+                    Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                    Style = ParameterStyle.Simple,
+                }
+            ],
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                { HttpMethod.Get, new() },
+                { HttpMethod.Post, new() },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        Assert.False(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Get));
+        Assert.False(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Post));
+    }
+
+    [Fact]
+    public void HasOperationSpecificRequiredQueryParameters_DetectsUniqueRequiredParamsOnBothOperations()
+    {
+        // Both operations have unique required params — both must be detected regardless of iteration order
+        var doc = new OpenApiDocument { Paths = [] };
+        doc.Paths.Add("resource", new OpenApiPathItem
+        {
+            Operations = new Dictionary<HttpMethod, OpenApiOperation>
+            {
+                {
+                    HttpMethod.Get, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "filter",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                },
+                {
+                    HttpMethod.Delete, new()
+                    {
+                        Parameters =
+                        [
+                            new OpenApiParameter
+                            {
+                                Name = "confirm",
+                                In = ParameterLocation.Query,
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean },
+                                Style = ParameterStyle.Simple,
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        var childNode = node.Children.First().Value;
+
+        // Both operations have unique required params — both need overrides
+        Assert.True(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Get));
+        Assert.True(childNode.HasOperationSpecificRequiredQueryParameters(HttpMethod.Delete));
+    }
+
     public void Dispose()
     {
         _httpClient.Dispose();

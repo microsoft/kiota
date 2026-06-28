@@ -28,7 +28,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, DartConventionService>
         {
             conventions.WriteShortDescription(option, writer);
 
-            var serializationName = option.SerializationName;
+            var serializationName = DartConventionService.SanitizeDartSingleQuoteLiteral(option.SerializationName);
             writer.WriteLine($"{option.Name}('{serializationName}'){(option == lastOption ? ";" : ",")}");
         }
         writer.WriteLine($"const {enumName}(this.value);");

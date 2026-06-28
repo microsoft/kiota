@@ -127,6 +127,27 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("[QueryParameter(\"someserializationname\")", result);
     }
     [Fact]
+    public void WritesEscapedSerializationAttribute()
+    {
+        property.Kind = CodePropertyKind.QueryParameter;
+        property.SerializationName = "line1\"\nline2";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"[QueryParameter(\"{property.SerializationName.SanitizeDoubleQuote()}\")", result);
+    }
+    [Fact]
+    public void MapsCustomPropertiesToBackingStoreWithEscapedKey()
+    {
+        parentClass.AddBackingStoreProperty();
+        property.Kind = CodePropertyKind.Custom;
+        property.SerializationName = "line1\"\nline2";
+        writer.Write(property);
+        var result = tw.ToString();
+        var sanitizedWireName = property.WireName.SanitizeDoubleQuote();
+        Assert.Contains($"BackingStore?.Get<global::{rootNamespace.Name}.SomeCustomClass>(\"{sanitizedWireName}\")", result);
+        Assert.Contains($"BackingStore?.Set(\"{sanitizedWireName}\", value);", result);
+    }
+    [Fact]
     public void DoesntWritePropertiesExistingInParentType()
     {
         parentClass.AddProperty(new CodeProperty

@@ -6,7 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.CSharp;
-
+using Microsoft.Kiota.Abstractions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
@@ -628,6 +628,106 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithUnmappedComplexType()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass
+        {
+            Name = "ComplexType1",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var unmappedType = root.AddClass(new CodeClass
+        {
+            Name = "UnmappedType",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = complexType1
+        };
+        var uType = new CodeType
+        {
+            Name = "UnmappedType",
+            TypeDefinition = unmappedType
+        };
+        var sType = new CodeType
+        {
+            Name = "string",
+        };
+        // Only add mapping for ComplexType1, NOT for UnmappedType
+        unionTypeWrapper.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType
+        {
+            Name = "ComplexType1",
+            TypeDefinition = cType1
+        });
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.OriginalComposedType.AddType(uType);
+        unionTypeWrapper.OriginalComposedType.AddType(sType);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "ComplexType1Value",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "UnmappedTypeValue",
+            Type = uType,
+            Kind = CodePropertyKind.Custom
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "StringValue",
+            Type = sType,
+            Kind = CodePropertyKind.Custom
+        });
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("var result = new UnionTypeWrapper()", result);
+        // Should emit discriminator check for the mapped type
+        Assert.Contains("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
+        Assert.Contains("ComplexType1Value = new ComplexType1()", result);
+        // Should NOT emit a discriminator check for the unmapped type (null key)
+        Assert.DoesNotContain("UnmappedType", result);
+        // Should still emit the string check
+        Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
+        Assert.Contains("return result", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForUnionPrimitiveTypes()
     {
         setup();
@@ -717,6 +817,174 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<double?>()?.AsList() is List<double?> doubleValue", result);
         Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<int?>()?.AsList() is List<int?> integerValue", result);
         Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<bool?>()?.AsList() is List<bool?> booleanValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithGuidCollection()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "Guid",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            IsNullable = true,
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "GuidValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<Guid?>()?.AsList() is List<Guid?> guidValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithNonNullableGuidCollection()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "Guid",
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            IsNullable = false, // Non-nullable array items
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "GuidValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        // For non-nullable items, should generate List<Guid> without nullable marker
+        Assert.Contains("parseNode.GetCollectionOfPrimitiveValues<Guid>()?.AsList() is List<Guid> guidValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionModelWithNullableGuidScalar()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "UnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "UnionTypeWrapper",
+            },
+            DiscriminatorInformation = new()
+            {
+                DiscriminatorPropertyName = "@odata.type",
+            },
+        }).First();
+        var cType1 = new CodeType
+        {
+            Name = "Guid",
+            IsNullable = true, // Nullable but NOT a collection
+        };
+        unionTypeWrapper.OriginalComposedType.AddType(cType1);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "GuidValue",
+            Type = cType1,
+            Kind = CodePropertyKind.Custom
+        });
+
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "UnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode"
+            }
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        // For non-collection nullable value types, should NOT use nullable marker in pattern (C# doesn't allow "is Guid?")
+        Assert.Contains("parseNode.GetGuidValue() is Guid guidValue", result);
+        // Should NOT contain "is Guid?" which is illegal C# syntax
+        Assert.DoesNotContain("is Guid? guidValue", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -916,6 +1184,58 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("\"ns.childmodel\" => new ChildModel()", result);
         Assert.Contains("_ => new ParentModel()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void EscapesModelFactoryBodyForInheritedModels()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "parentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "childModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "parentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "parentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.ty\\\"pe\\nx\")?.GetStringValue()", result);
+        Assert.Contains("\"ns.chi\\\"ld\\nmodel\" => new ChildModel()", result);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
@@ -1136,6 +1456,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("var requestInfo = new RequestInformation(Method.GET, \"{baseurl+}/foo/bar\", PathParameters)", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        method.UrlTemplateOverride = "{baseurl+}/foo/\"bar\nbaz";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, \"{baseurl+}/foo/\\\"bar\\nbaz\", PathParameters)", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
@@ -1392,6 +1727,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nline2";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains("writer.WriteStringValue(\"line1\\\"\\nline2\", DummyProp);", serializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("{ \"line1\\\"\\nline2\", n => { DummyProp = n.GetStringValue(); } },", deserializerResult);
+    }
+    [Fact]
     public void WritesMethodAsyncDescription()
     {
         setup();
@@ -1469,6 +1821,54 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("<see href=", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see <more>";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("see &lt;more&gt; <see href=", result);
+    }
+    [Fact]
+    public void SanitizesMethodDescriptionLinkLabelNewlineInjection()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "See the docs.\nclass KiotaPwn{}//";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("\nclass KiotaPwn", result);
+        Assert.Contains("See the docs.class KiotaPwn{}//", result);
+        foreach (var line in result.Split('\n').Where(static l => l.Contains("KiotaPwn", StringComparison.Ordinal)))
+            Assert.StartsWith("///", line.TrimStart());
+    }
+    [Theory]
+    [InlineData("\r")]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\u0085")] // NEXT LINE
+    [InlineData("\u2028")] // LINE SEPARATOR
+    [InlineData("\u2029")] // PARAGRAPH SEPARATOR
+    public void SanitizesMethodDescriptionLinkLabelLineTerminatorInjection(string lineTerminator)
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = $"See the docs.{lineTerminator}class KiotaPwn{{}}//";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        // every C# line terminator (ECMA-334) must be stripped so the payload cannot
+        // break out of the single-line /// doc comment into namespace-level source
+        foreach (var line in result.Split('\n', '\r', '\u0085', '\u2028', '\u2029').Where(static l => l.Contains("KiotaPwn", StringComparison.Ordinal)))
+            Assert.StartsWith("///", line.TrimStart());
     }
     [Fact]
     public void Defensive()
@@ -1636,6 +2036,19 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueFloat = "15.5";
+        var floatPropName = "propWithDefaultFloatValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = floatPropName,
+            DefaultValue = defaultValueFloat,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "float",
+                IsNullable = true
+            }
+        });
         var defaultValueEscapedLineBreak = "\"someVal\n\"";
         var expectedValueEscapedLineBreak = @"""someVal\n""";
         var escapedLineBreakPropName = "propWithDefaultEscapedLineBreak";
@@ -1670,6 +2083,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = {defaultValue}", result);
         Assert.Contains($"{nullPropName.ToFirstCharacterUpperCase()} = {defaultValueNull.TrimQuotes()}", result);
         Assert.Contains($"{boolPropName.ToFirstCharacterUpperCase()} = {defaultValueBool.TrimQuotes()}", result);
+        //float value must be followed by "f":
+        Assert.Contains($"{floatPropName.ToFirstCharacterUpperCase()} = {defaultValueFloat}f", result);
         Assert.Contains($"{escapedLineBreakPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedLineBreak}", result);
         Assert.Contains($"{escapedQuotesPropName.ToFirstCharacterUpperCase()} = {expectedValueEscapedQuotes}", result);
     }
@@ -1768,6 +2183,110 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
         Assert.Contains($"{propName.ToFirstCharacterUpperCase()} = global::models.TestEnum.First;", result);//ensure enum is fully qualified due to conflicting property name
     }
+
+    [Fact]
+    public void WritesConstructorWithDefaultValuesThatRequireParsing()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
+        method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
+        var defaultValueDateTime = "\"1900-01-01T00:00:00\"";
+        var dateTimePropName = "propWithDefaultDateTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimePropName,
+            DefaultValue = defaultValueDateTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(DateTimeOffset)
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Date)
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Guid)
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Time)
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains($"{dateTimePropName.ToFirstCharacterUpperCase()} = DateTimeOffset.Parse({defaultValueDateTime})", result);
+        Assert.Contains($"{datePropName.ToFirstCharacterUpperCase()} = new Date(DateTimeOffset.Parse({defaultValueDate}).Date)", result);
+        Assert.Contains($"{uuidPropName.ToFirstCharacterUpperCase()} = Guid.Parse({defaultValueUuid})", result);
+        Assert.Contains($"{timePropName.ToFirstCharacterUpperCase()} = new Time(DateTimeOffset.Parse({defaultValueTime}).DateTime)", result);
+    }
+    [Fact]
+    public void WritesConstructorWithDefaultValuesSanitizesHostilePayloads()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var hostileDefault = "\"1900-01-01\"); Evil.Run(\"x\""; // injection attempt
+        var datePropName = "propWithHostileDate";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = hostileDefault,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nameof(Date)
+            }
+        });
+        var hostileStringDefault = "\"line1\"\nline2\"";
+        var stringPropName = "propWithHostileString";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = stringPropName,
+            DefaultValue = hostileStringDefault,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        // The hostile payload's inner quotes must be escaped so it stays inside the string literal
+        Assert.Contains(@"DateTimeOffset.Parse(""1900-01-01\""); Evil.Run(\""x"").Date)", result);
+        // String default must have newline and quotes escaped
+        Assert.Contains(@"""line1\""", result);
+        Assert.Contains(@"\n", result);
+    }
     [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
@@ -1852,6 +2371,44 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("RegisterDefaultDeserializer", result);
         Assert.Contains($"TryAdd(\"baseurl\", Core.BaseUrl)", result);
         Assert.Contains($"BaseUrl = \"{method.BaseUrl}\"", result);
+    }
+    [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
+        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("BaseUrl = \"https://graph.microsoft.com/v1.0/\\\"evil\\npath\"", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()
@@ -2050,6 +2607,46 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
     }
     [Fact]
+    public void WritesMethodWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.ReturnType = new CodeType
+        {
+            Name = "void",
+            IsExternal = true
+        };
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ra",
+            Kind = CodeParameterKind.Custom,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = false
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "sampleParam",
+            Kind = CodeParameterKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "string",
+                IsExternal = true,
+                IsNullable = false
+            },
+            Optional = true,
+            DefaultValue = "\"line1\"\nline2\"",
+        });
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"string sampleParam = {"\"line1\"\nline2\"".SanitizeQuotedStringLiteral()}", result);
+    }
+    [Fact]
     public void WritesDeprecationInformation()
     {
         setup();
@@ -2061,6 +2658,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("[Obsolete", result);
+    }
+    [Fact]
+    public void EscapesDeprecationInformationStringLiteral()
+    {
+        setup();
+        method.Deprecation = new("line1\"\nline2");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("line1\\\"\\nline2", result);
+        Assert.DoesNotContain("line1\"\nline2", result);
     }
 
     [Fact]

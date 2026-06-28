@@ -101,7 +101,7 @@ public class CodePropertyWriterTests
         };
         parentClass.Kind = CodeClassKind.Model;
         parentClass.AddProperty(property);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         propertyWriter.WriteCodeElement(property, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("private ?array $additionalData = null;", result);
@@ -223,6 +223,27 @@ public class CodePropertyWriterTests
         Assert.Contains("@QueryParameter(\"%24select\")", result);
         Assert.Contains("@var array<string>|null $select", result);
         Assert.Contains("private ?array $select", result);
+    }
+    [Fact]
+    public void EscapesQueryParameter()
+    {
+        var queryParameter = new CodeProperty
+        {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "li\"ne\nbreak",
+            Access = AccessModifier.Private,
+            Type = new CodeType
+            {
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                Name = "string"
+            }
+        };
+        parentClass.AddProperty(queryParameter);
+        propertyWriter.WriteCodeElement(queryParameter, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("@QueryParameter(\"li\\\"ne\\nbreak\")", result);
     }
 
     [Fact]

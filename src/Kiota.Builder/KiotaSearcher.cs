@@ -14,7 +14,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 
 namespace Kiota.Builder;
 
-public class KiotaSearcher
+public partial class KiotaSearcher
 {
     private readonly ILogger<KiotaSearcher> _logger;
     private readonly SearchConfiguration _config;
@@ -37,12 +37,12 @@ public class KiotaSearcher
     {
         if (string.IsNullOrEmpty(searchTerm))
         {
-            _logger.LogError("no search term provided");
+            LogNoSearchTermProvided();
             return new Dictionary<string, SearchResult>();
         }
         var apiGurusSearchProvider = new APIsGuruSearchProvider(_config.APIsGuruListUrl, _httpClient, _logger, _config.ClearCache);
-        _logger.LogDebug("searching for {SearchTerm}", searchTerm);
-        _logger.LogDebug("searching APIs.guru with url {Url}", _config.APIsGuruListUrl);
+        LogSearchingFor(searchTerm);
+        LogSearchingApisGuru(_config.APIsGuruListUrl);
         var oasProvider = new OpenApiSpecSearchProvider();
         var githubProvider = new GitHubSearchProvider(_httpClient, _logger, _config.ClearCache, _config.GitHub, _gitHubAuthenticationProvider, _isGitHubSignedInCallBack);
         var results = await Task.WhenAll(
@@ -63,4 +63,13 @@ public class KiotaSearcher
                     .ToDictionary(static x => x.Item1, static x => x.Value, StringComparer.OrdinalIgnoreCase);
     }
     public const string ProviderSeparator = "::";
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "no search term provided")]
+    private partial void LogNoSearchTermProvided();
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "searching for {SearchTerm}")]
+    private partial void LogSearchingFor(string searchTerm);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "searching APIs.guru with url {Url}")]
+    private partial void LogSearchingApisGuru(Uri url);
 }

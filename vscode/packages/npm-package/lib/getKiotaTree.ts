@@ -1,7 +1,7 @@
 import * as rpc from "vscode-jsonrpc/node";
 
-import { KiotaShowConfiguration, KiotaTreeResult } from "..";
 import connectToKiota from "../connect";
+import { KiotaTreeResult, KiotaShowConfiguration } from "../types";
 
 export interface KiotaResultOptions {
   descriptionPath: string;

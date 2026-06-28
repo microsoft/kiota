@@ -131,7 +131,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         });
         var dec = declaration?.StartBlock;
         var namespaces = declaration?.Parent as CodeNamespace;
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, namespaces);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, namespaces, cancellationToken: TestContext.Current.CancellationToken);
         codeElementWriter.WriteCodeElement(dec, writer);
         var result = tw.ToString();
 
@@ -230,7 +230,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
                 Type = new CodeType { Name = queryParamClass.Name, TypeDefinition = queryParamClass },
             }
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root, cancellationToken: TestContext.Current.CancellationToken);
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
 

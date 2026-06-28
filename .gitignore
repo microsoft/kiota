@@ -13,6 +13,9 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# User-specific files (AI)
+.claude/
+
 # Mono auto generated files
 mono_crash.*
 
@@ -448,8 +451,12 @@ reports/
 
 samples/
 it/openapi.yaml
+it/openapi.json
 
 idempotency-results/
 vscode/npm-package/dist/*
 vscode/npm-package/coverage/*
 vscode/npm-package/.kiotabin/*
+
+## Claude AI files
+tmpclaude-*

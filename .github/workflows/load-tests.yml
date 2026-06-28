@@ -36,11 +36,11 @@ jobs:
           ]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.0.x
       - name: Compile the CLI in debug mode
         run: |
           dotnet restore ./src/kiota
@@ -51,7 +51,7 @@ jobs:
           curl -o twitter.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/twitter.com/current/2.61/openapi.json
           curl -o notion.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/notion.com/1.0.0/openapi.json
           curl -o stripe.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/stripe.com/2022-11-15/openapi.json
-          curl -o maps.yaml https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml
+          curl -o maps.yaml https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml
           curl -o meraki.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/meraki.com/0.0.0-streaming/openapi.json
           curl -o pipedrive.yaml https://developers.pipedrive.com/docs/api/v1/openapi.yaml
           curl -o twilio.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/twilio.com/api/1.42.0/openapi.json
@@ -59,13 +59,13 @@ jobs:
           nohup sh -c "for i in 1 2 3 4 5 6 7 8 9 10; do while : ; do : ; done & done" > /dev/null 2> /dev/null &
           for ((n=0;n<100;n++))
           do
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java --dvr all
-            src/kiota/bin/Debug/net9.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/petstore.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/twitter.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/notion.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/stripe.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/maps.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/meraki.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/pipedrive.yaml" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/twilio.json" --output=tmp --clean-output --clear-cache --language java --dvr all
+            src/kiota/bin/Debug/net10.0/kiota generate --openapi="$(pwd)/docusign.json" --output=tmp --clean-output --clear-cache --language java --dvr all
           done

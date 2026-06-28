@@ -18,13 +18,18 @@ updates:
       MicrosoftExtensions:
         patterns:
           - "Microsoft.Extensions.*"
+      coverlet:
+        patterns:
+          - "coverlet.*"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
   - package-ecosystem: nuget
-    directory: "/it/csharp"
+    directories:
+      - "/it/csharp"
+      - "/it/csharp/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -33,7 +38,9 @@ updates:
         patterns:
           - "*kiota*"
   - package-ecosystem: gomod
-    directory: "/it/go"
+    directories:
+      - "/it/go"
+      - "/it/go/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -42,7 +49,9 @@ updates:
         patterns:
           - "*kiota*"
   - package-ecosystem: composer
-    directory: "/it/php"
+    directories:
+      - "/it/php"
+      - "/it/php/basic"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
@@ -59,6 +68,12 @@ updates:
       kiota-dependencies:
         patterns:
           - "*kiota*"
+      pytest:
+        patterns:
+          - "astroid*"
+          - "isort*"
+          - "pylint*"
+          - "pytest*"
   - package-ecosystem: bundler
     directory: "/it/ruby"
     schedule:
@@ -69,7 +84,18 @@ updates:
         patterns:
           - "*kiota*"
   - package-ecosystem: maven
-    directory: "/it/java"
+    directories:
+      - "/it/java"
+      - "/it/java/basic"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    groups:
+      kiota-dependencies:
+        patterns:
+          - "*kiota*"
+  - package-ecosystem: pub
+    directory: "/it/dart"
     schedule:
       interval: daily
     open-pull-requests-limit: 10

@@ -747,7 +747,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     protected readonly GenerationConfiguration _configuration;
 #pragma warning restore CA1051 // Do not declare visible instance fields
 
-    protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration, Func<IEnumerable<CodeTypeBase>, IEnumerable<CodeTypeBase>>? codeTypeFilter = default)
+    protected static void AddPropertiesAndMethodTypesImports(CodeElement current, bool includeParentNamespaces, bool includeCurrentNamespace, bool compareOnDeclaration, Func<IEnumerable<CodeTypeBase>, IEnumerable<CodeTypeBase>>? codeTypeFilter = default, Action<CodeClass>? updateUsings = default)
     {
         if (current is CodeClass currentClass &&
             currentClass.StartBlock is ClassDeclaration currentClassDeclaration &&
@@ -801,11 +801,16 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                             .Distinct(compareOnDeclaration ? usingComparerWithDeclarations : usingComparerWithoutDeclarations)
                             .ToArray();
 
-
             if (usingsToAdd.Length != 0)
                 (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //lots of languages do not support imports on nested classes
+
+            //Give the refiner the chance to update the usings for this class:
+            if (updateUsings != null)
+            {
+                updateUsings(currentClass);
+            }
         }
-        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter));
+        CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter, updateUsings));
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = true)
     {
@@ -1617,5 +1622,67 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             requestExecutorMethod.DeduplicateErrorMappings();
         }
         CrawlTree(codeElement, DeduplicateErrorMappings);
+    }
+    /// <summary>
+    /// Shortens overly-long namespace segments and class names in the CodeDOM to avoid exceeding
+    /// file system path limits. Uses truncation + hash suffix for human readability and uniqueness.
+    /// Should be called from refiners for languages where package/namespace must match directory structure (Java, Python, PHP).
+    /// </summary>
+    protected static void ShortenOversizedNamespaceSegments(CodeElement currentElement, int maxSegmentLength = 64)
+    {
+        if (currentElement is CodeNamespace codeNamespace && !string.IsNullOrEmpty(codeNamespace.Name))
+        {
+            var segments = codeNamespace.Name.Split('.');
+            var shortened = false;
+            for (var i = 0; i < segments.Length; i++)
+            {
+                if (segments[i].Length > maxSegmentLength)
+                {
+                    segments[i] = segments[i].ShortenNameSegment(maxSegmentLength);
+                    shortened = true;
+                }
+            }
+            if (shortened)
+            {
+                var newName = string.Join('.', segments);
+                if (codeNamespace.Parent is CodeNamespace parentNs)
+                    parentNs.RenameChildElement(codeNamespace.Name, newName);
+                else
+                    codeNamespace.Name = newName; // root namespace fallback
+            }
+
+            // Shorten class, enum, and interface names and enrich their doc comments
+            // Materialize with ToArray() since RenameChildElement modifies the dictionary
+            foreach (var codeClass in codeNamespace.GetChildElements(true).OfType<CodeClass>().ToArray())
+            {
+                ShortenCodeElementNameIfOversized(codeNamespace, codeClass, codeClass.Documentation, maxSegmentLength);
+            }
+            foreach (var codeEnum in codeNamespace.GetChildElements(true).OfType<CodeEnum>().ToArray())
+            {
+                ShortenCodeElementNameIfOversized(codeNamespace, codeEnum, codeEnum.Documentation, maxSegmentLength);
+            }
+            foreach (var codeInterface in codeNamespace.GetChildElements(true).OfType<CodeInterface>().ToArray())
+            {
+                ShortenCodeElementNameIfOversized(codeNamespace, codeInterface, codeInterface.Documentation, maxSegmentLength);
+            }
+        }
+        CrawlTree(currentElement, x => ShortenOversizedNamespaceSegments(x, maxSegmentLength));
+    }
+    private static void ShortenCodeElementNameIfOversized(CodeNamespace parentNamespace, CodeElement codeElement, CodeDocumentation? documentation, int maxSegmentLength)
+    {
+        if (codeElement.Name.Length > maxSegmentLength)
+        {
+            var originalName = codeElement.Name;
+            var newName = originalName.ShortenNameSegment(maxSegmentLength);
+            parentNamespace.RenameChildElement(originalName, newName);
+            // Add original name to doc comment for disambiguation
+            if (documentation is not null)
+            {
+                var existingDesc = documentation.DescriptionTemplate ?? string.Empty;
+                documentation.DescriptionTemplate = string.IsNullOrEmpty(existingDesc)
+                    ? $"Original name: {originalName}"
+                    : $"{existingDesc} Original name: {originalName}";
+            }
+        }
     }
 }

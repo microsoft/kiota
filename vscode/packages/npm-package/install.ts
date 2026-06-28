@@ -106,7 +106,7 @@ export async function ensureKiotaIsPresentInPath(installPath: string, runtimeDep
             makeExecutable(kiotaFilePath);
           }
         } catch (error) {
-          fs.rmdirSync(installPath, { recursive: true });
+          fs.rmSync(installPath, { recursive: true, force: true });
           throw new Error("Kiota download failed. Check the logs for more information.");
         }
       });

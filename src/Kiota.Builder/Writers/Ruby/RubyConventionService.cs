@@ -17,6 +17,21 @@ public class RubyConventionService : CommonLanguageConventionService
     internal string DocCommentStart = "## ";
     internal string DocCommentEnd = "## ";
     public override string TempDictionaryVarName => "url_tpl_params";
+    internal static string SanitizeRubyDoubleQuoteLiteral(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+
+        if (value.Length > 1)
+        {
+            if (value[0] == '"' && value[^1] == '"')
+                return $"\"{value[1..^1].SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal)}\"";
+
+            if (value[0] == '\'' && value[^1] == '\'')
+                return $"'{value[1..^1].SanitizeSingleQuote().Replace("#", "\\#", StringComparison.Ordinal)}'";
+        }
+
+        return value.SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal);
+    }
     public override string GetAccessModifier(AccessModifier access)
     {
         return access switch
@@ -30,7 +45,7 @@ public class RubyConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
-            $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : parameter.DefaultValue)}" :
+            $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : SanitizeRubyDoubleQuoteLiteral(parameter.DefaultValue))}" :
             string.Empty;
         return $"{parameter.Name}{defaultValue}";
     }
@@ -60,7 +75,7 @@ public class RubyConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement));
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
         writer.WriteLine($"{DocCommentPrefix}");
         writer.WriteLine($"# {description}");
 
@@ -78,7 +93,12 @@ public class RubyConventionService : CommonLanguageConventionService
         return string.Empty;
     }
 #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "#", StringComparison.OrdinalIgnoreCase);
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\\", "#", StringComparison.OrdinalIgnoreCase)
+            .Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {

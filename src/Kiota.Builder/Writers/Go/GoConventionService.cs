@@ -22,7 +22,7 @@ public class GoConventionService : CommonLanguageConventionService
     public string SerializationHash => "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
     public string StoreHash => "ie8677ce2c7e1b4c22e9c3827ecd078d41185424dd9eeb92b7d971ed2d49a392e";
     public string StringsHash => "ie967d16dae74a49b5e0e051225c5dac0d76e5e38f13dd1628028cbce108c25b6";
-
+    public const string UuidHash = "i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22";
     public string ContextVarTypeName => "context.Context";
 
 #pragma warning restore CA1822 // Method should be static
@@ -100,9 +100,9 @@ public class GoConventionService : CommonLanguageConventionService
             "byte" => "byte",
             "sbyte" => "int8",
             "boolean" => "bool",
-            "Guid" or "UUID" when includeImportSymbol => "i561e97a8befe7661a44c8f54600992b4207a3a0cf6770e5559949bc276de2e22.UUID",
+            "Guid" or "UUID" when includeImportSymbol => $"{UuidHash}.UUID",
             "Guid" or "UUID" when !includeImportSymbol => "UUID",
-            "DateTimeOffset" or "Time" when includeImportSymbol => "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e.Time",
+            "DateTimeOffset" or "Time" when includeImportSymbol => $"{TimeFormatHash}.Time",
             "DateTimeOffset" or "Time" when !includeImportSymbol => "Time",
             "DateOnly" or "TimeOnly" or "ISODuration" when includeImportSymbol => $"{SerializationHash}.{type.Name}",
             "DateOnly" or "TimeOnly" or "ISODuration" when !includeImportSymbol => type.Name,
@@ -176,7 +176,7 @@ public class GoConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false));
+        var description = element.Documentation.GetDescription(x => GetTypeString(x, codeElement, true, false), normalizationFunc: RemoveInvalidDescriptionCharacters);
         if (!string.IsNullOrEmpty(prefix))
         {
             description = description.ToFirstCharacterLowerCase();
@@ -184,6 +184,11 @@ public class GoConventionService : CommonLanguageConventionService
         WriteDescriptionItem($"{prefix}{description}{suffix}", writer);
         return true;
     }
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
     public void WriteGeneratorComment(LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(writer);
@@ -207,9 +212,11 @@ public class GoConventionService : CommonLanguageConventionService
         if (documentation is null) return;
         if (documentation.ExternalDocumentationAvailable)
         {
-            WriteDescriptionItem($"[{documentation.DocumentationLabel}]", writer);
+            var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+            var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+            WriteDescriptionItem($"[{documentationLabel}]", writer);
             WriteDescriptionItem(string.Empty, writer);
-            WriteDescriptionItem($"[{documentation.DocumentationLabel}]: {documentation.DocumentationLink}", writer);
+            WriteDescriptionItem($"[{documentationLabel}]: {documentationLink}", writer);
         }
     }
 #pragma warning disable CA1822 // Method should be static
@@ -253,14 +260,14 @@ public class GoConventionService : CommonLanguageConventionService
             };
             if (shouldCheckNullability)
                 writer.StartBlock($"if {p.Item3} != {defaultValue} {{");
-            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
+            writer.WriteLine($"{pathParametersTarget}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {GetValueStringConversion(p.Item1.Name, pointerDereference + p.Item3)}");
             if (shouldCheckNullability)
                 writer.CloseBlock();
         }
     }
 #pragma warning restore CA1822 // Method should be static
     internal const string StrConvHash = "i53ac87e8cb3cc9276228f74d38694a208cacb99bb8ceb705eeae99fb88d4d274";
-    private const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
+    public const string TimeFormatHash = "i336074805fc853987abe6f7fe3ad97a6a6f3077a16391fec744f671a015fbd7e";
     private static string GetValueStringConversion(string typeName, string reference)
     {
         return typeName switch
@@ -280,9 +287,9 @@ public class GoConventionService : CommonLanguageConventionService
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return;
 
-        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {RemoveInvalidDescriptionCharacters(element.Deprecation.Version)}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        WriteDescriptionItem($"Deprecated: {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).TrimStart('*'))}{versionComment}{dateComment}{removalComment}", writer);
+        WriteDescriptionItem($"Deprecated: {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).TrimStart('*'), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}", writer);
     }
 }

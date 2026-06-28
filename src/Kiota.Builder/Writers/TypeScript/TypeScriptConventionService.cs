@@ -69,7 +69,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         }
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"{varName}[\"{p.Item2}\"] = {p.Item3}"
+                $"{varName}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {p.Item3}"
             ).ToArray());
     }
     public override string GetAccessModifier(AccessModifier access)
@@ -97,6 +97,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             paramType = GetTypescriptTypeString(newType, targetElement, includeCollectionInformation: false, inlineComposedTypeString: true);
         }
         var isComposedOfPrimitives = composedType != null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
 
         // add a 'Parsable' type to the parameter if it is composed of non-Parsable types
         var parsableTypes = (
@@ -111,9 +112,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         var defaultValueSuffix = (string.IsNullOrEmpty(parameter.DefaultValue), parameter.Kind, isComposedOfPrimitives) switch
         {
             (false, CodeParameterKind.DeserializationTarget, false) when parameter.Parent is CodeMethod codeMethod && codeMethod.Kind is CodeMethodKind.Serializer
-                => $" | null = {parameter.DefaultValue}",
-            (false, CodeParameterKind.DeserializationTarget or CodeParameterKind.SerializingDerivedType, false) => $" = {parameter.DefaultValue}",
-            (false, _, false) => $" = {parameter.DefaultValue} as {paramType}",
+                => $" | null = {sanitizedDefaultValue}",
+            (false, CodeParameterKind.DeserializationTarget or CodeParameterKind.SerializingDerivedType, false) => $" = {sanitizedDefaultValue}",
+            (false, _, false) => $" = {sanitizedDefaultValue} as {paramType}",
             _ => string.Empty,
         };
         var (partialPrefix, partialSuffix) = (isComposedOfPrimitives, parameter.Kind) switch
@@ -267,7 +268,8 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     private static Dictionary<string, string> InvalidCharactersReplacements = new(StringComparer.OrdinalIgnoreCase) {
         { "\\", "/"},
-        { "/*", "//*"}
+        { "/*", "//*"},
+        { "*/", "* /"}
     };
 
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription)
@@ -275,7 +277,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (string.IsNullOrEmpty(originalDescription)) return string.Empty;
         originalDescription = InvalidCharactersReplacements
             .Aggregate(originalDescription, (current, replacement) => current.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase));
-        return originalDescription;
+        return originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
     }
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
@@ -314,7 +318,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                 writer.WriteLine($"{DocCommentPrefix}{deprecationComment}");
 
             if (documentedElement.Documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentedElement.Documentation.DocumentationLink}|{documentedElement.Documentation.DocumentationLabel}}}");
+            {
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentedElement.Documentation.DocumentationLink?.ToString() ?? string.Empty);
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentedElement.Documentation.DocumentationLabel);
+                writer.WriteLine($"{DocCommentPrefix}@see {{@link {documentationLink}|{documentationLabel}}}");
+            }
             writer.WriteLine(DocCommentEnd);
         }
     }
@@ -322,10 +330,10 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return string.Empty;
 
-        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {RemoveInvalidDescriptionCharacters(element.Deprecation.Version)}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"@deprecated {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}";
+        return $"@deprecated {element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}";
     }
 
     public static string GetFactoryMethodName(CodeTypeBase targetClassType, CodeElement currentElement, LanguageWriter? writer = null)
@@ -337,7 +345,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         if (targetClassType is CodeType currentType && currentType.TypeDefinition is CodeInterface definitionClass && GetFactoryMethod(definitionClass, resultName) is { } factoryMethod)
         {
             var methodName = GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
-            return methodName.ToFirstCharacterUpperCase();// static function is aliased
+            return methodName;// static function may be aliased
         }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
@@ -362,12 +370,27 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             {
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
                 (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue()",
-                (_, true, _) when currentType.TypeDefinition is null => $"getCollectionOfPrimitiveValues<{propertyType}>()",
+                (_, true, _) when currentType.TypeDefinition is null && GetPrimitiveCollectionDeserializationType(propertyType) is string primitiveType => $"getCollectionOfPrimitiveValues<{propertyType}>(\"{primitiveType}\")",
                 (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
                 _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
             };
         }
         return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement);
+    }
+
+    private static string? GetPrimitiveCollectionDeserializationType(string propertyTypeName)
+    {
+        return propertyTypeName switch
+        {
+            TYPE_LOWERCASE_STRING or TYPE_STRING or TYPE_GUID => TYPE_LOWERCASE_STRING,
+            TYPE_LOWERCASE_BOOLEAN or TYPE_BOOLEAN => TYPE_LOWERCASE_BOOLEAN,
+            TYPE_NUMBER => TYPE_NUMBER,
+            TYPE_DATE => TYPE_DATE,
+            TYPE_DATE_ONLY => TYPE_DATE_ONLY,
+            TYPE_TIME_ONLY => TYPE_TIME_ONLY,
+            TYPE_DURATION => TYPE_DURATION,
+            _ => null,
+        };
     }
 
     private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeElement targetElement)

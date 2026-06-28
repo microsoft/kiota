@@ -13,6 +13,15 @@ public class ModelClassBuildLifecycle : IDisposable
     {
         return propertiesBuilt.IsSet;
     }
+    /// <summary>
+    /// Returns true when the current thread is already building properties for this class,
+    /// indicating a circular reference in the schema. Monitor.Enter is reentrant, so without
+    /// this check the same thread could re-enter property building and cause a stack overflow.
+    /// </summary>
+    public bool IsPropertiesBuildingInProgress()
+    {
+        return Monitor.IsEntered(propertiesBuilt);
+    }
     public void WaitForPropertiesBuilt()
     {
         if (!Monitor.IsEntered(propertiesBuilt))

@@ -851,6 +851,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesModelFactoryBody()
+    {
+        setup();
+        var parentModel = root.AddClass(new CodeClass
+        {
+            Name = "ParentModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var childModel = root.AddClass(new CodeClass
+        {
+            Name = "ChildModel",
+            Kind = CodeClassKind.Model,
+        }).First();
+        childModel.StartBlock.Inherits = new CodeType
+        {
+            Name = "ParentModel",
+            TypeDefinition = parentModel,
+        };
+        var factoryMethod = parentModel.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "ParentModel",
+                TypeDefinition = parentModel,
+            },
+            IsStatic = true,
+        }).First();
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        {
+            Name = "childModel",
+            TypeDefinition = childModel,
+        });
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.Contains("final ParseNode mappingValueNode = parseNode.getChildNode(\"@odata.ty\\\"pe\\nx\")", result);
+        Assert.Contains("case \"ns.chi\\\"ld\\nmodel\": return new ChildModel();", result);
+    }
+    [Fact]
     public void WritesModelSplitFactoryBody()
     {
         setup();
@@ -1261,6 +1317,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        method.AcceptedResponseTypes.Add("application/json");
+        method.UrlTemplateOverride = "{baseurl+}/foo/\"bar\nbaz";
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("final RequestInformation requestInfo = new RequestInformation(HttpMethod.GET, \"{baseurl+}/foo/\\\"bar\\nbaz\", pathParameters)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestGeneratorOverloadBody()
     {
         setup();
@@ -1506,6 +1577,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void EscapesWireNamesInSerializerAndDeserializerBody()
+    {
+        setup();
+        AddSerializationProperties();
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nline2";
+        method.Kind = CodeMethodKind.Serializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains("writer.writeStringValue(\"line1\\\"\\nline2\", this.getDummyProp());", serializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("deserializerMap.put(\"line1\\\"\\nline2\", (n) -> { this.setDummyProp(n.getStringValue()); });", deserializerResult);
+    }
+    [Fact]
     public void WritesMethodSyncDescription()
     {
         setup();
@@ -1558,6 +1646,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("some description", result);
         Assert.Contains("some special character", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void SanitizesMethodDescriptionLinkLabel()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Documentation.DocumentationLabel = "see */ more";
+        method.Documentation.DocumentationLink = new("https://foo.org/docs");
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("see */ more", result);
+        Assert.Contains("see  more", result);
+        Assert.Contains("@see <a href=", result);
     }
     [Fact]
     public void Defensive()
@@ -1648,6 +1750,33 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return new", result);
     }
     [Fact]
+    public void EscapesIndexerPathParameterName()
+    {
+        setup();
+        AddRequestProperties();
+        method.Kind = CodeMethodKind.IndexerBackwardCompatibility;
+        method.OriginalIndexer = new CodeIndexer
+        {
+            Name = "idx",
+            ReturnType = new CodeType
+            {
+                Name = "String"
+            },
+            IndexParameter = new()
+            {
+                Name = "id",
+                SerializationName = "collection\"Id\nx",
+                Type = new CodeType
+                {
+                    Name = "int"
+                },
+            }
+        };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("urlTplParams.put(\"collection\\\"Id\\nx\", id);", result);
+    }
+    [Fact]
     public void WritesPathParameterRequestBuilder()
     {
         setup();
@@ -1698,6 +1827,24 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("if(value == null)", result);
         Assert.Contains(defaultValue, result);
+    }
+    [Fact]
+    public void WritesGetterToBackingStoreWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.AddAccessedProperty();
+        parentClass.GetGreatestGrandparent().AddBackingStoreProperty();
+        method.AccessedProperty.Type = new CodeType
+        {
+            Name = "String",
+            IsNullable = false,
+        };
+        var defaultValue = "\"line1\"\nline2\"";
+        method.AccessedProperty.DefaultValue = defaultValue;
+        method.Kind = CodeMethodKind.Getter;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"value = {defaultValue.SanitizeQuotedStringLiteral()};", result);
     }
     [Fact]
     public void WritesSetterToBackingStore()
@@ -1818,6 +1965,45 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = true
             }
         });
+        var defaultValueFloat = "15.5";
+        var floatPropName = "propWithDefaultFloatValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = floatPropName,
+            DefaultValue = defaultValueFloat,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "float",
+                IsNullable = true
+            }
+        });
+        var defaultValueDouble = "15.5";
+        var doublePropName = "propWithDefaultDoubleValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = doublePropName,
+            DefaultValue = defaultValueDouble,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "double",
+                IsNullable = true
+            }
+        });
+        var defaultValueLong = "255";
+        var longPropName = "propWithDefaultLongValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = longPropName,
+            DefaultValue = defaultValueLong,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int64",
+                IsNullable = true
+            }
+        });
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -1834,7 +2020,110 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue})", result);
         Assert.Contains($"this.set{nullPropName.ToFirstCharacterUpperCase()}({defaultValueNull.TrimQuotes()})", result);
         Assert.Contains($"this.set{boolPropName.ToFirstCharacterUpperCase()}({defaultValueBool.TrimQuotes()})", result);
+        //float value must be followed by "f":
+        Assert.Contains($"this.set{floatPropName.ToFirstCharacterUpperCase()}({defaultValueFloat}f)", result);
+        //double must be followed by "d":
+        Assert.Contains($"this.set{doublePropName.ToFirstCharacterUpperCase()}({defaultValueDouble}d)", result);
+        //long value must be followed by "L":
+        Assert.Contains($"this.set{longPropName.ToFirstCharacterUpperCase()}({defaultValueLong}L)", result);
         Assert.Contains("super", result);
+    }
+    [Fact]
+    public void WritesConstructorWithEscapedStringDefaultValue()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var defaultValue = "\"line1\"\nline2\"";
+        var propName = "propWithDefaultValue";
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propName,
+            DefaultValue = defaultValue,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "String"
+            }
+        });
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Map<String, String>"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"this.set{propName.ToFirstCharacterUpperCase()}({defaultValue.SanitizeQuotedStringLiteral()})", result);
+    }
+    [Fact]
+    public void WritesConstructorWithDefaultValuesThatRequireParsing()
+    {
+        //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.Documentation.DescriptionTemplate = "Initializes a new instance of the {TypeName} class";
+        method.Documentation.TypeReferences.TryAdd("TypeName", new CodeType { TypeDefinition = parentClass, IsExternal = false });
+        var defaultValueDateTimeWithTimeZone = "\"1900-01-01T00:00:00+00:00\"";
+        var dateTimeWithTimeZonePropName = "propWithDefaultDateTimeWithTimeZoneValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = dateTimeWithTimeZonePropName,
+            DefaultValue = defaultValueDateTimeWithTimeZone,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "OffsetDateTime"
+            },
+        });
+        var defaultValueDate = "\"1900-01-01\"";
+        var datePropName = "propWithDefaultDateValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = datePropName,
+            DefaultValue = defaultValueDate,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "LocalDate"
+            }
+        });
+        var defaultValueUuid = "\"00000000-0000-0000-0000-000000000000\"";
+        var uuidPropName = "propWithDefaultUuidValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = uuidPropName,
+            DefaultValue = defaultValueUuid,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "UUID"
+            }
+        });
+        var defaultValueTime = "\"00:00:00\"";
+        var timePropName = "propWithDefaultTimeValue";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = timePropName,
+            DefaultValue = defaultValueTime,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "LocalTime"
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains(parentClass.Name.ToFirstCharacterUpperCase(), result);
+        Assert.Contains($"this.set{dateTimeWithTimeZonePropName.ToFirstCharacterUpperCase()}(OffsetDateTime.parse({defaultValueDateTimeWithTimeZone}));", result);
+        Assert.Contains($"this.set{datePropName.ToFirstCharacterUpperCase()}(LocalDate.parse({defaultValueDate}));", result);
+        Assert.Contains($"this.set{uuidPropName.ToFirstCharacterUpperCase()}(UUID.fromString({defaultValueUuid}));", result);
+        Assert.Contains($"this.set{timePropName.ToFirstCharacterUpperCase()}(LocalTime.parse({defaultValueTime}));", result);
     }
     [Fact]
     public void WritesWithUrl()
@@ -1977,6 +2266,44 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"setBaseUrl(\"{method.BaseUrl}\")", result);
     }
     [Fact]
+    public void EscapesApiConstructorBaseUrl()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var coreProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "core",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "HttpCore",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "core",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = coreProp.Type,
+        });
+        method.DeserializerModules = new() { "com.microsoft.kiota.serialization.Deserializer" };
+        method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("setBaseUrl(\"https://graph.microsoft.com/v1.0/\\\"evil\\npath\")", result);
+    }
+    [Fact]
     public void WritesApiConstructorWithBackingStore()
     {
         setup();
@@ -2037,6 +2364,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("allQueryParams.put(\"propWithDefaultValue\", propWithDefaultValue);", result);
     }
     [Fact]
+    public void EscapesQueryParametersExtractor()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        parentClass.Kind = CodeClassKind.QueryParameters;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "propWithDefaultValue",
+            SerializationName = "line1\"\nline2",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "String"
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("allQueryParams.put(\"line1\\\"\\nline2\", propWithDefaultValue);", result);
+    }
+    [Fact]
     public async Task AccessorsTargetingEscapedPropertiesAreNotEscapedThemselvesAsync()
     {
         setup();
@@ -2052,7 +2399,7 @@ public sealed class CodeMethodWriterTests : IDisposable
             Access = AccessModifier.Public,
             Kind = CodePropertyKind.Custom,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
         var getter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Getter));
         var setter = model.Methods.First(x => x.IsOfKind(CodeMethodKind.Setter));
         var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
@@ -2101,6 +2448,17 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("2021-01-01", result);
         Assert.Contains("v2.0", result);
         Assert.Contains("@Deprecated", result);
+    }
+    [Fact]
+    public void SanitizesDeprecationVersionInComments()
+    {
+        setup();
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), $"v2.0 */{Environment.NewLine}VERSION_MARKER");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("as of v2.0 */", result);
+        Assert.DoesNotContain($"{Environment.NewLine}VERSION_MARKER", result);
+        Assert.Contains("VERSION_MARKER", result);
     }
     [Fact]
     public void WritesDeprecationInformationFromBuilder()

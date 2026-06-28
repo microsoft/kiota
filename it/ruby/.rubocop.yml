@@ -110,11 +110,15 @@ Metrics/AbcSize:
 Naming/ConstantName:
   Enabled: false
 
-Naming/PredicateName:
+Naming/PredicatePrefix:
   Enabled: false
 
 Metrics/ClassLength:
   Enabled: false
 
 Metrics/ModuleLength:
+  Enabled: false
+
+# Don't raise an error if block is longer than 25 lines. This happens in "spec\defaultvalues\integration_test_defaultvalues.rb"
+Metrics/BlockLength:
   Enabled: false

@@ -81,6 +81,20 @@ public sealed class CodeConstantWriterTests : IDisposable
     }
 
     [Fact]
+    public void WritesEscapedUriTemplateConstant()
+    {
+        var constant = new CodeConstant
+        {
+            Name = "parentClassUriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "\"{baseurl+}/foo/\"bar\nbaz\"",
+        };
+        codeConstantWriter.WriteCodeElement(constant, writer);
+        var result = tw.ToString();
+        Assert.Contains($"export const ParentClassUriTemplate = {constant.UriTemplate.SanitizeQuotedStringLiteral()};", result);
+    }
+
+    [Fact]
     public void WritesEnumOptionDescription()
     {
         AddCodeEnum();
@@ -112,6 +126,42 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("as const;", result);
         Assert.Contains(optionName, result);
         AssertExtensions.CurlyBracesAreClosed(result, 0);
+    }
+    [Fact]
+    public void WritesEscapedEnumWireName()
+    {
+        AddCodeEnum();
+        var wireName = "line1\"\nline2";
+        currentEnum.AddOption(new CodeEnumOption { Name = "option1", SerializationName = wireName });
+        codeConstantWriter.WriteCodeElement(currentEnum.CodeEnumObject, writer);
+        var result = tw.ToString();
+        Assert.Contains($"Option1: \"{wireName.SanitizeDoubleQuote()}\"", result);
+    }
+
+    [Fact]
+    public void WritesEscapedQueryParameterMappings()
+    {
+        var queryParametersInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "SomeRequestBuilderGetQueryParameters",
+            Kind = CodeInterfaceKind.QueryParameters,
+            OriginalClass = new CodeClass { Name = "SomeRequestBuilderGetQueryParameters" },
+        }).First();
+        queryParametersInterface.AddProperty(new CodeProperty
+        {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "line1\"\nline2",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        var constant = CodeConstant.FromQueryParametersMapping(queryParametersInterface);
+        Assert.NotNull(constant);
+        codeConstantWriter.WriteCodeElement(constant, writer);
+        var result = tw.ToString();
+        Assert.Contains($"\"select\": \"{"line1\"\nline2".SanitizeDoubleQuote()}\"", result);
     }
 
     [Fact]
@@ -286,6 +336,25 @@ public sealed class CodeConstantWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("sendCollectionOfPrimitive", result);
         AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesEscapedUrlTemplateOverrideInRequestMetadata()
+    {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.UrlTemplateOverride = "line1\"\nline2";
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains($"uriTemplate: \"{method.UrlTemplateOverride.SanitizeDoubleQuote()}\"", result);
     }
     [Fact]
     public void WritesRequestGeneratorBodyForScalar()
@@ -515,7 +584,7 @@ public sealed class CodeConstantWriterTests : IDisposable
                 Name = "string",
                 IsNullable = true,
             },
-            SerializationName = "foo-id",
+            SerializationName = "foo\"\n-id",
             Kind = CodeParameterKind.Path
         });
         var parentNS = parentClass.GetImmediateParentOfType<CodeNamespace>();
@@ -547,7 +616,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("methodName", result);
         Assert.Contains("requestsMetadata: SomecustomtypeRequestsMetadata", result);
         Assert.Contains("navigationMetadata: SomecustomtypeNavigationMetadata", result);
-        Assert.Contains("pathParametersMappings: [\"foo-id\"]", result);
+        Assert.Contains($"pathParametersMappings: [\"{"foo\"\n-id".SanitizeDoubleQuote()}\"]", result);
     }
     private void AddRequestProperties()
     {

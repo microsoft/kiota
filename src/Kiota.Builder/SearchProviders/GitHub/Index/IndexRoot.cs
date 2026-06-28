@@ -5,6 +5,7 @@ namespace Kiota.Builder.SearchProviders.GitHub.Index;
 
 
 [JsonSerializable(typeof(IndexRoot))]
+[JsonSerializable(typeof(BlockList))]
 internal partial class IndexRootJsonContext : JsonSerializerContext
 {
 }

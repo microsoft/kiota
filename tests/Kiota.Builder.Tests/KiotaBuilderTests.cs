@@ -54,7 +54,7 @@ paths:
                 type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var readResult = await builder.CreateOpenApiDocumentWithResultAsync(fs);
+        var readResult = await builder.CreateOpenApiDocumentWithResultAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(readResult);
         var document = readResult?.Document;
         var diagnostics = readResult?.Diagnostic;
@@ -91,7 +91,7 @@ components:
       properties:
         id:
           type: string
-""");
+""", cancellationToken: TestContext.Current.CancellationToken);
         var tempFilePathReferrer = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePathReferrer,
     $$$"""
@@ -118,11 +118,11 @@ components:
       properties:
         id:
           type: string
-""");
+""", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePathReferrer, Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePathReferrer, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -155,11 +155,11 @@ paths:
           content:
             application/json:
               schema:
-                type: string");
+                type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = descriptionUrl }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -190,11 +190,11 @@ paths:
           content:
             application/json:
               schema:
-                type: string");
+                type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://graph.microsoft.com/description.yaml", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -227,11 +227,11 @@ paths:
           content:
             application/json:
               schema:
-                type: string");
+                type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json" }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -265,11 +265,11 @@ paths:
           content:
             application/json:
               schema:
-                type: string");
+                type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json" }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -307,11 +307,11 @@ components:
       type: object
       properties:
         name:
-          type: string");
+          type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json" }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -365,7 +365,7 @@ components:
         mediaType:
           type: string
         url:
-          type: string");
+          type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -373,7 +373,7 @@ components:
             OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
         }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -447,7 +447,7 @@ components:
         mediaType:
           type: string
         url:
-          type: string");
+          type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
         {
@@ -455,7 +455,7 @@ components:
             OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
         }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -547,7 +547,7 @@ components:
           - value: Premium_LRS");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
@@ -611,7 +611,7 @@ components:
         style: simple");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
@@ -661,7 +661,7 @@ components:
           nullable: true");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
@@ -743,10 +743,10 @@ components:
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var generationConfiguration = new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, Language = language }; // we can use any language that creates wrapper types for composed types in different ways
         var builder = new KiotaBuilder(mockLogger.Object, generationConfiguration, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, TestContext.Current.CancellationToken);
         var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
         Assert.NotNull(requestBuilderNamespace);
         if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
@@ -821,7 +821,7 @@ components:
                   format: int32");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
@@ -884,7 +884,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
@@ -1041,7 +1041,7 @@ components:
       x-ms-discriminator-value: '#microsoft.graph.educationUser'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
@@ -1116,7 +1116,7 @@ components:
                   nullable: true");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
@@ -1252,7 +1252,7 @@ components:
       x-ms-discriminator-value: '#microsoft.graph.educationUser'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models.microsoft.graph");
@@ -1293,9 +1293,9 @@ servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(extensionResult);
         Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
         Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
@@ -1327,11 +1327,11 @@ x-ms-kiota-info:
         - name: Microsoft.Graph.Core
           version: 3.0.0
 servers:
-  - url: https://graph.microsoft.com/v1.0");
+  - url: https://graph.microsoft.com/v1.0", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
         var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
-        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(treeNode);
         Assert.Equal("GraphClient", configuration.ClientClassName);
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
@@ -1352,9 +1352,9 @@ servers:
   - url: https://graph.microsoft.com/v1.0");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
-        var extensionResult = await builder.GetLanguagesInformationAsync(new CancellationToken());
+        var extensionResult = await builder.GetLanguagesInformationAsync(TestContext.Current.CancellationToken);
         Assert.Null(extensionResult);
     }
     [Fact]
@@ -1376,7 +1376,7 @@ paths:
         in: path");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var model = builder.CreateSourceModel(node);
         Assert.NotNull(model);
@@ -1400,10 +1400,10 @@ paths:
           content:
             application/json:
               schema:
-                type: string");
+                type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(new CancellationToken());
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(treeNode);
         Assert.Equal("/", treeNode.DeduplicatedSegment());
         Assert.Equal("enumeration", treeNode.Children.First().Value.DeduplicatedSegment());
@@ -1414,7 +1414,7 @@ paths:
     public async Task DoesntThrowOnMissingServerForV2Async()
     {
         var tempFilePath = Path.GetTempFileName();
-        await File.WriteAllLinesAsync(tempFilePath, new[] { "swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https", " - http" });
+        await File.WriteAllLinesAsync(tempFilePath, new[] { "swagger: 2.0", "title: \"Todo API\"", "version: \"1.0.0\"", "host: mytodos.doesntexit", "basePath: v2", "schemes:", " - https", " - http" }, cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         await builder.GenerateClientAsync(new());
@@ -3373,7 +3373,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectsClass = codeModel.FindChildByName<CodeClass>("directoryObjects");
         Assert.NotNull(entityClass);
@@ -3501,7 +3501,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
@@ -3527,6 +3527,388 @@ paths:
         Assert.DoesNotContain(directoryObjectClass.Properties, static x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("microsoft.graph.user", directoryObjectClass.DiscriminatorInformation.DiscriminatorMappings.Select(static x => x.Key));
         Assert.Empty(userClass.DiscriminatorInformation.DiscriminatorMappings);
+    }
+
+    [Fact]
+    public async Task AddsDiscriminatorMappingsForOneOfWithDerivedTypesFromBaseWithMappingAsync()
+    {
+        // Test case: oneOf contains derived types (via allOf) where the discriminator mapping is defined on the base type
+        // Expected: The discriminator keys from the base type's mapping should be used, not the schema names
+        var baseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                },
+                {
+                    "$type", new OpenApiSchema {
+                        Type = JsonSchemaType.String
+                    }
+                }
+            },
+            Required = new HashSet<string> {
+                "$type"
+            },
+            Discriminator = new()
+            {
+                PropertyName = "$type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    {
+                        "typeA", new OpenApiSchemaReference("ResultTypeA")
+                    },
+                    {
+                        "typeB", new OpenApiSchemaReference("ResultTypeB")
+                    }
+                }
+            },
+        };
+        var resultTypeASchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("OperationResult"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "dataA", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                }
+            },
+        };
+        var resultTypeBSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("OperationResult"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "dataB", new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+                    },
+                }
+            },
+        };
+        var oneOfResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            OneOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("ResultTypeA"),
+                new OpenApiSchemaReference("ResultTypeB")
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["objects"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("OperationResponse"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var operationResponse = new OpenApiResponse
+        {
+            Content = new Dictionary<string, IOpenApiMediaType>()
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("OneOfResponse", document)
+                }
+            },
+        };
+        document.AddComponent("OperationResult", baseSchema);
+        document.AddComponent("ResultTypeA", resultTypeASchema);
+        document.AddComponent("ResultTypeB", resultTypeBSchema);
+        document.AddComponent("OneOfResponse", oneOfResponseSchema);
+        document.AddComponent("OperationResponse", operationResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
+
+        var oneOfResponseClass = codeModel.FindChildByName<CodeClass>("OneOfResponse");
+        Assert.NotNull(oneOfResponseClass);
+
+        // The discriminator mappings on the oneOf wrapper class should use the keys from OperationResult's discriminator mapping
+        var mappings = oneOfResponseClass.DiscriminatorInformation.DiscriminatorMappings.ToList();
+        Assert.Equal(2, mappings.Count);
+        // Bug fix verification: keys should be "typeA" and "typeB" (from base type mapping), not "ResultTypeA" and "ResultTypeB" (schema names)
+        Assert.Contains("typeA", mappings.Select(static x => x.Key));
+        Assert.Contains("typeB", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("ResultTypeA", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("ResultTypeB", mappings.Select(static x => x.Key));
+    }
+
+    [Fact]
+    public async Task AddsDiscriminatorMappingsForOneOfWithDerivedTypesFromGrandparentMappingAsync()
+    {
+        // Regression test: 3-level hierarchy where entity (grandparent) has the discriminator mapping,
+        // directoryObject (parent) has no discriminator, and application (child) is a oneOf member.
+        // The discriminator key for application should be resolved from entity's mapping, not
+        // fall back to the schema name (which wouldn't match OData @odata.type values like "#microsoft.graph.application").
+        var entitySchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "id", new OpenApiSchema { Type = JsonSchemaType.String }
+                },
+                {
+                    "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String }
+                }
+            },
+            Required = new HashSet<string> { "@odata.type" },
+            Discriminator = new()
+            {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    { "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject") },
+                    { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                }
+            },
+        };
+        var directoryObjectSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "deletedDateTime", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    }
+                }
+            },
+            // No discriminator on directoryObject — discriminator lives on the grandparent entity
+        };
+        var applicationSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchema {
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "appId", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "displayName", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    }
+                }
+            },
+        };
+        var deltaResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            OneOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchemaReference("microsoft.graph.application"),
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["applications/delta"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponseReference("deltaResponse"),
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var deltaResponse = new OpenApiResponse
+        {
+            Content = new Dictionary<string, IOpenApiMediaType>()
+            {
+                ["application/json"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchemaReference("deltaResponseSchema", document)
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.application", applicationSchema);
+        document.AddComponent("deltaResponseSchema", deltaResponseSchema);
+        document.AddComponent("deltaResponse", deltaResponse);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
+
+        var deltaResponseClass = codeModel.FindChildByName<CodeClass>("deltaResponseSchema");
+        Assert.NotNull(deltaResponseClass);
+
+        var mappings = deltaResponseClass.DiscriminatorInformation.DiscriminatorMappings.ToList();
+        // Bug fix: discriminator keys should come from the grandparent (entity) mapping,
+        // i.e. "#microsoft.graph.directoryObject" and "#microsoft.graph.application", NOT the schema names.
+        Assert.Contains("#microsoft.graph.directoryObject", mappings.Select(static x => x.Key));
+        Assert.Contains("#microsoft.graph.application", mappings.Select(static x => x.Key));
+        Assert.DoesNotContain("microsoft.graph.directoryObject", mappings.Select(static x => x.Key).Where(k => !k.StartsWith('#')));
+        Assert.DoesNotContain("microsoft.graph.application", mappings.Select(static x => x.Key).Where(k => !k.StartsWith('#')));
+    }
+
+    [Fact]
+    public async Task DeltaResponseValuePropertyTypeIsConcreteTypeNotBaseTypeAsync()
+    {
+        // Regression test: The Value property on a delta response should have the concrete type
+        // (Application), NOT the base type (DirectoryObject).
+        // Schema: entity (root discriminator) → directoryObject (inline allOf discriminator) → application
+        // Delta response: allOf: [BaseDeltaFunctionResponse, {value: array of $ref application}]
+        var entitySchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "id", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+            Required = new HashSet<string> { "@odata.type" },
+            Discriminator = new()
+            {
+                PropertyName = "@odata.type",
+                Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                    { "#microsoft.graph.directoryObject", new OpenApiSchemaReference("microsoft.graph.directoryObject") },
+                    { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                }
+            },
+        };
+        var directoryObjectSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.entity"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "deletedDateTime", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    },
+                    Required = new HashSet<string> { "@odata.type" },
+                    Discriminator = new()
+                    {
+                        PropertyName = "@odata.type",
+                        Mapping = new Dictionary<string, OpenApiSchemaReference> {
+                            { "#microsoft.graph.application", new OpenApiSchemaReference("microsoft.graph.application") }
+                        }
+                    }
+                }
+            },
+        };
+        var applicationSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("microsoft.graph.directoryObject"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        { "appId", new OpenApiSchema { Type = JsonSchemaType.String } },
+                        { "@odata.type", new OpenApiSchema { Type = JsonSchemaType.String } }
+                    },
+                    Required = new HashSet<string> { "@odata.type" }
+                }
+            },
+        };
+        var baseDeltaResponseSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "@odata.nextLink", new OpenApiSchema { Type = JsonSchemaType.String } },
+                { "@odata.deltaLink", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+        };
+        var deltaGetResponseSchema = new OpenApiSchema
+        {
+            AllOf = new List<IOpenApiSchema> {
+                new OpenApiSchemaReference("BaseDeltaFunctionResponse"),
+                new OpenApiSchema {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema> {
+                        {
+                            "value", new OpenApiSchema {
+                                Type = JsonSchemaType.Array,
+                                Items = new OpenApiSchemaReference("microsoft.graph.application")
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["applications/delta()"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = deltaGetResponseSchema
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.entity", entitySchema);
+        document.AddComponent("microsoft.graph.directoryObject", directoryObjectSchema);
+        document.AddComponent("microsoft.graph.application", applicationSchema);
+        document.AddComponent("BaseDeltaFunctionResponse", baseDeltaResponseSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var config = new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" };
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
+
+        var deltaResponseClass = codeModel.FindChildByName<CodeClass>("DeltaGetResponse");
+        Assert.NotNull(deltaResponseClass);
+
+        var valueProperty = deltaResponseClass.Properties
+            .FirstOrDefault(p => p.Name.Equals("value", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(valueProperty);
+        // The type name should be "application" (Application class), not "directoryObject"
+        Assert.Equal("application", valueProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.NotEqual("directoryObject", valueProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -3654,7 +4036,7 @@ paths:
         var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        await builder.ApplyLanguageRefinementAsync(config, codeModel, CancellationToken.None);
+        await builder.ApplyLanguageRefinementAsync(config, codeModel, TestContext.Current.CancellationToken);
         var entityClass = codeModel.FindChildByName<CodeClass>("entity");
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("directoryObject");
         var userClass = codeModel.FindChildByName<CodeClass>("user");
@@ -3775,7 +4157,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var response = codeModel.FindChildByName<CodeMethod>("GetAsFooGetResponse");
@@ -4329,6 +4711,127 @@ components:
         Assert.Equal(expected, property.Type.Name);
         Assert.True(property.Type.AllTypes.First().IsExternal);
     }
+    [InlineData("date-time", "DateTimeOffset")]
+    [InlineData("duration", "TimeSpan")]
+    [InlineData("time", "TimeOnly")]
+    [InlineData("date", "DateOnly")]
+    [InlineData("byte", "base64")]
+    [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
+    [Theory]
+    public void MapsPrimitiveFormatsWithoutType(string format, string expected)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                // Type is intentionally not set to simulate .NET 10 ASP.NET OpenAPI generator behavior
+                                                Format = format
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var method = requestBuilder.GetChildElements(true).OfType<CodeMethod>().FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(method);
+        Assert.Equal(expected, method.ReturnType.Name);
+        Assert.True(method.ReturnType.AllTypes.First().IsExternal);
+    }
+    [InlineData("date-time", "DateTimeOffset")]
+    [InlineData("duration", "TimeSpan")]
+    [InlineData("time", "TimeOnly")]
+    [InlineData("date", "DateOnly")]
+    [InlineData("byte", "base64")]
+    [InlineData("binary", "binary")]
+    [InlineData("uuid", "Guid")]
+    [InlineData("base64url", "base64url")]
+    [InlineData("double", "double")]
+    [InlineData("float", "float")]
+    [InlineData("decimal", "decimal")]
+    [InlineData("int8", "sbyte")]
+    [InlineData("uint8", "byte")]
+    [InlineData("int16", "integer")] // int16 and int32 both map to generic "integer" type for backwards compatibility
+    [InlineData("int32", "integer")]
+    [InlineData("int64", "int64")]
+    [Theory]
+    public void MapsQueryParameterTypesWithoutType(string format, string expected)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["primitive"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<IOpenApiParameter> {
+                                new OpenApiParameter() {
+                                    Name = "query",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        // Type is intentionally not set to simulate .NET 10 ASP.NET OpenAPI generator behavior
+                                        Format = format
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["204"] = new OpenApiResponse()
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var queryParameters = codeModel.FindChildByName<CodeClass>("primitiveRequestBuilderGetQueryParameters");
+        Assert.NotNull(queryParameters);
+        var property = queryParameters.Properties.First(static x => x.Name.Equals("query", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(property);
+        Assert.Equal(expected, property.Type.Name);
+        Assert.True(property.Type.AllTypes.First().IsExternal);
+    }
     [Fact]
     public void IncludesQueryParameterInUriTemplate()
     {
@@ -4612,11 +5115,11 @@ components:
   schemas:
     InternalExternal:
       enum: [All, Internal, External]
-      type: string");
+      type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json", Language = GenerationLanguage.CSharp, ExcludeBackwardCompatible = ecb }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -6446,7 +6949,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
@@ -6496,7 +6999,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
@@ -6537,7 +7040,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
         var collectionRequestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.me.posts");
@@ -6626,7 +7129,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -6712,7 +7215,7 @@ paths:
                                     - false");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
@@ -6748,7 +7251,7 @@ paths:
                                     - 2");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document!);
         var codeModel = builder.CreateSourceModel(node);
         var requestBuilderNS = codeModel.FindNamespaceByName("ApiSdk.me");
@@ -6785,11 +7288,11 @@ paths:
                     type: object
                     properties:
                       foo:
-                        type: string");
+                        type: string", cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = "https://localhost:443" }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         builder.SetApiRootUrl();
         var codeModel = builder.CreateSourceModel(node);
@@ -7075,7 +7578,7 @@ components:
           nullable: true");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
@@ -7115,7 +7618,7 @@ paths:
                     type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("DirectoryObjectGetResponse");
@@ -7177,7 +7680,7 @@ components:
       type: object");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("ConversionsPostResponse"));
@@ -7246,7 +7749,7 @@ components:
           type: object");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.Equal("base entity", codeModel.FindChildByName<CodeClass>("entity").Documentation.DescriptionTemplate);
@@ -7287,7 +7790,7 @@ components:
           type: integer");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Entity");
@@ -7338,7 +7841,7 @@ components:
               type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var entityClass = codeModel.FindChildByName<CodeClass>("Entity");
@@ -7383,7 +7886,7 @@ paths:
                 type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var parametersClass = codeModel.FindChildByName<CodeClass>("directoryObjectRequestBuilderGetQueryParameters");
@@ -7457,7 +7960,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -7516,7 +8019,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -7575,7 +8078,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection { "multipart/form-data;q=1" } }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -7645,7 +8148,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -7716,7 +8219,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection { "multipart/form-data;q=1", "application/json;q=0.1" } }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -7794,7 +8297,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false, StructuredMimeTypes = new StructuredMimeTypesCollection { "multipart/form-data;q=1", "application/json;q=0.1" } }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -7900,7 +8403,7 @@ components:
             '$ref': '#/components/schemas/group.GroupClassification'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Linkable"));
@@ -7959,7 +8462,7 @@ components:
               type: 'string'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel.FindChildByName<CodeClass>("Group"));
@@ -8026,7 +8529,7 @@ components:
             - '$ref': '#/components/schemas/microsoft.graph.group'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var memberClass = codeModel.FindChildByName<CodeClass>("member");
@@ -8045,6 +8548,82 @@ components:
         var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models.microsoft.graph");
         Assert.NotNull(modelsNamespace);
         Assert.Equal(4, modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
+    }
+    [Fact]
+    public async Task AllOfInheritanceModelReferencedViaComposedTypeKeepsItsPropertiesAsync()
+    {
+        // Regression test: a model defined as allOf [ $ref base, { inline properties } ] that is also reached
+        // as a member of a composed (anyOf/oneOf) type used to be generated with its base class but WITHOUT the
+        // inline allOf properties. CreateComposedModelDeclaration passed the raw $ref straight to
+        // AddModelDeclarationIfDoesntExist, bypassing the allOf merge, and the resulting empty class then won
+        // the name-based dedup over the correctly-merged one.
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: repro
+  version: 1.0.1
+servers:
+  - url: https://example.com
+paths:
+  /things/{id}:
+    get:
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer.jsonld-read'
+components:
+  schemas:
+    ItemBase:
+      type: object
+      required: ['@id', '@type']
+      properties:
+        '@id':
+          type: string
+          readOnly: true
+        '@type':
+          type: string
+          readOnly: true
+    Offer.jsonld-read:
+      allOf:
+        - $ref: '#/components/schemas/ItemBase'
+        - type: object
+          properties:
+            name:
+              type: [string, 'null']
+            amount:
+              type: [integer, 'null']
+            product:
+              anyOf:
+                - $ref: '#/components/schemas/Product.jsonld-read'
+                - type: 'null'
+    Product.jsonld-read:
+      allOf:
+        - $ref: '#/components/schemas/ItemBase'
+        - type: object
+          properties:
+            label:
+              type: [string, 'null']
+            offer:
+              anyOf:
+                - $ref: '#/components/schemas/Offer.jsonld-read'
+                - type: 'null'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var offerClass = codeModel.FindNamespaceByName("ApiSdk.models.Offer")?.FindChildByName<CodeClass>("JsonldRead", false);
+        Assert.NotNull(offerClass);
+        Assert.NotNull(offerClass.StartBlock.Inherits); // still inherits ItemBase
+        Assert.Equal("ItemBase", offerClass.StartBlock.Inherits!.Name);
+        // the inline allOf properties must be present (regression: they were dropped, leaving an empty class)
+        Assert.Contains(offerClass.Properties, static p => p.Name.Equals("name", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(offerClass.Properties, static p => p.Name.Equals("amount", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(offerClass.Properties, static p => p.Name.Equals("product", StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task InheritanceWithAllOfWith3Parts3SchemaChildClassAsync()
@@ -8102,7 +8681,7 @@ components:
         - '$ref': '#/components/schemas/microsoft.graph.groupFacet2'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
@@ -8173,7 +8752,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8263,7 +8842,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8373,7 +8952,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8502,7 +9081,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8606,7 +9185,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8620,6 +9199,119 @@ components:
         Assert.NotNull(withObjectClass);
         var twoProperty = withoutObjectClass.FindChildByName<CodeProperty>("two", false);
         Assert.NotNull(twoProperty);
+    }
+
+    [Fact]
+    public async Task NullableReferenceWrapperUnwrapsToReferencedSchemaAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(
+    """
+openapi: 3.1.0
+info:
+  title: "Nullable reference wrapper unwrap test"
+  version: "1.0.0"
+servers:
+  - url: https://example.doesnotexist/
+paths:
+  /items:
+    get:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkbookOperationError"
+components:
+  schemas:
+    WorkbookOperationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        innerError:
+          type:
+            - 'null'
+            - object
+          anyOf:
+            - $ref: "#/components/schemas/WorkbookOperationError"
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The self-referential schema should produce exactly one class, not infinite inline classes
+        var errorClass = codeModel.FindChildByName<CodeClass>("WorkbookOperationError");
+        Assert.NotNull(errorClass);
+        var codeProperty = errorClass.FindChildByName<CodeProperty>("innerError", false);
+        Assert.NotNull(codeProperty);
+        // innerError should reference the same WorkbookOperationError type, not a unique inline class
+        Assert.Equal("WorkbookOperationError", codeProperty.Type.Name);
+    }
+
+    [Fact]
+    public async Task NullableReferenceWrapperWithDiscriminatorIsNotUnwrappedAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(
+    """
+openapi: 3.0.0
+info:
+  title: "Nullable reference wrapper with discriminator should not unwrap"
+  version: "1.0.0"
+servers:
+  - url: https://example.doesnotexist/
+paths:
+  /items:
+    get:
+      description: Return something
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsesWrapper"
+components:
+  schemas:
+    UsesWrapper:
+      type: object
+      properties:
+        value:
+          $ref: "#/components/schemas/WrapperWithDiscriminator"
+    WrapperWithDiscriminator:
+      type: object
+      anyOf:
+        - $ref: "#/components/schemas/Component1"
+      discriminator:
+        propertyName: objectType
+    Component1:
+      type: object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: string
+        name:
+          type: string
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // With a discriminator, the wrapper should NOT be unwrapped — it should keep its own class with merged properties
+        var wrapperClass = codeModel.FindChildByName<CodeClass>("WrapperWithDiscriminator");
+        Assert.NotNull(wrapperClass);
+        var nameProperty = wrapperClass.FindChildByName<CodeProperty>("name", false);
+        Assert.NotNull(nameProperty);
     }
 
     [Fact]
@@ -8716,7 +9408,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8845,7 +9537,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
 
@@ -8967,7 +9659,7 @@ components:
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var registeredModelClass = codeModel.FindChildByName<CodeClass>("RegisteredModel");
@@ -9036,7 +9728,7 @@ components:
           type: 'string'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var directoryObjectClass = codeModel.FindChildByName<CodeClass>("DirectoryObject");
@@ -9097,7 +9789,7 @@ components:
               type: 'string'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Group");
@@ -9145,7 +9837,7 @@ components:
           type: 'string'");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Group");
@@ -9201,7 +9893,7 @@ components:
         - '$ref': '#/components/schemas/microsoft.graph.directoryObject'"));
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var resultClass = codeModel.FindChildByName<CodeClass>("Group");
@@ -9252,7 +9944,7 @@ components:
           type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         var outerPayloadClass = codeModel.FindChildByName<CodeClass>("outerPayload");
@@ -9306,7 +9998,7 @@ components:
       type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -9369,7 +10061,7 @@ components:
       type: string");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -9514,7 +10206,7 @@ components:
       description: The ID or key of a linked issue.");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, IncludeAdditionalData = false }, _httpClient);
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         Assert.NotNull(codeModel);
@@ -9585,7 +10277,7 @@ components:
             },
             _httpClient);
 
-        var document = await builder.CreateOpenApiDocumentAsync(fs);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(document);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
@@ -10112,4 +10804,601 @@ components:
     }
     [GeneratedRegex(@"^[a-zA-Z0-9_]*$", RegexOptions.IgnoreCase | RegexOptions.Singleline, 2000)]
     private static partial Regex OperationIdValidationRegex();
+
+    [Fact]
+    public async Task GeneratesBinaryReturnTypeWhenSuccessResponseIsBinaryAndErrorResponseIsPlainTextOrJsonAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Image API
+  version: 1.0.0
+servers:
+  - url: https://example.org
+paths:
+  /image:
+    get:
+      responses:
+        '200':
+          description: Returns image binary data
+          content:
+            application/octet-stream:
+                schema:
+                    type: string
+                    format: binary
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer
+            text/plain:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("ImageRequestBuilder");
+        Assert.NotNull(rbClass);
+        var getMethod = rbClass.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.NotNull(getMethod.ReturnType);
+        // The return type should be binary since the success response (200) is binary
+        Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task HandlesBinaryContentWithoutSchemaWhenErrorResponseHasSchemaAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Image API with Error Schema
+  version: 1.0.0
+servers:
+  - url: https://example.org
+paths:
+  /avatar:
+    get:
+      responses:
+        '200':
+          description: Returns user avatar image
+          content:
+            image/png: {}
+            image/jpeg: {}
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        Assert.NotNull(codeModel);
+        var rbClass = codeModel.FindChildByName<CodeClass>("AvatarRequestBuilder");
+        Assert.NotNull(rbClass);
+        var getMethod = rbClass.FindChildByName<CodeMethod>("Get", false);
+        Assert.NotNull(getMethod);
+        Assert.NotNull(getMethod.ReturnType);
+        // Since 200 has no schema and only binary content types (image/png, image/jpeg),
+        // and these are not in structuredMimeTypes, GetResponseSchema returns null,
+        // which triggers GetExecutorMethodDefaultReturnType, which should return "binary"
+        Assert.Equal("binary", getMethod.ReturnType.Name, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task GeneratesNavigationPropertiesForSimplePathsSiblingToIndexNodes()
+    {
+        // Regression test: navigation properties for simple path segments (no path parameters)
+        // that are siblings of index nodes ({id}) must be generated.
+        // e.g. /admin/teams/telephoneNumberManagement must appear as a property on TeamsRequestBuilder
+        // even though /admin/teams/{team-id} (index node) also exists at the same level.
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /admin/teams:
+    description: Provides operations to manage the admin teams.
+    get:
+      operationId: admin.GetTeams
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsAdmin'
+  /admin/teams/{team-id}:
+    description: Provides operations to manage a specific team.
+    get:
+      operationId: admin.teams.GetTeam
+      parameters:
+        - name: team-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsAdmin'
+  /admin/teams/telephoneNumberManagement:
+    description: Provides operations to manage the telephoneNumberManagement property.
+    get:
+      operationId: admin.teams.GetTelephoneNumberManagement
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+    patch:
+      operationId: admin.teams.UpdateTelephoneNumberManagement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelephoneNumberManagementRoot'
+components:
+  schemas:
+    TeamsAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+    TelephoneNumberManagementRoot:
+      allOf:
+        - $ref: '#/components/schemas/Entity'
+        - type: object
+          properties:
+            displayName:
+              type: string
+    Entity:
+      type: object
+      properties:
+        id:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = "https://localhost",
+            ClientNamespaceName = "TestSdk"
+        }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The TeamsRequestBuilder should have a navigation property for TelephoneNumberManagement
+        var teamsRbNs = codeModel.FindNamespaceByName("TestSdk.Admin.Teams");
+        Assert.NotNull(teamsRbNs);
+        var teamsRb = teamsRbNs.FindChildByName<CodeClass>("TeamsRequestBuilder", false);
+        Assert.NotNull(teamsRb);
+
+        // Must have the TelephoneNumberManagement property
+        var telephoneNumberManagementProperty = teamsRb.Properties.FirstOrDefault(p =>
+            p.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            p.Name.Equals("TelephoneNumberManagement", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(telephoneNumberManagementProperty);
+
+        // The TelephoneNumberManagement request builder namespace must exist
+        var telephoneNumberManagementNs = codeModel.FindNamespaceByName("TestSdk.Admin.Teams.TelephoneNumberManagement");
+        Assert.NotNull(telephoneNumberManagementNs);
+        var telephoneNumberManagementRb = telephoneNumberManagementNs.FindChildByName<CodeClass>("TelephoneNumberManagementRequestBuilder", false);
+        Assert.NotNull(telephoneNumberManagementRb);
+    }
+    [Fact]
+    public async Task GeneratesNavigationPropertiesForActionPathsSiblingToCollectionIndexNodes()
+    {
+        // Regression test: navigation properties for OData action paths (e.g. /messages/replyWithQuote)
+        // that are siblings of index nodes must be generated on the collection request builder.
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /chats/{chat-id}/messages:
+    description: Collection of messages.
+    get:
+      operationId: chats.messages.ListMessages
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+  /chats/{chat-id}/messages/{chatMessage-id}:
+    description: A specific message.
+    get:
+      operationId: chats.messages.GetMessage
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: chatMessage-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+  /chats/{chat-id}/messages/replyWithQuote:
+    description: Provides operations to call the replyWithQuote method.
+    post:
+      operationId: chats.messages.replyWithQuote
+      parameters:
+        - name: chat-id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+components:
+  schemas:
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        body:
+          type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration
+        {
+            ClientClassName = "TestClient",
+            OpenAPIFilePath = "https://localhost",
+            ClientNamespaceName = "TestSdk"
+        }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // The MessagesRequestBuilder should have a navigation property for ReplyWithQuote
+        var messagesRbNs = codeModel.FindNamespaceByName("TestSdk.Chats.Item.Messages");
+        Assert.NotNull(messagesRbNs);
+        var messagesRb = messagesRbNs.FindChildByName<CodeClass>("MessagesRequestBuilder", false);
+        Assert.NotNull(messagesRb);
+
+        // Must have the ReplyWithQuote property
+        var replyWithQuoteProperty = messagesRb.Properties.FirstOrDefault(p =>
+            p.IsOfKind(CodePropertyKind.RequestBuilder) &&
+            p.Name.Equals("ReplyWithQuote", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(replyWithQuoteProperty);
+
+        // The ReplyWithQuote request builder namespace must exist
+        var replyWithQuoteNs = codeModel.FindNamespaceByName("TestSdk.Chats.Item.Messages.ReplyWithQuote");
+        Assert.NotNull(replyWithQuoteNs);
+        var replyWithQuoteRb = replyWithQuoteNs.FindChildByName<CodeClass>("ReplyWithQuoteRequestBuilder", false);
+        Assert.NotNull(replyWithQuoteRb);
+    }
+
+    /// <summary>
+    /// Regression test for https://github.com/microsoft/kiota/issues/7292
+    /// Required query parameters on one operation must not leak into the path-item URL template
+    /// and must not be visible as required for sibling operations on the same path.
+    /// Both the request-generator and request-executor methods must carry the per-operation URL template override.
+    /// </summary>
+    [Fact]
+    public async Task PerOperationUrlTemplateOverrideSetOnBothGeneratorAndExecutorMethodsAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(
+            """
+            openapi: 3.0.1
+            info:
+              title: Test
+              version: '1.0'
+            servers:
+              - url: https://graph.microsoft.com/v1.0
+            paths:
+              /resource:
+                get:
+                  description: Gets the resource
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                delete:
+                  description: Deletes the resource (requires confirm)
+                  parameters:
+                    - name: confirm
+                      in: query
+                      required: true
+                      schema:
+                        type: boolean
+                  responses:
+                    '204':
+                      description: No content
+            """);
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "Graph",
+                OpenAPIFilePath = "https://localhost",
+                ClientNamespaceName = "GraphSdk",
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        // Locate the ResourceRequestBuilder class
+        var resourceNs = codeModel.FindNamespaceByName("GraphSdk.Resource");
+        Assert.NotNull(resourceNs);
+        var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
+        Assert.NotNull(resourceRb);
+
+        // The path-item URL template excludes operation-specific required params (confirm)
+        var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(urlTemplateProperty);
+        Assert.Equal("\"{+baseurl}/resource\"", urlTemplateProperty.DefaultValue);
+
+        // GET has no operation-specific required params → no override needed (uses class-level UrlTemplate)
+        var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getExecutor);
+        Assert.False(getExecutor.HasUrlTemplateOverride);
+
+        var getGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getGenerator);
+        Assert.False(getGenerator.HasUrlTemplateOverride);
+
+        // DELETE executor must carry an override with the required confirm parameter
+        var deleteExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
+        Assert.NotNull(deleteExecutor);
+        Assert.True(deleteExecutor.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource?confirm={confirm}", deleteExecutor.UrlTemplateOverride);
+
+        // DELETE generator must also carry the override
+        var deleteGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Delete);
+        Assert.NotNull(deleteGenerator);
+        Assert.True(deleteGenerator.HasUrlTemplateOverride);
+        Assert.Equal("{+baseurl}/resource?confirm={confirm}", deleteGenerator.UrlTemplateOverride);
+    }
+
+    [Fact]
+    public async Task PerOperationUrlTemplateOverrideSetWhenAllTemplatesAreUniqueWithOptionalQueryParametersAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(
+            """
+            openapi: 3.0.1
+            info:
+              title: Test
+              version: '1.0'
+            servers:
+              - url: https://graph.microsoft.com/v1.0
+            paths:
+              /resource:
+                get:
+                  description: Gets the resource
+                  parameters:
+                    - name: $select
+                      in: query
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                post:
+                  description: Creates the resource
+                  responses:
+                    '201':
+                      description: Created
+            """);
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "Graph",
+                OpenAPIFilePath = "https://localhost",
+                ClientNamespaceName = "GraphSdk",
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var resourceNs = codeModel.FindNamespaceByName("GraphSdk.Resource");
+        Assert.NotNull(resourceNs);
+        var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
+        Assert.NotNull(resourceRb);
+
+        var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(urlTemplateProperty);
+        // Class-level template includes the union of optional params ($select) — no required params to exclude
+        Assert.Equal("\"{+baseurl}/resource{?%24select*}\"", urlTemplateProperty.DefaultValue);
+
+        // No operation-specific required params → no overrides needed for any operation
+        var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getExecutor);
+        Assert.False(getExecutor.HasUrlTemplateOverride);
+
+        var getGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getGenerator);
+        Assert.False(getGenerator.HasUrlTemplateOverride);
+
+        var postExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.NotNull(postExecutor);
+        Assert.False(postExecutor.HasUrlTemplateOverride);
+
+        var postGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.NotNull(postGenerator);
+        Assert.False(postGenerator.HasUrlTemplateOverride);
+    }
+
+    [Fact]
+    public async Task PerOperationUrlTemplateOverrideSetForOptionalQueryOutlierAgainstHighestCardinalityTemplateAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(
+            """
+            openapi: 3.0.1
+            info:
+              title: Test
+              version: '1.0'
+            servers:
+              - url: https://graph.microsoft.com/v1.0
+            paths:
+              /resource:
+                get:
+                  description: Gets the resource
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                post:
+                  description: Creates the resource
+                  responses:
+                    '201':
+                      description: Created
+                patch:
+                  description: Updates the resource
+                  parameters:
+                    - name: $filter
+                      in: query
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+            """);
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(
+            mockLogger.Object,
+            new GenerationConfiguration
+            {
+                ClientClassName = "Graph",
+                OpenAPIFilePath = "https://localhost",
+                ClientNamespaceName = "GraphSdk",
+            },
+            _httpClient);
+
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var resourceNs = codeModel.FindNamespaceByName("GraphSdk.Resource");
+        Assert.NotNull(resourceNs);
+        var resourceRb = resourceNs.FindChildByName<CodeClass>("ResourceRequestBuilder", false);
+        Assert.NotNull(resourceRb);
+
+        var urlTemplateProperty = resourceRb.Properties.FirstOrDefault(static p => p.Kind is CodePropertyKind.UrlTemplate);
+        Assert.NotNull(urlTemplateProperty);
+        // Class-level template includes the union of optional params ($filter) — no required params to exclude
+        Assert.Equal("\"{+baseurl}/resource{?%24filter*}\"", urlTemplateProperty.DefaultValue);
+
+        // No operation-specific required params → no overrides needed for any operation
+        var getExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Get);
+        Assert.NotNull(getExecutor);
+        Assert.False(getExecutor.HasUrlTemplateOverride);
+
+        var postExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Post);
+        Assert.NotNull(postExecutor);
+        Assert.False(postExecutor.HasUrlTemplateOverride);
+
+        var patchExecutor = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestExecutor && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
+        Assert.NotNull(patchExecutor);
+        Assert.False(patchExecutor.HasUrlTemplateOverride);
+
+        var patchGenerator = resourceRb.Methods.FirstOrDefault(static m =>
+            m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
+        Assert.NotNull(patchGenerator);
+        Assert.False(patchGenerator.HasUrlTemplateOverride);
+    }
 }

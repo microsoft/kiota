@@ -1,6 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
 using kiota.Extension;
@@ -45,23 +43,20 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        string searchTerm = context.ParseResult.GetValueForArgument(SearchTermArgument);
-        string? version0 = context.ParseResult.GetValueForOption(VersionOption);
-        string? outputPath0 = context.ParseResult.GetValueForOption(OutputPathOption);
-        bool cleanOutput = context.ParseResult.GetValueForOption(CleanOutputOption);
-        bool clearCache = context.ParseResult.GetValueForOption(ClearCacheOption);
-        bool disableSSLValidation = context.ParseResult.GetValueForOption(DisableSSLValidationOption);
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        string searchTerm = parseResult.GetValue(SearchTermArgument) ?? string.Empty;
+        string? version0 = parseResult.GetValue(VersionOption);
+        string? outputPath0 = parseResult.GetValue(OutputPathOption);
+        bool cleanOutput = parseResult.GetValue(CleanOutputOption);
+        bool clearCache = parseResult.GetValue(ClearCacheOption);
+        bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, version0, outputPath0, cleanOutput, clearCache, disableSSLValidation,
@@ -86,7 +81,7 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
 
         Configuration.Search.ClearCache = Configuration.Download.ClearCache;
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaSearcher>(parseResult);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
@@ -121,7 +116,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
     private async Task<int> SaveResultsAsync(string searchTerm, string version, IDictionary<string, SearchResult> results, ILogger logger, CancellationToken cancellationToken)
     {
         if (!results.Any())
+        {
             DisplayError("No matching result found, use the search command to find the right key");
+            return 1;
+        }
         else if (results.Any() && !string.IsNullOrEmpty(searchTerm) && searchTerm.Contains(KiotaSearcher.ProviderSeparator) && results.ContainsKey(searchTerm))
         {
             var (path, statusCode) = await SaveResultAsync(results.First(), logger, cancellationToken);
@@ -134,9 +132,10 @@ internal class KiotaDownloadCommandHandler : BaseKiotaCommandHandler
             return statusCode;
         }
         else
+        {
             DisplayError("Multiple matches found, use the key to select a specific description. You can find the key by using the search command.");
-
-        return 0;
+            return 1;
+        }
     }
     private async Task<(string, int)> SaveResultAsync(KeyValuePair<string, SearchResult> result, ILogger logger, CancellationToken cancellationToken)
     {

@@ -30,7 +30,6 @@ paths:
               schema:
                 type: object";
 
-
     public void Dispose()
     {
         _httpClient.Dispose();
@@ -48,7 +47,7 @@ paths:
 
         using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         //There should be a log entry for the no server rule
@@ -69,13 +68,58 @@ paths:
 
         using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         //There should be no log entry for the no server rule
         var logEntryForNoServerRule = fakeLogger.LogEntries
             .Where(l => l.message.StartsWith("OpenAPI warning: #/ - A servers entry (v3) or host + basePath + schemes properties (v2) was not present in the OpenAPI description"));
         Assert.Empty(logEntryForNoServerRule);
+    }
+
+    [Fact]
+    public async Task GetDocumentFromStreamAsync_LogsSpecificationPathWhenParsingThrows()
+    {
+        const string brokenDocument = """
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Repro API",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "ItemStatus": {
+        "type": "string",
+        "enum": [
+          "Active",
+          "Archived"
+        ],
+        "x-ms-enum-flags": []
+      }
+    }
+  }
+}
+""";
+
+        var generationConfig = new GenerationConfiguration
+        {
+            OpenAPIFilePath = "repro-broken.json"
+        };
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+        using var inputDocumentStream = CreateMemoryStreamFromString(brokenDocument);
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken));
+
+        var parsingLogEntry = fakeLogger.LogEntries
+            .Where(l => l.message.Contains("Error parsing specification", StringComparison.OrdinalIgnoreCase));
+
+        var logEntry = Assert.Single(parsingLogEntry);
+        Assert.Contains("repro-broken.json", logEntry.message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -89,7 +133,7 @@ paths:
 
         using var inputDocumentStream = CreateMemoryStreamFromString(DocumentContentWithNoServer);
         var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
-        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
         //There should be no log entry for the no server rule

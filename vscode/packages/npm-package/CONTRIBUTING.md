@@ -6,7 +6,7 @@ Thanks for your interest in contributing to Kiota npm package! We welcome contri
 
 To get started, you'll need to have the following tools installed:
 
-- [.NET SDK 9.0](https://get.dot.net/9)
+- [.NET SDK 10.0](https://get.dot.net/10)
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [Node.js](https://nodejs.org/en/download/) (LTS version)
 
@@ -24,7 +24,7 @@ Context: you're a developer working on the extension, and you want to run tests 
 
 ```sh
 dotnet restore ../../src/kiota
-dotnet publish ../../src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net9.0 -c Debug -r <rid> -o ./vscode/npm-package/.kiotabin/0.0.1/<rid>/
+dotnet publish ../../src/kiota/kiota.csproj -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained -f net10.0 -c Debug -r <rid> -o ./vscode/npm-package/.kiotabin/0.0.1/<rid>/
 ```
 
 where rid is one of `win-x64|linux-x64|osx-x64`.
@@ -37,5 +37,7 @@ This will create a folder in `vscode/npm-package/.kiotabin/0.0.1/<rid>/` with th
 npm test
 ```
 
-### Debugging the Kiota npm package 
+ 
+### Debugging the Kiota npm package
+
 See [Debugging the package](https://github.com/microsoft/kiota/blob/main/vscode/npm-package/debugging.md)

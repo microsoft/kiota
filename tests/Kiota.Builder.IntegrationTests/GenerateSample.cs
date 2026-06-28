@@ -42,6 +42,7 @@ public sealed class GenerateSample : IDisposable
             OpenAPIFilePath = GetAbsolutePath("ToDoApi.yaml"),
             OutputPath = $".\\Generated\\Todo\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -70,6 +71,7 @@ public sealed class GenerateSample : IDisposable
             OpenAPIFilePath = GetAbsolutePath("ModelWithDictionary.yaml"),
             OutputPath = $".\\Generated\\ModelWithDictionary\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -98,6 +100,7 @@ public sealed class GenerateSample : IDisposable
             OpenAPIFilePath = GetAbsolutePath("ResponseWithMultipleReturnFormats.yaml"),
             OutputPath = $".\\Generated\\ResponseWithMultipleReturnFormats\\{language}{backingStoreSuffix}",
             UsesBackingStore = backingStore,
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -121,6 +124,7 @@ public sealed class GenerateSample : IDisposable
             Language = language,
             OpenAPIFilePath = GetAbsolutePath("InheritingErrors.yaml"),
             OutputPath = $".\\Generated\\ErrorInlineParents\\{language}",
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -144,6 +148,7 @@ public sealed class GenerateSample : IDisposable
             Language = language,
             OpenAPIFilePath = GetAbsolutePath("EnumHandling.yaml"),
             OutputPath = $".\\Generated\\EnumHandling\\{language}",
+            CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
     }
@@ -168,7 +173,7 @@ public sealed class GenerateSample : IDisposable
         var fullText = "";
         foreach (var file in Directory.GetFiles(OutputPath, "*.*", SearchOption.AllDirectories))
         {
-            fullText += await File.ReadAllTextAsync(file);
+            fullText += await File.ReadAllTextAsync(file, cancellationToken: TestContext.Current.CancellationToken);
         }
 
         Assert.Empty(Directory.GetFiles(OutputPath, "*_*", SearchOption.AllDirectories));
@@ -214,7 +219,7 @@ public sealed class GenerateSample : IDisposable
                 Assert.Contains("'EndDateTime' : endDateTime", fullText);
                 break;
             case GenerationLanguage.Go:
-                Assert.Contains("`uriparametername:\"startDateTime\"`", fullText);
+                Assert.Contains("uriparametername:\\\"startDateTime\\\"", fullText);
                 break;
             case GenerationLanguage.Java:
                 Assert.Contains("allQueryParams.put(\"EndDateTime\", endDateTime)", fullText);

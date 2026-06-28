@@ -30,7 +30,7 @@ public class PhpLanguageRefinerTests
                 Name = "string"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("breaks", requestBuilder.Name);
         Assert.Equal("userRequestBuilder", model.Name);
     }
@@ -46,7 +46,7 @@ public class PhpLanguageRefinerTests
         }).First();
         var option = new CodeEnumOption { Name = input, SerializationName = input };
         model.AddOption(option);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(input, model.Options.First().Name);
     }
@@ -70,7 +70,7 @@ public class PhpLanguageRefinerTests
             }
         }).First();
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("EscapedContinue", property.Name);
     }
 
@@ -90,7 +90,7 @@ public class PhpLanguageRefinerTests
                 Name = "binary"
             }
         }).First();
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("StreamInterface", method.ReturnType.Name);
     }
 
@@ -107,7 +107,7 @@ public class PhpLanguageRefinerTests
             Name = "rb",
             Kind = CodeClassKind.RequestBuilder,
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(model.StartBlock.Usings);
     }
 
@@ -148,7 +148,7 @@ public class PhpLanguageRefinerTests
             },
             Kind = CodeMethodKind.ErrorMessageOverride
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         var declaration = model.StartBlock;
 
@@ -185,7 +185,7 @@ public class PhpLanguageRefinerTests
         apiClientClass.AddMethod(constructor);
 
         root.AddClass(apiClientClass);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP, UsesBackingStore = true }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("BackingStoreFactory", backingStoreParameter.Type.Name);
         Assert.Equal("null", backingStoreParameter.DefaultValue);
     }
@@ -243,7 +243,7 @@ public class PhpLanguageRefinerTests
         };
         Assert.Empty(modelClass.Usings);
         subNamespace.AddClass(securityClass);
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(2, modelClass.Usings.Count());
     }
 
@@ -269,7 +269,7 @@ public class PhpLanguageRefinerTests
             Name = "property",
             Type = composedType
         });
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(root.FindChildByName<CodeClass>("UnionWrapper", false));
     }
 
@@ -295,8 +295,77 @@ public class PhpLanguageRefinerTests
         });
         root.AddClass(parent);
 
-        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(root.FindChildByName<CodeClass>("Union", false) is CodeClass unionTypeWrapper && unionTypeWrapper.OriginalComposedType != null);
         Assert.True(root.FindChildByName<CodeClass>("UnionWrapper", false) is null);
     }
+    #region NameShortening
+    [Fact]
+    public async Task ShortensOversizedNamespaceSegmentsAsync()
+    {
+        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentIdDiscoveredApplicationSegmentIdApplicationIdApplicationId";
+        var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Documentation = new()
+            {
+                DescriptionTemplate = "Test request builder",
+            },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Namespace segment should be shortened
+        foreach (var segment in childNs.Name.Split('.'))
+        {
+            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+        }
+
+        // Class name should be shortened
+        Assert.True(requestBuilderClass.Name.Length <= 64, $"Class name '{requestBuilderClass.Name}' exceeds 64 chars");
+    }
+    [Fact]
+    public async Task ShortenedClassImportsAreConsistentAsync()
+    {
+        // Parent request builder references a child with a long name via method return type
+        var parentNs = root.AddNamespace("ApiSdk.NetworkAccess.Reports");
+        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentId";
+        var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
+
+        var targetClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+
+        var parentClass = parentNs.AddClass(new CodeClass
+        {
+            Name = "ReportsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+
+        var returnType = new CodeType { TypeDefinition = targetClass, IsExternal = false };
+        parentClass.AddMethod(new CodeMethod
+        {
+            Name = "deviceReport",
+            Kind = CodeMethodKind.RequestBuilderWithParameters,
+            ReturnType = returnType,
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Verify imports on the parent class reference the SHORTENED namespace, not the original long one
+        var usings = parentClass.Usings.Where(u => !u.IsExternal && u.Declaration?.TypeDefinition == targetClass).ToArray();
+        foreach (var u in usings)
+        {
+            // CodeUsing.Name should match the (now shortened) namespace
+            var nsSegments = u.Name.Split('.');
+            foreach (var seg in nsSegments)
+            {
+                Assert.True(seg.Length <= 64, $"Using namespace segment '{seg}' exceeds 64 chars — stale pre-shortened name");
+            }
+        }
+    }
+    #endregion
 }

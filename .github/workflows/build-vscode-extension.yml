@@ -40,16 +40,16 @@ jobs:
             os: macOS-latest
     runs-on: ${{ matrix.binaries.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20.x
+          node-version: 22.x
 
-      - name: Use .NET 9
+      - name: Use .NET 10
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "9.x"
+          dotnet-version: "10.0.x"
 
       - id: last_release
         run: |
@@ -64,12 +64,12 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
         working-directory: vscode
 
       - name: Publish kiota for testing - ${{ matrix.binaries.os }} - ${{ matrix.binaries.architecture }}
         run: |
-          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/packages/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }} -f net9.0
+          dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ matrix.binaries.architecture }} -p:PublishSingleFile=true --self-contained --output vscode/packages/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }} -f net10.0
         shell: pwsh
 
       - name: Lint
@@ -98,7 +98,7 @@ jobs:
 
       - name: Run sonar cloud analysis
         if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -107,7 +107,7 @@ jobs:
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.binaries.architecture }}
           path: vscode/packages/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }}
@@ -128,11 +128,11 @@ jobs:
             id: "package"
             item: "tgz"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20.x
+          node-version: 22.x
 
       - id: last_release
         run: |
@@ -146,7 +146,7 @@ jobs:
         shell: pwsh
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
         working-directory: vscode
 
       - run: npm run package:${{ matrix.builds.id }}
@@ -168,7 +168,7 @@ jobs:
         if: matrix.builds.id == 'vscode'
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.builds.name }}
           path: vscode/packages/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}

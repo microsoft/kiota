@@ -37,7 +37,7 @@ public class PythonConventionService : CommonLanguageConventionService
         writer.WriteLine($"{TempDictionaryVarName} = get_path_parameters({pathParametersReference})");
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"{TempDictionaryVarName}[\"{p.Item2}\"] = {p.Item3}"
+                $"{TempDictionaryVarName}[\"{p.Item2.SanitizeDoubleQuote()}\"] = {p.Item3}"
             ));
     }
 
@@ -54,7 +54,7 @@ public class PythonConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         ArgumentNullException.ThrowIfNull(targetElement);
-        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue}";
+        var defaultValueSuffix = string.IsNullOrEmpty(parameter.DefaultValue) ? string.Empty : $" = {parameter.DefaultValue.SanitizeQuotedStringLiteral()}";
         var deprecationInfo = GetDeprecationInformation(parameter);
         var deprecationSuffix = string.IsNullOrEmpty(deprecationInfo) ? string.Empty : $"# {deprecationInfo}";
         return $"{parameter.Name}: {(parameter.Optional ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Optional ? "] = None" : string.Empty)}{defaultValueSuffix}{deprecationSuffix}";
@@ -96,7 +96,13 @@ public class PythonConventionService : CommonLanguageConventionService
         throw new InvalidOperationException($"type of type {code.GetType()} is unknown");
     }
 #pragma warning restore CA1822 // Method should be static
-    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) => originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("\"\"\"", "\\\"\\\"\\\"", StringComparison.OrdinalIgnoreCase);
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase)
+            .Replace("\t", " ", StringComparison.OrdinalIgnoreCase)
+            .Replace("\r", " ", StringComparison.OrdinalIgnoreCase)
+            .Replace("\n", " ", StringComparison.OrdinalIgnoreCase)
+            .Replace("\"\"\"", "\\\"\\\"\\\"", StringComparison.OrdinalIgnoreCase);
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -192,7 +198,11 @@ public class PythonConventionService : CommonLanguageConventionService
             foreach (var additionalRemark in additionalRemarksArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{additionalRemark}");
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{documentation.DocumentationLabel}: {documentation.DocumentationLink}");
+            {
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                writer.WriteLine($"{documentationLabel}: {documentationLink}");
+            }
             writer.WriteLine(DocCommentEnd);
         }
     }
@@ -214,12 +224,12 @@ public class PythonConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!))}{versionComment}{dateComment}{removalComment}";
+        return $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!), normalizationFunc: RemoveInvalidDescriptionCharacters)}{versionComment}{dateComment}{removalComment}";
     }
     internal void WriteDeprecationWarning(IDeprecableElement element, LanguageWriter writer)
     {
         var deprecationMessage = GetDeprecationInformation(element);
         if (!string.IsNullOrEmpty(deprecationMessage))
-            writer.WriteLine($"warn(\"{deprecationMessage}\", DeprecationWarning)");
+            writer.WriteLine($"warn(\"{deprecationMessage.SanitizeDoubleQuote()}\", DeprecationWarning)");
     }
 }

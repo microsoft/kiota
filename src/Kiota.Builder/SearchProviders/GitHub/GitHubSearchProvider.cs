@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Caching;
@@ -15,12 +15,13 @@ using Kiota.Builder.SearchProviders.GitHub.Index;
 using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
+using Microsoft.OpenApi.YamlReader;
 using SharpYaml;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace Kiota.Builder.SearchProviders.GitHub;
 
-public class GitHubSearchProvider : ISearchProvider
+public partial class GitHubSearchProvider : ISearchProvider
 {
     private readonly DocumentCachingProvider documentCachingProvider;
     private readonly ILogger _logger;
@@ -112,7 +113,7 @@ public class GitHubSearchProvider : ISearchProvider
 #pragma warning disable CA2007
             await using var document = await documentCachingProvider.GetDocumentAsync(_blockListUrl, "search", _blockListUrl.GetFileName(), "text/yaml", cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2007
-            var deserialized = deserializeDocumentFromYaml<BlockList>(document);
+            var deserialized = deserializeDocumentFromYaml(document, indexRootContext.BlockList);
             return new Tuple<HashSet<string>, HashSet<string>>(
                 new HashSet<string>(deserialized.Organizations.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase),
                 new HashSet<string>(deserialized.Repositories.Distinct(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase));
@@ -126,19 +127,21 @@ public class GitHubSearchProvider : ISearchProvider
         }
     }
     private const string OpenApiPropertyKey = "X-openapi";
-    private static readonly Lazy<IDeserializer> _deserializer = new(() => new DeserializerBuilder()
-                .WithNamingConvention(new YamlNamingConvention())
-                .IgnoreUnmatchedProperties()
-                .Build());
     private static async Task<IndexRoot?> deserializeDocumentFromJsonAsync(Stream document, CancellationToken cancellationToken) => await JsonSerializer.DeserializeAsync(document, indexRootContext.IndexRoot, cancellationToken).ConfigureAwait(false);
     private static readonly IndexRootJsonContext indexRootContext = new(new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true,
     });
-    private static T deserializeDocumentFromYaml<T>(Stream document)
+    private static T deserializeDocumentFromYaml<T>(Stream document, JsonTypeInfo<T> typeInfo)
     {
         using var reader = new StreamReader(document);
-        return _deserializer.Value.Deserialize<T>(reader);
+        var yamlStream = new YamlStream();
+        yamlStream.Load(reader);
+        var jsonNode = yamlStream is { Documents.Count: > 0 }
+            ? yamlStream.Documents[0].ToJsonNode()
+            : throw new InvalidOperationException("No documents found in the YAML stream.");
+        return JsonSerializer.Deserialize(jsonNode, typeInfo) ??
+            throw new InvalidOperationException("Unable to deserialize the YAML document into the target type.");
     }
     private async Task<IEnumerable<Tuple<string, SearchResult>>> GetSearchResultsFromRepoAsync(GitHubClient.GitHubClient gitHubClient, string? org, string? repo, string fileName, string accept, CancellationToken cancellationToken)
     {
@@ -156,7 +159,7 @@ public class GitHubSearchProvider : ISearchProvider
             var indexFile = accept.ToLowerInvariant() switch
             {
                 "application/json" => await deserializeDocumentFromJsonAsync(document, cancellationToken).ConfigureAwait(false),
-                "text/yaml" => deserializeDocumentFromYaml<IndexRoot>(document),
+                "text/yaml" => deserializeDocumentFromYaml(document, indexRootContext.IndexRoot),
                 _ => throw new InvalidOperationException($"Unsupported accept type {accept}"),
             };
             if (indexFile is null || indexFile.Apis is null)
@@ -180,22 +183,30 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogUnableToFindInformation(fileName, org, repo);
         }
         catch (Exception ex) when (ex is YamlException || ex is JsonException)
         {
 #if DEBUG
-            _logger.LogError(ex, "Error while parsing the file {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogErrorParsingFileError(ex, fileName, org, repo);
 #else
-            _logger.LogInformation("Error while parsing the file {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogErrorParsingFileInformation(fileName, org, repo);
 #endif
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex, "Error while downloading the file {FileName} in {Org}/{Repo}", fileName, org, repo);
+            LogErrorParsingFileError(ex, fileName, org, repo);
         }
         return [];
     }
+    [LoggerMessage(Level = LogLevel.Information, Message = "Unable to find the file {FileName} in {Org}/{Repo}")]
+    private partial void LogUnableToFindInformation(string fileName, string org, string repo);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error while downloading the file {FileName} in {Org}/{Repo}")]
+    private partial void LogErrorDownloadingFileError(Exception ex, string fileName, string org, string repo);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Error while parsing the file {FileName} in {Org}/{Repo}")]
+    private partial void LogErrorParsingFileInformation(string fileName, string org, string repo);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error while parsing the file {FileName} in {Org}/{Repo}")]
+    private partial void LogErrorParsingFileError(Exception ex, string fileName, string org, string repo);
     private async Task GetUrlForRelativeDescriptionsAsync(List<IndexApiEntry> originalResults, GitHubClient.GitHubClient gitHubClient, string org, string repo, CancellationToken cancellationToken)
     {
         var relativeUrlsResults = originalResults.Where(static x => x.Properties.Any(static y => y.Type.Equals(OpenApiPropertyKey, StringComparison.OrdinalIgnoreCase) && !y.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)));
@@ -224,7 +235,7 @@ public class GitHubSearchProvider : ISearchProvider
         }
         catch (BasicError)
         {
-            _logger.LogInformation("Unable to find {FileName} in {Org}/{Repo}", originalUrl, org, repo);
+            LogUnableToFindInformation(originalUrl, org, repo);
         }
         return new Tuple<string, string?>(originalUrl, null);
     }
@@ -239,8 +250,8 @@ public class GitHubSearchProvider : ISearchProvider
             {
                 x.QueryParameters.Q = $"{term} topic:{topic} fork:true";
                 x.QueryParameters.Page = pageNumber;
-                _logger.LogTrace("Page {PageNumber}", x.QueryParameters.Page); // using the property is intentional to avoid trimming
-                _logger.LogTrace("Query: {Query}", x.QueryParameters.Q);
+                LogPageNumberTrace(x.QueryParameters.Page); // using the property is intentional to avoid trimming
+                LogQueryTrace(x.QueryParameters.Q);
             }, cancellationToken).ConfigureAwait(false);
             if (reposPage == null)
                 break;
@@ -251,4 +262,8 @@ public class GitHubSearchProvider : ISearchProvider
         } while (shouldContinue);
         return results;
     }
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Query: {Query}")]
+    private partial void LogQueryTrace(string query);
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Page {PageNumber}")]
+    private partial void LogPageNumberTrace(int? pageNumber);
 }

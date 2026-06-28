@@ -24,9 +24,9 @@ public class DocumentCachingProviderTests
         Assert.Throws<ArgumentNullException>(() => new DocumentCachingProvider(null, mockLogger));
 
         var provider = new DocumentCachingProvider(client, mockLogger);
-        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(null, null, null));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(new Uri("https://localhost"), null, null));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(new Uri("https://localhost"), "foo", null));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(null, null, null, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(new Uri("https://localhost"), null, null, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => provider.GetDocumentAsync(new Uri("https://localhost"), "foo", null, cancellationToken: TestContext.Current.CancellationToken));
     }
     private const string ResponsePayload = @"{
   ""headers"": {
@@ -72,7 +72,7 @@ public class DocumentCachingProviderTests
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
-        await using var result = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json");
+        await using var result = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json", cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(result);
         Assert.Equal(ResponsePayload.Length, result.Length);
     }
@@ -82,9 +82,9 @@ public class DocumentCachingProviderTests
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
-        await using var result1 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json");
+        await using var result1 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json", cancellationToken: TestContext.Current.CancellationToken);
         provider.Duration = TimeSpan.FromMilliseconds(-1);
-        await using var result2 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json");
+        await using var result2 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json", cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(result2);
         Assert.Equal(ResponsePayload.Length, result2.Length);
     }
@@ -94,9 +94,9 @@ public class DocumentCachingProviderTests
         var client = HttpClientInstance.Value; //not disposed on purpose
         var mockLogger = new Mock<ILogger>().Object;
         var provider = new DocumentCachingProvider(client, mockLogger);
-        await using var result1 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json");
+        await using var result1 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json", cancellationToken: TestContext.Current.CancellationToken);
         provider.ClearCache = true;
-        await using var result2 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json");
+        await using var result2 = await provider.GetDocumentAsync(new Uri("https://localhost/foo.json"), "foo", "bar.json", cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(result2);
         Assert.Equal(ResponsePayload.Length, result2.Length);
     }

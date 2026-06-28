@@ -62,7 +62,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(element);
         if (element is not CodeElement codeElement) return false;
         if (!element.Documentation.DescriptionAvailable) return false;
-        var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
+        var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => RemoveInvalidDescriptionCharacters(x.CleanupXMLString()));
         writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
         return true;
     }
@@ -83,11 +83,15 @@ public class CSharpConventionService : CommonLanguageConventionService
             writer.WriteLine($"{DocCommentPrefix}<summary>");
             if (documentation.DescriptionAvailable)
             {
-                var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => x.CleanupXMLString());
+                var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => RemoveInvalidDescriptionCharacters(x.CleanupXMLString()));
                 writer.WriteLine($"{DocCommentPrefix}{description}");
             }
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}{documentation.DocumentationLabel} <see href=\"{documentation.DocumentationLink}\" />");
+            {
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel.CleanupXMLString());
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString().CleanupXMLString() ?? string.Empty);
+                writer.WriteLine($"{DocCommentPrefix}{documentationLabel} <see href=\"{documentationLink}\" />");
+            }
             writer.WriteLine($"{DocCommentPrefix}</summary>");
             return true;
         }
@@ -136,7 +140,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }
-                return $"{nullCheck}{varName}.Add(\"{name}\", {identName});";
+                return $"{nullCheck}{varName}.Add(\"{name.SanitizeDoubleQuote()}\", {identName});";
             }).ToArray());
         }
     }
@@ -173,6 +177,14 @@ public class CSharpConventionService : CommonLanguageConventionService
                 yield return childNsSegment;
         }
     }
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\u0085", string.Empty, StringComparison.Ordinal) // NEXT LINE
+            .Replace("\u2028", string.Empty, StringComparison.Ordinal) // LINE SEPARATOR
+            .Replace("\u2029", string.Empty, StringComparison.Ordinal) // PARAGRAPH SEPARATOR
+            .Replace("\t", " ", StringComparison.Ordinal);
     public string GetTypeStringForDocumentation(CodeTypeBase code, CodeElement targetElement)
     {
         var typeString = GetTypeString(code, targetElement, true, false);// dont include nullable markers
@@ -244,9 +256,10 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
         var defaultValue = parameter switch
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {sanitizedDefaultValue}",
             _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
             _ when parameter.Optional => " = default",
             _ => string.Empty,
@@ -260,7 +273,8 @@ public class CSharpConventionService : CommonLanguageConventionService
         var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {element.Deprecation.Version}";
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
-        return $"[Obsolete(\"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).Split('.', StringSplitOptions.TrimEntries)[^1])}{versionComment}{dateComment}{removalComment}\")]";
+        var deprecationMessage = $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).Split('.', StringSplitOptions.TrimEntries)[^1])}{versionComment}{dateComment}{removalComment}";
+        return $"[Obsolete(\"{deprecationMessage.SanitizeDoubleQuote()}\")]";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {

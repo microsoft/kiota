@@ -1,5 +1,4 @@
-﻿using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
+﻿using System.CommandLine;
 using System.Diagnostics;
 using kiota.Extension;
 using kiota.Telemetry;
@@ -16,17 +15,14 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         new(TelemetryLabels.TagCommandName, "logout-github"),
         new(TelemetryLabels.TagCommandRevision, 1)
     ];
-    public override async Task<int> InvokeAsync(InvocationContext context)
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
         Stopwatch? stopwatch = Stopwatch.StartNew();
         var startTime = DateTimeOffset.UtcNow;
         // Get options
-        var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
-        CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
-
-        var host = context.GetHost();
-        var instrumentation = host.Services.GetService<Instrumentation>();
+        var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
+        var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, logLevel, out var tags);
@@ -41,7 +37,7 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
         var tl = new TagList(_commonTags.AsSpan()).AddAll(tags.OrEmpty());
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
-        var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(context);
+        var (loggerFactory, logger) = GetLoggerAndFactory<TempFolderCachingAccessTokenProvider>(parseResult);
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
