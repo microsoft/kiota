@@ -33,7 +33,8 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
                                     .Where(static x => x.Declaration != null && x.Declaration.IsExternal)
                                     .Select(static x => new Tuple<string, string>(x.Name.StartsWith('*') ? x.Name[1..] : x.Declaration!.Name.GetNamespaceImportSymbol(), x.Declaration!.Name))
                                     .Distinct())
-                                .OrderBy(static x => x.Item2) // Item1: import alias, Item2: import path
+                                .OrderBy(static x => x.Item2, StringComparer.Ordinal) // Item2: import path
+                                .ThenBy(static x => x.Item1, StringComparer.Ordinal) // Item1: import alias
                                 .ToList();
             if (importSegments.Count != 0)
             {

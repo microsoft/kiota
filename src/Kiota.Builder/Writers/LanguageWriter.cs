@@ -17,10 +17,10 @@ using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers;
 
-public abstract class LanguageWriter(string indentationChar = " ", int indentSize = 4)
+public abstract class LanguageWriter(string indentationChar = " ", int indentationSize = 4)
 {
     private TextWriter? writer;
-    private readonly int indentSize = indentSize;
+    private readonly int indentSize = indentationSize;
     private readonly string indentString = string.Concat(Enumerable.Repeat(indentationChar, 1000));
     private int currentIndent;
 
