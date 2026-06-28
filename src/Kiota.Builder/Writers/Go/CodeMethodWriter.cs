@@ -474,6 +474,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var returnTypeString = (code, finalReturnType, errorDeclaration) switch
         {
             _ when code.IsAsync && !string.IsNullOrEmpty(finalReturnType) => $"({finalReturnType}, error)",
+            _ when code.IsAsync && string.IsNullOrEmpty(finalReturnType) => "error",
             _ when !string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => $"({finalReturnType}, {errorDeclaration})",
             _ when string.IsNullOrEmpty(finalReturnType) && !string.IsNullOrEmpty(errorDeclaration) => errorDeclaration,
             _ when !string.IsNullOrEmpty(finalReturnType) && string.IsNullOrEmpty(errorDeclaration) => finalReturnType,
