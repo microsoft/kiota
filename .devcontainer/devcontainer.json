@@ -56,7 +56,7 @@
   "remoteUser": "vscode",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers-contrib/features/gradle-sdkman:2": {},
+    "ghcr.io/devcontainers-extra/features/gradle-sdkman:2": {},
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/go:1": {},
     "ghcr.io/devcontainers/features/java:1": {},
