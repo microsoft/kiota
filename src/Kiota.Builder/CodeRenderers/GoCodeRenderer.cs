@@ -40,8 +40,8 @@ public class GoCodeRenderer : CodeRenderer
 
 #pragma warning disable CA2007
         await using var stream = new FileStream(outputFile, FileMode.Create);
-#pragma warning restore CA2007
         await using var fileWriter = new StreamWriter(stream, new UTF8Encoding(false), 1024, leaveOpen: true);
+#pragma warning restore CA2007
         await fileWriter.WriteAsync(formatted.AsMemory(), cancellationToken).ConfigureAwait(false);
         if (!cancellationToken.IsCancellationRequested)
             await fileWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
