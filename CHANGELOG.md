@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: remove trailing spaces on comments
 - golang: fix import ordering
 - golang: correctly indent case statements inside a switch
+- golang: remove the space before the parameter list of anonymous deserializer functions
+- golang: align consecutive struct and const fields into columns to match gofmt
+- golang: keep a single blank line between top-level declarations and strip trailing whitespace so that `go fmt` on the generated code is a no-op
 
 ## [1.32.4] - 2026-06-26
 

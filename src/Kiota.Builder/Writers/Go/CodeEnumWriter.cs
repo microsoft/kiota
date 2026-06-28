@@ -109,7 +109,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine("switch str {");
             foreach (var item in enumOptions)
             {
-                writer.StartBlock($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
+                writer.WriteLine($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"result |= {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
@@ -127,12 +127,13 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.WriteLine("switch v {");
             foreach (var item in enumOptions)
             {
-                writer.StartBlock($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
+                writer.WriteLine($"case \"{item.WireName.SanitizeDoubleQuote()}\":");
                 writer.IncreaseIndent();
                 writer.WriteLine($"result = {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}");
                 writer.DecreaseIndent();
             }
-            writer.StartBlock("default:");
+            writer.WriteLine("default:");
+            writer.IncreaseIndent();
             writer.WriteLine("return nil, nil");
             writer.DecreaseIndent();
             writer.WriteLine("}");
