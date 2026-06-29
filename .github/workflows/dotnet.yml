@@ -25,7 +25,7 @@ jobs:
           dotnet-version: 10.0.x
       - name: Setup Go
         # required so the integration tests can run gofmt against the generated Go code
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: stable
       - name: Restore dependencies
