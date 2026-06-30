@@ -1,10 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using kiota.Rpc;
+using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Microsoft.OpenApi;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
@@ -142,6 +146,74 @@ paths:
         Assert.Empty(logEntryForNoServerRule);
     }
 
+    [Fact]
+    public async Task DoesNotLoadExternalReferencesByDefault()
+    {
+        var generationConfig = new GenerationConfiguration
+        {
+            OpenAPIFilePath = "https://example.com/openapi.yaml",
+        };
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+        using var inputDocumentStream = CreateMemoryStreamFromString("""
+openapi: 3.0.0
+info:
+  title: External refs
+  version: 0.0.0
+paths: {}
+components:
+  schemas:
+    Pet:
+      $ref: 'https://contoso.com/schemas/pet.yaml#/components/schemas/Pet'
+""");
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsLoadMatchingReferences()
+    {
+        var generationConfig = new GenerationConfiguration
+        {
+            OpenAPIFilePath = "https://example.com/openapi.yaml",
+            AllowedExternalOrigins = ["https://contoso.com/schemas/*"],
+        };
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+        using var inputDocumentStream = CreateMemoryStreamFromString("""
+openapi: 3.0.0
+info:
+  title: External refs
+  version: 0.0.0
+paths: {}
+components:
+  schemas:
+    Pet:
+      $ref: 'https://contoso.com/schemas/pet.yaml#/components/schemas/Pet'
+""");
+        using var httpClient = new HttpClient(new ResponseHandler());
+        var documentDownloadService = new OpenApiDocumentDownloadService(httpClient, fakeLogger);
+
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(document);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderImplementsOpenApiLoader()
+    {
+        using var httpClient = new HttpClient(new ResponseHandler());
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(stream);
+    }
+
     private static Stream CreateMemoryStreamFromString(string s)
     {
         var stream = new MemoryStream();
@@ -150,5 +222,26 @@ paths:
         writer.Flush();
         stream.Position = 0;
         return stream;
+    }
+
+    private sealed class ResponseHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+openapi: 3.0.0
+info:
+  title: External ref
+  version: 0.0.0
+paths: {}
+components:
+  schemas:
+    Pet:
+      type: object
+"""),
+            });
+        }
     }
 }

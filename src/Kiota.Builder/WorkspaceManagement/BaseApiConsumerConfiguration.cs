@@ -21,6 +21,7 @@ public abstract class BaseApiConsumerConfiguration
         DescriptionLocation = config.OpenAPIFilePath;
         IncludePatterns = new HashSet<string>(config.IncludePatterns, StringComparer.OrdinalIgnoreCase);
         ExcludePatterns = new HashSet<string>(config.ExcludePatterns, StringComparer.OrdinalIgnoreCase);
+        AllowedExternalOrigins = new HashSet<string>(config.AllowedExternalOrigins, StringComparer.OrdinalIgnoreCase);
         OutputPath = config.OutputPath;
     }
     /// <summary>
@@ -35,6 +36,10 @@ public abstract class BaseApiConsumerConfiguration
     /// The path patterns for API endpoints to exclude for this client.
     /// </summary>
     public HashSet<string> ExcludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// The external origins that can be loaded while resolving references from the OpenAPI description.
+    /// </summary>
+    public HashSet<string> AllowedExternalOrigins { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// The output path for the generated code, related to the configuration file.
     /// </summary>
@@ -56,6 +61,7 @@ public abstract class BaseApiConsumerConfiguration
         target.DescriptionLocation = DescriptionLocation;
         target.IncludePatterns = new HashSet<string>(IncludePatterns, StringComparer.OrdinalIgnoreCase);
         target.ExcludePatterns = new HashSet<string>(ExcludePatterns, StringComparer.OrdinalIgnoreCase);
+        target.AllowedExternalOrigins = new HashSet<string>(AllowedExternalOrigins, StringComparer.OrdinalIgnoreCase);
     }
     protected void UpdateGenerationConfigurationFromBase(GenerationConfiguration config, string clientName, IList<RequestInfo>? requests)
     {
@@ -63,6 +69,7 @@ public abstract class BaseApiConsumerConfiguration
         ArgumentException.ThrowIfNullOrEmpty(clientName);
         config.IncludePatterns = IncludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.ExcludePatterns = ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        config.AllowedExternalOrigins = AllowedExternalOrigins.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.OpenAPIFilePath = DescriptionLocation;
         config.OutputPath = OutputPath;
         config.ClientClassName = clientName;

@@ -50,6 +50,10 @@ internal class
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
@@ -64,6 +68,7 @@ internal class
         string? version0 = parseResult.GetValue(VersionOption);
         bool json = parseResult.GetValue(JsonOption);
         DependencyType[]? dependencyTypes0 = parseResult.GetValue(DependencyTypesOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         GenerationLanguage? language = parseResult.GetValue(GenerationLanguage);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
@@ -111,6 +116,7 @@ internal class
             Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ClearCache = clearCache;
             Configuration.Generation.Language = language.Value;
+            AssignAllowedExternalOrigins(allowedExternalOrigins);
 
             var instructions = Configuration.Languages;
             if (!string.IsNullOrEmpty(openapi))

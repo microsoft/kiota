@@ -28,6 +28,7 @@ public class LockManagementServiceTests
             ClientClassName = "foo",
             ClientNamespaceName = "bar",
             DescriptionLocation = descriptionPath,
+            AllowedExternalOrigins = ["https://contoso.com/*"],
         };
         var path = Path.GetTempPath();
         await lockManagementService.WriteLockFileAsync(path, lockFile, cancellationToken: TestContext.Current.CancellationToken);

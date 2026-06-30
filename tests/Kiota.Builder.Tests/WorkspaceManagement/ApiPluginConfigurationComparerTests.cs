@@ -21,6 +21,9 @@ public class ApiPluginConfigurationComparerTests
     {
         Assert.True(_comparer.Equals(new(), new()));
         Assert.True(_comparer.Equals(new() { Types = ["a", "b", "c"] }, new() { Types = ["a", "b", "c"] }));
+        Assert.False(_comparer.Equals(
+            new() { AllowedExternalOrigins = ["https://contoso.com/*"] },
+            new() { AllowedExternalOrigins = ["https://example.com/*"] }));
     }
     [Fact]
     public void GetsHashCode()

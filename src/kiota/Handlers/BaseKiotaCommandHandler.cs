@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using kiota.Authentication.GitHub.DeviceCode;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Logging;
 using Kiota.Builder.SearchProviders.GitHub.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -164,6 +165,13 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
     {
         if (!string.IsNullOrEmpty(input))
             assignment.Invoke(Configuration.Generation, input);
+    }
+    protected void AssignAllowedExternalOrigins(List<string>? allowedExternalOrigins)
+    {
+        if (allowedExternalOrigins is { Count: > 0 })
+            Configuration.Generation.AllowedExternalOrigins = allowedExternalOrigins
+                .Select(static x => x.TrimQuotes())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
     protected static string NormalizeSlashesInPath(string path)
     {

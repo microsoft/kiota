@@ -54,6 +54,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
@@ -70,6 +74,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
         List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -118,6 +123,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ApiManifestPath = manifest;
             Configuration.Generation.IncludePatterns = [.. includePatterns];
             Configuration.Generation.ExcludePatterns = [.. excludePatterns];
+            AssignAllowedExternalOrigins(allowedExternalOrigins);
             Configuration.Generation.ClearCache = clearCache;
             try
             {

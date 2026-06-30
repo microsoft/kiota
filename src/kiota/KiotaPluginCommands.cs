@@ -90,6 +90,7 @@ public static class KiotaPluginCommands
         var pluginType = GetPluginTypeOption();
         var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
         var pluginAuthRefIdOption = GetPluginAuthenticationReferenceIdOption();
+        var allowedExternalOriginsOption = KiotaHost.GetAllowedExternalOriginsOption(defaultConfiguration.AllowedExternalOrigins);
         var command = new Command("add", "Adds a new plugin to the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -102,6 +103,7 @@ public static class KiotaPluginCommands
             pluginAuthTypeOption,
             pluginAuthRefIdOption,
             noWorkspaceOption,
+            allowedExternalOriginsOption,
             //TODO overlay when we have support for it in OAI.net
         };
         command.Validators.Add(commandResult =>
@@ -121,6 +123,7 @@ public static class KiotaPluginCommands
             SkipGenerationOption = skipGenerationOption,
             LogLevelOption = logLevelOption,
             NoWorkspaceOption = noWorkspaceOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
@@ -136,6 +139,7 @@ public static class KiotaPluginCommands
         var pluginTypes = GetPluginTypeOption(false);
         var pluginAuthTypeOption = GetPluginAuthenticationTypeOption();
         var pluginAuthRefIdOption = GetPluginAuthenticationReferenceIdOption();
+        var allowedExternalOriginsOption = KiotaHost.GetAllowedExternalOriginsOption([]);
         var command = new Command("edit", "Edits a plugin configuration and updates the Kiota configuration"){
             descriptionOption,
             includePatterns,
@@ -147,6 +151,7 @@ public static class KiotaPluginCommands
             pluginTypes,
             pluginAuthTypeOption,
             pluginAuthRefIdOption,
+            allowedExternalOriginsOption,
             //TODO overlay when we have support for it in OAI.net
         };
         command.Validators.Add(commandResult =>
@@ -165,6 +170,7 @@ public static class KiotaPluginCommands
             ExcludePatternsOption = excludePatterns,
             SkipGenerationOption = skipGenerationOption,
             LogLevelOption = logLevelOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
@@ -194,17 +200,20 @@ public static class KiotaPluginCommands
         var pluginNameOption = GetPluginNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var refreshOption = KiotaClientCommands.GetRefreshOption();
+        var allowedExternalOriginsOption = KiotaHost.GetAllowedExternalOriginsOption([]);
         var command = new Command("generate", "Generates one or all plugin from the Kiota configuration")
         {
             pluginNameOption,
             logLevelOption,
             refreshOption,
+            allowedExternalOriginsOption,
         };
         command.Action = new GenerateHandler
         {
             ClassOption = pluginNameOption,
             LogLevelOption = logLevelOption,
             RefreshOption = refreshOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
