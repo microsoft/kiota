@@ -1174,7 +1174,7 @@ public partial class KiotaBuilder
     }
     private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
-    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom, bool isRequired = false)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
@@ -1200,7 +1200,8 @@ public partial class KiotaBuilder
                                         propertySchema is { Extensions: not null } &&
                                         propertySchema.Extensions.TryGetValue(OpenApiPrimaryErrorMessageExtension.Name, out var openApiExtension) &&
                                         openApiExtension is OpenApiPrimaryErrorMessageExtension primaryErrorMessageExtension &&
-                                        primaryErrorMessageExtension.IsPrimaryErrorMessage
+                                        primaryErrorMessageExtension.IsPrimaryErrorMessage,
+            IsRequired = isRequired,
         };
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
@@ -2434,7 +2435,7 @@ public partial class KiotaBuilder
                             LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                             return null;
                         }
-                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition, isRequired: schema.Required?.Contains(x.Key) ?? false);
                     })
                     .OfType<CodeProperty>()
                     .ToArray() ?? [];
