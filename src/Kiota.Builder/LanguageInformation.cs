@@ -40,7 +40,6 @@ public record LanguageInformation : IOpenApiSerializable
         writer.WriteStartObject();
         writer.WriteProperty(nameof(MaturityLevel).ToFirstCharacterLowerCase(), MaturityLevel.ToString());
         writer.WriteProperty(nameof(SupportExperience).ToFirstCharacterLowerCase(), SupportExperience.ToString());
-        writer.WriteProperty(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), DependencyInstallCommand);
         writer.WriteOptionalCollection(nameof(Dependencies).ToFirstCharacterLowerCase(), Dependencies, callback);
         writer.WriteProperty(nameof(ClientClassName).ToFirstCharacterLowerCase(), ClientClassName);
         writer.WriteProperty(nameof(ClientNamespaceName).ToFirstCharacterLowerCase(), ClientNamespaceName);
@@ -58,10 +57,6 @@ public record LanguageInformation : IOpenApiSerializable
             foreach (var entry in arrayValue)
                 if (entry is not null)
                     extension.Dependencies.Add(LanguageDependency.Parse(entry));
-        }
-        if (rawObject.TryGetPropertyValue(nameof(DependencyInstallCommand).ToFirstCharacterLowerCase(), out var installCommand) && installCommand is JsonValue stringValue)
-        {
-            extension.DependencyInstallCommand = stringValue.GetValue<string>();
         }
         // not parsing the maturity level on purpose, we don't want APIs to be able to change that
         if (rawObject.TryGetPropertyValue(nameof(ClientClassName).ToFirstCharacterLowerCase(), out var clientClassName) && clientClassName is JsonValue clientClassNameValue)

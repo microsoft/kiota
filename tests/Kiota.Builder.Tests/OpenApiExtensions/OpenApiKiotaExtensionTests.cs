@@ -10,6 +10,22 @@ namespace Kiota.Builder.Tests.OpenApiExtensions;
 public class OpenApiKiotaExtensionTests
 {
     [Fact]
+    public void DoesNotSerializeLanguageInformationDependencyInstallCommand()
+    {
+        var value = new LanguageInformation
+        {
+            DependencyInstallCommand = "dotnet add package",
+        };
+        using var sWriter = new StringWriter();
+        OpenApiJsonWriter writer = new(sWriter, new OpenApiJsonWriterSettings { Terse = true });
+
+        value.SerializeAsV3(writer);
+
+        // Dependency install commands from the OpenAPI description extension are untrusted and must never be emitted.
+        Assert.DoesNotContain("dependencyInstallCommand", sWriter.ToString());
+    }
+
+    [Fact]
     public void Serializes()
     {
         var value = new OpenApiKiotaExtension
@@ -44,7 +60,7 @@ public class OpenApiKiotaExtensionTests
 
         value.Write(writer, OpenApiSpecVersion.OpenApi3_0);
         var result = sWriter.ToString();
-        Assert.Equal("{\"languagesInformation\":{\"CSharp\":{\"maturityLevel\":\"Preview\",\"supportExperience\":\"Microsoft\",\"dependencyInstallCommand\":\"dotnet add package\",\"dependencies\":[{\"name\":\"Microsoft.Graph.Core\",\"version\":\"1.0.0\",\"type\":\"Bundle\"}],\"clientClassName\":\"GraphServiceClient\",\"clientNamespaceName\":\"Microsoft.Graph\",\"structuredMimeTypes\":[\"application/json\",\"application/xml\"]}}}", result);
+        Assert.Equal("{\"languagesInformation\":{\"CSharp\":{\"maturityLevel\":\"Preview\",\"supportExperience\":\"Microsoft\",\"dependencies\":[{\"name\":\"Microsoft.Graph.Core\",\"version\":\"1.0.0\",\"type\":\"Bundle\"}],\"clientClassName\":\"GraphServiceClient\",\"clientNamespaceName\":\"Microsoft.Graph\",\"structuredMimeTypes\":[\"application/json\",\"application/xml\"]}}}", result);
     }
     [Fact]
     public void Parses()
@@ -79,7 +95,8 @@ public class OpenApiKiotaExtensionTests
         var value = OpenApiKiotaExtension.Parse(oaiValue);
         Assert.NotNull(value);
         Assert.True(value.LanguagesInformation.TryGetValue("CSharp", out var CSEntry));
-        Assert.Equal("dotnet add package", CSEntry.DependencyInstallCommand);
+        // Dependency install commands from the OpenAPI description extension are untrusted and must never be read.
+        Assert.Empty(CSEntry.DependencyInstallCommand);
         Assert.Equal(LanguageMaturityLevel.Preview, CSEntry.MaturityLevel);
         Assert.Equal(SupportExperience.Microsoft, CSEntry.SupportExperience);
         Assert.Equal("GraphServiceClient", CSEntry.ClientClassName);

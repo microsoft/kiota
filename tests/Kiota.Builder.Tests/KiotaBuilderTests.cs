@@ -1299,7 +1299,8 @@ servers:
         Assert.NotNull(extensionResult);
         Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
         Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
-        Assert.Equal("dotnet add {0} {1}", csharpInfo.DependencyInstallCommand);
+        // ignored for security reasons
+        Assert.Empty(csharpInfo.DependencyInstallCommand);
         Assert.Single(csharpInfo.Dependencies);
         Assert.Equal("Microsoft.Graph.Core", csharpInfo.Dependencies.First().Name);
         Assert.Equal("3.0.0", csharpInfo.Dependencies.First().Version);
