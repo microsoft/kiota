@@ -1340,6 +1340,31 @@ servers:
         _tempFiles.Add(tempFilePath);
     }
     [Fact]
+    public async Task SanitizesGenerationConfigurationFromKiotaExtensionAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+x-ms-kiota-info:
+  languagesInformation:
+    CSharp:
+      clientClassName: '/abs/path/Pwn { } public class INJECTED'
+      clientNamespaceName: '../Microsoft.Graph""/{/;'
+servers:
+  - url: https://graph.microsoft.com/v1.0", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
+        var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
+        Assert.NotNull(treeNode);
+        Assert.Equal("abspathPwnpublicclassINJECTED", configuration.ClientClassName);
+        Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
+        _tempFiles.Add(tempFilePath);
+    }
+    [Fact]
     public async Task DoesntFailOnEmptyKiotaExtensionAsync()
     {
         var tempFilePath = Path.GetTempFileName();
