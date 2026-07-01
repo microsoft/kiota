@@ -63,4 +63,27 @@ public class GenerationConfigurationTests
         Assert.Equal("foo/bar", apiDependency.Requests[0].UriTemplate);
         Assert.Equal("GET", apiDependency.Requests[0].Method);
     }
+
+    [Theory]
+    [InlineData("/abs/path/PWNED", "abspathPWNED")]
+    [InlineData("\\abs\\path\\PWNED", "abspathPWNED")]
+    [InlineData("..\\PWNED", "PWNED")]
+    [InlineData("Pwn { } public class INJECTED", "PwnpublicclassINJECTED")]
+    [InlineData("\"/{/;", "ApiClient")]
+    [InlineData("1Graph", "Graph")]
+    public void SanitizesClientClassName(string clientClassName, string expected)
+    {
+        Assert.Equal(expected, GenerationConfiguration.SanitizeClientClassName(clientClassName));
+    }
+
+    [Theory]
+    [InlineData("/abs/path/PWNED", "abspathPWNED")]
+    [InlineData("C:\\temp\\Evil", "CtempEvil")]
+    [InlineData("..Microsoft..Graph", "Microsoft.Graph")]
+    [InlineData("Microsoft.Graph\"/{/;", "Microsoft.Graph")]
+    [InlineData("...", "ApiSdk")]
+    public void SanitizesClientNamespaceName(string clientNamespaceName, string expected)
+    {
+        Assert.Equal(expected, GenerationConfiguration.SanitizeClientNamespaceName(clientNamespaceName));
+    }
 }
