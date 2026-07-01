@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using kiota;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
