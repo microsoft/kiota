@@ -21,12 +21,14 @@ public class WorkspaceConfigurationStorageService
     {
         get; private set;
     }
+    private readonly string workspaceDirectory;
     private readonly string targetConfigurationFilePath;
     private readonly string targetManifestFilePath;
     private readonly ManifestManagementService manifestManagementService = new();
     public WorkspaceConfigurationStorageService(string targetDirectory)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
+        workspaceDirectory = Path.GetFullPath(targetDirectory);
         TargetDirectory = Path.Combine(targetDirectory, KiotaDirectorySegment);
         targetConfigurationFilePath = Path.Combine(TargetDirectory, ConfigurationFileName);
         targetManifestFilePath = Path.Combine(TargetDirectory, ManifestFileName);
@@ -84,6 +86,7 @@ public class WorkspaceConfigurationStorageService
                 await using var configStream = File.OpenRead(targetConfigurationFilePath);
 #pragma warning restore CA2007
                 var config = await JsonSerializer.DeserializeAsync(configStream, context.WorkspaceConfiguration, cancellationToken).ConfigureAwait(false);
+                ValidateConsumerOutputPaths(config);
                 if (File.Exists(targetManifestFilePath))
                     using (await localFilesLock.LockAsync(targetManifestFilePath, cancellationToken).ConfigureAwait(false))
                     {
@@ -100,6 +103,29 @@ public class WorkspaceConfigurationStorageService
                 return (config, null);
             }
         return (null, null);
+    }
+    private void ValidateConsumerOutputPaths(WorkspaceConfiguration? configuration)
+    {
+        if (configuration is null)
+            return;
+        foreach (var client in configuration.Clients)
+            try
+            {
+                BaseApiConsumerConfiguration.ValidateOutputPath(client.Value.OutputPath, workspaceDirectory);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"The client {client.Key} has an invalid output path: {ex.Message}", ex);
+            }
+        foreach (var plugin in configuration.Plugins)
+            try
+            {
+                BaseApiConsumerConfiguration.ValidateOutputPath(plugin.Value.OutputPath, workspaceDirectory);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"The plugin {plugin.Key} has an invalid output path: {ex.Message}", ex);
+            }
     }
     public async Task BackupConfigAsync(CancellationToken cancellationToken = default)
     {

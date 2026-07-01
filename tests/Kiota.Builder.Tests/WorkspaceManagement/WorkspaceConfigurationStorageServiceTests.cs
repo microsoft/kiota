@@ -74,6 +74,51 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         await service.RestoreConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(File.Exists(targetConfigFile));
     }
+    [InlineData("../outside")]
+    [InlineData("client/../outside")]
+    [InlineData(".")]
+    [Theory]
+    public async Task RejectsClientOutputPathOutsideWorkspaceAsync(string outputPath)
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await WriteWorkspaceConfigurationAsync($$"""
+        {
+          "version": "1.0.0",
+          "clients": {
+            "GraphClient": {
+              "outputPath": "{{outputPath}}"
+            }
+          },
+          "plugins": {}
+        }
+        """);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWorkspaceConfigurationAsync(cancellationToken: TestContext.Current.CancellationToken));
+    }
+    [Fact]
+    public async Task RejectsPluginRootedOutputPathAsync()
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await WriteWorkspaceConfigurationAsync($$"""
+        {
+          "version": "1.0.0",
+          "clients": {},
+          "plugins": {
+            "GraphPlugin": {
+              "outputPath": "{{Path.GetFullPath(Path.Combine(tempPath, "plugin")).Replace('\\', '/')}}"
+            }
+          }
+        }
+        """);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWorkspaceConfigurationAsync(cancellationToken: TestContext.Current.CancellationToken));
+    }
+    private async Task WriteWorkspaceConfigurationAsync(string content)
+    {
+        var configurationDirectory = Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment);
+        Directory.CreateDirectory(configurationDirectory);
+        await File.WriteAllTextAsync(Path.Combine(configurationDirectory, WorkspaceConfigurationStorageService.ConfigurationFileName), content, TestContext.Current.CancellationToken);
+    }
     public void Dispose()
     {
         if (Directory.Exists(tempPath))
