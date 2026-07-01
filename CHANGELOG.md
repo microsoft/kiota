@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension.
+
 ## [1.32.4] - 2026-06-26
 
 ### Added
@@ -1774,5 +1776,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
 
