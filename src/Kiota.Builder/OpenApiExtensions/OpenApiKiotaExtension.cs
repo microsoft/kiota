@@ -24,7 +24,7 @@ public class OpenApiKiotaExtension : IOpenApiExtension
             LanguagesInformation.Any())
         {
             writer.WriteStartObject();
-            writer.WriteRequiredObject(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), LanguagesInformation, (w, x) => x.SerializeAsV3(w));
+            writer.WriteRequiredObject(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), LanguagesInformation, static (w, x) => x.SerializeAsV3(w));
             writer.WriteEndObject();
         }
     }
