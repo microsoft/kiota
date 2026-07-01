@@ -23,6 +23,11 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+      - name: Setup Go
+        # required so the integration tests can run gofmt against the generated Go code
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
       - name: Restore dependencies
         run: dotnet restore kiota.slnx
       - name: Check formatting

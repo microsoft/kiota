@@ -22,7 +22,7 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
         if (codeElement.Inherits?.AllTypes?.Any() ?? false)
         {
             var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), currentClass, true, false);
-            writer.WriteLine($"{parentTypeName}");
+            writer.WriteLine(parentTypeName);
         }
     }
 }

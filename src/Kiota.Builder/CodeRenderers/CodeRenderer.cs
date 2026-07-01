@@ -21,7 +21,7 @@ public class CodeRenderer
         Configuration = configuration;
         _rendererElementComparer = elementComparer ?? new CodeElementOrderComparer();
     }
-    public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
+    public virtual async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -78,8 +78,10 @@ public class CodeRenderer
     {
         get; private set;
     }
-    private void RenderCode(LanguageWriter writer, CodeElement element)
+    protected void RenderCode(LanguageWriter writer, CodeElement element)
     {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(element);
         writer.Write(element);
         if (element is not CodeNamespace)
             foreach (var childElement in element.GetChildElements()
@@ -105,7 +107,7 @@ public class CodeRenderer
         {
             GenerationLanguage.TypeScript => new TypeScriptCodeRenderer(config),
             GenerationLanguage.Python => new CodeRenderer(config, new CodeElementOrderComparerPython()),
-            GenerationLanguage.Go => new CodeRenderer(config, new CodeElementOrderComparerWithExternalMethods()),
+            GenerationLanguage.Go => new GoCodeRenderer(config, new CodeElementOrderComparerWithExternalMethods()),
             _ => new CodeRenderer(config),
         };
     }
