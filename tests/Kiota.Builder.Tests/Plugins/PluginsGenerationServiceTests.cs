@@ -1531,6 +1531,7 @@ paths:
           type: text
           title: Confirmation Title
           body: Are you sure you want to proceed?
+          isNonConsequential: true
         security_info:
           data_handling:
             - sensitiveData
@@ -1609,6 +1610,7 @@ paths:
         Assert.Equal("text", resultingManifest.Document.Functions[0].Capabilities.Confirmation.Type);
         Assert.Equal("Confirmation Title", resultingManifest.Document.Functions[0].Capabilities.Confirmation.Title);
         Assert.Equal("Are you sure you want to proceed?", resultingManifest.Document.Functions[0].Capabilities.Confirmation.Body);
+        Assert.True(resultingManifest.Document.Functions[0].Capabilities.Confirmation.IsNonConsequential);
 
         // Validate SecurityInfo
         Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.SecurityInfo);

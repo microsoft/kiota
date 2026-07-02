@@ -51,7 +51,8 @@ public sealed class OpenApiAiCapabilitiesExtensionTest : IDisposable
             "confirmation": {
                 "type": "modal",
                 "title": "Confirm action",
-                "body": "Do you want to proceed?"
+                "body": "Do you want to proceed?",
+                "isNonConsequential": true
             },
             "security_info": {
                 "data_handling": ["some data handling"]
@@ -89,6 +90,7 @@ public sealed class OpenApiAiCapabilitiesExtensionTest : IDisposable
         Assert.Equal("modal", confirmation.Type);
         Assert.Equal("Confirm action", confirmation.Title);
         Assert.Equal("Do you want to proceed?", confirmation.Body);
+        Assert.True(confirmation.IsNonConsequential);
 
         Assert.Equal("some data handling", securityInfo.DataHandling[0]);
     }
@@ -190,7 +192,8 @@ components:
             {
                 Type = "modal",
                 Title = "Confirm action",
-                Body = "Do you want to proceed?"
+                Body = "Do you want to proceed?",
+                IsNonConsequential = true
             },
             SecurityInfo = new ExtensionSecurityInfo
             {
@@ -232,6 +235,7 @@ components:
         Assert.Contains("Confirm action", result);
         Assert.Contains("body", result);
         Assert.Contains("Do you want to proceed?", result);
+        Assert.Contains("\"isNonConsequential\":true", result);
         Assert.Contains("\"security_info\":", result);
         Assert.Contains("data_handling", result);
         Assert.Contains("some data handling", result);
