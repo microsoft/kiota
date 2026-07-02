@@ -50,6 +50,12 @@ public partial class KiotaBuilder
     private readonly HttpClient httpClient;
     private OpenApiDocument? openApiDocument;
     private readonly ISettingsManagementService settingsFileManagementService;
+    /// <summary>
+    /// Dynamic scope stack used to resolve <c>$dynamicRef</c>. The innermost frame (top of stack) is the most recently entered schema that declares a <c>$dynamicAnchor</c>.
+    /// Populated by <see cref="EnterDynamicScope"/> at the entry of model materialization methods.
+    /// Static + thread-local because model materialization runs concurrently via Parallel.ForEach (see also <see cref="modelCreationDepth"/> and <see cref="schemasBeingProcessedForDiscriminators"/>).
+    /// </summary>
+    private static readonly ThreadLocal<Stack<IOpenApiSchema>> _dynamicScope = new(() => new Stack<IOpenApiSchema>(), trackAllValues: false);
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false, ISettingsManagementService? settingsManagementService = null)
@@ -1708,12 +1714,40 @@ public partial class KiotaBuilder
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string classNameSuffix = "", IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
+        using var _ = EnterDynamicScope(schema);
         var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, response: response, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
         return new CodeType
         {
             TypeDefinition = codeDeclaration,
         };
+    }
+    /// <summary>
+    /// Pushes <paramref name="schema"/> onto the dynamic scope stack when it declares a <c>$dynamicAnchor</c>.
+    /// The returned <see cref="IDisposable"/> pops the stack on dispose. Returns a no-op disposable when the schema has no anchor.
+    /// </summary>
+    private IDisposable EnterDynamicScope(IOpenApiSchema? schema)
+    {
+        if (schema is null || !schema.DeclaresAnyDynamicAnchor())
+            return NullDisposable.Instance;
+        _dynamicScope.Value!.Push(schema);
+        return new DynamicScopePopper();
+    }
+    private sealed class DynamicScopePopper : IDisposable
+    {
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            KiotaBuilder._dynamicScope.Value!.Pop();
+            _disposed = true;
+        }
+    }
+    private sealed class NullDisposable : IDisposable
+    {
+        public static readonly NullDisposable Instance = new();
+        public void Dispose() { }
     }
     private CodeType CreateInheritedModelDeclarationAndType(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
@@ -1724,6 +1758,7 @@ public partial class KiotaBuilder
     }
     private CodeClass CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
+        using var _ = EnterDynamicScope(schema);
         var flattenedAllOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).ToArray();
         var referenceId = schema.GetReferenceId();
         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(referenceId);
@@ -1974,7 +2009,60 @@ public partial class KiotaBuilder
         if ((schema.AnyOf is { Count: > 0 } || schema.OneOf is { Count: > 0 } || schema.AllOf is { Count: > 0 }) &&
            (schema.AnyOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+        if (TryResolveDynamicRef(schema, currentNode, operation, parentElement) is { } dynamicResolvedType)
+            return dynamicResolvedType;
+        if (schema.GetDynamicRef() is { } unresolvedDynRef)
+        {
+            var scope = _dynamicScope.Value!;
+            var inScopeAnchors = scope.Count == 0
+                ? "(empty scope)"
+                : string.Join(", ", scope.Select(s => s.GetDynamicAnchor() ?? "(anonymous)"));
+            logger.LogWarning("Schema at {Pointer} uses $dynamicRef '{DynamicRef}' which could not be resolved. In-scope dynamic anchors: {InScopeAnchors}. Generating UntypedNode.", currentNode.Path, unresolvedDynRef, inScopeAnchors);
+        }
         return new CodeType { Name = UntypedNodeName, IsExternal = true };
+    }
+    /// <summary>
+    /// Resolves a <c>$dynamicRef</c> by walking the dynamic scope stack outermost-first to find a schema declaring a matching <c>$dynamicAnchor</c>,
+    /// per JSON Schema 2020-12 §7.7.2 (the outermost matching anchor in the dynamic scope wins). Returns null when the schema has no
+    /// <c>$dynamicRef</c> or no matching anchor is in scope. Recursion terminates naturally because <see cref="AddModelDeclarationIfDoesntExist"/>
+    /// returns existing declarations for schemas already being materialized.
+    /// </summary>
+    /// <remarks>
+    /// <b>Known limitation — processing-order sensitivity.</b> Because properties are typed eagerly during the first
+    /// materialization of a class (see <see cref="CreatePropertiesForModelClass"/>) and <see cref="AddModelDeclarationIfDoesntExist"/>
+    /// returns the cached class on subsequent visits, the dynamic scope at first visit is what gets baked into the
+    /// generated code. If a base type declaring <c>$dynamicAnchor</c> is materialized standalone (e.g. as the response
+    /// type of another endpoint) before any of its derived types, the dynamic-ref-typed properties resolve against the
+    /// base type itself rather than the derived type. The current traversal order is determined by the URL tree walk
+    /// and is not deterministic with respect to dynamic-anchor resolution.
+    /// <para>
+    /// The fallback for unresolved dynamic refs is <see cref="UntypedNodeName"/> with a build-time warning, which is
+    /// valid generated code (the runtime <c>UntypedNode</c> type accepts arbitrary JSON) but loses strong typing.
+    /// </para><para>
+    /// The semantically correct fix is to emit a union over all candidate derived types that declare the matching
+    /// anchor (TypeScript / Python get native unions; C# / Java / Go / PHP / Dart / Ruby get the existing
+    /// <c>ComposedTypeWrapper</c> pattern). This is tracked as follow-up work alongside the declared type-parameter /
+    /// generic-class emission feature.
+    /// </para>
+    /// </remarks>
+    private CodeTypeBase? TryResolveDynamicRef(IOpenApiSchema schema, OpenApiUrlTreeNode currentNode, OpenApiOperation? operation, CodeElement parentElement)
+    {
+        if (schema.GetDynamicAnchorName() is not { } anchorName)
+            return null;
+        // Walk the dynamic scope outermost-first (Stack enumerates innermost-first, so reverse).
+        // Per JSON Schema 2020-12 §7.7.2, the outermost matching $dynamicAnchor in the dynamic scope wins.
+        foreach (var frame in _dynamicScope.Value!.Reverse())
+        {
+            if (!frame.DeclaresDynamicAnchor(anchorName))
+                continue;
+            // The anchor target is either the frame itself (top-level $dynamicAnchor) or a $defs entry.
+            var anchorSchema = frame.GetDynamicAnchorTarget(anchorName);
+            if (anchorSchema is null)
+                continue;
+            // Resolve the anchor schema via normal materialization (handles $ref, properties, etc.).
+            return CreateModelDeclarations(currentNode, anchorSchema, operation, parentElement, string.Empty);
+        }
+        return null;
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {

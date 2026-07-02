@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adds support for resolving JSON Schema 2020-12 `$dynamicRef` against schemas declaring `$dynamicAnchor`, so recursive types (e.g. `LocalizedCategory.children: LocalizedCategory[]`) generate correctly instead of degrading to `UntypedNode`. Phase 1 of [#7815](https://github.com/microsoft/kiota/issues/7815).
+
 ### Changed
 
 - Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace.

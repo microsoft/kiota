@@ -1156,4 +1156,61 @@ public class OpenApiSchemaExtensionsTests
         var reference = new OpenApiSchema();
         Assert.Empty(reference.GetClassName());
     }
+    [Fact]
+    public void GetsDynamicRefAndAnchor()
+    {
+        var schema = new OpenApiSchema
+        {
+            DynamicRef = "#itemType",
+            DynamicAnchor = "category",
+        };
+        Assert.Equal("#itemType", schema.GetDynamicRef());
+        Assert.Equal("category", schema.GetDynamicAnchor());
+        Assert.True(schema.HasDynamicAnchor("category"));
+        Assert.False(schema.HasDynamicAnchor("other"));
+    }
+    [Fact]
+    public void GetsDynamicRefAndAnchorDefensive()
+    {
+        Assert.Null(OpenApiSchemaExtensions.GetDynamicRef(null));
+        Assert.Null(OpenApiSchemaExtensions.GetDynamicAnchor(null));
+        Assert.False(OpenApiSchemaExtensions.HasDynamicAnchor(null, "category"));
+        var schema = new OpenApiSchema();
+        Assert.Null(schema.GetDynamicRef());
+        Assert.Null(schema.GetDynamicAnchor());
+        Assert.False(schema.HasDynamicAnchor("category"));
+        Assert.False(schema.HasDynamicAnchor(""));
+        Assert.False(schema.HasDynamicAnchor(null!));
+    }
+    [Fact]
+    public void GetsDynamicRefAndAnchorViaSchemaReference()
+    {
+        // OpenApiSchemaReference exposes DynamicRef/DynamicAnchor directly (delegated to Target when resolved).
+        // Verify the extension handles the reference type without throwing.
+        var reference = new OpenApiSchemaReference("target", new OpenApiDocument());
+        Assert.Null(reference.GetDynamicRef());
+        Assert.Null(reference.GetDynamicAnchor());
+        Assert.False(reference.HasDynamicAnchor("category"));
+    }
+    [Theory]
+    [InlineData("#category", "category")]
+    [InlineData("https://example.com/schemas/BaseCategory#category", "category")]
+    [InlineData("urn:uuid:1234#meta", "meta")]
+    [InlineData("category", "category")] // bare anchor, no leading '#'
+    [InlineData("", null)]
+    public void GetsDynamicAnchorNameFromRef(string dynamicRef, string expected)
+    {
+        var schema = new OpenApiSchema
+        {
+            DynamicRef = dynamicRef,
+        };
+        Assert.Equal(expected, schema.GetDynamicAnchorName());
+    }
+    [Fact]
+    public void GetsDynamicAnchorNameDefensive()
+    {
+        Assert.Null(OpenApiSchemaExtensions.GetDynamicAnchorName(null));
+        var schema = new OpenApiSchema();
+        Assert.Null(schema.GetDynamicAnchorName());
+    }
 }
