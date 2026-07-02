@@ -60,7 +60,6 @@ kiota info -l CSharp --json
 ```json
 {
   "maturityLevel": "Stable",
-  "dependencyInstallCommand": "dotnet add package {0} --version {1}",
   "dependencies": [
     {
       "name": "Microsoft.Kiota.Abstractions",

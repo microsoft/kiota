@@ -15,6 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace.
+- Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths.
+- Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension.
+
+## [1.32.4] - 2026-06-26
+
+### Added
+
+### Changed
+
+- Fixed a code injection vulnerability in PHP generation by escaping `$` in double-quoted string literals. [#7863](https://github.com/microsoft/kiota/pull/7863)
+
 ## [1.32.3] - 2026-06-24
 
 ### Added
@@ -1766,5 +1778,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
 

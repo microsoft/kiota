@@ -12,6 +12,10 @@ public class PhpConventionService : CommonLanguageConventionService
 {
     public override string TempDictionaryVarName => "urlTplParams";
 
+    internal static string SanitizePhpDoubleQuoteLiteral(string? value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeDoubleQuote().Replace("$", "\\$", StringComparison.Ordinal);
+
+
     private static readonly CodeUsingDeclarationNameComparer _usingDeclarationNameComparer = new();
 
     public override string GetAccessModifier(AccessModifier access)
