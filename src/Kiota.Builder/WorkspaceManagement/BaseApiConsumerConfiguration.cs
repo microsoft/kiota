@@ -48,6 +48,28 @@ public abstract class BaseApiConsumerConfiguration
     {
         if (Path.IsPathRooted(OutputPath))
             OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath).NormalizePathSeparators();
+        ValidateOutputPath(OutputPath, targetDirectory);
+    }
+    internal static void ValidateOutputPath(string? outputPath, string targetDirectory)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
+        if (string.IsNullOrWhiteSpace(outputPath))
+            throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+        if (IsRootedPath(outputPath) || outputPath.Split('/', '\\').Contains("..", StringComparer.Ordinal))
+            throw new InvalidOperationException("The output path must be a relative subdirectory of the workspace and cannot navigate up.");
+        var targetFullPath = Path.GetFullPath(targetDirectory);
+        var outputFullPath = Path.GetFullPath(Path.Combine(targetFullPath, outputPath));
+        var targetFullPathWithSeparator = Path.EndsInDirectorySeparator(targetFullPath) ? targetFullPath : targetFullPath + Path.DirectorySeparatorChar;
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison))
+            throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+    }
+    private static bool IsRootedPath(string path)
+    {
+        return Path.IsPathRooted(path) ||
+               path.StartsWith(@"\\", StringComparison.Ordinal) ||
+               path.StartsWith("//", StringComparison.Ordinal) ||
+               path.Length >= 3 && char.IsLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/');
     }
     public void NormalizeDescriptionLocation(string targetDirectory)
     {

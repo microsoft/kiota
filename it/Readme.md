@@ -20,6 +20,46 @@ And finally run the test:
 ./it/exec-cmd.ps1 -descriptionUrl ${FILE/URL} -language ${LANG}
 ```
 
+# Surface area / DOM diff test
+
+The surface area test guards against **binary/source breaking changes** that a change to
+kiota's generation logic could introduce into downstream SDKs (notably the Microsoft Graph
+SDKs). It compares the public-API surface (`kiota-dom-export.txt`) produced by the currently
+published `Microsoft.OpenApi.Kiota` NuGet tool (baseline) against the surface produced by a
+locally built kiota (current changeset).
+
+In CI this runs via `.github/workflows/surface-area-tests.yml` and feeds the resulting patch
+to the [`microsoftgraph/kiota-dom-export-diff-tool`](https://github.com/microsoftgraph/kiota-dom-export-diff-tool)
+`tool` action with `fail-on-removal: true`: any removed surface line fails the check.
+
+To run it locally, first publish a development build of `kiota`:
+
+```bash
+dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
+```
+
+Then generate the baseline/current exports and a diff patch:
+
+```bash
+./it/compare-dom-export.ps1 -descriptionUrl ${FILE/URL} -language ${LANG}
+```
+
+Useful options:
+
+* `-baselineVersion` — pin a specific published `Microsoft.OpenApi.Kiota` version (defaults to latest stable).
+* `-patchPath` — where to write the unified diff (defaults to `./<language>-dom-export.patch`).
+* `-kiotaExec` — path to the locally built kiota (defaults to `./publish/kiota`).
+* `-additionalArguments` — extra arguments forwarded to both `kiota generate` invocations.
+
+**Interpreting results:** removed lines (`-`) in the patch indicate API removed/changed since
+the baseline release — i.e. potential breaking changes. Added lines (`+`) are additive and do
+not fail the check. Because the baseline is the last published release, the diff reflects every
+change since that release, not just the current changeset.
+
+**Intended breaking changes:** review the explanations produced by the diff tool. If a breaking
+change is deliberate, it must be acknowledged through normal PR review (and, where configured, a
+required-check override) before merging.
+
 # MockServer tests
 
 The OpenAPI description can be published to a mock server, and you can execute tests that call this API.

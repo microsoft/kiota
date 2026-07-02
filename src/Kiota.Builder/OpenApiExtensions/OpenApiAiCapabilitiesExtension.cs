@@ -91,6 +91,13 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
         {
             confirmation.Body = bodyStrValue;
         }
+        if (source.TryGetPropertyValue(nameof(Confirmation.IsNonConsequential).ToFirstCharacterLowerCase(), out var isNonConsequential) &&
+            isNonConsequential is JsonValue isNonConsequentialValue &&
+            isNonConsequentialValue.GetValueKind() is JsonValueKind.True or JsonValueKind.False &&
+            isNonConsequentialValue.TryGetValue<bool>(out var isNonConsequentialBoolValue))
+        {
+            confirmation.IsNonConsequential = isNonConsequentialBoolValue;
+        }
 
         return confirmation;
     }
@@ -115,6 +122,12 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
         {
             writer.WritePropertyName(nameof(Confirmation.Body).ToFirstCharacterLowerCase());
             writer.WriteValue(confirmation.Body);
+        }
+
+        if (confirmation.IsNonConsequential.HasValue)
+        {
+            writer.WritePropertyName(nameof(Confirmation.IsNonConsequential).ToFirstCharacterLowerCase());
+            writer.WriteValue(confirmation.IsNonConsequential.Value);
         }
 
         writer.WriteEndObject();
@@ -329,6 +342,10 @@ public class ExtensionConfirmation
         get; set;
     }
     public string? Body
+    {
+        get; set;
+    }
+    public bool? IsNonConsequential
     {
         get; set;
     }

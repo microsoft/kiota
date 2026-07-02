@@ -12,8 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the `--allowed-external-origins` parameter to commands that load OpenAPI descriptions. External references are now not loaded by default to improve security; use this parameter to allow `*`, full URIs, URI patterns, full paths, relative paths, or path patterns.
+- Added support for the `isNonConsequential` confirmation property in the AI capabilities extension (`x-ai-capabilities`) and mapped it to the generated plugin manifest confirmation object (plugin manifest 2.4). [#7857](https://github.com/microsoft/kiota/pull/7857)
+- Added a DOM-surface regression integration test that diffs the kiota public API export between the published NuGet generator and the current changeset to catch breaking changes in generated SDKs. [#7858](https://github.com/microsoft/kiota/issues/7858)
 
 ### Changed
+
+- Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace.
+- Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths.
+- Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension.
 
 ## [1.32.4] - 2026-06-26
 

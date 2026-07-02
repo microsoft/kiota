@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
@@ -12,8 +13,10 @@ namespace Kiota.Builder.Configuration;
 
 #pragma warning disable CA2227
 #pragma warning disable CA1056
-public class GenerationConfiguration : ICloneable
+public partial class GenerationConfiguration : ICloneable
 {
+    private const string DefaultClientClassName = "ApiClient";
+    private const string DefaultClientNamespaceName = "ApiSdk";
     public static GenerationConfiguration DefaultConfiguration
     {
         get;
@@ -42,9 +45,9 @@ public class GenerationConfiguration : ICloneable
     internal string FileNameSuffix { get; set; } = "";
 
     public string OutputPath { get; set; } = "./output";
-    public string ClientClassName { get; set; } = "ApiClient";
+    public string ClientClassName { get; set; } = DefaultClientClassName;
     public AccessModifier TypeAccessModifier { get; set; } = AccessModifier.Public;
-    public string ClientNamespaceName { get; set; } = "ApiSdk";
+    public string ClientNamespaceName { get; set; } = DefaultClientNamespaceName;
     public string NamespaceNameSeparator { get; set; } = ".";
     public bool ExportPublicApi
     {
@@ -197,16 +200,45 @@ public class GenerationConfiguration : ICloneable
         if (!string.IsNullOrEmpty(languageInfo.ClientClassName) &&
             ClientClassName.Equals(defaultConfiguration.ClientClassName, StringComparison.Ordinal) &&
             !ClientClassName.Equals(languageInfo.ClientClassName, StringComparison.Ordinal))
-            ClientClassName = languageInfo.ClientClassName;
+            ClientClassName = SanitizeClientClassName(languageInfo.ClientClassName);
         if (!string.IsNullOrEmpty(languageInfo.ClientNamespaceName) &&
             ClientNamespaceName.Equals(defaultConfiguration.ClientNamespaceName, StringComparison.Ordinal) &&
             !ClientNamespaceName.Equals(languageInfo.ClientNamespaceName, StringComparison.Ordinal))
-            ClientNamespaceName = languageInfo.ClientNamespaceName;
+            ClientNamespaceName = SanitizeClientNamespaceName(languageInfo.ClientNamespaceName);
         if (languageInfo.StructuredMimeTypes.Count != 0 &&
             comparer.Equals(StructuredMimeTypes, defaultConfiguration.StructuredMimeTypes) &&
             !comparer.Equals(languageInfo.StructuredMimeTypes, StructuredMimeTypes))
             StructuredMimeTypes = new(languageInfo.StructuredMimeTypes);
     }
+    public static string SanitizeClientClassName(string? clientClassName, string fallbackValue = DefaultClientClassName)
+    {
+        if (string.IsNullOrEmpty(clientClassName))
+            return fallbackValue;
+
+        var sanitizedName = ClientClassNameInvalidCharactersRegex().Replace(clientClassName, string.Empty);
+        sanitizedName = ClientClassNameInvalidStartRegex().Replace(sanitizedName, string.Empty);
+        return string.IsNullOrEmpty(sanitizedName) ? fallbackValue : sanitizedName;
+    }
+    public static string SanitizeClientNamespaceName(string? clientNamespaceName, string fallbackValue = DefaultClientNamespaceName)
+    {
+        if (string.IsNullOrEmpty(clientNamespaceName))
+            return fallbackValue;
+
+        var sanitizedName = ClientNamespaceNameInvalidCharactersRegex().Replace(clientNamespaceName, string.Empty);
+        sanitizedName = ClientNamespaceNameConsecutiveDotsRegex().Replace(sanitizedName, ".");
+        sanitizedName = ClientNamespaceNameInvalidStartRegex().Replace(sanitizedName, string.Empty).Trim('.', '-', '_');
+        return string.IsNullOrEmpty(sanitizedName) ? fallbackValue : sanitizedName;
+    }
+    [GeneratedRegex(@"[^a-zA-Z0-9_]+", RegexOptions.Singleline, 500)]
+    private static partial Regex ClientClassNameInvalidCharactersRegex();
+    [GeneratedRegex(@"^[^a-zA-Z_]+", RegexOptions.Singleline, 500)]
+    private static partial Regex ClientClassNameInvalidStartRegex();
+    [GeneratedRegex(@"[^a-zA-Z0-9._-]+", RegexOptions.Singleline, 500)]
+    private static partial Regex ClientNamespaceNameInvalidCharactersRegex();
+    [GeneratedRegex(@"\.{2,}", RegexOptions.Singleline, 500)]
+    private static partial Regex ClientNamespaceNameConsecutiveDotsRegex();
+    [GeneratedRegex(@"^[^a-zA-Z0-9_]+", RegexOptions.Singleline, 500)]
+    private static partial Regex ClientNamespaceNameInvalidStartRegex();
     public const string KiotaHashManifestExtensionKey = "x-ms-kiota-hash";
     public const string KiotaVersionManifestExtensionKey = "x-ms-kiota-version";
     public ApiDependency ToApiDependency(string configurationHash, Dictionary<string, HashSet<string>> templatesWithOperations, string targetDirectory)
