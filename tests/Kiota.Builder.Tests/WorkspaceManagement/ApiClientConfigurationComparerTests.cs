@@ -45,7 +45,13 @@ public sealed class ApiClientConfigurationComparerTests
     public void ConsidersAllowedExternalOrigins()
     {
         Assert.False(_comparer.Equals(
-            new() { AllowedExternalOrigins = ["https://contoso.com/*"] },
-            new() { AllowedExternalOrigins = ["https://example.com/*"] }));
+            new()
+            {
+                AllowedExternalOrigins = ["https://contoso.com/*"]
+            },
+            new()
+            {
+                AllowedExternalOrigins = ["https://example.com/*"]
+            }));
     }
 }
