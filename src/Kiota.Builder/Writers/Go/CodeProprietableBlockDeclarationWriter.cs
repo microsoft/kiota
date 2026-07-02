@@ -42,9 +42,10 @@ public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWri
                 writer.IncreaseIndent();
                 importSegments.ForEach(x => writer.WriteLine(string.IsNullOrEmpty(x.Item1) || x.Item1.Equals(x.Item2, StringComparison.Ordinal) ? $"\"{x.Item2.SanitizeDoubleQuote()}\"" : $"{x.Item1} \"{x.Item2.SanitizeDoubleQuote()}\""));
                 writer.DecreaseIndent();
-                writer.WriteLines(")", string.Empty);
+                writer.WriteLine(")");
             }
         }
+        writer.WriteLine(); // gofmt: exactly one blank line before each top-level declaration
         WriteTypeDeclaration(codeElement, writer);
     }
     protected abstract void WriteTypeDeclaration(T codeElement, LanguageWriter writer);

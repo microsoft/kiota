@@ -109,6 +109,31 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
         writer?.Write(includeIndent ? GetIndent() + text : text);
     }
     /// <summary>
+    /// Runs <paramref name="write"/> against a temporary buffer and returns the lines it produced
+    /// instead of writing them out. This lets a writer that owns a whole block post-process
+    /// sibling lines that are normally written one element at a time — e.g. the Go writers must
+    /// see every struct field before any is written to column-align them the way gofmt does.
+    /// Indentation state is shared with the real writer, so captured lines carry their indent.
+    /// </summary>
+    internal IReadOnlyList<string> CaptureLines(Action write)
+    {
+        ArgumentNullException.ThrowIfNull(write);
+        var previousWriter = writer;
+        using var buffer = new StringWriter();
+        writer = buffer;
+        try
+        {
+            write();
+        }
+        finally
+        {
+            writer = previousWriter;
+        }
+        var lines = buffer.GetStringBuilder().ToString().Split(buffer.NewLine);
+        // WriteLine terminates every line, so a trailing separator is not an extra empty line
+        return lines.Length > 0 && lines[^1].Length == 0 ? lines[..^1] : lines;
+    }
+    /// <summary>
     /// Dispatch call to Write the code element to the proper derivative write method
     /// </summary>
     /// <param name="code"></param>

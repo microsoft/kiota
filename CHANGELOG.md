@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: remove the space before the parameter list of anonymous deserializer functions
 - golang: align consecutive struct and const fields into columns to match gofmt
 - golang: keep a single blank line between top-level declarations and strip trailing whitespace so that `go fmt` on the generated code is a no-op
+- golang: remove stray semicolons and extra spaces from the code generated for backing-store clients (`--backing-store`) so it matches gofmt
 
 ## [1.32.4] - 2026-06-26
 

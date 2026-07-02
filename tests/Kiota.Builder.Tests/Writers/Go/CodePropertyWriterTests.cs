@@ -52,10 +52,19 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => writer.Write(property));
     }
     [Fact]
+    public void WritingThePropertyItselfEmitsNothing()
+    {
+        // fields are emitted by CodeClassDeclarationWriter so the whole struct body can be
+        // column-aligned like gofmt; dispatching the property alone writes nothing
+        property.Kind = CodePropertyKind.Custom;
+        writer.Write(property);
+        Assert.Empty(tw.ToString());
+    }
+    [Fact]
     public void WritesCustomProperty()
     {
         property.Kind = CodePropertyKind.Custom;
-        writer.Write(property);
+        writer.Write(parentClass.StartBlock);
         var result = tw.ToString();
         Assert.Contains($"{PropertyName.ToFirstCharacterUpperCase()} *{TypeName}", result);
     }
@@ -72,7 +81,7 @@ public sealed class CodePropertyWriterTests : IDisposable
             Name = "customEnumType",
             Flags = true,
         };
-        writer.Write(property);
+        writer.Write(parentClass.StartBlock);
         var result = tw.ToString();
         Assert.Contains("EnumSet", result);
     }
@@ -81,16 +90,17 @@ public sealed class CodePropertyWriterTests : IDisposable
     {
         property.Kind = CodePropertyKind.Custom;
         (property.Type as CodeType).IsNullable = false;
-        writer.Write(property);
+        writer.Write(parentClass.StartBlock);
         var result = tw.ToString();
-        Assert.DoesNotContain("*", result);
+        Assert.Contains($"{PropertyName.ToFirstCharacterUpperCase()} {TypeName}", result);
+        Assert.DoesNotContain($"*{TypeName}", result);
     }
     [Fact]
     public void WritesSerializationTag()
     {
         property.Kind = CodePropertyKind.QueryParameter;
         property.SerializationName = "someserializationname";
-        writer.Write(property);
+        writer.Write(parentClass.StartBlock);
         var result = tw.ToString();
         Assert.Contains("\"uriparametername:\\\"someserializationname\\\"\"", result);
     }
@@ -99,7 +109,7 @@ public sealed class CodePropertyWriterTests : IDisposable
     {
         property.Kind = CodePropertyKind.QueryParameter;
         property.SerializationName = "line1\"\nline2";
-        writer.Write(property);
+        writer.Write(parentClass.StartBlock);
         var result = tw.ToString();
         Assert.Contains("uriparametername:\\\"line1", result);
         Assert.Contains("line2\\\"", result);

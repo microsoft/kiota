@@ -24,6 +24,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement.Parent);
         var writePrototypeOnly = codeElement.Parent is CodeInterface;
+        if (!writePrototypeOnly)
+            writer.WriteLine(); // gofmt: exactly one blank line before each top-level declaration
         WriteMethodPrototype(codeElement, codeElement.Parent!, writer, returnType, writePrototypeOnly);
         if (writePrototypeOnly || codeElement.Parent is not CodeClass parentClass) return;
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
@@ -93,7 +95,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 break;
         }
         writer.CloseBlock();
-        writer.WriteLine(); // empty line after each func
     }
     private static void WriteErrorMethodOverride(CodeClass parentClass, LanguageWriter writer)
     {
@@ -506,11 +507,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 !string.IsNullOrEmpty(codeElement.AccessedProperty.DefaultValue))
             {
                 writer.WriteLines(
-                    $"val , err :=  m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
+                    $"val, err := m.{backingStore.NamePrefix}{backingStore.Name.ToFirstCharacterLowerCase()}.Get(\"{codeElement.AccessedProperty.Name.ToFirstCharacterLowerCase()}\")");
                 writer.WriteBlock("if err != nil {", "}", "panic(err)");
                 writer.WriteBlock("if val == nil {", "}",
-                    $"var value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()};",
-                    $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value);");
+                    $"var value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()}",
+                    $"m.Set{codeElement.AccessedProperty.Name?.ToFirstCharacterUpperCase()}(value)");
 
                 writer.WriteLine($"return val.({conventions.GetTypeString(codeElement.AccessedProperty.Type, parentClass)})");
             }
@@ -640,7 +641,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
                                         .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
+            writer.WriteLine($"m.{propWithDefault.NamePrefix}{propWithDefault.Name.ToFirstCharacterLowerCase()} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()}");
         }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom rely on accessors
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
