@@ -1299,7 +1299,8 @@ servers:
         Assert.NotNull(extensionResult);
         Assert.True(extensionResult.TryGetValue("CSharp", out var csharpInfo));
         Assert.Equal("Experimental", csharpInfo.MaturityLevel.ToString());
-        Assert.Equal("dotnet add {0} {1}", csharpInfo.DependencyInstallCommand);
+        // ignored for security reasons
+        Assert.Empty(csharpInfo.DependencyInstallCommand);
         Assert.Single(csharpInfo.Dependencies);
         Assert.Equal("Microsoft.Graph.Core", csharpInfo.Dependencies.First().Name);
         Assert.Equal("3.0.0", csharpInfo.Dependencies.First().Version);
@@ -1337,6 +1338,31 @@ servers:
         Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
         Assert.Contains("application/json", configuration.StructuredMimeTypes);
         Assert.Contains("application/xml", configuration.StructuredMimeTypes);
+        _tempFiles.Add(tempFilePath);
+    }
+    [Fact]
+    public async Task SanitizesGenerationConfigurationFromKiotaExtensionAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, @"openapi: 3.0.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+x-ms-kiota-info:
+  languagesInformation:
+    CSharp:
+      clientClassName: '/abs/path/Pwn { } public class INJECTED'
+      clientNamespaceName: '../Microsoft.Graph""/{/;'
+servers:
+  - url: https://graph.microsoft.com/v1.0", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var configuration = new GenerationConfiguration { OpenAPIFilePath = tempFilePath, Language = GenerationLanguage.CSharp };
+        var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
+        var (treeNode, _) = await builder.GetUrlTreeNodeAsync(TestContext.Current.CancellationToken);
+        Assert.NotNull(treeNode);
+        Assert.Equal("abspathPwnpublicclassINJECTED", configuration.ClientClassName);
+        Assert.Equal("Microsoft.Graph", configuration.ClientNamespaceName);
         _tempFiles.Add(tempFilePath);
     }
     [Fact]
