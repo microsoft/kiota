@@ -290,4 +290,27 @@ public class CodePropertyWriterTests
         var result = stringWriter.ToString();
         Assert.DoesNotContain("/*/*", result);
     }
+
+    [Fact]
+    public void WritesRequiredNonNullableProperty_NoNullPrefix_NoNullDefault()
+    {
+        // A required, non-nullable custom property should have no '?' type prefix and no '= null' default
+        var property = new CodeProperty
+        {
+            Name = "Email",
+            Access = AccessModifier.Public,
+            Kind = CodePropertyKind.Custom,
+            IsRequired = true,
+            Type = new CodeType
+            {
+                Name = "emailAddress",
+                IsNullable = false,
+            }
+        };
+        parentClass.AddProperty(property);
+        propertyWriter.WriteCodeElement(property, languageWriter);
+        var result = stringWriter.ToString();
+        Assert.DoesNotContain("?EmailAddress", result);
+        Assert.DoesNotContain("= null", result);
+    }
 }

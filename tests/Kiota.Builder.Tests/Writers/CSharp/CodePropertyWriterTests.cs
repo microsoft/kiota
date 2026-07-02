@@ -271,5 +271,72 @@ public sealed class CodePropertyWriterTests : IDisposable
         // Then
         Assert.Contains("public override string Message { get => Prop1 ?? string.Empty; }", result);
     }
+
+    [Fact]
+    public void WritesRequiredNonNullableCustomProperty_NoNullableBlock()
+    {
+        // A required, non-nullable reference-type property should NOT emit #nullable enable / ?
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = false;
+        property.IsRequired = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"{TypeName} {PropertyName}", result);
+        Assert.DoesNotContain("#nullable enable", result);
+        Assert.DoesNotContain($"{TypeName}?", result);
+    }
+
+    [Fact]
+    public void WritesNullableCustomProperty_HasNullableBlock()
+    {
+        // A nullable reference-type property (the default) should still emit #nullable enable / ?
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("#nullable enable", result);
+        Assert.Contains($"{TypeName}?", result);
+    }
+
+    [Fact]
+    public void WritesRequiredNonNullableEnumProperty_NoNullableBlock()
+    {
+        var enumDef = rootNamespace.AddClass(new CodeClass { Name = "MyEnum" }).First();
+        property.Kind = CodePropertyKind.Custom;
+        property.Type = new CodeType
+        {
+            Name = "MyEnum",
+            TypeDefinition = new CodeEnum { Name = "MyEnum" },
+            IsNullable = false,
+        };
+        property.IsRequired = true;
+        parentClass.AddProperty(property);
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.DoesNotContain("#nullable enable", result);
+        Assert.DoesNotContain("MyEnum?", result);
+    }
+
+    [Fact]
+    public void WritesRequiredProperty_FlagFalse_HasNullableBlock()
+    {
+        // When MakeRequiredPropertiesNonNullable = false, a required property with IsNullable = true
+        // should still get the #nullable enable block (old all-nullable behavior).
+        var flagOffWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName, makeRequiredPropertiesNonNullable: false);
+        using var sw = new StringWriter();
+        flagOffWriter.SetTextWriter(sw);
+
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = true;  // flag=false: stays nullable
+        property.IsRequired = true;        // IsRequired is still set accurately
+        writer.Write(property);            // control: default writer suppresses ? for required
+        var defaultResult = tw.ToString();
+        Assert.DoesNotContain("#nullable enable", defaultResult); // flag=true suppresses it
+
+        flagOffWriter.Write(property);     // flag=false: should emit nullable block
+        var flagOffResult = sw.ToString();
+        Assert.Contains("#nullable enable", flagOffResult);       // opt-out restores it
+        Assert.Contains($"{TypeName}?", flagOffResult);
+    }
 }
 

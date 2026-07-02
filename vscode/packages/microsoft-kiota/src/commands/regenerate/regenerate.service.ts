@@ -47,6 +47,7 @@ export class RegenerateService {
           deserializers: settings.languagesSerializationConfiguration[language].deserializers,
           structuredMimeTypes: clientObjectItem.structuredMimeTypes ? clientObjectItem.structuredMimeTypes : settings.structuredMimeTypes,
           includeAdditionalData: clientObjectItem.includeAdditionalData ? clientObjectItem.includeAdditionalData : settings.includeAdditionalData,
+          makeRequiredPropertiesNonNullable: clientObjectItem.makeRequiredPropertiesNonNullable !== undefined ? clientObjectItem.makeRequiredPropertiesNonNullable : settings.makeRequiredPropertiesNonNullable,
           operation: ConsumerOperation.Edit,
           workingDirectory: getWorkspaceJsonDirectory()
         });

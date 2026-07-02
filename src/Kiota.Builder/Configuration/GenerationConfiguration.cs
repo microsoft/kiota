@@ -68,6 +68,10 @@ public partial class GenerationConfiguration : ICloneable
     {
         get; set;
     }
+    public bool MakeRequiredPropertiesNonNullable
+    {
+        get; set;
+    } = true;
     public bool ExcludeBackwardCompatible
     {
         get; set;
@@ -187,6 +191,7 @@ public partial class GenerationConfiguration : ICloneable
             DisableSSLValidation = DisableSSLValidation,
             ExportPublicApi = ExportPublicApi,
             PluginAuthInformation = PluginAuthInformation,
+            MakeRequiredPropertiesNonNullable = MakeRequiredPropertiesNonNullable,
         };
     }
     private static readonly StringIEnumerableDeepComparer comparer = new();

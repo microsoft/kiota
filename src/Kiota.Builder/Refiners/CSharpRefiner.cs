@@ -136,6 +136,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeClass currentClass && currentClass.IsOfKind(CodeClassKind.Model))
             currentClass.Properties
                         .Where(x => x.Type is CodeType propType && propType.TypeDefinition is CodeEnum)
+                        .Where(x => !x.IsRequired)
                         .ToList()
                         .ForEach(x => x.Type.IsNullable = true);
         CrawlTree(currentElement, MakeEnumPropertiesNullable);

@@ -124,4 +124,17 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("List<", result);
         Assert.DoesNotContain("EnumSet", result);
     }
+
+    [Fact]
+    public void WritesRequiredNonNullable_NonnullAnnotation()
+    {
+        // A required, non-nullable custom property must emit @Nonnull (not @Nullable)
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.IsNullable = false;
+        property.IsRequired = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("@jakarta.annotation.Nonnull", result);
+        Assert.DoesNotContain("@jakarta.annotation.Nullable", result);
+    }
 }
