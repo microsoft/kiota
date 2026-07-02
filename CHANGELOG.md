@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a DOM-surface regression integration test that diffs the kiota public API export between the published NuGet generator and the current changeset to catch breaking changes in generated SDKs. [#7858](https://github.com/microsoft/kiota/issues/7858)
+
 ### Changed
 
 - Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace.
