@@ -55,8 +55,11 @@ $descriptionValue = $jsonValue.psobject.properties.Where({ $_.name -eq $descript
 if ($null -ne $descriptionValue) {
     if ($descriptionValue.PSObject.Properties.Name -contains "ExcludePatterns") {
         $descriptionValue.ExcludePatterns | ForEach-Object {
-            Write-Information "Excluding $($_.Pattern) rationale: $($_.Rationale)"
-            $command += " -e `"$($_.Pattern)`""
+            # A "Language" might be defined.
+            if ([string]::IsNullOrEmpty($_.Language) -or ($_.Language -eq $language)) {
+                Write-Information "Excluding $($_.Pattern) rationale: $($_.Rationale)"
+                $command += " -e `"$($_.Pattern)`""
+            }
         }
     }
 
