@@ -28,24 +28,32 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, TypeScriptConv
         switch (codeElement.Parent)
         {
             case CodeInterface:
-                WriteCodePropertyForInterface(codeElement, writer, returnType, isFlagEnum);
+                WriteCodePropertyForInterface(codeElement, writer, returnType, isFlagEnum, conventions.MakeRequiredPropertiesNonNullable);
                 break;
             case CodeClass:
                 throw new InvalidOperationException($"All properties are defined on interfaces in TypeScript.");
         }
     }
-    private static void WriteCodePropertyForInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum)
+    private static void WriteCodePropertyForInterface(CodeProperty codeElement, LanguageWriter writer, string returnType, bool isFlagEnum, bool makeRequiredPropertiesNonNullable)
     {
+        var collectionSuffix = isFlagEnum ? "[]" : string.Empty;
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"get {codeElement.Name.ToFirstCharacterLowerCase()}(): {returnType};");
                 break;
             case CodePropertyKind.QueryParameter:
-                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)};");
+                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{collectionSuffix};");
                 break;
             default:
-                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}?: {returnType}{(isFlagEnum ? "[]" : string.Empty)} | null;");
+                // When enabled, a required property is non-optional (no `?`), and drops `| null` unless its
+                // schema is explicitly nullable. Otherwise the historical optional + nullable form is kept.
+                var suppressOptionalAndNull = makeRequiredPropertiesNonNullable && codeElement.IsRequired;
+                var optionalMarker = suppressOptionalAndNull ? string.Empty : "?";
+                var nullSuffix = suppressOptionalAndNull
+                    ? (codeElement.Type.IsNullable ? " | null" : string.Empty)
+                    : " | null";
+                writer.WriteLine($"{codeElement.Name.ToFirstCharacterLowerCase()}{optionalMarker}: {returnType}{collectionSuffix}{nullSuffix};");
                 break;
         }
     }

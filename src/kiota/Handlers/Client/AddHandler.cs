@@ -66,6 +66,11 @@ internal class AddHandler : BaseKiotaCommandHandler
         get;
         set;
     }
+    public required Option<bool> MakeRequiredPropertiesNonNullableOption
+    {
+        get;
+        set;
+    }
     public required Option<List<string>> IncludePatternsOption
     {
         get; init;
@@ -91,6 +96,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         string? openapi = parseResult.GetValue(DescriptionOption);
         bool backingStore = parseResult.GetValue(BackingStoreOption);
         bool excludeBackwardCompatible = parseResult.GetValue(ExcludeBackwardCompatibleOption);
+        bool makeRequiredPropertiesNonNullable = parseResult.GetValue(MakeRequiredPropertiesNonNullableOption);
         bool includeAdditionalData = parseResult.GetValue(AdditionalDataOption);
         bool skipGeneration = parseResult.GetValue(SkipGenerationOption);
         string? className = parseResult.GetValue(ClassOption);
@@ -126,6 +132,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
         Configuration.Generation.UsesBackingStore = backingStore;
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
+        Configuration.Generation.MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;
         Configuration.Generation.Language = language;
         WarnUsingPreviewLanguage(language);

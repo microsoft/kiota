@@ -45,6 +45,7 @@ public static class KiotaClientCommands
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var backingStoreOption = KiotaHost.GetBackingStoreOption(defaultConfiguration.UsesBackingStore);
         var excludeBackwardCompatible = KiotaHost.GetExcludeBackwardCompatibleOption(defaultConfiguration.ExcludeBackwardCompatible);
+        var makeRequiredPropertiesNonNullableOption = KiotaHost.GetMakeRequiredPropertiesNonNullableOption(defaultConfiguration.MakeRequiredPropertiesNonNullable);
         var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration.IncludeAdditionalData);
         var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([.. defaultConfiguration.StructuredMimeTypes]);
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
@@ -62,6 +63,7 @@ public static class KiotaClientCommands
             logLevelOption,
             backingStoreOption,
             excludeBackwardCompatible,
+            makeRequiredPropertiesNonNullableOption,
             additionalDataOption,
             structuredMimeTypesOption,
             includePatterns,
@@ -80,6 +82,7 @@ public static class KiotaClientCommands
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,
             ExcludeBackwardCompatibleOption = excludeBackwardCompatible,
+            MakeRequiredPropertiesNonNullableOption = makeRequiredPropertiesNonNullableOption,
             AdditionalDataOption = additionalDataOption,
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
@@ -121,6 +124,7 @@ public static class KiotaClientCommands
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var backingStoreOption = KiotaHost.GetOptionalBackingStoreOption();
         var excludeBackwardCompatible = KiotaHost.GetOptionalExcludeBackwardCompatibleOption();
+        var makeRequiredPropertiesNonNullableOption = KiotaHost.GetOptionalMakeRequiredPropertiesNonNullableOption();
         var additionalDataOption = KiotaHost.GetOptionalAdditionalDataOption();
         var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([]);
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions([], []);
@@ -138,6 +142,7 @@ public static class KiotaClientCommands
             logLevelOption,
             backingStoreOption,
             excludeBackwardCompatible,
+            makeRequiredPropertiesNonNullableOption,
             additionalDataOption,
             structuredMimeTypesOption,
             includePatterns,
@@ -156,6 +161,7 @@ public static class KiotaClientCommands
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,
             ExcludeBackwardCompatibleOption = excludeBackwardCompatible,
+            MakeRequiredPropertiesNonNullableOption = makeRequiredPropertiesNonNullableOption,
             AdditionalDataOption = additionalDataOption,
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,

@@ -661,7 +661,7 @@ public partial class KiotaBuilder
 
     public async Task CreateLanguageSourceFilesAsync(GenerationLanguage language, CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
-        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore, config.ExcludeBackwardCompatible);
+        var languageWriter = LanguageWriter.GetLanguageWriter(language, config.OutputPath, config.ClientNamespaceName, config.UsesBackingStore, config.ExcludeBackwardCompatible, config.MakeRequiredPropertiesNonNullable);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var codeRenderer = CodeRenderer.GetCodeRender(config);
@@ -1174,7 +1174,7 @@ public partial class KiotaBuilder
     }
     private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
-    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty? CreateProperty(string childIdentifier, string childType, IOpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom, bool isRequired = false)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
@@ -1196,6 +1196,7 @@ public partial class KiotaBuilder
             ReadOnly = propertySchema?.ReadOnly ?? false,
             Type = resultType,
             Deprecation = propertySchema?.GetDeprecationInformation(),
+            IsRequired = isRequired,
             IsPrimaryErrorMessage = kind == CodePropertyKind.Custom &&
                                         propertySchema is { Extensions: not null } &&
                                         propertySchema.Extensions.TryGetValue(OpenApiPrimaryErrorMessageExtension.Name, out var openApiExtension) &&
@@ -1219,6 +1220,22 @@ public partial class KiotaBuilder
         {
             //Values not placed in quotes (number and boolean): just forward the value.
             prop.DefaultValue = stringDefaultJsonValue2.ToString();
+        }
+
+        // Required, non-explicitly-nullable properties are marked non-nullable so writers can drop the optional/nullable markers.
+        // Collections are excluded: their IsNullable also drives element nullability, which the serialization APIs rely on.
+        // Scoped to the languages whose writers honor this safely (TypeScript, Python, Java); other languages keep the
+        // historical nullable rendering so their output is unchanged until support is added and validated for them.
+        // Clone first to avoid mutating a shared/cached type reference.
+        var isCollection = existingType != null
+            ? existingType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None
+            : propertySchema.IsArray();
+        var languageSupportsNonNullableRequired = config.Language is GenerationLanguage.TypeScript or GenerationLanguage.Python or GenerationLanguage.Java;
+        if (config.MakeRequiredPropertiesNonNullable && languageSupportsNonNullableRequired && kind == CodePropertyKind.Custom && isRequired && !propertySchema.IsExplicitlyNullable() && !isCollection)
+        {
+            if (existingType != null)
+                prop.Type = (CodeTypeBase)existingType.Clone();
+            prop.Type.IsNullable = false;
         }
 
         if (existingType == null)
@@ -2434,7 +2451,13 @@ public partial class KiotaBuilder
                             LogOmittedPropertyInvalidSchema(x.Key, model.Name, currentNode.Path);
                             return null;
                         }
-                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                        // Required-ness is read from the (already allOf-merged) schema's own `required` array. Note that
+                        // MergeIntersectionSchemaEntries merges member *properties* but not their `required` arrays, so a
+                        // property declared required only inside an allOf member is treated as not-required here. This is a
+                        // safe under-application for MakeRequiredPropertiesNonNullable (such a property stays nullable) and
+                        // matches the pre-existing required handling; widening it would be a separate, cross-cutting change.
+                        var isRequired = schema.Required?.Contains(x.Key) ?? false;
+                        return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition, isRequired: isRequired);
                     })
                     .OfType<CodeProperty>()
                     .ToArray() ?? [];

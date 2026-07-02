@@ -1687,6 +1687,42 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task Writes_UnionOfPrimitiveValues_FactoryFunction_KeepsUndefinedWhenReturnTypeNonNullableAsync()
+    {
+        // Regression for MakeRequiredPropertiesNonNullable: a required scalar-alias reference can flip a
+        // primitive-composed factory's ReturnType non-nullable. Its body is always `parseNode?.get*Value()`
+        // (`T | undefined`), so the signature must keep `| undefined` or tsc fails — the writer forces these
+        // factory return types nullable regardless of the flag.
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, UnionOfPrimitiveValuesSample.Yaml, cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Primitives", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.primitives");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("primitivesRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+        var factoryFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && GetOriginalComposedType(function.OriginalLocalMethod.ReturnType) is not null) as CodeFunction;
+        Assert.NotNull(factoryFunction);
+        // Simulate the MakeRequiredPropertiesNonNullable flag tightening the composed return type.
+        factoryFunction.OriginalLocalMethod.ReturnType.IsNullable = false;
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        // The body returns `T | undefined`, so the declared return type must still carry `| undefined`.
+        Assert.Contains("| undefined {", result);
+        Assert.Contains("return parseNode?.getNumberValue() ?? parseNode?.getStringValue();", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
     public async Task Writes_UnionOfObjects_FactoryMethodAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };

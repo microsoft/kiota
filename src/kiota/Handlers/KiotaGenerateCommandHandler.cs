@@ -86,6 +86,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         bool excludeBackwardCompatible = parseResult.GetValue(ExcludeBackwardCompatibleOption);
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         bool disableSSLValidation = parseResult.GetValue(DisableSSLValidationOption);
+        bool makeRequiredPropertiesNonNullable = parseResult.GetValue(MakeRequiredPropertiesNonNullableOption);
         bool includeAdditionalData = parseResult.GetValue(AdditionalDataOption);
         string? className = parseResult.GetValue(ClassOption);
         AccessModifier typeAccessModifier = parseResult.GetValue(TypeAccessModifierOption);
@@ -101,7 +102,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
 
-        CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, clearCache, disableSSLValidation, cleanOutput, output,
+        CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, makeRequiredPropertiesNonNullable, clearCache, disableSSLValidation, cleanOutput, output,
             namespaceName, includePatterns0, excludePatterns0, structuredMimeTypes0, logLevel, out var tags);
         // Start span
         using var invokeActivity = activitySource?.StartActivity(ActivityKind.Internal, name: TelemetryLabels.SpanGenerateClientCommand,
@@ -152,6 +153,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         Configuration.Generation.CleanOutput = cleanOutput;
         Configuration.Generation.ClearCache = clearCache;
         Configuration.Generation.DisableSSLValidation = disableSSLValidation;
+        Configuration.Generation.MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable;
 
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
         using (loggerFactory)
@@ -233,19 +235,24 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<bool> MakeRequiredPropertiesNonNullableOption
+    {
+        get; init;
+    }
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, GenerationLanguage language, bool backingStore,
-        bool excludeBackwardCompatible, bool clearCache, bool disableSslValidation, bool cleanOutput, string? output,
+        bool excludeBackwardCompatible, bool makeRequiredPropertiesNonNullable, bool clearCache, bool disableSslValidation, bool cleanOutput, string? output,
         string? namespaceName, List<string>? includePatterns, List<string>? excludePatterns,
         List<string>? structuredMimeTypes, LogLevel? logLevel, out List<KeyValuePair<string, object?>>? tags)
     {
         // set up telemetry tags
-        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(13)
+        tags = activitySource?.HasListeners() == true ? new List<KeyValuePair<string, object?>>(14)
             {
                 new(TelemetryLabels.TagCommandSource, TelemetryLabels.CommandSourceCliValue),
                 new(TelemetryLabels.TagGeneratorLanguage, language.ToString("G")),
                 new($"{TelemetryLabels.TagCommandParams}.backing_store", backingStore),
                 new($"{TelemetryLabels.TagCommandParams}.exclude_backward_compatible", excludeBackwardCompatible),
+                new($"{TelemetryLabels.TagCommandParams}.make_required_properties_non_nullable", makeRequiredPropertiesNonNullable),
                 new($"{TelemetryLabels.TagCommandParams}.clear_cache", clearCache),
                 new($"{TelemetryLabels.TagCommandParams}.disable_ssl_validation", disableSslValidation),
                 new($"{TelemetryLabels.TagCommandParams}.clean_output", cleanOutput),

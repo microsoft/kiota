@@ -80,6 +80,21 @@ public static class OpenApiSchemaExtensions
     {
         return schema?.Properties is { Count: > 0 };
     }
+    /// <summary>
+    /// Indicates whether the schema explicitly permits null.
+    /// Covers OAS 3.0 <c>nullable: true</c> and OAS 3.1 <c>type: [..., "null"]</c>,
+    /// as well as the OAS 3.1 <c>anyOf: [{ type: null }]</c> pattern.
+    /// </summary>
+    internal static bool IsExplicitlyNullable(this IOpenApiSchema? schema)
+    {
+        if (schema is null) return false;
+        // OAS 3.0 nullable: true or OAS 3.1 type includes null
+        if ((schema.Type & JsonSchemaType.Null) is JsonSchemaType.Null) return true;
+        // OAS 3.1 anyOf/oneOf [ { type: null }, ... ] patterns
+        static bool HasNullMember(IList<IOpenApiSchema>? members) => members?.Any(static x =>
+            (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null && !x.HasAnyProperty()) ?? false;
+        return HasNullMember(schema.AnyOf) || HasNullMember(schema.OneOf);
+    }
     public static bool IsInclusiveUnion(this IOpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
         return schema?.AnyOf?.Count(static x => IsSemanticallyMeaningful(x, true)) > exclusiveMinimumNumberOfEntries;

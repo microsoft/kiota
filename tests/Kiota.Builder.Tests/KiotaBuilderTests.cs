@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Refiners;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11427,4 +11428,231 @@ components:
         Assert.NotNull(patchGenerator);
         Assert.False(patchGenerator.HasUrlTemplateOverride);
     }
+
+    #region Issue-3911 — required/nullable OAS properties → IsRequired / IsNullable
+
+    private async Task<CodeProperty> GetItemPropertyAsync(string schemasYaml, string propertyName, bool makeRequiredPropertiesNonNullable, string openApiVersion = "3.0.1", GenerationLanguage language = GenerationLanguage.TypeScript, bool applyLanguageRefinement = false)
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await using var fs = await GetDocumentStreamAsync(@"openapi: " + openApiVersion + @"
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com/v1.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+components:
+  schemas:
+" + schemasYaml);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var configuration = new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath, MakeRequiredPropertiesNonNullable = makeRequiredPropertiesNonNullable, Language = language };
+        var builder = new KiotaBuilder(mockLogger.Object, configuration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        if (applyLanguageRefinement)
+            await ILanguageRefiner.RefineAsync(configuration, codeModel, cancellationToken: TestContext.Current.CancellationToken);
+        // Search the whole tree: language refiners (e.g. Go) reorganize namespaces, so the "ApiSdk.models" path is not stable post-refinement.
+        var item = codeModel.FindChildByName<CodeClass>("Item", true);
+        Assert.NotNull(item);
+        var prop = item.Properties.FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(prop);
+        return prop;
+    }
+
+    private const string RequiredNonNullableStringSchema = @"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string";
+
+    [Fact]
+    public async Task RequiredNonNullableString_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(RequiredNonNullableStringSchema, "name", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableString_FlagOff_IsNullableTrue_IsRequiredTrue()
+    {
+        // Opt-out: IsNullable stays true (historical behavior), but IsRequired is still set accurately.
+        var prop = await GetItemPropertyAsync(RequiredNonNullableStringSchema, "name", makeRequiredPropertiesNonNullable: false);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNullableString_FlagOn_IsNullableTrue_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          nullable: true", "name", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task OptionalNonNullableString_FlagOn_IsNullableTrue_IsRequiredFalse()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      properties:
+        name:
+          type: string", "name", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.False(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableInteger_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer", "count", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableObjectRef_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - owner
+      properties:
+        owner:
+          $ref: '#/components/schemas/Owner'
+    Owner:
+      type: object
+      properties:
+        id:
+          type: string", "owner", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableEnum_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+    Status:
+      type: string
+      enum:
+        - active
+        - inactive", "status", makeRequiredPropertiesNonNullable: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredCollection_FlagOn_IsNullableTrue_IsRequiredTrue()
+    {
+        // Collections keep IsNullable = true: the element nullability and serializer API depend on it.
+        // Only scalar/object/enum required properties are made non-nullable.
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          type: array
+          items:
+            type: string", "tags", makeRequiredPropertiesNonNullable: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredNonNullableString_Oas31_FlagOn_IsNullableFalse_IsRequiredTrue()
+    {
+        // OAS 3.1 scalar type form: a required, non-nullable property is made non-nullable just like OAS 3.0.
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string", "name", makeRequiredPropertiesNonNullable: true, openApiVersion: "3.1.0");
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Fact]
+    public async Task RequiredExplicitlyNullableString_Oas31_FlagOn_IsNullableTrue_IsRequiredTrue()
+    {
+        // OAS 3.1 explicit-null form (`type: [string, "null"]`): the property is required but explicitly nullable,
+        // so it must stay nullable even with the flag on.
+        var prop = await GetItemPropertyAsync(@"    Item:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type:
+            - string
+            - 'null'", "name", makeRequiredPropertiesNonNullable: true, openApiVersion: "3.1.0");
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Theory]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.Java)]
+    public async Task RequiredNonNullableString_FlagOn_SupportedLanguage_StaysNonNullableAfterRefinement(GenerationLanguage language)
+    {
+        // Supported language: the flip must survive the full pipeline. Unlike PHP/Go, these refiners do not re-nullify
+        // model properties, so a required non-nullable property stays non-nullable through refinement.
+        // (TypeScript is validated at the writer level instead — it lowers models to interfaces during refinement.)
+        var prop = await GetItemPropertyAsync(RequiredNonNullableStringSchema, "name", makeRequiredPropertiesNonNullable: true, language: language, applyLanguageRefinement: true);
+        Assert.False(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    [Theory]
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Dart)]
+    public async Task RequiredNonNullableString_FlagOn_UnsupportedLanguage_StaysNullableAfterRefinement(GenerationLanguage language)
+    {
+        // The flag is only honored for the validated languages (TypeScript, Python, Java). For every other language the
+        // property must keep its historical nullable rendering so generated output is unchanged until support is
+        // added and validated for it. This runs the FULL pipeline (build + language refinement) to prove that
+        // neither the builder gate nor any language refiner (e.g. PHP/Go MakeModelPropertiesNullable) leaves the
+        // property non-nullable — i.e. enabling the flag is a safe no-op for these languages.
+        var prop = await GetItemPropertyAsync(RequiredNonNullableStringSchema, "name", makeRequiredPropertiesNonNullable: true, language: language, applyLanguageRefinement: true);
+        Assert.True(prop.Type.IsNullable);
+        Assert.True(prop.IsRequired);
+    }
+
+    #endregion
 }
