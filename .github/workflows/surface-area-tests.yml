@@ -1,0 +1,137 @@
+name: surface-area-tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      baselineVersion:
+        description: "Specific Microsoft.OpenApi.Kiota version to use as the baseline (defaults to latest stable release)."
+        required: false
+        default: ""
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-surface-area-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore dependencies
+        run: dotnet restore kiota.slnx
+      - name: Build
+        run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
+      - uses: actions/upload-artifact@v7
+        with:
+          name: generator
+          path: publish
+
+  surface-diff:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - csharp
+          - java
+        description:
+          - "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v8
+        with:
+          name: generator
+          path: publish
+      - run: chmod a+x ./publish/kiota
+
+      - name: Generate baseline & current DOM exports and diff
+        id: compare
+        shell: pwsh
+        timeout-minutes: 30
+        run: |
+          $patchPath = Join-Path -Path (Get-Location) -ChildPath "${{ matrix.language }}-dom-export.patch"
+          ./it/compare-dom-export.ps1 `
+            -descriptionUrl "${{ matrix.description }}" `
+            -language "${{ matrix.language }}" `
+            -patchPath $patchPath `
+            -baselineVersion "${{ github.event.inputs.baselineVersion }}"
+          $hasPatch = (Test-Path $patchPath) -and ((Get-Item $patchPath).Length -gt 0)
+          Write-Output "patchFilePath=$patchPath" >> $Env:GITHUB_OUTPUT
+          Write-Output "hasPatch=$($hasPatch.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
+
+      - name: Analyze DOM export diff for breaking changes
+        id: diff
+        if: ${{ steps.compare.outputs.hasPatch == 'true' }}
+        # Pinned to a commit SHA for supply-chain safety. This tool is owned by the
+        # Microsoft Graph Developer Experience team.
+        uses: microsoftgraph/kiota-dom-export-diff-tool/tool@e32a993776c40f03dce8c55ff7a607ed21011945
+        with:
+          path: ${{ steps.compare.outputs.patchFilePath }}
+          fail-on-removal: true
+
+      - name: Comment on the pull request
+        if: ${{ always() && steps.compare.outputs.hasPatch == 'true' && steps.diff.outputs.hasExplanations != '' && github.event_name == 'pull_request' }}
+        continue-on-error: true
+        uses: microsoftgraph/kiota-dom-export-diff-tool/comment@e32a993776c40f03dce8c55ff7a607ed21011945
+        with:
+          comment: ${{ steps.diff.outputs.explanationsFilePath }}
+          prNumber: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload patch file as artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        continue-on-error: true
+        with:
+          name: surface-area-patch-${{ matrix.language }}
+          path: "*.patch"
+
+      - name: Upload explanations file as artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        continue-on-error: true
+        with:
+          name: surface-area-explanations-${{ matrix.language }}
+          path: "explanations.txt"
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: surface-diff
+    if: always()
+    steps:
+      - uses: jimschubert/delete-artifacts-action@v1
+        with:
+          artifact_name: "generator"
+          min_bytes: "0"
+
+  # Aggregates result of the surface area tests for use in branch policy
+  check-surface-area-tests:
+    runs-on: ubuntu-latest
+    needs: surface-diff
+    if: always()
+    steps:
+      - name: All build matrix options are successful
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: exit 0
+      - name: One or more build matrix options failed
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
