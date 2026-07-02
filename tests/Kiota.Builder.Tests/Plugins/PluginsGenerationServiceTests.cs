@@ -1322,6 +1322,18 @@ components:
                     Assert.IsType<AnonymousAuth>(auth0);
                 }
             },
+            // optional security alternative in operation object
+            {
+                "{securitySchemes: {apiKey0: {type: apiKey, name: x-api-key, in: header}}}",
+                string.Empty, "security: [{}, {apiKey0: []}]", null, resultingManifest =>
+                {
+                    Assert.NotNull(resultingManifest.Document);
+                    Assert.Empty(resultingManifest.Problems);
+                    Assert.NotEmpty(resultingManifest.Document.Runtimes);
+                    var auth0 = resultingManifest.Document.Runtimes[0].Auth;
+                    Assert.IsType<AnonymousAuth>(auth0);
+                }
+            },
             // Unsupported security scheme (http basic)
             {
                 "{securitySchemes: {httpBasic0: {type: http, scheme: basic}}}",
@@ -2570,4 +2582,3 @@ paths:
 
     #endregion
 }
-
