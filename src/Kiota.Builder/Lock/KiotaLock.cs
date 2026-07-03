@@ -98,6 +98,10 @@ public class KiotaLock
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// The external origins that can be loaded while resolving references from the OpenAPI description.
+    /// </summary>
+    public HashSet<string> AllowedExternalOrigins { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 #pragma warning restore CA2227
     /// <summary>
     /// Updates the passed configuration with the values from the lock file.
@@ -122,6 +126,7 @@ public class KiotaLock
         config.ExcludePatterns = ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.OpenAPIFilePath = DescriptionLocation;
         config.DisabledValidationRules = DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        config.AllowedExternalOrigins = AllowedExternalOrigins.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.DisableSSLValidation = DisableSSLValidation;
     }
     /// <summary>
@@ -151,6 +156,7 @@ public class KiotaLock
         ExcludePatterns = config.ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         DescriptionLocation = config.OpenAPIFilePath;
         DisabledValidationRules = config.DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        AllowedExternalOrigins = config.AllowedExternalOrigins.ToHashSet(StringComparer.OrdinalIgnoreCase);
         DisableSSLValidation = config.DisableSSLValidation;
     }
 }

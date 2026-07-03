@@ -32,7 +32,8 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
 
         // slow deep comparison
         return _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
-               && _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes);
+               && _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes)
+               && base.Equals(x, y);
     }
 
     /// <inheritdoc/>

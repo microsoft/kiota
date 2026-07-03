@@ -4,6 +4,7 @@ using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,10 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
@@ -40,6 +45,7 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
         string? output = parseResult.GetValue(OutputOption);
         bool clearCache = parseResult.GetValue(ClearCacheOption);
         bool cleanOutput = parseResult.GetValue(CleanOutputOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -85,6 +91,8 @@ internal class KiotaUpdateCommandHandler : BaseKiotaCommandHandler
                 {
                     var config = (GenerationConfiguration)Configuration.Generation.Clone();
                     x.lockInfo?.UpdateGenerationConfigurationFromLock(config);
+                    if (allowedExternalOrigins is { Count: > 0 })
+                        config.AllowedExternalOrigins = allowedExternalOrigins.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                     config.OutputPath = x.lockDirectoryPath;
                     return config;
                 }).ToArray();

@@ -59,6 +59,10 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
@@ -75,6 +79,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         string? className0 = parseResult.GetValue(ClassOption);
         List<string>? includePatterns = parseResult.GetValue(IncludePatternsOption);
         List<string>? excludePatterns = parseResult.GetValue(ExcludePatternsOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -130,6 +135,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (pluginTypes is { Count: > 0 })
                     Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+                AssignAllowedExternalOrigins(allowedExternalOrigins);
                 Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
                 Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
                 DefaultSerializersAndDeserializers(Configuration.Generation);

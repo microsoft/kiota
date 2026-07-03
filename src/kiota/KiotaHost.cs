@@ -112,6 +112,7 @@ public static partial class KiotaHost
         var versionOption = GetVersionOption();
         var logLevelOption = GetLogLevelOption();
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultGenerationConfiguration.AllowedExternalOrigins);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language")
         {
@@ -130,6 +131,7 @@ public static partial class KiotaHost
             versionOption,
             logLevelOption,
             clearCacheOption,
+            allowedExternalOriginsOption,
             searchTermOption,
             languageOption,
             jsonOption,
@@ -142,6 +144,7 @@ public static partial class KiotaHost
             VersionOption = versionOption,
             LogLevelOption = logLevelOption,
             ClearCacheOption = clearCacheOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             SearchTermOption = searchTermOption,
             GenerationLanguage = languageOption,
             JsonOption = jsonOption,
@@ -183,6 +186,7 @@ public static partial class KiotaHost
         var logLevelOption = GetLogLevelOption();
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultGenerationConfiguration.AllowedExternalOrigins);
         var searchTermOption = GetSearchKeyOption();
         var maxDepthOption = new Option<uint>("--max-depth")
         {
@@ -201,6 +205,7 @@ public static partial class KiotaHost
             includePatterns,
             excludePatterns,
             clearCacheOption,
+            allowedExternalOriginsOption,
             disableSSLValidationOption,
         };
         displayCommand.Action = new KiotaShowCommandHandler
@@ -214,6 +219,7 @@ public static partial class KiotaHost
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
             ClearCacheOption = clearCacheOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             DisableSSLValidationOption = disableSSLValidationOption,
             ServiceProvider = serviceProvider,
         };
@@ -588,6 +594,7 @@ public static partial class KiotaHost
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
         var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultConfiguration.AllowedExternalOrigins);
 
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
@@ -610,6 +617,7 @@ public static partial class KiotaHost
             dvrOption,
             clearCacheOption,
             disableSSLValidationOption,
+            allowedExternalOriginsOption,
         };
         command.Action = new KiotaGenerateCommandHandler
         {
@@ -633,6 +641,7 @@ public static partial class KiotaHost
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
             DisableSSLValidationOption = disableSSLValidationOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
@@ -647,12 +656,14 @@ public static partial class KiotaHost
         var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultConfiguration.AllowedExternalOrigins);
 
         var command = new Command("update", "Updates existing clients under the target directory using their lock files.") {
             outputOption,
             logLevelOption,
             cleanOutputOption,
             clearCacheOption,
+            allowedExternalOriginsOption,
         };
         command.Action = new KiotaUpdateCommandHandler
         {
@@ -660,6 +671,7 @@ public static partial class KiotaHost
             LogLevelOption = logLevelOption,
             CleanOutputOption = cleanOutputOption,
             ClearCacheOption = clearCacheOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
@@ -680,6 +692,17 @@ public static partial class KiotaHost
         };
         excludePatterns.Aliases.Add("-e");
         return (includePatterns, excludePatterns);
+    }
+    internal static Option<List<string>> GetAllowedExternalOriginsOption(HashSet<string> defaultValue)
+    {
+        var allowedExternalOrigins = new Option<List<string>>("--allowed-external-origins")
+        {
+            DefaultValueFactory = _ => [.. defaultValue],
+            Description = "The external reference origins allowed when loading the OpenAPI description. Accepts '*', full URIs, URI patterns, full paths, relative paths, and path patterns.",
+            Arity = ArgumentArity.ZeroOrMore,
+            HelpName = "origins"
+        };
+        return allowedExternalOrigins;
     }
     internal static Option<LogLevel> GetLogLevelOption()
     {

@@ -64,6 +64,10 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
@@ -80,6 +84,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         string? className = parseResult.GetValue(ClassOption);
         List<string>? includePatterns0 = parseResult.GetValue(IncludePatternsOption);
         List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -111,6 +116,7 @@ internal class AddHandler : BaseKiotaCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns0 is { Count: > 0 })
             Configuration.Generation.ExcludePatterns = excludePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        AssignAllowedExternalOrigins(allowedExternalOrigins);
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
