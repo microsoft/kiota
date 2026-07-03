@@ -21,7 +21,7 @@ public class CodeRenderer
         Configuration = configuration;
         _rendererElementComparer = elementComparer ?? new CodeElementOrderComparer();
     }
-    public virtual async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
+    public async Task RenderCodeNamespaceToSingleFileAsync(LanguageWriter writer, CodeElement codeElement, string outputFile, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(codeElement);
