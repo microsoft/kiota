@@ -74,7 +74,7 @@ public sealed class OpenApiAiCapabilitiesExtensionTest : IDisposable
 
         Assert.Equal("$.items", responseSemantics.DataPath);
         Assert.Equal("oauthCard.json", responseSemantics.OauthCardPath);
-        var staticTemplate = responseSemantics.StaticTemplate as JsonObject;
+        var staticTemplate = responseSemantics.StaticTemplate?.Template;
         Assert.NotNull(staticTemplate);
         Assert.Equal("Search for items", staticTemplate["title"]?.ToString());
         Assert.Equal("Here are the items I found for you.", staticTemplate["body"]?.ToString());
@@ -173,10 +173,13 @@ components:
             ResponseSemantics = new ExtensionResponseSemantics
             {
                 DataPath = "$.items",
-                StaticTemplate = new JsonObject
+                StaticTemplate = new ExtensionResponseSemanticsStaticTemplate
                 {
-                    ["title"] = "Search for items",
-                    ["body"] = "Here are the items I found for you."
+                    Template = new JsonObject
+                    {
+                        ["title"] = "Search for items",
+                        ["body"] = "Here are the items I found for you."
+                    }
                 },
                 Properties = new ExtensionResponseSemanticsProperties
                 {
@@ -240,5 +243,74 @@ components:
         Assert.Contains("data_handling", result);
         Assert.Contains("some data handling", result);
 
+    }
+
+    [Theory]
+    // Safe relative references inside the manifest package.
+    [InlineData("card.json", true)]
+    [InlineData("./adaptiveCards/card.json", true)]
+    [InlineData("adaptiveCards/card.json", true)]
+    [InlineData("a/b/c.json", true)]
+    // Empty / whitespace are not usable references.
+    [InlineData("", false)]
+    [InlineData("   ", false)]
+    // Parent-directory traversal (CWE-22).
+    [InlineData("../card.json", false)]
+    [InlineData("../../../../etc/passwd", false)]
+    [InlineData("..\\..\\windows\\system32\\config\\sam", false)]
+    [InlineData("adaptiveCards/../../secret.json", false)]
+    // Rooted POSIX / UNC paths.
+    [InlineData("/etc/passwd", false)]
+    [InlineData("//server/share/card.json", false)]
+    // Windows drive-qualified paths.
+    [InlineData("C:\\Windows\\System32\\drivers\\etc\\hosts", false)]
+    [InlineData("C:card.json", false)]
+    // Absolute URIs (CWE-829).
+    [InlineData("http://attacker.example/exfil", false)]
+    [InlineData("https://attacker.example/card.json", false)]
+    [InlineData("file:///etc/passwd", false)]
+    public void StaticTemplateIsSafeFileReferenceValidatesPaths(string file, bool expectedSafe)
+    {
+        Assert.Equal(expectedSafe, ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(file));
+    }
+
+    [Fact]
+    public void StaticTemplateIsSafeFileReferenceRejectsNull()
+    {
+        Assert.False(ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(null));
+    }
+
+    [Fact]
+    public void StaticTemplateExposesFileReferenceAndFlagsUnsafeOnes()
+    {
+        var unsafeTemplate = new ExtensionResponseSemanticsStaticTemplate
+        {
+            Template = new JsonObject { ["file"] = "../../../../etc/passwd" }
+        };
+        Assert.Equal("../../../../etc/passwd", unsafeTemplate.File);
+        Assert.True(unsafeTemplate.HasUnsafeFileReference);
+
+        var safeTemplate = new ExtensionResponseSemanticsStaticTemplate
+        {
+            Template = new JsonObject { ["file"] = "./adaptiveCards/card.json" }
+        };
+        Assert.Equal("./adaptiveCards/card.json", safeTemplate.File);
+        Assert.False(safeTemplate.HasUnsafeFileReference);
+    }
+
+    [Fact]
+    public void StaticTemplateTreatsInlineCardAsSafePassthrough()
+    {
+        // An inlined Adaptive Card has no "file" property; it must never be treated as an unsafe file reference.
+        var inlineCard = new ExtensionResponseSemanticsStaticTemplate
+        {
+            Template = new JsonObject
+            {
+                ["type"] = "AdaptiveCard",
+                ["body"] = new JsonArray()
+            }
+        };
+        Assert.Null(inlineCard.File);
+        Assert.False(inlineCard.HasUnsafeFileReference);
     }
 }

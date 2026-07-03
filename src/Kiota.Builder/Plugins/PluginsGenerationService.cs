@@ -1193,21 +1193,19 @@ public partial class PluginsGenerationService
                 var responseSemantics = new ResponseSemantics();
 
                 responseSemantics.DataPath = capabilities.ResponseSemantics.DataPath;
-                if (capabilities.ResponseSemantics.StaticTemplate is not null && capabilities.ResponseSemantics.StaticTemplate is JsonObject staticTemplateObj)
+                if (capabilities.ResponseSemantics.StaticTemplate is { } staticTemplate)
                 {
-                    // A static_template is either an inlined Adaptive Card or a { "file": "..." } reference. When it is a
-                    // file reference, reject attacker-controlled absolute paths, URIs, and '..' traversal (CWE-22) instead
-                    // of copying the unsafe reference verbatim into the generated manifest. Inlined cards (no "file" key)
-                    // are passed through unchanged.
-                    if (TryGetStaticTemplateFile(staticTemplateObj, out var staticTemplateFile) && !IsSafeStaticTemplateFileReference(staticTemplateFile))
+                    // A static_template is either an inlined Adaptive Card or a { "file": "..." } reference. Reject
+                    // attacker-controlled file references that could resolve outside the manifest package
+                    // instead of copying them verbatim; inlined cards are passed through unchanged.
+                    if (staticTemplate.HasUnsafeFileReference)
                     {
-                        LogUnsafeStaticTemplateFileReference(logger, staticTemplateFile);
+                        LogUnsafeStaticTemplateFileReference(logger, staticTemplate.File!);
                     }
                     else
                     {
-                        using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
-                        JsonElement staticTemplate = doc.RootElement.Clone();
-                        responseSemantics.StaticTemplate = staticTemplate;
+                        using JsonDocument doc = JsonDocument.Parse(staticTemplate.Template.ToJsonString());
+                        responseSemantics.StaticTemplate = doc.RootElement.Clone();
                     }
                 }
                 if (capabilities.ResponseSemantics.Properties is not null)
@@ -1254,60 +1252,6 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static bool TryGetStaticTemplateFile(JsonObject staticTemplate, out string file)
-    {
-        file = string.Empty;
-        if (staticTemplate.TryGetPropertyValue("file", out var fileNode) &&
-            fileNode is JsonValue fileValue &&
-            fileValue.TryGetValue<string>(out var fileString))
-        {
-            file = fileString;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool IsSafeStaticTemplateFileReference(string file)
-    {
-        if (string.IsNullOrWhiteSpace(file))
-        {
-            return false;
-        }
-
-        // The manifest schema requires a relative file path; reject absolute URIs such as http(s):// or file:// (CWE-829).
-        if (Uri.TryCreate(file, UriKind.Absolute, out _))
-        {
-            return false;
-        }
-
-        // Normalize separators so the checks below are OS-independent (the manifest is consumed on any platform).
-        var normalized = file.Replace('\\', '/');
-
-        // Reject POSIX-absolute and UNC-style rooted paths (e.g. /etc/passwd, //server/share).
-        if (normalized.StartsWith('/'))
-        {
-            return false;
-        }
-
-        // Reject Windows drive-qualified paths (e.g. C:\..., C:foo).
-        if (normalized.Length >= 2 && normalized[1] == ':')
-        {
-            return false;
-        }
-
-        // Reject any parent-directory traversal segment (CWE-22).
-        foreach (var segment in normalized.Split('/'))
-        {
-            if (segment == "..")
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName, ILogger<KiotaBuilder> logger)
     {
         if (openApiOperation.Extensions is not null &&
@@ -1322,7 +1266,7 @@ public partial class PluginsGenerationService
             // The file reference is emitted verbatim into static_template.file and resolved by the AI host relative to
             // the plugin package. Reject attacker-controlled absolute paths, URIs, and parent-directory traversal so a
             // malicious OpenAPI description cannot make the generated manifest point outside the package (CWE-22).
-            if (!IsSafeStaticTemplateFileReference(adaptiveCard.File))
+            if (!ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(adaptiveCard.File))
             {
                 LogUnsafeStaticTemplateFileReference(logger, adaptiveCard.File);
                 return null;
