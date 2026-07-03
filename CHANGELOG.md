@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rejected unsafe `static_template.file` references in generated plugin manifests, preventing path traversal outside the manifest package.
 - Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace.
 - Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths.
 - Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension.

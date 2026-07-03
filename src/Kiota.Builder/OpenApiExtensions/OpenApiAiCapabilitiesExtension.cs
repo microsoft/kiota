@@ -146,7 +146,7 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
         if (source.TryGetPropertyValue(nameof(ResponseSemantics.StaticTemplate).ToFirstCharacterLowerCase().ToSnakeCase(), out var staticTemplate) &&
             staticTemplate is JsonObject staticTemplateObj)
         {
-            responseSemantics.StaticTemplate = staticTemplateObj;
+            responseSemantics.StaticTemplate = new ExtensionResponseSemanticsStaticTemplate { Template = staticTemplateObj };
         }
 
         if (source.TryGetPropertyValue(nameof(ResponseSemantics.Properties).ToFirstCharacterLowerCase(), out var properties) &&
@@ -172,10 +172,10 @@ public class OpenApiAiCapabilitiesExtension : IOpenApiExtension
         writer.WritePropertyName(nameof(ResponseSemantics.DataPath).ToFirstCharacterLowerCase().ToSnakeCase());
         writer.WriteValue(responseSemantics.DataPath);
 
-        if (responseSemantics.StaticTemplate != null && responseSemantics.StaticTemplate is JsonObject staticTemplateObj)
+        if (responseSemantics.StaticTemplate is { } staticTemplate)
         {
             writer.WritePropertyName(nameof(ResponseSemantics.StaticTemplate).ToFirstCharacterLowerCase().ToSnakeCase());
-            writer.WriteRaw(staticTemplateObj.ToJsonString());
+            writer.WriteRaw(staticTemplate.Template.ToJsonString());
         }
 
         if (responseSemantics.Properties != null)
@@ -354,7 +354,7 @@ public class ExtensionConfirmation
 public class ExtensionResponseSemantics
 {
     public string DataPath { get; set; } = string.Empty;
-    public object? StaticTemplate
+    public ExtensionResponseSemanticsStaticTemplate? StaticTemplate
     {
         get; set;
     }
@@ -365,6 +365,67 @@ public class ExtensionResponseSemantics
     public string? OauthCardPath
     {
         get; set;
+    }
+}
+
+public class ExtensionResponseSemanticsStaticTemplate
+{
+    // The raw static_template content, either an inlined Adaptive Card or a { "file": "..." } reference.
+    // It is preserved verbatim so inlined cards are passed through to the generated manifest unchanged.
+    public JsonObject Template { get; init; } = new();
+
+    // The relative file reference when the static_template is a { "file": "..." } reference; null for inlined cards.
+    public string? File =>
+        Template.TryGetPropertyValue("file", out var fileNode) &&
+        fileNode is JsonValue fileValue &&
+        fileValue.TryGetValue<string>(out var file)
+            ? file
+            : null;
+
+    // True when the static_template is a file reference that could resolve outside the manifest package.
+    // Inlined cards (no "file" property) are always considered safe.
+    public bool HasUnsafeFileReference => File is not null && !IsSafeFileReference(File);
+
+    // Validates that a static_template file reference is a relative path that cannot point outside the manifest
+    // package: rejects absolute URIs, POSIX/UNC rooted paths, Windows drive paths, and '..' traversal (CWE-22/CWE-829).
+    public static bool IsSafeFileReference(string? file)
+    {
+        if (string.IsNullOrWhiteSpace(file))
+        {
+            return false;
+        }
+
+        // The manifest schema requires a relative file path; reject absolute URIs such as http(s):// or file://.
+        if (Uri.TryCreate(file, UriKind.Absolute, out _))
+        {
+            return false;
+        }
+
+        // Normalize separators so the checks below are OS-independent (the manifest is consumed on any platform).
+        var normalized = file.Replace('\\', '/');
+
+        // Reject POSIX-absolute and UNC-style rooted paths (e.g. /etc/passwd, //server/share).
+        if (normalized.StartsWith('/'))
+        {
+            return false;
+        }
+
+        // Reject Windows drive-qualified paths (e.g. C:\..., C:foo).
+        if (normalized.Length >= 2 && normalized[1] == ':')
+        {
+            return false;
+        }
+
+        // Reject any parent-directory traversal segment.
+        foreach (var segment in normalized.Split('/'))
+        {
+            if (segment == "..")
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
