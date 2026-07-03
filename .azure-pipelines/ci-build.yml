@@ -826,22 +826,11 @@ extends:
                       Write-Host "Publishing $packagePath"
                       if ($Env:isPrerelease -eq "true") {
                         Write-Host "Publishing $packagePath as a pre-release"
-                        $publishOutput = vsce publish --pat "$aadToken" --packagePath $packagePath --manifestPath $manifestPath --signaturePath $signaturePath --pre-release 2>&1
+                        vsce publish --pat "$aadToken" --packagePath $packagePath --manifestPath $manifestPath --signaturePath $signaturePath --pre-release
                       }
                       else {
                         Write-Host "Publishing $packagePath as a release"
-                        $publishOutput = vsce publish --pat "$aadToken" --packagePath $packagePath --manifestPath $manifestPath --signaturePath $signaturePath 2>&1
-                      }
-                      $publishExit = $LASTEXITCODE
-                      Write-Host $publishOutput
-                      # Idempotency: a re-run for an already-published vsix version should not fail.
-                      if ($publishExit -ne 0) {
-                        if ("$publishOutput" -match "already exists") {
-                          Write-Host "Extension version for $packagePath already published; skipping (idempotent re-run)."
-                        }
-                        else {
-                          throw "vsce publish failed for $packagePath with exit code $publishExit"
-                        }
+                        vsce publish --pat "$aadToken" --packagePath $packagePath --manifestPath $manifestPath --signaturePath $signaturePath
                       }
                     }
                 env:
@@ -892,31 +881,8 @@ extends:
                     - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version Unreleased -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
                       condition: eq(variables['isPrerelease'], 'true')
                       displayName: "Get release notes from CHANGELOG.md"
-                    # Idempotency: if the pipeline is re-triggered for a tag whose GitHub
-                    # release already exists, skip creating it (create fails with a 422 on
-                    # an existing tag) and leave the existing release untouched so
-                    # downstream publish jobs can still run. The lookup is anonymous
-                    # because microsoft/kiota is a public repository.
-                    - pwsh: |
-                        $tag = if ($env:ISPRERELEASE -eq 'true') { "v$(artifactVersion)$(versionSuffix)" } else { "v$(artifactVersion)" }
-                        $uri = "https://api.github.com/repos/microsoft/kiota/releases/tags/$tag"
-                        try {
-                          Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline'; 'Accept' = 'application/vnd.github+json' } | Out-Null
-                          Write-Host "Release '$tag' already exists; skipping GitHub release creation (idempotent re-run)."
-                          Write-Host "##vso[task.setvariable variable=releaseExists]true"
-                        } catch {
-                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "Release '$tag' does not exist; GitHub release will be created."
-                            Write-Host "##vso[task.setvariable variable=releaseExists]false"
-                          } else {
-                            throw
-                          }
-                        }
-                      displayName: "Check whether GitHub release already exists (idempotent)"
-                      env:
-                        ISPRERELEASE: $(isPrerelease)
                     - task: GitHubRelease@1
-                      condition: and(eq(variables['isPrerelease'], 'false'), ne(variables['releaseExists'], 'true'))
+                      condition: eq(variables['isPrerelease'], 'false')
                       inputs:
                         gitHubConnection: "microsoftkiota"
                         tagSource: userSpecifiedTag
@@ -932,7 +898,7 @@ extends:
                           $(Pipeline.Workspace)/*.snupkg
                         addChangeLog: false
                     - task: GitHubRelease@1
-                      condition: and(eq(variables['isPrerelease'], 'true'), ne(variables['releaseExists'], 'true'))
+                      condition: eq(variables['isPrerelease'], 'true')
                       inputs:
                         gitHubConnection: "microsoftkiota"
                         tagSource: userSpecifiedTag
@@ -970,32 +936,8 @@ extends:
                     - pwsh: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
                       displayName: remove other nupkgs to avoid duplication
-                    - pwsh: |
-                        $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter "Microsoft.OpenApi.Kiota.*.nupkg" | Where-Object { $_.Name -match '^Microsoft\.OpenApi\.Kiota\.(\d[\w\.\-]*)\.nupkg$' } | Select-Object -First 1
-                        if (-not $pkg) { throw "No Microsoft.OpenApi.Kiota nupkg found to publish." }
-                        $null = $pkg.Name -match '^Microsoft\.OpenApi\.Kiota\.(\d[\w\.\-]*)\.nupkg$'
-                        $version = $Matches[1]
-                        $id = 'microsoft.openapi.kiota'
-                        $uri = "https://api.nuget.org/v3-flatcontainer/$id/index.json"
-                        try {
-                          $resp = Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline' }
-                          if ($resp.versions -contains $version) {
-                            Write-Host "NuGet $id $version already published; skipping push (idempotent re-run)."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]true"
-                          } else {
-                            Write-Host "NuGet $id $version not found on nuget.org; will push."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          }
-                        } catch {
-                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "NuGet $id has no published versions yet; will push."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          } else { throw }
-                        }
-                      displayName: "Check whether NuGet package version already published (idempotent)"
                     - task: 1ES.PublishNuget@1
                       displayName: "NuGet push"
-                      condition: ne(variables['nugetAlreadyPublished'], 'true')
                       inputs:
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
                         packageParentPath: "$(Pipeline.Workspace)"
@@ -1023,32 +965,8 @@ extends:
                     - pwsh: |
                         Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
                       displayName: remove other nupkgs to avoid duplication
-                    - pwsh: |
-                        $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter "Microsoft.OpenApi.Kiota.Builder.*.nupkg" | Where-Object { $_.Name -match '^Microsoft\.OpenApi\.Kiota\.Builder\.(\d[\w\.\-]*)\.nupkg$' } | Select-Object -First 1
-                        if (-not $pkg) { throw "No Microsoft.OpenApi.Kiota.Builder nupkg found to publish." }
-                        $null = $pkg.Name -match '^Microsoft\.OpenApi\.Kiota\.Builder\.(\d[\w\.\-]*)\.nupkg$'
-                        $version = $Matches[1]
-                        $id = 'microsoft.openapi.kiota.builder'
-                        $uri = "https://api.nuget.org/v3-flatcontainer/$id/index.json"
-                        try {
-                          $resp = Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline' }
-                          if ($resp.versions -contains $version) {
-                            Write-Host "NuGet $id $version already published; skipping push (idempotent re-run)."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]true"
-                          } else {
-                            Write-Host "NuGet $id $version not found on nuget.org; will push."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          }
-                        } catch {
-                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "NuGet $id has no published versions yet; will push."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          } else { throw }
-                        }
-                      displayName: "Check whether NuGet package version already published (idempotent)"
                     - task: 1ES.PublishNuget@1
                       displayName: "NuGet push"
-                      condition: ne(variables['nugetAlreadyPublished'], 'true')
                       inputs:
                         packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
                         packageParentPath: "$(Pipeline.Workspace)"
@@ -1175,29 +1093,7 @@ extends:
             dependsOn:
               - github_release
             steps:
-              - task: UseNode@1
-                inputs:
-                  version: "22.x"
-              - pwsh: |
-                  $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)/npm-package" -Filter "*.tgz" | Select-Object -First 1
-                  if (-not $pkg) { throw "No npm .tgz package found to publish." }
-                  if ($pkg.Name -match '^microsoft-kiota-(.+)\.tgz$') {
-                    $version = $Matches[1]
-                  } else {
-                    throw "Could not parse version from $($pkg.Name)."
-                  }
-                  Write-Host "Checking npm registry for @microsoft/kiota@$version ..."
-                  $published = & npm view "@microsoft/kiota@$version" version 2>$null
-                  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($published)) {
-                    Write-Host "npm @microsoft/kiota@$version already published; skipping ESRP release (idempotent re-run)."
-                    Write-Host "##vso[task.setvariable variable=npmAlreadyPublished]true"
-                  } else {
-                    Write-Host "npm @microsoft/kiota@$version not found; will publish."
-                    Write-Host "##vso[task.setvariable variable=npmAlreadyPublished]false"
-                  }
-                displayName: "Check whether npm version already published (idempotent)"
               - task: EsrpRelease@12
-                condition: ne(variables['npmAlreadyPublished'], 'true')
                 inputs:
                   connectedservicename: "Federated DevX ESRP Managed Identity Connection"
                   usemanagedidentity: false
