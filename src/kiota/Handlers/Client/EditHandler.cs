@@ -78,6 +78,10 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
@@ -99,6 +103,7 @@ internal class EditHandler : BaseKiotaCommandHandler
         List<string>? excludePatterns = parseResult.GetValue(ExcludePatternsOption);
         List<string>? disabledValidationRules = parseResult.GetValue(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes = parseResult.GetValue(StructuredMimeTypesOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -170,6 +175,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                 if (structuredMimeTypes is { Count: > 0 })
                     Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                                     .Select(static x => x.TrimQuotes()));
+                AssignAllowedExternalOrigins(allowedExternalOrigins);
 
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);

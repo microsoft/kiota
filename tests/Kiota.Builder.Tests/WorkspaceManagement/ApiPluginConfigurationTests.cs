@@ -17,22 +17,26 @@ public sealed class ApiPluginConfigurationTests
     {
         var generationConfig = new GenerationConfiguration
         {
-            PluginTypes = [PluginType.APIManifest]
+            PluginTypes = [PluginType.APIManifest],
+            AllowedExternalOrigins = ["https://contoso.com/*"],
         };
         var apiPluginConfig = new ApiPluginConfiguration(generationConfig);
         Assert.NotNull(apiPluginConfig);
         Assert.Contains("APIManifest", apiPluginConfig.Types);
+        Assert.Equal(generationConfig.AllowedExternalOrigins, apiPluginConfig.AllowedExternalOrigins);
     }
     [Fact]
     public void Clones()
     {
         var apiPluginConfig = new ApiPluginConfiguration
         {
-            Types = ["APIManifest"]
+            Types = ["APIManifest"],
+            AllowedExternalOrigins = ["https://contoso.com/*"],
         };
         var cloned = (ApiPluginConfiguration)apiPluginConfig.Clone();
         Assert.NotNull(cloned);
         Assert.Equal(apiPluginConfig.Types, cloned.Types);
+        Assert.Equal(apiPluginConfig.AllowedExternalOrigins, cloned.AllowedExternalOrigins);
     }
     [Fact]
     public void UpdateGenerationConfigurationFromPluginConfiguration()
@@ -40,9 +44,11 @@ public sealed class ApiPluginConfigurationTests
         var generationConfig = new GenerationConfiguration();
         var apiPluginConfig = new ApiPluginConfiguration
         {
-            Types = ["APIManifest"]
+            Types = ["APIManifest"],
+            AllowedExternalOrigins = ["https://contoso.com/*"],
         };
         apiPluginConfig.UpdateGenerationConfigurationFromApiPluginConfiguration(generationConfig, "Foo");
         Assert.Contains(PluginType.APIManifest, generationConfig.PluginTypes);
+        Assert.Equal(apiPluginConfig.AllowedExternalOrigins, generationConfig.AllowedExternalOrigins);
     }
 }

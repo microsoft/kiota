@@ -51,6 +51,7 @@ public static class KiotaClientCommands
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
+        var allowedExternalOriginsOption = KiotaHost.GetAllowedExternalOriginsOption(defaultConfiguration.AllowedExternalOrigins);
 
         var command = new Command("add", "Adds a new client to the Kiota configuration"){
             descriptionOption,
@@ -68,6 +69,7 @@ public static class KiotaClientCommands
             excludePatterns,
             dvrOption,
             skipGenerationOption,
+            allowedExternalOriginsOption,
         };
         command.Action = new AddHandler
         {
@@ -86,6 +88,7 @@ public static class KiotaClientCommands
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
 
@@ -127,6 +130,7 @@ public static class KiotaClientCommands
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
+        var allowedExternalOriginsOption = KiotaHost.GetAllowedExternalOriginsOption([]);
 
         var command = new Command("edit", "Edits a client from the Kiota configuration") {
             descriptionOption,
@@ -144,6 +148,7 @@ public static class KiotaClientCommands
             excludePatterns,
             dvrOption,
             skipGenerationOption,
+            allowedExternalOriginsOption,
         };
         command.Action = new EditHandler
         {
@@ -162,6 +167,7 @@ public static class KiotaClientCommands
             ExcludePatternsOption = excludePatterns,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
@@ -171,17 +177,20 @@ public static class KiotaClientCommands
         var clientNameOption = GetClientNameOption(false);
         var logLevelOption = KiotaHost.GetLogLevelOption();
         var refreshOption = GetRefreshOption();
+        var allowedExternalOriginsOption = KiotaHost.GetAllowedExternalOriginsOption([]);
         var command = new Command("generate", "Generates one or all clients from the Kiota configuration")
         {
             clientNameOption,
             logLevelOption,
             refreshOption,
+            allowedExternalOriginsOption,
         };
         command.Action = new GenerateHandler
         {
             ClassOption = clientNameOption,
             LogLevelOption = logLevelOption,
             RefreshOption = refreshOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             ServiceProvider = serviceProvider,
         };
         return command;
