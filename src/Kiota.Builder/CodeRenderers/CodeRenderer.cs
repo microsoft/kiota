@@ -78,10 +78,8 @@ public class CodeRenderer
     {
         get; private set;
     }
-    protected void RenderCode(LanguageWriter writer, CodeElement element)
+    private void RenderCode(LanguageWriter writer, CodeElement element)
     {
-        ArgumentNullException.ThrowIfNull(writer);
-        ArgumentNullException.ThrowIfNull(element);
         writer.Write(element);
         if (element is not CodeNamespace)
             foreach (var childElement in element.GetChildElements()
