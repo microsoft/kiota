@@ -60,7 +60,7 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
-    <PackageReference Include="Spectre.Console" Version="0.57.1" />
+    <PackageReference Include="Spectre.Console" Version="0.57.2" />
     <PackageReference Include="StreamJsonRpc" Version="2.25.29" />
     <PackageReference Include="System.CommandLine" Version="2.0.9" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
