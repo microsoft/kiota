@@ -23,6 +23,9 @@ public sealed class ApiClientConfigurationTests
             IncludePatterns = [
                 "include"
             ],
+            AllowedExternalOrigins = [
+                "https://contoso.com/*"
+            ],
             Language = "csharp",
             OutputPath = "output",
             StructuredMimeTypes = [
@@ -38,6 +41,7 @@ public sealed class ApiClientConfigurationTests
         Assert.Equal(clientConfig.ExcludePatterns, cloned.ExcludePatterns);
         Assert.Equal(clientConfig.IncludeAdditionalData, cloned.IncludeAdditionalData);
         Assert.Equal(clientConfig.IncludePatterns, cloned.IncludePatterns);
+        Assert.Equal(clientConfig.AllowedExternalOrigins, cloned.AllowedExternalOrigins);
         Assert.Equal(clientConfig.Language, cloned.Language);
         Assert.Equal(clientConfig.OutputPath, cloned.OutputPath);
         Assert.Equal(clientConfig.StructuredMimeTypes, cloned.StructuredMimeTypes);
@@ -56,6 +60,7 @@ public sealed class ApiClientConfigurationTests
             ExcludePatterns = ["exclude"],
             IncludeAdditionalData = true,
             IncludePatterns = ["include"],
+            AllowedExternalOrigins = ["https://contoso.com/*"],
             Language = GenerationLanguage.CSharp,
             OpenAPIFilePath = "openapi",
             OutputPath = "output",
@@ -70,6 +75,7 @@ public sealed class ApiClientConfigurationTests
         Assert.Equal(generationConfiguration.ExcludePatterns, clientConfig.ExcludePatterns);
         Assert.Equal(generationConfiguration.IncludeAdditionalData, clientConfig.IncludeAdditionalData);
         Assert.Equal(generationConfiguration.IncludePatterns, clientConfig.IncludePatterns);
+        Assert.Equal(generationConfiguration.AllowedExternalOrigins, clientConfig.AllowedExternalOrigins);
         Assert.Equal(generationConfiguration.Language.ToString(), clientConfig.Language, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(generationConfiguration.OutputPath, clientConfig.OutputPath);
         Assert.Equal(generationConfiguration.StructuredMimeTypes, clientConfig.StructuredMimeTypes);
@@ -86,6 +92,7 @@ public sealed class ApiClientConfigurationTests
             ExcludePatterns = ["exclude"],
             IncludeAdditionalData = true,
             IncludePatterns = ["include"],
+            AllowedExternalOrigins = ["https://contoso.com/*"],
             Language = "csharp",
             OutputPath = "output",
             StructuredMimeTypes = ["application/json"],
@@ -111,6 +118,7 @@ public sealed class ApiClientConfigurationTests
         Assert.Equal(clientConfiguration.ExcludePatterns, generationConfiguration.ExcludePatterns);
         Assert.Equal(clientConfiguration.IncludeAdditionalData, generationConfiguration.IncludeAdditionalData);
         Assert.Equal(clientConfiguration.IncludePatterns, generationConfiguration.IncludePatterns);
+        Assert.Equal(clientConfiguration.AllowedExternalOrigins, generationConfiguration.AllowedExternalOrigins);
         Assert.Equal(clientConfiguration.OutputPath, generationConfiguration.OutputPath);
         Assert.Equal(clientConfiguration.StructuredMimeTypes, generationConfiguration.StructuredMimeTypes);
         Assert.Equal(clientConfiguration.UsesBackingStore, generationConfiguration.UsesBackingStore);

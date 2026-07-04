@@ -610,6 +610,9 @@ public partial class PluginsGenerationService
     [LoggerMessage(Level = LogLevel.Warning, Message = "Authentication warning: {OperationId} - {Message}")]
     private static partial void LogAuthenticationWarning(ILogger logger, string operationId, string message);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipping unsafe static_template file reference '{FilePath}' in the generated plugin manifest. A static_template file reference must be a relative path that does not point outside the manifest package (no absolute paths, URIs, or '..' parent-directory segments).")]
+    private static partial void LogUnsafeStaticTemplateFileReference(ILogger logger, string filePath);
+
     private sealed class MappingCleanupVisitor(OpenApiDocument openApiDocument) : OpenApiVisitorBase
     {
         private readonly OpenApiDocument _document = openApiDocument;
@@ -1150,13 +1153,13 @@ public partial class PluginsGenerationService
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation, GenerationConfiguration configuration, ILogger<KiotaBuilder> logger)
     {
-        var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
+        var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name, logger);
         if (capabilities != null)
         {
             return capabilities;
         }
 
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name, logger);
         if (responseSemantics != null)
         {
             return new FunctionCapabilities
@@ -1176,7 +1179,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName, ILogger<KiotaBuilder> logger)
     {
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var capabilitiesExtension) &&
@@ -1190,11 +1193,20 @@ public partial class PluginsGenerationService
                 var responseSemantics = new ResponseSemantics();
 
                 responseSemantics.DataPath = capabilities.ResponseSemantics.DataPath;
-                if (capabilities.ResponseSemantics.StaticTemplate is not null && capabilities.ResponseSemantics.StaticTemplate is JsonObject staticTemplateObj)
+                if (capabilities.ResponseSemantics.StaticTemplate is { } staticTemplate)
                 {
-                    using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
-                    JsonElement staticTemplate = doc.RootElement.Clone();
-                    responseSemantics.StaticTemplate = staticTemplate;
+                    // A static_template is either an inlined Adaptive Card or a { "file": "..." } reference. Reject
+                    // attacker-controlled file references that could resolve outside the manifest package
+                    // instead of copying them verbatim; inlined cards are passed through unchanged.
+                    if (staticTemplate.HasUnsafeFileReference)
+                    {
+                        LogUnsafeStaticTemplateFileReference(logger, staticTemplate.File!);
+                    }
+                    else
+                    {
+                        using JsonDocument doc = JsonDocument.Parse(staticTemplate.Template.ToJsonString());
+                        responseSemantics.StaticTemplate = doc.RootElement.Clone();
+                    }
                 }
                 if (capabilities.ResponseSemantics.Properties is not null)
                 {
@@ -1240,7 +1252,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName)
+    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName, ILogger<KiotaBuilder> logger)
     {
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
@@ -1248,6 +1260,15 @@ public partial class PluginsGenerationService
             // This is a workaround for integration with TypeSpec when passing empty object from adaptiveCardExtension
             if (string.IsNullOrEmpty(adaptiveCard.DataPath) || string.IsNullOrEmpty(adaptiveCard.File) || string.IsNullOrEmpty(adaptiveCard.Title))
             {
+                return null;
+            }
+
+            // The file reference is emitted verbatim into static_template.file and resolved by the AI host relative to
+            // the plugin package. Reject attacker-controlled absolute paths, URIs, and parent-directory traversal so a
+            // malicious OpenAPI description cannot make the generated manifest point outside the package (CWE-22).
+            if (!ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(adaptiveCard.File))
+            {
+                LogUnsafeStaticTemplateFileReference(logger, adaptiveCard.File);
                 return null;
             }
 

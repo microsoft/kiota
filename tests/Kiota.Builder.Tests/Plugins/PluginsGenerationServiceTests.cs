@@ -1683,6 +1683,198 @@ paths:
         Assert.NotEqual("$.adaptiveCard", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.DataPath);
     }
 
+    [Theory]
+    [InlineData("../../../../../../etc/passwd")]
+    [InlineData("..\\..\\..\\windows\\system32\\config\\sam")]
+    [InlineData("/etc/passwd")]
+    [InlineData("C:\\Windows\\System32\\drivers\\etc\\hosts")]
+    [InlineData("http://attacker.example/exfil")]
+    [InlineData("file:///etc/passwd")]
+    public async Task DoesNotEmitUnsafeStaticTemplateFileFromAdaptiveCardExtensionAsync(string maliciousFile)
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      operationId: testFunction
+      x-ai-adaptive-card:
+        data_path: $.test
+        file: '" + maliciousFile + @"'
+        title: title
+      responses:
+        '200':
+          description: test
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
+        // The attacker-controlled path/URL must never be copied into the generated manifest.
+        Assert.DoesNotContain(maliciousFile, manifestContent);
+
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        // Generation falls back to Kiota's own safe placeholder template instead of the unsafe reference.
+        var staticTemplate = resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString();
+        Assert.Contains("adaptiveCards", staticTemplate);
+        Assert.DoesNotContain(maliciousFile, staticTemplate);
+    }
+
+    [Theory]
+    [InlineData("../../../../../../etc/passwd")]
+    [InlineData("..\\..\\..\\windows\\system32\\config\\sam")]
+    [InlineData("/etc/passwd")]
+    [InlineData("C:\\Windows\\System32\\drivers\\etc\\hosts")]
+    [InlineData("http://attacker.example/exfil")]
+    [InlineData("file:///etc/passwd")]
+    public async Task DoesNotEmitUnsafeStaticTemplateFileFromCapabilitiesExtensionAsync(string maliciousFile)
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      operationId: testFunction
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+          static_template:
+            file: '" + maliciousFile + @"'
+      responses:
+        '200':
+          description: test
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
+        // The attacker-controlled path/URL must never be copied into the generated manifest.
+        Assert.DoesNotContain(maliciousFile, manifestContent);
+
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics);
+        // The rest of the response semantics is preserved; only the unsafe static_template file reference is dropped.
+        Assert.Equal("$.test", resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.DataPath);
+        Assert.Null(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate);
+    }
+
+    [Fact]
+    public async Task EmitsSafeRelativeStaticTemplateFileFromCapabilitiesExtensionAsync()
+    {
+        const string safeFile = "./adaptiveCards/card.json";
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      operationId: testFunction
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+          static_template:
+            file: '" + safeFile + @"'
+      responses:
+        '200':
+          description: test
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        // A legitimate relative file reference must still be preserved verbatim.
+        Assert.NotNull(resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate);
+        Assert.Contains(safeFile, resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
+    }
+
     #endregion
 
     #region Validation

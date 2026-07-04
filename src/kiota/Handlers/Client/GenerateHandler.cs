@@ -5,6 +5,7 @@ using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
@@ -35,6 +40,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         // Get options
         string? className0 = parseResult.GetValue(ClassOption);
         bool refresh = parseResult.GetValue(RefreshOption);
+        List<string>? allowedExternalOrigins = parseResult.GetValue(AllowedExternalOriginsOption);
         var logLevel = parseResult.GetResult(LogLevelOption)?.GetValueOrDefault<LogLevel>() as LogLevel?;
         var instrumentation = ServiceProvider.GetService<Instrumentation>();
         var activitySource = instrumentation?.ActivitySource;
@@ -81,6 +87,8 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
                     clientEntry.Value.UpdateGenerationConfigurationFromApiClientConfiguration(generationConfiguration, clientEntry.Key, requests);
+                    if (allowedExternalOrigins is { Count: > 0 })
+                        generationConfiguration.AllowedExternalOrigins = allowedExternalOrigins.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;
                     generationConfiguration.Operation = ConsumerOperation.Generate;
