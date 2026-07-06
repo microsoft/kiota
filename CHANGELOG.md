@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed TypeScript generation failing with a file-system error when an API endpoint produces a namespace segment longer than the per-component name limit (e.g. NTFS 255 chars). Oversized TypeScript namespace segments are now shortened (directories only; type names are preserved). [#7901](https://github.com/microsoft/kiota/pull/7901)
+
 ## [1.32.5] - 2026-07-03
 
 ### Added
