@@ -54,6 +54,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             RemoveCancellationParameter(generatedCode);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             CorrectCoreTypesForBackingStore(generatedCode, "BackingStoreFactorySingleton.instance.createBackingStore()");
+            // TypeScript maps namespace segments to directories, so overly-long segments must be shortened
+            // to avoid exceeding the file system's per-component name limit (e.g. NTFS 255 chars).
+            ShortenOversizedNamespaceSegments(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             RemoveRequestConfigurationClasses(generatedCode,
                 new CodeUsing

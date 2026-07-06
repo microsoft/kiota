@@ -1626,7 +1626,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     /// <summary>
     /// Shortens overly-long namespace segments and class names in the CodeDOM to avoid exceeding
     /// file system path limits. Uses truncation + hash suffix for human readability and uniqueness.
-    /// Should be called from refiners for languages where package/namespace must match directory structure (Java, Python, PHP).
+    /// Should be called from refiners for languages where package/namespace must match directory structure (Java, Python, PHP, TypeScript).
     /// </summary>
     protected static void ShortenOversizedNamespaceSegments(CodeElement currentElement, int maxSegmentLength = 64)
     {

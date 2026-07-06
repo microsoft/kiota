@@ -91,6 +91,41 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Contains(deserializerFunction.Usings, x => x.Declaration?.TypeDefinition == propertyFactoryMethod);
     }
     [Fact]
+    public async Task ShortensOversizedNamespaceSegmentsAsync()
+    {
+        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentIdDiscoveredApplicationSegmentIdApplicationIdApplicationId";
+        var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Documentation = new()
+            {
+                DescriptionTemplate = "Test request builder",
+            },
+        }).First();
+        requestBuilderClass.AddProperty(new CodeProperty
+        {
+            Kind = CodePropertyKind.UrlTemplate,
+            Name = "urlTemplate",
+            DefaultValue = "{baseurl+}",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Namespace segment should be shortened so it stays within the file system per-component name limit
+        foreach (var segment in childNs.Name.Split('.'))
+        {
+            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+        }
+
+        // Class name should be shortened
+        Assert.True(requestBuilderClass.Name.Length <= 64, $"Class name '{requestBuilderClass.Name}' exceeds 64 chars");
+    }
+    [Fact]
     public async Task AddsExceptionImplementsOnErrorClassesAsync()
     {
         var apiErrorClassName = "ApiError";
