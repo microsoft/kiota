@@ -91,6 +91,43 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.Contains(deserializerFunction.Usings, x => x.Declaration?.TypeDefinition == propertyFactoryMethod);
     }
     [Fact]
+    public async Task ShortensOversizedNamespaceSegmentsAsync()
+    {
+        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentIdDiscoveredApplicationSegmentIdApplicationIdApplicationId";
+        var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Documentation = new()
+            {
+                DescriptionTemplate = "Test request builder",
+            },
+        }).First();
+        requestBuilderClass.AddProperty(new CodeProperty
+        {
+            Kind = CodePropertyKind.UrlTemplate,
+            Name = "urlTemplate",
+            DefaultValue = "{baseurl+}",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Namespace segment should be shortened so it stays within the file system per-component name limit.
+        // TypeScript maps namespaces (not type names) to directories, so only segments are shortened.
+        foreach (var segment in childNs.Name.Split('.'))
+        {
+            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+        }
+
+        // Type names must be left intact: TypeScript groups types into index.ts barrels and relies on
+        // name-based generation, so only namespaces (directories) are shortened, never the class name.
+        Assert.Equal($"{longSegment}RequestBuilder", requestBuilderClass.Name);
+    }
+    [Fact]
     public async Task AddsExceptionImplementsOnErrorClassesAsync()
     {
         var apiErrorClassName = "ApiError";
