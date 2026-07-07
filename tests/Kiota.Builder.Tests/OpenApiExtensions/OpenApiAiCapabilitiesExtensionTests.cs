@@ -281,6 +281,15 @@ components:
     [InlineData("%252e%252e%252fcard.json", false)]
     // A benign filename containing an encoded space stays safe after decoding.
     [InlineData("card%20name.json", true)]
+    // Encoded NUL / control characters must be rejected (truncation + segment-check evasion).
+    [InlineData("card%00.json", false)]
+    [InlineData("safe.json%00%2e%2e%2fetc%2fpasswd", false)]
+    // Encoding deeper than the decode budget must fail closed rather than pass residual %XX through.
+    [InlineData("%25252525252e%25252525252e%25252525252fx", false)]
+    [InlineData("%2525252525252e%2525252525252e%2525252525252fx", false)]
+    // Unicode full-width homoglyph traversal (literal and percent-encoded UTF-8) is folded and rejected.
+    [InlineData("\uFF0E\uFF0E/card.json", false)]
+    [InlineData("%EF%BC%8E%EF%BC%8E/card.json", false)]
     public void StaticTemplateIsSafeFileReferenceValidatesPaths(string file, bool expectedSafe)
     {
         Assert.Equal(expectedSafe, ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(file));
