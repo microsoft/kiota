@@ -652,4 +652,85 @@ public class PythonLanguageRefinerTests
         Assert.Equal("bytes", method.ReturnType.Name);// return type is renamed to use the stream type
     }
     #endregion
+    #region NameShortening
+    [Fact]
+    public async Task ShortensOversizedNamespaceSegmentsAsync()
+    {
+        // Simulate the problematic long namespace segment from OData functions with many parameters
+        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentidapplicationidapplicationidaiagentidaiagentidaiagentnameaiagentnamecloudapplicationnamecloudapplicationname";
+        var childNs = root.AddNamespace($"graph.networkaccess.reports.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+            Documentation = new()
+            {
+                DescriptionTemplate = "Builds and executes requests for operations under /networkAccess/reports/...",
+            },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Namespace segment should be shortened
+        foreach (var segment in childNs.Name.Split('.'))
+        {
+            Assert.True(segment.Length <= 128, $"Segment '{segment}' exceeds 128 chars (length: {segment.Length})");
+        }
+
+        // Class name should be shortened
+        Assert.True(requestBuilderClass.Name.Length <= 128, $"Class name '{requestBuilderClass.Name}' exceeds 128 chars (length: {requestBuilderClass.Name.Length})");
+
+        // Doc comment should contain original name for disambiguation
+        Assert.Contains("Original name:", requestBuilderClass.Documentation.DescriptionTemplate);
+    }
+    [Fact]
+    public async Task DoesNotShortenNormalLengthNamespacesAsync()
+    {
+        var childNs = root.AddNamespace("graph.networkaccess.users");
+        childNs.AddClass(new CodeClass
+        {
+            Name = "UsersRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("graph.networkaccess.users", childNs.Name);
+    }
+    [Fact]
+    public async Task DoesNotShortenSegmentsWithinThresholdAsync()
+    {
+        // 100 characters: above the previous 64 threshold but within the current 128 threshold,
+        // so it must be preserved verbatim (both namespace segment and type name).
+        var mediumSegment = new string('a', 100);
+        var childNs = root.AddNamespace($"graph.networkaccess.{mediumSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = mediumSegment,
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.EndsWith($".{mediumSegment}", childNs.Name);
+        // The type name is left intact (case normalization aside) — not hash-shortened.
+        Assert.Equal(mediumSegment.Length, requestBuilderClass.Name.Length);
+        Assert.Equal(mediumSegment, requestBuilderClass.Name, ignoreCase: true);
+    }
+    [Fact]
+    public async Task ShorteningWorksWhenDocumentationIsNullAsync()
+    {
+        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentid";
+        var childNs = root.AddNamespace($"graph.networkaccess.{longSegment}");
+        var requestBuilderClass = childNs.AddClass(new CodeClass
+        {
+            Name = $"{longSegment}RequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        // Explicitly set Documentation to null to test the defensive null guard
+        requestBuilderClass.Documentation = null!;
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Should shorten without throwing
+        Assert.True(requestBuilderClass.Name.Length <= 128);
+    }
+    #endregion
 }
