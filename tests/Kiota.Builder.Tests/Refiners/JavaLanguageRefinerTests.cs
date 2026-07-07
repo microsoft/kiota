@@ -791,11 +791,11 @@ public class JavaLanguageRefinerTests
         var nameSegments = childNs.Name.Split('.');
         foreach (var segment in nameSegments)
         {
-            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 128, $"Segment '{segment}' exceeds 128 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 64, $"Class name '{requestBuilderClass.Name}' exceeds 64 chars (length: {requestBuilderClass.Name.Length})");
+        Assert.True(requestBuilderClass.Name.Length <= 128, $"Class name '{requestBuilderClass.Name}' exceeds 128 chars (length: {requestBuilderClass.Name.Length})");
 
         // Doc comment should contain original name for disambiguation
         Assert.Contains("Original name:", requestBuilderClass.Documentation.DescriptionTemplate);
@@ -830,7 +830,7 @@ public class JavaLanguageRefinerTests
     public async Task ShortenedClassNameIsReflectedInMethodReturnTypeAsync()
     {
         // Simulate: parent request builder has a method returning a child request builder with a long name
-        var longClassName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeRequestBuilder";
+        var longClassName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentIdWithApplicationIdRequestBuilder";
         var parentNs = root.AddNamespace("com.microsoft.graph.beta.networkaccess.reports");
         var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetime";
         var childNs = root.AddNamespace($"com.microsoft.graph.beta.networkaccess.reports.{longSegment}");
@@ -861,11 +861,11 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // The class should be shortened
-        Assert.True(targetClass.Name.Length <= 64, $"Class name '{targetClass.Name}' exceeds 64 chars");
+        Assert.True(targetClass.Name.Length <= 128, $"Class name '{targetClass.Name}' exceeds 128 chars");
 
         // The method's return type should automatically reflect the shortened name via TypeDefinition
         Assert.Equal(targetClass.Name, returnType.Name);
-        Assert.True(returnType.Name.Length <= 64, $"Return type name '{returnType.Name}' exceeds 64 chars");
+        Assert.True(returnType.Name.Length <= 128, $"Return type name '{returnType.Name}' exceeds 128 chars");
     }
     [Fact]
     public async Task ShorteningWorksWhenDocumentationIsNullAsync()
@@ -883,7 +883,7 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Should shorten without throwing
-        Assert.True(requestBuilderClass.Name.Length <= 64);
+        Assert.True(requestBuilderClass.Name.Length <= 128);
     }
     #endregion
 }

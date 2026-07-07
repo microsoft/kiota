@@ -140,17 +140,17 @@ public class StringExtensionsTests
     [Fact]
     public void ShortenNameSegmentReturnsOriginalAtExactLimit()
     {
-        var name = new string('a', 64);
+        var name = new string('a', 128);
         Assert.Equal(name, name.ShortenNameSegment());
     }
     [Fact]
     public void ShortenNameSegmentTruncatesAndAppendsHashWhenOverLimit()
     {
-        var longName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
+        var longName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentIdWithApplicationIdWithAiAgentIdWithCloudApplicationName";
         var result = longName.ShortenNameSegment();
-        Assert.Equal(64, result.Length);
-        // First 55 chars are preserved (64 - 8 hash - 1 underscore)
-        Assert.StartsWith("MicrosoftGraphNetworkaccessDeviceReportWithStartDateTim", result);
+        Assert.Equal(128, result.Length);
+        // First 119 chars are preserved (128 - 8 hash - 1 underscore)
+        Assert.StartsWith("MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentIdWithApplicatio", result);
         Assert.Contains("_", result);
     }
     [Fact]

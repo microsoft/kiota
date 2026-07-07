@@ -120,7 +120,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         // TypeScript maps namespaces (not type names) to directories, so only segments are shortened.
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 128, $"Segment '{segment}' exceeds 128 chars (length: {segment.Length})");
         }
 
         // Type names must be left intact: TypeScript groups types into index.ts barrels and relies on

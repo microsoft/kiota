@@ -319,18 +319,18 @@ public class PhpLanguageRefinerTests
         // Namespace segment should be shortened
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 128, $"Segment '{segment}' exceeds 128 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 64, $"Class name '{requestBuilderClass.Name}' exceeds 64 chars");
+        Assert.True(requestBuilderClass.Name.Length <= 128, $"Class name '{requestBuilderClass.Name}' exceeds 128 chars");
     }
     [Fact]
     public async Task ShortenedClassImportsAreConsistentAsync()
     {
         // Parent request builder references a child with a long name via method return type
         var parentNs = root.AddNamespace("ApiSdk.NetworkAccess.Reports");
-        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentId";
+        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentIdDiscoveredApplicationSegmentIdApplicationIdApplicationId";
         var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
 
         var targetClass = childNs.AddClass(new CodeClass
@@ -363,7 +363,7 @@ public class PhpLanguageRefinerTests
             var nsSegments = u.Name.Split('.');
             foreach (var seg in nsSegments)
             {
-                Assert.True(seg.Length <= 64, $"Using namespace segment '{seg}' exceeds 64 chars — stale pre-shortened name");
+                Assert.True(seg.Length <= 128, $"Using namespace segment '{seg}' exceeds 128 chars — stale pre-shortened name");
             }
         }
     }
