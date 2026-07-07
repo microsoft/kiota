@@ -392,7 +392,9 @@ public class ExtensionResponseSemanticsStaticTemplate
     // Validates that a static_template file reference is a relative path that cannot point outside the manifest
     // package: rejects absolute URIs, POSIX/UNC rooted paths, Windows drive paths, and '..' traversal (CWE-22/CWE-829).
     // The reference is percent-decoded first so encoded traversal sequences (e.g. %2e%2e for '..', %2f for '/',
-    // %3a for ':') cannot bypass the checks below; decoding is repeated to defeat multi-level encoding.
+    // %3a for ':') cannot bypass the checks below; decoding is repeated to defeat multi-level encoding, residual
+    // encoding beyond the decode budget fails closed, embedded control/NUL characters are rejected, and Unicode
+    // compatibility forms are folded so full-width homoglyph traversal cannot slip through.
     public static bool IsSafeFileReference(string? file)
     {
         if (string.IsNullOrWhiteSpace(file))
@@ -416,6 +418,29 @@ public class ExtensionResponseSemanticsStaticTemplate
         if (string.IsNullOrWhiteSpace(decoded))
         {
             return false;
+        }
+
+        // Fail closed if percent-encoding remains after the decode budget is exhausted: undecoded residue
+        // (e.g. more encoding levels than MaxPercentDecodePasses) could still be decoded by the downstream
+        // consumer into a traversal sequence, so treat it as unsafe rather than accepting it verbatim.
+        if (!string.Equals(Uri.UnescapeDataString(decoded), decoded, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Fold Unicode compatibility forms (e.g. full-width '．'/'／') to their canonical ASCII equivalents so
+        // homoglyph traversal payloads are normalized before the checks below. Validation only; the original
+        // reference is still emitted verbatim.
+        decoded = decoded.Normalize(System.Text.NormalizationForm.FormKC);
+
+        // Reject control characters (e.g. an embedded NUL from %00) which can truncate the path in downstream
+        // consumers and defeat the parent-directory segment check below.
+        foreach (var ch in decoded)
+        {
+            if (char.IsControl(ch))
+            {
+                return false;
+            }
         }
 
         // The manifest schema requires a relative file path; reject absolute URIs such as http(s):// or file://.
