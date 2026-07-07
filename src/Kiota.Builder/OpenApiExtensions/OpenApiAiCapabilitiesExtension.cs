@@ -386,8 +386,13 @@ public class ExtensionResponseSemanticsStaticTemplate
     // Inlined cards (no "file" property) are always considered safe.
     public bool HasUnsafeFileReference => File is not null && !IsSafeFileReference(File);
 
+    // Upper bound on percent-decode passes; enough to defeat multi-level (double) encoding without unbounded looping.
+    private const int MaxPercentDecodePasses = 5;
+
     // Validates that a static_template file reference is a relative path that cannot point outside the manifest
     // package: rejects absolute URIs, POSIX/UNC rooted paths, Windows drive paths, and '..' traversal (CWE-22/CWE-829).
+    // The reference is percent-decoded first so encoded traversal sequences (e.g. %2e%2e for '..', %2f for '/',
+    // %3a for ':') cannot bypass the checks below; decoding is repeated to defeat multi-level encoding.
     public static bool IsSafeFileReference(string? file)
     {
         if (string.IsNullOrWhiteSpace(file))
@@ -395,14 +400,32 @@ public class ExtensionResponseSemanticsStaticTemplate
             return false;
         }
 
+        // Percent-decode repeatedly until the value is stable so encoded (and double-encoded) traversal payloads
+        // are normalized back to their literal form before validation.
+        var decoded = file;
+        for (var pass = 0; pass < MaxPercentDecodePasses; pass++)
+        {
+            var next = Uri.UnescapeDataString(decoded);
+            if (string.Equals(next, decoded, StringComparison.Ordinal))
+            {
+                break;
+            }
+            decoded = next;
+        }
+
+        if (string.IsNullOrWhiteSpace(decoded))
+        {
+            return false;
+        }
+
         // The manifest schema requires a relative file path; reject absolute URIs such as http(s):// or file://.
-        if (Uri.TryCreate(file, UriKind.Absolute, out _))
+        if (Uri.TryCreate(decoded, UriKind.Absolute, out _))
         {
             return false;
         }
 
         // Normalize separators so the checks below are OS-independent (the manifest is consumed on any platform).
-        var normalized = file.Replace('\\', '/');
+        var normalized = decoded.Replace('\\', '/');
 
         // Reject POSIX-absolute and UNC-style rooted paths (e.g. /etc/passwd, //server/share).
         if (normalized.StartsWith('/'))
