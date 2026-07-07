@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
@@ -435,12 +436,9 @@ public class ExtensionResponseSemanticsStaticTemplate
 
         // Reject control characters (e.g. an embedded NUL from %00) which can truncate the path in downstream
         // consumers and defeat the parent-directory segment check below.
-        foreach (var ch in decoded)
+        if (decoded.Any(char.IsControl))
         {
-            if (char.IsControl(ch))
-            {
-                return false;
-            }
+            return false;
         }
 
         // The manifest schema requires a relative file path; reject absolute URIs such as http(s):// or file://.
