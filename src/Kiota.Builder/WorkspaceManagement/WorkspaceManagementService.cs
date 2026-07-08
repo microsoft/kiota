@@ -42,6 +42,7 @@ public partial class WorkspaceManagementService
     private readonly DescriptionStorageService descriptionStorageService;
     public async Task<bool> IsConsumerPresentAsync(string clientName, CancellationToken cancellationToken = default)
     {
+        DescriptionStorageService.ValidateConsumerName(clientName);
         if (!UseKiotaConfig) return false;
         var (wsConfig, _) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);
         return wsConfig is not null && (wsConfig.Clients.ContainsKey(clientName) || wsConfig.Plugins.ContainsKey(clientName));
@@ -68,6 +69,7 @@ public partial class WorkspaceManagementService
     public async Task UpdateStateFromConfigurationAsync(GenerationConfiguration generationConfiguration, string descriptionHash, Dictionary<string, HashSet<string>> templatesWithOperations, Stream descriptionStream, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(generationConfiguration);
+        DescriptionStorageService.ValidateConsumerName(generationConfiguration.ClientClassName);
         if (UseKiotaConfig)
         {
             var (wsConfig, manifest) = await LoadConfigurationAndManifestAsync(cancellationToken).ConfigureAwait(false);
@@ -154,6 +156,7 @@ public partial class WorkspaceManagementService
     }
     public async Task<Stream?> GetDescriptionCopyAsync(string clientName, string inputPath, bool cleanOutput, CancellationToken cancellationToken = default)
     {
+        DescriptionStorageService.ValidateConsumerName(clientName);
         if (!UseKiotaConfig || cleanOutput)
             return null;
         return await descriptionStorageService.GetDescriptionAsync(clientName, new Uri(inputPath).GetFileExtension(), cancellationToken).ConfigureAwait(false);
@@ -178,6 +181,7 @@ public partial class WorkspaceManagementService
     }
     private async Task RemoveConsumerInternalAsync<T>(string consumerName, Func<WorkspaceConfiguration, Dictionary<string, T>> consumerRetrieval, bool cleanOutput, string consumerDisplayName, CancellationToken cancellationToken) where T : BaseApiConsumerConfiguration
     {
+        DescriptionStorageService.ValidateConsumerName(consumerName);
         if (!UseKiotaConfig)
             throw new InvalidOperationException($"Cannot remove a {consumerDisplayName} in lock mode");
         var (wsConfig, manifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);

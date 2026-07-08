@@ -113,6 +113,50 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWorkspaceConfigurationAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
+    [InlineData("../Victim")]
+    [InlineData("junk/../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    [Theory]
+    public async Task RejectsClientNameWithTraversalKeyAsync(string clientName)
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await WriteWorkspaceConfigurationAsync($$"""
+        {
+          "version": "1.0.0",
+          "clients": {
+            "{{clientName.Replace("\\", "\\\\", StringComparison.Ordinal)}}": {
+              "outputPath": "./client"
+            }
+          },
+          "plugins": {}
+        }
+        """);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWorkspaceConfigurationAsync(cancellationToken: TestContext.Current.CancellationToken));
+    }
+    [InlineData("../Victim")]
+    [InlineData("junk/../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    [Theory]
+    public async Task RejectsPluginNameWithTraversalKeyAsync(string pluginName)
+    {
+        var service = new WorkspaceConfigurationStorageService(tempPath);
+        await WriteWorkspaceConfigurationAsync($$"""
+        {
+          "version": "1.0.0",
+          "clients": {},
+          "plugins": {
+            "{{pluginName.Replace("\\", "\\\\", StringComparison.Ordinal)}}": {
+              "outputPath": "./plugin"
+            }
+          }
+        }
+        """);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWorkspaceConfigurationAsync(cancellationToken: TestContext.Current.CancellationToken));
+    }
     private async Task WriteWorkspaceConfigurationAsync(string content)
     {
         var configurationDirectory = Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment);
