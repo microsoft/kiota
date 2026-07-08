@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncKeyedLock;
@@ -21,7 +22,29 @@ public class DescriptionStorageService
         o.PoolSize = 20;
         o.PoolInitialFill = 1;
     });
-    private string GetDescriptionFilePath(string clientName, string extension) => Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath, clientName, $"openapi.{extension}");
+    private string GetDescriptionFilePath(string clientName, string extension)
+    {
+        ValidateConsumerName(clientName);
+        var documentsDirectory = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath);
+        var descriptionFilePath = Path.GetFullPath(Path.Combine(documentsDirectory, clientName, $"openapi.{extension}"));
+        var documentsFullPath = Path.GetFullPath(documentsDirectory);
+        var documentsFullPathWithSeparator = Path.EndsInDirectorySeparator(documentsFullPath) ? documentsFullPath : documentsFullPath + Path.DirectorySeparatorChar;
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!descriptionFilePath.StartsWith(documentsFullPathWithSeparator, comparison))
+            throw new InvalidOperationException($"The consumer name '{clientName}' resolves to a path outside of the documents directory.");
+        return descriptionFilePath;
+    }
+    internal static void ValidateConsumerName(string clientName)
+    {
+        if (string.IsNullOrWhiteSpace(clientName))
+            throw new InvalidOperationException("The consumer name must not be empty or whitespace.");
+        if (Path.IsPathRooted(clientName) ||
+            clientName.Contains('/', StringComparison.Ordinal) ||
+            clientName.Contains('\\', StringComparison.Ordinal) ||
+            clientName.Split('/', '\\').Contains("..", StringComparer.Ordinal) ||
+            clientName is "." or "..")
+            throw new InvalidOperationException($"The consumer name '{clientName}' is not a valid single path segment and cannot navigate the file system.");
+    }
     public async Task UpdateDescriptionAsync(string clientName, Stream description, string extension = "yml", CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(clientName);

@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed a path traversal vulnerability where workspace consumer identifiers (`clientName`/`pluginName`) and workspace configuration keys were used as filesystem path components without containment validation, allowing a crafted name (e.g. `junk/../Victim`) to overwrite another consumer's cached OpenAPI description. [#7919](https://github.com/microsoft/kiota/issues/7919)
+
 ## [1.33.0] - 2026-07-06
 
 ### Added
