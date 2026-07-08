@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -319,11 +319,11 @@ public class PhpLanguageRefinerTests
         // Namespace segment should be shortened
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 255, $"Segment '{segment}' exceeds 255 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 250, $"Segment '{segment}' exceeds 250 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 255, $"Class name '{requestBuilderClass.Name}' exceeds 255 chars");
+        Assert.True(requestBuilderClass.Name.Length <= 250, $"Class name '{requestBuilderClass.Name}' exceeds 250 chars");
     }
     [Fact]
     public async Task ShortenedClassImportsAreConsistentAsync()
@@ -363,7 +363,7 @@ public class PhpLanguageRefinerTests
             var nsSegments = u.Name.Split('.');
             foreach (var seg in nsSegments)
             {
-                Assert.True(seg.Length <= 255, $"Using namespace segment '{seg}' exceeds 255 chars — stale pre-shortened name");
+                Assert.True(seg.Length <= 250, $"Using namespace segment '{seg}' exceeds 250 chars — stale pre-shortened name");
             }
         }
     }
