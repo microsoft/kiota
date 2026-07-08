@@ -657,7 +657,7 @@ public class PythonLanguageRefinerTests
     public async Task ShortensOversizedNamespaceSegmentsAsync()
     {
         // Simulate the problematic long namespace segment from OData functions with many parameters
-        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentidapplicationidapplicationidaiagentidaiagentidaiagentnameaiagentnamecloudapplicationnamecloudapplicationname";
+        var longSegment = string.Concat(Enumerable.Repeat("microsoftgraphnetworkaccessdevicereportsegment", 6)); // 276 chars > 255
         var childNs = root.AddNamespace($"graph.networkaccess.reports.{longSegment}");
         var requestBuilderClass = childNs.AddClass(new CodeClass
         {
@@ -673,11 +673,11 @@ public class PythonLanguageRefinerTests
         // Namespace segment should be shortened
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 128, $"Segment '{segment}' exceeds 128 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 255, $"Segment '{segment}' exceeds 255 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 128, $"Class name '{requestBuilderClass.Name}' exceeds 128 chars (length: {requestBuilderClass.Name.Length})");
+        Assert.True(requestBuilderClass.Name.Length <= 255, $"Class name '{requestBuilderClass.Name}' exceeds 255 chars (length: {requestBuilderClass.Name.Length})");
 
         // Doc comment should contain original name for disambiguation
         Assert.Contains("Original name:", requestBuilderClass.Documentation.DescriptionTemplate);
@@ -698,9 +698,9 @@ public class PythonLanguageRefinerTests
     [Fact]
     public async Task DoesNotShortenSegmentsWithinThresholdAsync()
     {
-        // 100 characters: above the previous 64 threshold but within the current 128 threshold,
+        // 200 characters: above the previous 64/128 thresholds but within the current 255 threshold,
         // so it must be preserved verbatim (both namespace segment and type name).
-        var mediumSegment = new string('a', 100);
+        var mediumSegment = new string('a', 200);
         var childNs = root.AddNamespace($"graph.networkaccess.{mediumSegment}");
         var requestBuilderClass = childNs.AddClass(new CodeClass
         {
@@ -717,7 +717,7 @@ public class PythonLanguageRefinerTests
     [Fact]
     public async Task ShorteningWorksWhenDocumentationIsNullAsync()
     {
-        var longSegment = "microsoftgraphnetworkaccessdevicereportwithstartdatetimewithenddatetimediscoveredapplicationsegmentiddiscoveredapplicationsegmentid";
+        var longSegment = string.Concat(Enumerable.Repeat("microsoftgraphnetworkaccessdevicereportsegment", 6)); // 276 chars > 255
         var childNs = root.AddNamespace($"graph.networkaccess.{longSegment}");
         var requestBuilderClass = childNs.AddClass(new CodeClass
         {
@@ -730,7 +730,7 @@ public class PythonLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Should shorten without throwing
-        Assert.True(requestBuilderClass.Name.Length <= 128);
+        Assert.True(requestBuilderClass.Name.Length <= 255);
     }
     #endregion
 }

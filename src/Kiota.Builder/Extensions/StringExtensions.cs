@@ -75,14 +75,14 @@ public static partial class StringExtensions
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;
 #pragma warning restore CA1308
 
-    private const int DefaultMaxNameSegmentLength = 128;
+    private const int DefaultMaxNameSegmentLength = 255;
     private const int HashSuffixLength = 8;
     /// <summary>
     /// Shortens a name segment to the specified maximum length by truncating and appending a short hash suffix.
     /// Preserves human readability by keeping the first part of the original name.
     /// </summary>
     /// <param name="name">The name to potentially shorten</param>
-    /// <param name="maxLength">The maximum allowed length. Default is 128.</param>
+    /// <param name="maxLength">The maximum allowed length. Default is 255.</param>
     /// <returns>The original name if within limits, or a truncated name with hash suffix for uniqueness</returns>
     public static string ShortenNameSegment(this string name, int maxLength = DefaultMaxNameSegmentLength)
     {

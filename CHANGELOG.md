@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Reduced the aggressiveness of namespace segment and type name shortening by raising the length threshold from 64 to 128 characters, so names between 65 and 128 characters keep their full names.
+- Reduced the aggressiveness of namespace segment and type name shortening by raising the length threshold to 255 characters (the common file-system per-component limit), so only names longer than 255 characters are truncated (to a 246-character prefix plus an underscore and 8-character hash).
 
 ## [1.33.0] - 2026-07-06
 

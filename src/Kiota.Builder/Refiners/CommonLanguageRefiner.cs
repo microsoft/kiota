@@ -1635,7 +1635,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     /// that map only namespaces to directories and group types into barrel files, where renaming types would
     /// break downstream name-based generation without any file-system benefit.
     /// </param>
-    protected static void ShortenOversizedNamespaceSegments(CodeElement currentElement, int maxSegmentLength = 128, bool shortenTypeNames = true)
+    protected static void ShortenOversizedNamespaceSegments(CodeElement currentElement, int maxSegmentLength = 255, bool shortenTypeNames = true)
     {
         if (currentElement is CodeNamespace codeNamespace && !string.IsNullOrEmpty(codeNamespace.Name))
         {
