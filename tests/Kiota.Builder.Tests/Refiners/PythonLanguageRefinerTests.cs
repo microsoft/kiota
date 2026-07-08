@@ -673,11 +673,11 @@ public class PythonLanguageRefinerTests
         // Namespace segment should be shortened
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 240, $"Segment '{segment}' exceeds 240 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 225, $"Segment '{segment}' exceeds 225 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 240, $"Class name '{requestBuilderClass.Name}' exceeds 240 chars (length: {requestBuilderClass.Name.Length})");
+        Assert.True(requestBuilderClass.Name.Length <= 225, $"Class name '{requestBuilderClass.Name}' exceeds 225 chars (length: {requestBuilderClass.Name.Length})");
 
         // Doc comment should contain original name for disambiguation
         Assert.Contains("Original name:", requestBuilderClass.Documentation.DescriptionTemplate);
@@ -698,7 +698,7 @@ public class PythonLanguageRefinerTests
     [Fact]
     public async Task DoesNotShortenSegmentsWithinThresholdAsync()
     {
-        // 200 characters: above the previous 64/128 thresholds but within the current 240 threshold,
+        // 200 characters: above the previous 64/128 thresholds but within the current 225 threshold,
         // so it must be preserved verbatim (both namespace segment and type name).
         var mediumSegment = new string('a', 200);
         var childNs = root.AddNamespace($"graph.networkaccess.{mediumSegment}");
@@ -730,7 +730,7 @@ public class PythonLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Should shorten without throwing
-        Assert.True(requestBuilderClass.Name.Length <= 240);
+        Assert.True(requestBuilderClass.Name.Length <= 225);
     }
     #endregion
 }
