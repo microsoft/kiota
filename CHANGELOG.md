@@ -13,7 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Reduced the aggressiveness of namespace segment and type name shortening by raising the length threshold to 250 characters, so only names longer than 250 characters are truncated (to a 241-character prefix plus an underscore and 8-character hash). The threshold leaves a small buffer below the 255 file-system per-component limit for the file extension appended by path segmenters. Python uses a lower threshold of 240 to account for the extra underscores introduced by snake_case file naming.
+## [1.34.0] - 2026-07-08
+
+### Added
+
+### Changed
+
 - Fixed a path traversal vulnerability where workspace consumer identifiers (`clientName`/`pluginName`) and workspace configuration keys were used as filesystem path components without containment validation, allowing a crafted name (e.g. `junk/../Victim`) to overwrite another consumer's cached OpenAPI description. [#7919](https://github.com/microsoft/kiota/issues/7919)
 
 ## [1.33.0] - 2026-07-06
