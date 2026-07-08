@@ -75,16 +75,18 @@ public static partial class StringExtensions
         (!string.IsNullOrEmpty(name) && name.Length > length) ? HashString(name).ToLowerInvariant() : name;
 #pragma warning restore CA1308
 
-    // 250 leaves a 5-character buffer below the 255 file-system per-component limit (NAME_MAX) for the
-    // file extension (e.g. ".java") that path segmenters append when turning a type name into a file name.
-    private const int DefaultMaxNameSegmentLength = 250;
+    // 200 keeps the shortened name well below the 255 file-system per-component limit (NAME_MAX),
+    // leaving room for extensions and language-specific suffixes that path segmenters and compilers
+    // append (e.g. ".java" plus nested-class suffixes like "$GetQueryParameters.class", or the extra
+    // underscores Python introduces when converting names to snake_case file names).
+    private const int DefaultMaxNameSegmentLength = 200;
     private const int HashSuffixLength = 8;
     /// <summary>
     /// Shortens a name segment to the specified maximum length by truncating and appending a short hash suffix.
     /// Preserves human readability by keeping the first part of the original name.
     /// </summary>
     /// <param name="name">The name to potentially shorten</param>
-    /// <param name="maxLength">The maximum allowed length. Default is 250.</param>
+    /// <param name="maxLength">The maximum allowed length. Default is 200.</param>
     /// <returns>The original name if within limits, or a truncated name with hash suffix for uniqueness</returns>
     public static string ShortenNameSegment(this string name, int maxLength = DefaultMaxNameSegmentLength)
     {

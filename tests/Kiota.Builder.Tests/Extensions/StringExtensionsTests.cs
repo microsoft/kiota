@@ -142,18 +142,18 @@ public class StringExtensionsTests
     [Fact]
     public void ShortenNameSegmentReturnsOriginalAtExactLimit()
     {
-        var name = new string('a', 250);
+        var name = new string('a', 200);
         Assert.Equal(name, name.ShortenNameSegment());
     }
     [Fact]
     public void ShortenNameSegmentTruncatesAndAppendsHashWhenOverLimit()
     {
-        var longName = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkaccessDeviceReportSegment", 8)); // 368 chars > 250
+        var longName = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkaccessDeviceReportSegment", 8)); // 368 chars > 200
         var result = longName.ShortenNameSegment();
-        Assert.Equal(250, result.Length);
-        // First 241 chars are preserved (250 - 8 hash - 1 underscore)
-        Assert.StartsWith(longName[..241], result);
-        Assert.Equal('_', result[241]);
+        Assert.Equal(200, result.Length);
+        // First 191 chars are preserved (200 - 8 hash - 1 underscore)
+        Assert.StartsWith(longName[..191], result);
+        Assert.Equal('_', result[191]);
     }
     [Fact]
     public void ShortenNameSegmentIsDeterministic()

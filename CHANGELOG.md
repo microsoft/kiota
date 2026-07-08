@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Reduced the aggressiveness of namespace segment and type name shortening by raising the length threshold to 250 characters, so only names longer than 250 characters are truncated (to a 241-character prefix plus an underscore and 8-character hash). The threshold leaves a small buffer below the 255 file-system per-component limit for the file extension appended by path segmenters. Python uses a lower threshold of 225 to account for the extra underscores introduced by snake_case file naming.
+- Reduced the aggressiveness of namespace segment and type name shortening by raising the length threshold to 200 characters, so only names longer than 200 characters are truncated (to a 191-character prefix plus an underscore and 8-character hash). The threshold stays well below the 255 file-system per-component limit to leave room for extensions and language-specific suffixes appended by path segmenters and compilers (e.g. Java nested-class `.class` files and the extra underscores Python adds when converting names to snake_case).
 
 ## [1.34.0] - 2026-07-08
 

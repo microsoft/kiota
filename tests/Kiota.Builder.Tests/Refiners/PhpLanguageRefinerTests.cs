@@ -319,11 +319,11 @@ public class PhpLanguageRefinerTests
         // Namespace segment should be shortened
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 250, $"Segment '{segment}' exceeds 250 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 200, $"Segment '{segment}' exceeds 200 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 250, $"Class name '{requestBuilderClass.Name}' exceeds 250 chars");
+        Assert.True(requestBuilderClass.Name.Length <= 200, $"Class name '{requestBuilderClass.Name}' exceeds 200 chars");
     }
     [Fact]
     public async Task ShortenedClassImportsAreConsistentAsync()
@@ -363,7 +363,7 @@ public class PhpLanguageRefinerTests
             var nsSegments = u.Name.Split('.');
             foreach (var seg in nsSegments)
             {
-                Assert.True(seg.Length <= 250, $"Using namespace segment '{seg}' exceeds 250 chars — stale pre-shortened name");
+                Assert.True(seg.Length <= 200, $"Using namespace segment '{seg}' exceeds 200 chars — stale pre-shortened name");
             }
         }
     }

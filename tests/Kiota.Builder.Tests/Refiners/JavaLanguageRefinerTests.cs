@@ -791,11 +791,11 @@ public class JavaLanguageRefinerTests
         var nameSegments = childNs.Name.Split('.');
         foreach (var segment in nameSegments)
         {
-            Assert.True(segment.Length <= 250, $"Segment '{segment}' exceeds 250 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 200, $"Segment '{segment}' exceeds 200 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 250, $"Class name '{requestBuilderClass.Name}' exceeds 250 chars (length: {requestBuilderClass.Name.Length})");
+        Assert.True(requestBuilderClass.Name.Length <= 200, $"Class name '{requestBuilderClass.Name}' exceeds 200 chars (length: {requestBuilderClass.Name.Length})");
 
         // Doc comment should contain original name for disambiguation
         Assert.Contains("Original name:", requestBuilderClass.Documentation.DescriptionTemplate);
@@ -861,11 +861,11 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // The class should be shortened
-        Assert.True(targetClass.Name.Length <= 250, $"Class name '{targetClass.Name}' exceeds 250 chars");
+        Assert.True(targetClass.Name.Length <= 200, $"Class name '{targetClass.Name}' exceeds 200 chars");
 
         // The method's return type should automatically reflect the shortened name via TypeDefinition
         Assert.Equal(targetClass.Name, returnType.Name);
-        Assert.True(returnType.Name.Length <= 250, $"Return type name '{returnType.Name}' exceeds 250 chars");
+        Assert.True(returnType.Name.Length <= 200, $"Return type name '{returnType.Name}' exceeds 200 chars");
     }
     [Fact]
     public async Task ShorteningWorksWhenDocumentationIsNullAsync()
@@ -883,7 +883,7 @@ public class JavaLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
 
         // Should shorten without throwing
-        Assert.True(requestBuilderClass.Name.Length <= 250);
+        Assert.True(requestBuilderClass.Name.Length <= 200);
     }
     #endregion
 }
