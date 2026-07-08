@@ -70,7 +70,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
-            ShortenOversizedNamespaceSegments(generatedCode);
+            // Python appends an extra underscore per capital letter when converting the
+            // CodeDOM name to a snake_case file name, so use a lower threshold (240) to keep
+            // the resulting file name (plus the ".py" extension) within the 255 file-system limit.
+            ShortenOversizedNamespaceSegments(generatedCode, maxSegmentLength: 240);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             cancellationToken.ThrowIfCancellationRequested();
