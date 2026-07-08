@@ -104,4 +104,28 @@ public sealed class DescriptionStorageServiceTests
         var service = new DescriptionStorageService(tempPath);
         Assert.Throws<InvalidOperationException>(() => service.RemoveDescription(clientName));
     }
+
+    [Theory]
+    [InlineData("../evil")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task UpdateDescriptionRejectsInvalidExtensionsAsync(string extension)
+    {
+        var service = new DescriptionStorageService(tempPath);
+        using var stream = new MemoryStream();
+        stream.WriteByte(0x1);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateDescriptionAsync("clientName", stream, extension, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData("../evil")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    public async Task GetDescriptionRejectsInvalidExtensionsAsync(string extension)
+    {
+        var service = new DescriptionStorageService(tempPath);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetDescriptionAsync("clientName", extension, cancellationToken: TestContext.Current.CancellationToken));
+    }
 }

@@ -25,7 +25,8 @@ public class DescriptionStorageService
     private string GetDescriptionFilePath(string clientName, string extension)
     {
         ValidateConsumerName(clientName);
-        var documentsDirectory = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath);
+        ValidateExtension(extension);
+        var documentsDirectory = Path.Join(TargetDirectory, DescriptionsSubDirectoryRelativePath);
         var descriptionFilePath = Path.GetFullPath(Path.Combine(documentsDirectory, clientName, $"openapi.{extension}"));
         var documentsFullPath = Path.GetFullPath(documentsDirectory);
         var documentsFullPathWithSeparator = Path.EndsInDirectorySeparator(documentsFullPath) ? documentsFullPath : documentsFullPath + Path.DirectorySeparatorChar;
@@ -44,6 +45,15 @@ public class DescriptionStorageService
             clientName.Split('/', '\\').Contains("..", StringComparer.Ordinal) ||
             clientName is "." or "..")
             throw new InvalidOperationException($"The consumer name '{clientName}' is not a valid single path segment and cannot navigate the file system.");
+    }
+    private static void ValidateExtension(string extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension))
+            throw new InvalidOperationException("The description file extension must not be empty or whitespace.");
+        if (Path.IsPathRooted(extension) ||
+            extension.Contains('/', StringComparison.Ordinal) ||
+            extension.Contains('\\', StringComparison.Ordinal))
+            throw new InvalidOperationException($"The description file extension '{extension}' must not contain path separators or be rooted.");
     }
     public async Task UpdateDescriptionAsync(string clientName, Stream description, string extension = "yml", CancellationToken cancellationToken = default)
     {
@@ -85,7 +95,7 @@ public class DescriptionStorageService
     }
     public void Clean()
     {
-        var kiotaDirectoryPath = Path.Combine(TargetDirectory, DescriptionsSubDirectoryRelativePath);
+        var kiotaDirectoryPath = Path.Join(TargetDirectory, DescriptionsSubDirectoryRelativePath);
         if (Path.Exists(kiotaDirectoryPath))
             Directory.Delete(kiotaDirectoryPath, true);
     }
