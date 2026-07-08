@@ -264,6 +264,82 @@ paths:
             Assert.NotNull(descriptionCopy);
     }
 
+    [Theory]
+    [InlineData("junk/../Victim")]
+    [InlineData("../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    public async Task RemoveClientRejectsTraversalNamesAsync(string clientName)
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.RemoveClientAsync(clientName, cancellationToken: TestContext.Current.CancellationToken));
+    }
+    [Theory]
+    [InlineData("junk/../Victim")]
+    [InlineData("../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    public async Task RemovePluginRejectsTraversalNamesAsync(string clientName)
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.RemovePluginAsync(clientName, cancellationToken: TestContext.Current.CancellationToken));
+    }
+    [Theory]
+    [InlineData("junk/../Victim")]
+    [InlineData("../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    public async Task IsConsumerPresentRejectsTraversalNamesAsync(string clientName)
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.IsConsumerPresentAsync(clientName, cancellationToken: TestContext.Current.CancellationToken));
+    }
+    [Theory]
+    [InlineData("junk/../Victim")]
+    [InlineData("../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    public async Task GetDescriptionCopyRejectsTraversalNamesAsync(string clientName)
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetDescriptionCopyAsync(clientName, Path.Combine(tempPath, "openapi.yml"), false, cancellationToken: TestContext.Current.CancellationToken));
+    }
+    [Theory]
+    [InlineData("junk/../Victim")]
+    [InlineData("../Victim")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    public async Task UpdateStateRejectsTraversalClientNamesAsync(string clientName)
+    {
+        var mockLogger = Mock.Of<ILogger>();
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(mockLogger, httpClient, true, tempPath);
+        var configuration = new GenerationConfiguration
+        {
+            ClientClassName = clientName,
+            OutputPath = Path.Combine(tempPath, "client"),
+            OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
+            ApiRootUrl = "https://graph.microsoft.com",
+        };
+        using var stream = new MemoryStream();
+        stream.WriteByte(0x1);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateStateFromConfigurationAsync(
+            configuration,
+            "foo",
+            new Dictionary<string, HashSet<string>> {
+                { "/foo", new HashSet<string> { "GET" } }
+            },
+            stream, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(tempPath))

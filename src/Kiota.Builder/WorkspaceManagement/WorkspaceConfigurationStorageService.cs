@@ -111,20 +111,22 @@ public class WorkspaceConfigurationStorageService
         foreach (var client in configuration.Clients)
             try
             {
+                DescriptionStorageService.ValidateConsumerName(client.Key);
                 BaseApiConsumerConfiguration.ValidateOutputPath(client.Value.OutputPath, workspaceDirectory);
             }
             catch (InvalidOperationException ex)
             {
-                throw new InvalidOperationException($"The client {client.Key} has an invalid output path: {ex.Message}", ex);
+                throw new InvalidOperationException($"The client {client.Key} has an invalid configuration: {ex.Message}", ex);
             }
         foreach (var plugin in configuration.Plugins)
             try
             {
+                DescriptionStorageService.ValidateConsumerName(plugin.Key);
                 BaseApiConsumerConfiguration.ValidateOutputPath(plugin.Value.OutputPath, workspaceDirectory);
             }
             catch (InvalidOperationException ex)
             {
-                throw new InvalidOperationException($"The plugin {plugin.Key} has an invalid output path: {ex.Message}", ex);
+                throw new InvalidOperationException($"The plugin {plugin.Key} has an invalid configuration: {ex.Message}", ex);
             }
     }
     public async Task BackupConfigAsync(CancellationToken cancellationToken = default)
