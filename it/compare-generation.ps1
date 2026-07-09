@@ -123,11 +123,45 @@ if ($HashString1 -eq $HashString2) {
 }
 else {
     Write-Host "The content of the folders is NOT identical"
+
+    # Print differing files: get hash for each file and compare. Print files the differ.
+    function Get-FileHashMap {
+        param([string]$Root)
+        $map = @{}
+        Get-ChildItem -Path $Root -File -Recurse | ForEach-Object {
+            $rel = $_.FullName.Substring($Root.Length).TrimStart('\','/')
+            $hash = (Get-FileHash -Algorithm MD5 -Path $_.FullName).Hash
+            $map[$rel] = $hash
+        }
+        return $map
+    }
+
+    $map1 = Get-FileHashMap -Root $tmpFolder1
+    $map2 = Get-FileHashMap -Root $tmpFolder2
+
+    $allKeys = ($map1.Keys + $map2.Keys) | Sort-Object -Unique
+
+    foreach ($key in $allKeys) {
+        $in1 = $map1.ContainsKey($key)
+        $in2 = $map2.ContainsKey($key)
+
+        if (-not $in1) {
+            Write-Host "Missing in ${tmpFolder1}: $key" # Should not happen
+        } elseif (-not $in2) {
+            Write-Host "Missing in ${tmpFolder2}: $key" # Should not happen
+        } else {
+            if ($map1[$key] -ne $map2[$key]) {
+                Write-Host "Difference found in: $key"
+            }
+        }
+    }
+
+    # Now zip the results in the upload folder:
     $resultsFolder = Join-Path -Path $rootPath -ChildPath "idempotency-results"
     if (Test-Path $resultsFolder) {
         Remove-Item $resultsFolder -Force -Verbose -Recurse
     }
-    New-Item -ItemType Directory -Path $resultsFolder -Force
+    New-Item -ItemType Directory -Path $resultsFolder -Force | Out-Null
 
     if ($dev -eq $false) {
         $archivePath1 = Join-Path $resultsFolder -ChildPath "idempotency-folder1.zip"
