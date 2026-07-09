@@ -1,4 +1,6 @@
-﻿using Kiota.Builder.Extensions;
+﻿using System.Linq;
+
+using Kiota.Builder.Extensions;
 
 using Xunit;
 
@@ -140,23 +142,23 @@ public class StringExtensionsTests
     [Fact]
     public void ShortenNameSegmentReturnsOriginalAtExactLimit()
     {
-        var name = new string('a', 64);
+        var name = new string('a', 200);
         Assert.Equal(name, name.ShortenNameSegment());
     }
     [Fact]
     public void ShortenNameSegmentTruncatesAndAppendsHashWhenOverLimit()
     {
-        var longName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
+        var longName = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkaccessDeviceReportSegment", 8)); // 368 chars > 200
         var result = longName.ShortenNameSegment();
-        Assert.Equal(64, result.Length);
-        // First 55 chars are preserved (64 - 8 hash - 1 underscore)
-        Assert.StartsWith("MicrosoftGraphNetworkaccessDeviceReportWithStartDateTim", result);
-        Assert.Contains("_", result);
+        Assert.Equal(200, result.Length);
+        // First 191 chars are preserved (200 - 8 hash - 1 underscore)
+        Assert.StartsWith(longName[..191], result);
+        Assert.Equal('_', result[191]);
     }
     [Fact]
     public void ShortenNameSegmentIsDeterministic()
     {
-        var longName = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
+        var longName = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkaccessDeviceReportSegment", 8)); // 368 chars > 255
         var result1 = longName.ShortenNameSegment();
         var result2 = longName.ShortenNameSegment();
         Assert.Equal(result1, result2);
@@ -164,8 +166,8 @@ public class StringExtensionsTests
     [Fact]
     public void ShortenNameSegmentProducesDifferentResultsForDifferentInputs()
     {
-        var name1 = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithDiscoveredApplicationSegmentId";
-        var name2 = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeWithApplicationId";
+        var name1 = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkaccessDeviceReportSegment", 8)) + "One"; // > 255
+        var name2 = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkaccessDeviceReportSegment", 8)) + "Two"; // > 255
         var result1 = name1.ShortenNameSegment();
         var result2 = name2.ShortenNameSegment();
         Assert.NotEqual(result1, result2);
