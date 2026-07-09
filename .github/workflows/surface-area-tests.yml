@@ -68,14 +68,18 @@ jobs:
         shell: pwsh
         timeout-minutes: 30
         run: |
-          $patchPath = Join-Path -Path (Get-Location) -ChildPath "${{ matrix.language }}-dom-export.patch"
+          $patchFileName = "${{ matrix.language }}-dom-export.patch"
+          $patchPath = Join-Path -Path (Get-Location) -ChildPath $patchFileName
           ./it/compare-dom-export.ps1 `
             -descriptionUrl "${{ matrix.description }}" `
             -language "${{ matrix.language }}" `
             -patchPath $patchPath `
             -baselineVersion "${{ github.event.inputs.baselineVersion }}"
           $hasPatch = (Test-Path $patchPath) -and ((Get-Item $patchPath).Length -gt 0)
-          Write-Output "patchFilePath=$patchPath" >> $Env:GITHUB_OUTPUT
+          # The diff tool runs as a Docker container action with the repository mounted at
+          # /github/workspace, so it must receive a workspace-relative path. Passing the
+          # absolute host path fails inside the container with a DirectoryNotFoundException.
+          Write-Output "patchFilePath=$patchFileName" >> $Env:GITHUB_OUTPUT
           Write-Output "hasPatch=$($hasPatch.ToString().ToLowerInvariant())" >> $Env:GITHUB_OUTPUT
 
       - name: Analyze DOM export diff for breaking changes
