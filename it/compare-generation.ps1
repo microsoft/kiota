@@ -162,7 +162,7 @@ else {
 
         # Rename ".kiota.log" to "kiota.log" as "Compress-Archive" ignores hidden files when running on linux (Github CI)
         if (Test-Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")) {
-            Rename-Item -Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log") -NewName (Join-Path -Path $tmpFolder1 -ChildPath "kiota.log")
+            Rename-Item -Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log") -NewName (Join-Path -Path $tmpFolder1 -ChildPath "kiota.log") -Force
         }
 
         Write-Host "Creating archives at location $archivePath1 and $archivePath2"
