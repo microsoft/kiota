@@ -160,6 +160,11 @@ else {
         $archivePath1 = Join-Path $resultsFolder -ChildPath "idempotency-folder1.zip"
         $archivePath2 = Join-Path $resultsFolder -ChildPath "idempotency-folder2.zip"
 
+        # Rename ".kiota.log" to "kiota.log" as "Compress-Archive" ignores hidden files when running on linux (Github CI)
+        if (Test-Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")) {
+            Rename-Item -Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log") -NewName (Join-Path -Path $tmpFolder1 -ChildPath "kiota.log")
+        }
+
         Write-Host "Creating archives at location $archivePath1 and $archivePath2"
         Compress-Archive -Path $tmpFolder1 -DestinationPath $archivePath1 -Force
         Compress-Archive -Path $tmpFolder2 -DestinationPath $archivePath2 -Force
