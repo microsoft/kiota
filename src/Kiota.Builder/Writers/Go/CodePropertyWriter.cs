@@ -17,10 +17,19 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, GoConventionSe
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
+        // This writer emits nothing: properties still reach it because they remain CodeProperty DOM
+        // items — the refinement stage does not replace them with anything else. Ideally a new
+        // "property group" DOM item, produced by a refiner transformation and rendered by its own
+        // dedicated writer, would own the struct body, and this property writer could be removed
+        // entirely. That is a bigger refactoring, so for now the switch below only enforces the
+        // invariants the Go refiner is expected to have upheld.
         switch (codeElement.Kind)
         {
+            // The Go refiner replaces request-builder properties with methods; one surviving to the
+            // write stage is a refiner bug.
             case CodePropertyKind.RequestBuilder:
                 throw new InvalidOperationException("RequestBuilders are as properties are not supported in Go and should be replaced by methods by the refiner.");
+            // Likewise implemented as methods in Go, so this kind must not reach the writer either.
             case CodePropertyKind.ErrorMessageOverride:
                 throw new InvalidOperationException("Error message overrides are implemented with methods in Go.");
         }
