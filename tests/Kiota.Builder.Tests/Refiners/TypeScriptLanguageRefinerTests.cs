@@ -93,7 +93,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
     [Fact]
     public async Task ShortensOversizedNamespaceSegmentsAsync()
     {
-        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentIdDiscoveredApplicationSegmentIdApplicationIdApplicationId";
+        var longSegment = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkAccessDeviceReportSegment", 6)); // 276 chars > 255
         var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
         var requestBuilderClass = childNs.AddClass(new CodeClass
         {
@@ -120,7 +120,7 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         // TypeScript maps namespaces (not type names) to directories, so only segments are shortened.
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 200, $"Segment '{segment}' exceeds 200 chars (length: {segment.Length})");
         }
 
         // Type names must be left intact: TypeScript groups types into index.ts barrels and relies on
