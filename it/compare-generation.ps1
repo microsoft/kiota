@@ -83,8 +83,8 @@ $tmpFolder2 = New-TemporaryDirectory
 
 $additionalArgumentCmd = Join-Path -Path $PSScriptRoot -ChildPath "get-additional-arguments.ps1"
 $additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionKey $descriptionKey -language $language -includeOutputParameter $false"
-$firstGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder1" -Wait -NoNewWindow -PassThru
-$secondGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder2" -Wait -NoNewWindow -PassThru
+$firstGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder1 --ll debug" -Wait -NoNewWindow -PassThru
+$secondGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder2 --ll debug" -Wait -NoNewWindow -PassThru
 
 if ($firstGenerationProcess.ExitCode -ne 0 -or $secondGenerationProcess.ExitCode -ne 0) {
     Write-Error "Failed to generate the code for ${language}"
