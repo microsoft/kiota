@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging;
@@ -240,5 +242,88 @@ public sealed class GenerateSample : IDisposable
 
         }
     }
+    [InlineData("ToDoApi.yaml")]
+    [InlineData("ModelWithDictionary.yaml")]
+    [InlineData("ModelWithDerivedTypes.yaml")]
+    [InlineData("ResponseWithMultipleReturnFormats.yaml")]
+    [InlineData("InheritingErrors.yaml")]
+    [InlineData("EnumHandling.yaml")]
+    [InlineData("FlagsEnumHandling.yaml")]
+    [InlineData("GeneratesUritemplateHints.yaml")]
+    [InlineData("SwaggerPetStore.json")]
+    [Theory]
+    public async Task GeneratedGoCodeIsFormattedAsync(string descriptionFile)
+    {
+        var gofmt = GetGoFmtPath();
+        Assert.SkipWhen(string.IsNullOrEmpty(gofmt), "gofmt (the Go toolchain) is not available on this machine.");
+
+        var logger = LoggerFactory.Create(static builder => { }).CreateLogger<KiotaBuilder>();
+
+        var descriptionName = Path.GetFileNameWithoutExtension(descriptionFile);
+        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "Generated", "GoFormatting", descriptionName);
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.Go,
+            OpenAPIFilePath = GetAbsolutePath(descriptionFile),
+            OutputPath = outputPath,
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(TestContext.Current.CancellationToken);
+
+        // "gofmt -l" lists the files whose formatting differs from gofmt's. The generated code is
+        // expected to already be formatted, so the command must not report any file.
+        var (exitCode, stdOut, stdErr) = await RunProcessAsync(gofmt, ["-l", outputPath], TestContext.Current.CancellationToken);
+
+        Assert.True(string.IsNullOrEmpty(stdErr), $"gofmt reported errors for '{descriptionFile}':\n{stdErr}");
+        Assert.Equal(0, exitCode);
+        Assert.True(string.IsNullOrWhiteSpace(stdOut),
+            $"go fmt would reformat the following generated files for '{descriptionFile}', so kiota did not format them correctly:\n{stdOut}");
+    }
+
+    private static string GetGoFmtPath()
+    {
+        var executableName = OperatingSystem.IsWindows() ? "gofmt.exe" : "gofmt";
+
+        // gofmt ships inside the Go SDK ($GOROOT/bin) which is not always added to PATH on CI agents.
+        var goRoot = Environment.GetEnvironmentVariable("GOROOT");
+        if (!string.IsNullOrEmpty(goRoot))
+        {
+            var candidate = Path.Combine(goRoot, "bin", executableName);
+            if (File.Exists(candidate)) return candidate;
+        }
+
+        var pathVariable = Environment.GetEnvironmentVariable("PATH");
+        if (!string.IsNullOrEmpty(pathVariable))
+            foreach (var directory in pathVariable.Split(Path.PathSeparator))
+            {
+                if (string.IsNullOrWhiteSpace(directory)) continue;
+                var candidate = Path.Combine(directory, executableName);
+                if (File.Exists(candidate)) return candidate;
+            }
+
+        return string.Empty;
+    }
+
+    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunProcessAsync(string fileName, string[] arguments, CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        foreach (var argument in arguments)
+            startInfo.ArgumentList.Add(argument);
+
+        using var process = new Process { StartInfo = startInfo };
+        process.Start();
+        var stdOutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stdErrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        await process.WaitForExitAsync(cancellationToken);
+        return (process.ExitCode, await stdOutTask, await stdErrTask);
+    }
+
     private static string GetAbsolutePath(string relativePath) => Path.Combine(Directory.GetCurrentDirectory(), relativePath);
 }
