@@ -677,6 +677,107 @@ components:
         Assert.NotNull(innerRequestBuilderNS.FindChildByName<CodeClass>("InnerRequestBuilder", false));
 
     }
+    [Fact]
+    public async Task GeneratesModelsReferencedByWebhookSchemasAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.1.0
+info:
+  title: Webhook API
+  version: 1.0.0
+paths: {}
+webhooks:
+  orderCreated:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreated'
+      responses:
+        '200':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAcknowledgement'
+components:
+  schemas:
+    OrderCreated:
+      type: object
+      required:
+        - orderId
+      properties:
+        orderId:
+          type: string
+    WebhookAcknowledgement:
+      type: object
+      properties:
+        accepted:
+          type: boolean");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Webhook", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document.Webhooks);
+        Assert.True(document.Webhooks.ContainsKey("orderCreated"));
+
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var webhookModel = modelsNS.FindChildByName<CodeClass>("OrderCreated", false);
+        Assert.NotNull(webhookModel);
+        Assert.Contains(webhookModel.Properties, static x => x.Name.Equals("orderId", StringComparison.OrdinalIgnoreCase));
+        var responseModel = modelsNS.FindChildByName<CodeClass>("WebhookAcknowledgement", false);
+        Assert.NotNull(responseModel);
+        Assert.Contains(responseModel.Properties, static x => x.Name.Equals("accepted", StringComparison.OrdinalIgnoreCase));
+    }
+    [Fact]
+    public async Task GeneratesModelsForInlineWebhookSchemasAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.1.0
+info:
+  title: Webhook API
+  version: 1.0.0
+paths: {}
+webhooks:
+  deliveryFailed:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted:
+                    type: boolean");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Webhook", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+
+        var requestModel = modelsNS.FindChildByName<CodeClass>("DeliveryFailedPostRequestBody", false);
+        Assert.NotNull(requestModel);
+        Assert.Contains(requestModel.Properties, static x => x.Name.Equals("reason", StringComparison.OrdinalIgnoreCase));
+        var responseModel = modelsNS.FindChildByName<CodeClass>("DeliveryFailedPost200Response", false);
+        Assert.NotNull(responseModel);
+        Assert.Contains(responseModel.Properties, static x => x.Name.Equals("accepted", StringComparison.OrdinalIgnoreCase));
+    }
     [Theory]
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Java)]

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added model generation for schemas used by OpenAPI 3.1 webhooks. [#6394](https://github.com/microsoft/kiota/issues/6394)
+
 ### Changed
 
 ## [1.32.5] - 2026-07-03
@@ -1787,4 +1789,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
