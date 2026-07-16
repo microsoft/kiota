@@ -20,8 +20,8 @@ namespace Kiota.Builder.Writers;
 public abstract class LanguageWriter(string indentationChar = " ", int indentationSize = 4)
 {
     private TextWriter? writer;
-    private readonly int indentSize = indentationSize;
-    private readonly string indentString = string.Concat(Enumerable.Repeat(indentationChar, 1000));
+    private readonly int indentSize = indentationSize > 0 ? indentationSize : throw new ArgumentOutOfRangeException(nameof(indentationSize));
+    private readonly string indentString = string.Concat(Enumerable.Repeat(!string.IsNullOrEmpty(indentationChar) ? indentationChar : throw new ArgumentException("Indentation character must be non-empty.", nameof(indentationChar)), 1000));
     private int currentIndent;
 
     /// <summary>

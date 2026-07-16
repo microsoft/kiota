@@ -26,7 +26,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         {
             writer.WriteLine(); // gofmt: blank line between the package clause and the imports
             writer.StartBlock("import (");
-            usings.ForEach(x => writer.WriteLine($"\"{x}\""));
+            usings.ForEach(x => writer.WriteLine($"\"{x.SanitizeDoubleQuote()}\""));
             writer.CloseBlock(")");
         }
 

@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- golang: make sure all generated code adheres to golangs coding standards
+
 ## [1.34.1] - 2026-07-09
 
 ### Added
@@ -51,15 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace.
 - Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths.
 - Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension.
-- golang: indent with tabs instead of spaces
-- golang: if there is only one return argument, omit the parentheses
-- golang: remove trailing spaces on comments
-- golang: fix import ordering
-- golang: correctly indent case statements inside a switch
-- golang: remove the space before the parameter list of anonymous deserializer functions
-- golang: align consecutive struct and const fields into columns to match gofmt
-- golang: keep a single blank line between top-level declarations and strip trailing whitespace so that `go fmt` on the generated code is a no-op
-- golang: remove stray semicolons and extra spaces from the code generated for backing-store clients (`--backing-store`) so it matches gofmt
 
 ## [1.32.4] - 2026-06-26
 
