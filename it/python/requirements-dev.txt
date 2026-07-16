@@ -4,7 +4,7 @@ astroid==4.0.4 ; python_full_version >= '3.7.2'
 
 certifi==2026.6.17 ; python_version >= '3.6'
 
-charset-normalizer==3.4.7 ; python_full_version >= '3.7.0'
+charset-normalizer==3.4.9 ; python_full_version >= '3.7.0'
 
 colorama==0.4.6 ; sys_platform == 'win32'
 
@@ -30,7 +30,7 @@ lazy-object-proxy==1.12.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==2.1.0
+mypy==2.3.0
 
 mypy-extensions==1.1.0 ; python_version >= '3.5'
 
@@ -70,7 +70,7 @@ aiohttp==3.14.1 ; python_version >= '3.6'
 
 aiosignal==1.4.0 ; python_version >= '3.7'
 
-anyio==4.14.1 ; python_version >= '3.7'
+anyio==4.14.2 ; python_version >= '3.7'
 
 async-timeout==5.0.1 ; python_version >= '3.6'
 
@@ -80,7 +80,7 @@ azure-core==1.41.0 ; python_version >= '3.7'
 
 azure-identity==1.25.3
 
-cffi==2.0.0
+cffi==2.1.0
 
 cryptography==49.0.0 ; python_version >= '3.7'
 

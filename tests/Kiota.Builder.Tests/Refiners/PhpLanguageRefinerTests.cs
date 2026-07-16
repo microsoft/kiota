@@ -303,7 +303,7 @@ public class PhpLanguageRefinerTests
     [Fact]
     public async Task ShortensOversizedNamespaceSegmentsAsync()
     {
-        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentIdDiscoveredApplicationSegmentIdApplicationIdApplicationId";
+        var longSegment = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkAccessDeviceReportSegment", 6)); // 276 chars > 255
         var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
         var requestBuilderClass = childNs.AddClass(new CodeClass
         {
@@ -319,18 +319,18 @@ public class PhpLanguageRefinerTests
         // Namespace segment should be shortened
         foreach (var segment in childNs.Name.Split('.'))
         {
-            Assert.True(segment.Length <= 64, $"Segment '{segment}' exceeds 64 chars (length: {segment.Length})");
+            Assert.True(segment.Length <= 200, $"Segment '{segment}' exceeds 200 chars (length: {segment.Length})");
         }
 
         // Class name should be shortened
-        Assert.True(requestBuilderClass.Name.Length <= 64, $"Class name '{requestBuilderClass.Name}' exceeds 64 chars");
+        Assert.True(requestBuilderClass.Name.Length <= 200, $"Class name '{requestBuilderClass.Name}' exceeds 200 chars");
     }
     [Fact]
     public async Task ShortenedClassImportsAreConsistentAsync()
     {
         // Parent request builder references a child with a long name via method return type
         var parentNs = root.AddNamespace("ApiSdk.NetworkAccess.Reports");
-        var longSegment = "MicrosoftGraphNetworkaccessDeviceReportWithStartDateTimeWithEndDateTimeDiscoveredApplicationSegmentId";
+        var longSegment = string.Concat(Enumerable.Repeat("MicrosoftGraphNetworkAccessDeviceReportSegment", 6)); // 276 chars > 255
         var childNs = root.AddNamespace($"ApiSdk.NetworkAccess.Reports.{longSegment}");
 
         var targetClass = childNs.AddClass(new CodeClass
@@ -363,7 +363,7 @@ public class PhpLanguageRefinerTests
             var nsSegments = u.Name.Split('.');
             foreach (var seg in nsSegments)
             {
-                Assert.True(seg.Length <= 64, $"Using namespace segment '{seg}' exceeds 64 chars — stale pre-shortened name");
+                Assert.True(seg.Length <= 200, $"Using namespace segment '{seg}' exceeds 200 chars — stale pre-shortened name");
             }
         }
     }

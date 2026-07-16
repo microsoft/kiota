@@ -844,6 +844,10 @@ extends:
                         }
                       }
                     }
+                    # Reset the exit code so a handled "already exists" from vsce (which
+                    # leaves $LASTEXITCODE non-zero) does not fail the AzureCLI task; real
+                    # failures throw above and still surface as a non-zero exit.
+                    exit 0
                 env:
                   isPrerelease: $(isPrerelease)
           - deployment: github_release
@@ -1188,13 +1192,19 @@ extends:
                   }
                   Write-Host "Checking npm registry for @microsoft/kiota@$version ..."
                   $published = & npm view "@microsoft/kiota@$version" version 2>$null
-                  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($published)) {
+                  $npmExit = $LASTEXITCODE
+                  # npm view returns a non-zero exit code (E404) when the version is not
+                  # published; capture it above and reset so this step's own exit code is
+                  # not polluted by that lookup (the check itself succeeded).
+                  $global:LASTEXITCODE = 0
+                  if ($npmExit -eq 0 -and -not [string]::IsNullOrWhiteSpace($published)) {
                     Write-Host "npm @microsoft/kiota@$version already published; skipping ESRP release (idempotent re-run)."
                     Write-Host "##vso[task.setvariable variable=npmAlreadyPublished]true"
                   } else {
                     Write-Host "npm @microsoft/kiota@$version not found; will publish."
                     Write-Host "##vso[task.setvariable variable=npmAlreadyPublished]false"
                   }
+                  exit 0
                 displayName: "Check whether npm version already published (idempotent)"
               - task: EsrpRelease@12
                 condition: ne(variables['npmAlreadyPublished'], 'true')

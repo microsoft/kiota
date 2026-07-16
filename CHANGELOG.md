@@ -15,6 +15,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.34.1] - 2026-07-09
+
+### Added
+
+### Changed
+
+- Reduced the aggressiveness of namespace segment and type name shortening by raising the length threshold to 200 characters, so only names longer than 200 characters are truncated (to a 191-character prefix plus an underscore and 8-character hash). The threshold stays well below the 255 file-system per-component limit to leave room for extensions and language-specific suffixes appended by path segmenters and compilers (e.g. Java nested-class `.class` files and the extra underscores Python adds when converting names to snake_case).
+
+## [1.34.0] - 2026-07-08
+
+### Added
+
+### Changed
+
+- Fixed a path traversal vulnerability where workspace consumer identifiers (`clientName`/`pluginName`) and workspace configuration keys were used as filesystem path components without containment validation, allowing a crafted name (e.g. `junk/../Victim`) to overwrite another consumer's cached OpenAPI description. [#7919](https://github.com/microsoft/kiota/issues/7919)
+
+## [1.33.0] - 2026-07-06
+
+### Added
+
+### Changed
+
+- Fixed TypeScript generation failing with a file-system error when an API endpoint produces a namespace segment longer than the per-component name limit (e.g. NTFS 255 chars). Oversized TypeScript namespace segments are now shortened (directories only; type names are preserved). [#7901](https://github.com/microsoft/kiota/pull/7901)
+
 ## [1.32.5] - 2026-07-03
 
 ### Added
@@ -1789,3 +1813,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
+
