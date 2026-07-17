@@ -327,6 +327,18 @@ public sealed class GenerateSample : IDisposable
     }
 
     private static string GetAbsolutePath(string relativePath) => Path.Combine(Directory.GetCurrentDirectory(), relativePath);
+    private static string ReadGeneratedModelText(string modelsDir)
+    {
+        var directory = new DirectoryInfo(modelsDir);
+        var searchOption = SearchOption.AllDirectories;
+        var modelFiles = directory
+            .EnumerateFiles("*.cs", searchOption)
+            .Concat(directory.EnumerateFiles("*.java", searchOption))
+            .Concat(directory.EnumerateFiles("*.ts", searchOption))
+            .Concat(directory.EnumerateFiles("*.go", searchOption))
+            .Concat(directory.EnumerateFiles("*.py", searchOption));
+        return string.Join("\n", modelFiles.Select(f => File.ReadAllText(f.FullName)));
+    }
 
     [InlineData("recursive-category-tree.yaml", GenerationLanguage.CSharp)]
     [InlineData("recursive-category-tree.yaml", GenerationLanguage.Java)]
@@ -354,18 +366,9 @@ public sealed class GenerateSample : IDisposable
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
 
-        var modelsDir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "RecursiveDynamicRef", language.ToString(), Path.GetFileNameWithoutExtension(fixture)));
-        var searchOption = SearchOption.AllDirectories;
-        var modelFiles = modelsDir
-            .EnumerateFiles("*.cs", searchOption)
-            .Concat(modelsDir.EnumerateFiles("*.java", searchOption))
-            .Concat(modelsDir.EnumerateFiles("*.ts", searchOption))
-            .Concat(modelsDir.EnumerateFiles("*.go", searchOption))
-            .Concat(modelsDir.EnumerateFiles("*.py", searchOption))
-            .ToList();
         // Concatenate every model file's text so the assertions work for both per-file languages
         // (C#/Java/Go/Python) and single-file languages (TypeScript merges everything into index.ts).
-        var allModelText = string.Join("\n", modelFiles.Select(f => File.ReadAllText(f.FullName)));
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "RecursiveDynamicRef", language.ToString(), Path.GetFileNameWithoutExtension(fixture)));
         // Verify the recursive `children` property is actually typed as the recursive type,
         // not UntypedNode / object / unknown. Renderings differ per language.
         switch (language)
@@ -385,6 +388,48 @@ public sealed class GenerateSample : IDisposable
                 break;
             case GenerationLanguage.Python:
                 Assert.Contains("list[LocalizedCategory]", allModelText, StringComparison.Ordinal);
+                break;
+            default:
+                throw new Exception($"Please implement a test-case for {language}");
+        }
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+    }
+
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Python)]
+    [Theory]
+    public async Task ResolvesNestedDynamicScopeAsync(GenerationLanguage language)
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = GetAbsolutePath("nested-dynamic-scope.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "NestedDynamicScope", language.ToString()),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "NestedDynamicScope", language.ToString()));
+        switch (language)
+        {
+            case GenerationLanguage.CSharp:
+                Assert.Contains("GetObjectValue<global::ApiSdk.Models.Middle>", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Java:
+                Assert.Contains("getObjectValue(Middle::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.TypeScript:
+                Assert.Contains("createMiddleFromDiscriminatorValue", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Go:
+                Assert.Contains("CreateMiddleFromDiscriminatorValue", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Python:
+                Assert.Contains("n.get_object_value(Middle)", allModelText, StringComparison.Ordinal);
                 break;
             default:
                 throw new Exception($"Please implement a test-case for {language}");

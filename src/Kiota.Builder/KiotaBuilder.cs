@@ -51,12 +51,9 @@ public partial class KiotaBuilder
     private OpenApiDocument? openApiDocument;
     private readonly ISettingsManagementService settingsFileManagementService;
     /// <summary>
-    /// Tracks the outermost schema currently being materialized that participates in dynamic-scope resolution.
-    /// Set when entering <see cref="CreateModelDeclarationAndType"/> / <see cref="CreateInheritedModelDeclaration"/>,
-    /// restored on exit. Thread-local because model materialization runs concurrently via Parallel.ForEach.
-    /// Used by <see cref="OpenApiWorkspace.ResolveDynamicAnchorInContext"/> when the library's <c>Target</c> returns null (multi-candidate case).
+    /// Tracks dynamic scopes for unresolved <c>$dynamicRef</c>; thread-local because generation is parallel.
     /// </summary>
-    private static readonly ThreadLocal<IOpenApiSchema?> _dynamicScope = new(() => null);
+    private static readonly ThreadLocal<Stack<IOpenApiSchema>> _dynamicScope = new(() => new(), trackAllValues: false);
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false, ISettingsManagementService? settingsManagementService = null)
@@ -1715,15 +1712,14 @@ public partial class KiotaBuilder
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string classNameSuffix = "", IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
-        var previousScope = _dynamicScope.Value;
-        _dynamicScope.Value ??= schema;
+        _dynamicScope.Value!.Push(schema);
         try
         {
             var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, response: response, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
             var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
             return new CodeType { TypeDefinition = codeDeclaration };
         }
-        finally { _dynamicScope.Value = previousScope; }
+        finally { _dynamicScope.Value!.Pop(); }
     }
     private CodeType CreateInheritedModelDeclarationAndType(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
@@ -1734,13 +1730,12 @@ public partial class KiotaBuilder
     }
     private CodeClass CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
-        var previousScope = _dynamicScope.Value;
-        _dynamicScope.Value ??= schema;
+        _dynamicScope.Value!.Push(schema);
         try
         {
             return CreateInheritedModelDeclarationCore(currentNode, schema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isViaDiscriminator);
         }
-        finally { _dynamicScope.Value = previousScope; }
+        finally { _dynamicScope.Value!.Pop(); }
     }
     private CodeClass CreateInheritedModelDeclarationCore(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
@@ -1995,33 +1990,38 @@ public partial class KiotaBuilder
            (schema.AnyOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         // $dynamicRef resolution: when the library couldn't resolve Target (multi-candidate case),
-        // use OpenApiWorkspace.ResolveDynamicAnchorInContext with the current materialization entry point.
-        // Unwrap references to their target first — ResolveDynamicAnchorInContext checks Reference-level
-        // siblings for OpenApiSchemaReference, but the anchor may live on the target schema itself.
+        // walk the dynamic scope outermost-first and resolve against the first frame whose $defs
+        // declare a matching $dynamicAnchor (JSON Schema 2020-12 §7.7.2).
         if (schema is OpenApiSchemaReference { Target: null } dynRefSchema
             && !string.IsNullOrEmpty(dynRefSchema.DynamicRef)
-            && _dynamicScope.Value is { } rawEntryPoint)
+            && _dynamicScope.Value is { Count: > 0 } scope)
         {
             var anchorName = ExtractAnchorName(dynRefSchema.DynamicRef);
-            var entryPoint = rawEntryPoint is OpenApiSchemaReference { Target: { } t } ? t : rawEntryPoint;
-            if (!string.IsNullOrEmpty(anchorName)
-                && OpenApiWorkspace.ResolveDynamicAnchorInContext(entryPoint, anchorName) is { } resolved)
+            if (!string.IsNullOrEmpty(anchorName))
             {
-                // The resolved schema may be the entry point itself (recursive pattern) or a $defs
-                // entry that is itself a reference to a concrete type (generic-binding pattern).
-                // Use the resolved schema's reference ID first, fall back to the entry point's.
-                var refId = resolved.GetReferenceId() ?? rawEntryPoint.GetReferenceId();
-                if (!string.IsNullOrEmpty(refId))
+                // Stack<T> enumerates innermost-first (top to bottom); reverse to walk outermost-first.
+                foreach (var frame in scope.Reverse())
                 {
-                    var className = refId.Split('/').Last().Split('.').Last().CleanupSymbolName();
-                    var nsName = GetModelsNamespaceNameFromReferenceId(refId);
-                    var searchNs = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
-                    if (GetExistingDeclaration(searchNs, currentNode, className) is CodeClass existing)
-                        return new CodeType { TypeDefinition = existing };
-                    // Forward reference — the class will be created by the enclosing materialization.
-                    return new CodeType { Name = className };
+                    // Unwrap references to their target: ResolveDynamicAnchorInContext checks a reference's
+                    // own sibling $dynamicAnchor / $defs, but the anchor is usually declared on the target.
+                    var context = frame is OpenApiSchemaReference { Target: { } t } ? t : frame;
+                    if (OpenApiWorkspace.ResolveDynamicAnchorInContext(context, anchorName) is { } resolved)
+                    {
+                        // Use the resolved schema's reference ID first, fall back to the resolving frame's.
+                        var refId = resolved.GetReferenceId() ?? frame.GetReferenceId();
+                        if (!string.IsNullOrEmpty(refId))
+                        {
+                            var className = refId.Split('/').Last().Split('.').Last().CleanupSymbolName();
+                            var nsName = GetModelsNamespaceNameFromReferenceId(refId);
+                            var searchNs = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
+                            if (GetExistingDeclaration(searchNs, currentNode, className) is CodeClass existing)
+                                return new CodeType { TypeDefinition = existing };
+                            // Forward reference — the class will be created by the enclosing materialization.
+                            return new CodeType { Name = className };
+                        }
+                        return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+                    }
                 }
-                return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
             }
         }
         if (!string.IsNullOrEmpty(schema.DynamicRef))
