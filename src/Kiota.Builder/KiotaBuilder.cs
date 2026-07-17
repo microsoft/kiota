@@ -1790,7 +1790,7 @@ public partial class KiotaBuilder
         };
         if (codeDeclaration is not CodeClass currentClass) throw new InvalidOperationException("Inheritance is only supported for classes");
         if (!currentClass.Documentation.DescriptionAvailable &&
-            new string[] { schema.Description ?? string.Empty }
+            new string[] { GetModelClassDescription(schema) }
                         .Union(schema.AllOf?
                                     .OfType<OpenApiSchema>()
                                     .Select(static x => x.Description) ?? [])
@@ -2106,6 +2106,20 @@ public partial class KiotaBuilder
         }
         return currentNamespace;
     }
+    private static string GetModelClassDescription(IOpenApiSchema schema)
+    {
+        // The class description must be derived from the schema definition, never from a $ref site's
+        // own (sibling) description. A reference object's Description overrides the target's, and since
+        // the same component can be referenced from multiple properties with different descriptions
+        // (built by parallel tasks), using it makes generation non-deterministic (see issue #7927).
+        // The reference-level description is only relevant to the property, which is handled in CreateProperty.
+        var descriptionSource = schema is OpenApiSchemaReference schemaReference ? schemaReference.Target : schema;
+        if (descriptionSource is null)
+            return string.Empty;
+        return (string.IsNullOrEmpty(descriptionSource.Description) ?
+                    descriptionSource.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description :
+                    descriptionSource.Description) ?? string.Empty;
+    }
     private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, OpenApiOperation? currentOperation, CodeClass? inheritsFrom = null)
     {
         if (inheritsFrom == null && schema.AllOf?.OfType<OpenApiSchemaReference>().ToArray() is { Length: 1 } referencedSchemas)
@@ -2122,7 +2136,7 @@ public partial class KiotaBuilder
             {
                 DocumentationLabel = schema.ExternalDocs?.Description ?? string.Empty,
                 DocumentationLink = schema.ExternalDocs?.Url,
-                DescriptionTemplate = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
+                DescriptionTemplate = GetModelClassDescription(schema).CleanupDescription(),
             },
             Deprecation = schema.GetDeprecationInformation(),
         };

@@ -7784,6 +7784,152 @@ components:
         Assert.Equal("sub2", codeModel.FindChildByName<CodeClass>("sub2").Documentation.DescriptionTemplate);
     }
     [Fact]
+    public async Task ModelClassDescriptionIgnoresReferenceLevelDescriptionAsync()
+    {
+        // Regression test for https://github.com/microsoft/kiota/issues/7927
+        // A component referenced from multiple properties with differing $ref-level descriptions
+        // must not adopt one of those (property-level) descriptions as its class description, as the
+        // winning one is non-deterministic. When the target schema has no description of its own, the
+        // class description must be empty, while each property keeps its own reference-level description.
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.1.0
+info:
+  title: Notion repro
+  version: 1.0.0
+paths:
+  /pages:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pageResponse'
+components:
+  schemas:
+    internalFileResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        expiry_time:
+          type: string
+          format: date-time
+    filePageCoverResponse:
+      type: object
+      properties:
+        cover:
+          $ref: '#/components/schemas/internalFileResponse'
+          description: 'The file URL for the cover.'
+    filePageIconResponse:
+      type: object
+      properties:
+        icon:
+          $ref: '#/components/schemas/internalFileResponse'
+          description: 'The file URL for the icon.'
+    pageResponse:
+      type: object
+      properties:
+        coverInfo:
+          $ref: '#/components/schemas/filePageCoverResponse'
+        iconInfo:
+          $ref: '#/components/schemas/filePageIconResponse'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Notion", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var internalFileResponseClass = codeModel.FindChildByName<CodeClass>("internalFileResponse");
+        Assert.NotNull(internalFileResponseClass);
+        Assert.Empty(internalFileResponseClass.Documentation.DescriptionTemplate);
+
+        var coverClass = codeModel.FindChildByName<CodeClass>("filePageCoverResponse");
+        Assert.NotNull(coverClass);
+        var coverProperty = coverClass.FindChildByName<CodeProperty>("cover", false);
+        Assert.NotNull(coverProperty);
+        Assert.Equal("The file URL for the cover.", coverProperty.Documentation.DescriptionTemplate);
+
+        var iconClass = codeModel.FindChildByName<CodeClass>("filePageIconResponse");
+        Assert.NotNull(iconClass);
+        var iconProperty = iconClass.FindChildByName<CodeProperty>("icon", false);
+        Assert.NotNull(iconProperty);
+        Assert.Equal("The file URL for the icon.", iconProperty.Documentation.DescriptionTemplate);
+    }
+    [Fact]
+    public async Task ModelClassDescriptionUsesReferenceTargetDescriptionAsync()
+    {
+        // Regression test for https://github.com/microsoft/kiota/issues/7927
+        // When the referenced (target) schema carries its own description, the class description must
+        // use that target description, regardless of any differing $ref-level descriptions, while each
+        // property keeps its own reference-level description.
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.1.0
+info:
+  title: Notion repro
+  version: 1.0.0
+paths:
+  /pages:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pageResponse'
+components:
+  schemas:
+    internalFileResponse:
+      type: object
+      description: 'Details about an internally hosted file.'
+      properties:
+        url:
+          type: string
+        expiry_time:
+          type: string
+          format: date-time
+    filePageCoverResponse:
+      type: object
+      properties:
+        cover:
+          $ref: '#/components/schemas/internalFileResponse'
+          description: 'The file URL for the cover.'
+    filePageIconResponse:
+      type: object
+      properties:
+        icon:
+          $ref: '#/components/schemas/internalFileResponse'
+          description: 'The file URL for the icon.'
+    pageResponse:
+      type: object
+      properties:
+        coverInfo:
+          $ref: '#/components/schemas/filePageCoverResponse'
+        iconInfo:
+          $ref: '#/components/schemas/filePageIconResponse'");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Notion", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var internalFileResponseClass = codeModel.FindChildByName<CodeClass>("internalFileResponse");
+        Assert.NotNull(internalFileResponseClass);
+        Assert.Equal("Details about an internally hosted file.", internalFileResponseClass.Documentation.DescriptionTemplate);
+
+        var coverClass = codeModel.FindChildByName<CodeClass>("filePageCoverResponse");
+        Assert.NotNull(coverClass);
+        var coverProperty = coverClass.FindChildByName<CodeProperty>("cover", false);
+        Assert.NotNull(coverProperty);
+        Assert.Equal("The file URL for the cover.", coverProperty.Documentation.DescriptionTemplate);
+
+        var iconClass = codeModel.FindChildByName<CodeClass>("filePageIconResponse");
+        Assert.NotNull(iconClass);
+        var iconProperty = iconClass.FindChildByName<CodeProperty>("icon", false);
+        Assert.NotNull(iconProperty);
+        Assert.Equal("The file URL for the icon.", iconProperty.Documentation.DescriptionTemplate);
+    }
+    [Fact]
     public async Task CleanupSymbolNameDoesNotCauseNameConflictsAsync()
     {
         var tempFilePath = Path.GetTempFileName();
