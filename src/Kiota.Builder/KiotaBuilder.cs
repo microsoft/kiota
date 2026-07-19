@@ -1990,8 +1990,8 @@ public partial class KiotaBuilder
            (schema.AnyOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         // $dynamicRef resolution: when the library couldn't resolve Target (multi-candidate case),
-        // walk the dynamic scope outermost-first and resolve against the first frame whose $defs
-        // declare a matching $dynamicAnchor (JSON Schema 2020-12 §7.7.2).
+        // walk the dynamic scope outermost-first and resolve against the first frame
+        // whose schema or $defs declare a matching $dynamicAnchor (JSON Schema 2020-12 §7.7.2).
         if (schema is OpenApiSchemaReference { Target: null } dynRefSchema
             && !string.IsNullOrEmpty(dynRefSchema.DynamicRef)
             && _dynamicScope.Value is { Count: > 0 } scope)
