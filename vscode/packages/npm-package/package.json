@@ -58,7 +58,7 @@
   "author": "Microsoft",
   "license": "MIT",
   "dependencies": {
-    "adm-zip": "^0.5.18",
+    "adm-zip": "^0.6.0",
     "original-fs": "^1.2.0",
     "uuid": "^14.0.1",
     "vscode-jsonrpc": "^8.2.1"
