@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { getKiotaConfig } from './config.js';
 
 import runtimeJson from './runtime.json' with { type: 'json' };
@@ -129,7 +130,19 @@ function makeExecutable(path: string) {
 }
 
 function getBaseDir(): string {
-  return getKiotaConfig().binaryLocation || path.resolve(__dirname);
+  return getKiotaConfig().binaryLocation || getCurrentModuleDirectory();
+}
+
+function getCurrentModuleDirectory(): string {
+  if (typeof __dirname !== 'undefined') {
+    return path.resolve(__dirname);
+  }
+  // Jest transpiles this file to CommonJS, so avoid import.meta syntax in the source.
+  const installFileUrl = new Error().stack?.match(/(file:\/\/[^\s)]+\/install\.js):\d+:\d+/)?.[1];
+  if (installFileUrl) {
+    return path.dirname(fileURLToPath(installFileUrl));
+  }
+  return process.cwd();
 }
 
 function getRuntimeVersion(): string {
