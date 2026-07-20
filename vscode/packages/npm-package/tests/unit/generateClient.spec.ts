@@ -1,5 +1,5 @@
 import { generateClient } from '../../lib/generateClient';
-import { KiotaLogEntry, KiotaGenerationLanguage } from '../../types';
+import { KiotaLogEntry, KiotaGenerationLanguage } from '../../lib/types';
 import { setupKiotaStubs } from './stubs.util';
 
 describe("generate client", () => {

@@ -1,4 +1,4 @@
-import { KiotaManifestResult } from '../../types';
+import { KiotaManifestResult } from '../../lib/types';
 import { getManifestDetails } from '../../lib/getManifestDetails';
 import { setupKiotaStubs } from './stubs.util';
 

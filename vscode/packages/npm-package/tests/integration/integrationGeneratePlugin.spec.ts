@@ -3,8 +3,8 @@ import path from 'path';
 import { generatePlugin } from '../../lib/generatePlugin';
 import { getKiotaTree } from '../../lib/getKiotaTree';
 import { getPluginManifest } from '../../lib/getPluginManifest';
-import { KiotaPluginType, ConsumerOperation, LogLevel } from '../../types';
-import { PluginAuthType } from '../../types';
+import { KiotaPluginType, ConsumerOperation, LogLevel } from '../../lib/types';
+import { PluginAuthType } from '../../lib/types';
 import { existsEqualOrGreaterThanLevelLogs } from '../assertUtils';
 
 async function loadJSON(filename: string) {
