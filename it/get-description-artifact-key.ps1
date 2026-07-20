@@ -15,5 +15,11 @@ if ($descriptionUrl.StartsWith("./")) {
     Write-Output "DESCRIPTION_PATH=$descriptionUrl" >> $Env:GITHUB_OUTPUT
 }
 else {
-    Write-Output "DESCRIPTION_PATH=./description/openapi.yaml" >> $Env:GITHUB_OUTPUT
+    #api description might be a JSON or a yaml file (or a apigurus name, which is hopefully a yaml file).
+    if ($descriptionUrl.ToLower().EndsWith(".json")) {
+        Write-Output "DESCRIPTION_PATH=./description/openapi.json" >> $Env:GITHUB_OUTPUT
+    }
+    else {
+        Write-Output "DESCRIPTION_PATH=./description/openapi.yaml" >> $Env:GITHUB_OUTPUT
+    }
 }
