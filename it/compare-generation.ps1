@@ -50,7 +50,13 @@ switch ($dev) {
     }
 }
 
-$targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
+#api description might be a JSON or a yaml file (or a apigurus name, which is hopefully a yaml file).
+if ($descriptionUrl.ToLower().EndsWith(".json")) {
+    $targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.json"
+}
+else {
+    $targetOpenapiPath = Join-Path -Path $PSScriptRoot -ChildPath "openapi.yaml"
+}
 if (Test-Path $targetOpenapiPath) {
     Remove-Item $targetOpenapiPath
 }
@@ -77,29 +83,22 @@ $tmpFolder2 = New-TemporaryDirectory
 
 $additionalArgumentCmd = Join-Path -Path $PSScriptRoot -ChildPath "get-additional-arguments.ps1"
 $additionalArguments = Invoke-Expression "$additionalArgumentCmd -descriptionKey $descriptionKey -language $language -includeOutputParameter $false"
-$firstGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder1" -Wait -NoNewWindow -PassThru
-$secondGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder2" -Wait -NoNewWindow -PassThru
+$firstGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder1 --ll debug" -Wait -NoNewWindow -PassThru
+$secondGenerationProcess = Start-Process "$kiotaExec" -ArgumentList "generate --exclude-backward-compatible --clean-output --language ${language} --openapi ${targetOpenapiPath}${additionalArguments} --dvr all --output $tmpFolder2 --ll debug" -Wait -NoNewWindow -PassThru
 
 if ($firstGenerationProcess.ExitCode -ne 0 -or $secondGenerationProcess.ExitCode -ne 0) {
     Write-Error "Failed to generate the code for ${language}"
     exit 1
 }
 
-# Remove variable output files
-Remove-Item (Join-Path -Path $tmpFolder1 -ChildPath "kiota-lock.json")
-if (Test-Path (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")) {
-    Remove-Item -Force (Join-Path -Path $tmpFolder1 -ChildPath ".kiota.log")
-}
-Remove-Item (Join-Path -Path $tmpFolder2 -ChildPath "kiota-lock.json")
-if (Test-Path (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")) {
-    Remove-Item -Force (Join-Path -Path $tmpFolder2 -ChildPath ".kiota.log")
-}
+# Exclude variable output files
+$excludes = @("kiota-lock.json",".kiota.log")
 
 # Compare hashes
-$HashString1 = (Get-ChildItem $tmpFolder1 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
+$HashString1 = (Get-ChildItem $tmpFolder1 -Recurse -Exclude $excludes | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
 Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString1))
 
-$HashString2 = (Get-ChildItem $tmpFolder2 -Recurse | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
+$HashString2 = (Get-ChildItem $tmpFolder2 -Recurse -Exclude $excludes | where { ! $_.PSIsContainer } | Get-FileHash -Algorithm MD5).Hash | Out-String
 Get-FileHash -InputStream ([IO.MemoryStream]::new([char[]]$HashString2))
 
 Write-Output "Folder 1: $tmpFolder1"
@@ -117,11 +116,45 @@ if ($HashString1 -eq $HashString2) {
 }
 else {
     Write-Host "The content of the folders is NOT identical"
+
+    # Print differing files: get hash for each file and compare. Print files the differ.
+    function Get-FileHashMap {
+        param([string]$Root)
+        $map = @{}
+        Get-ChildItem -Path $Root -File -Recurse -Exclude $excludes | ForEach-Object {
+            $rel = $_.FullName.Substring($Root.Length).TrimStart('\','/')
+            $hash = (Get-FileHash -Algorithm MD5 -Path $_.FullName).Hash
+            $map[$rel] = $hash
+        }
+        return $map
+    }
+
+    $map1 = Get-FileHashMap -Root $tmpFolder1
+    $map2 = Get-FileHashMap -Root $tmpFolder2
+
+    $allKeys = ($map1.Keys + $map2.Keys) | Sort-Object -Unique
+
+    foreach ($key in $allKeys) {
+        $in1 = $map1.ContainsKey($key)
+        $in2 = $map2.ContainsKey($key)
+
+        if (-not $in1) {
+            Write-Host "Missing in ${tmpFolder1}: $key" # Should not happen
+        } elseif (-not $in2) {
+            Write-Host "Missing in ${tmpFolder2}: $key" # Should not happen
+        } else {
+            if ($map1[$key] -ne $map2[$key]) {
+                Write-Host "Difference found in: $key"
+            }
+        }
+    }
+
+    # Now zip the results in the upload folder:
     $resultsFolder = Join-Path -Path $rootPath -ChildPath "idempotency-results"
     if (Test-Path $resultsFolder) {
         Remove-Item $resultsFolder -Force -Verbose -Recurse
     }
-    New-Item -ItemType Directory -Path $resultsFolder -Force
+    New-Item -ItemType Directory -Path $resultsFolder -Force | Out-Null
 
     if ($dev -eq $false) {
         $archivePath1 = Join-Path $resultsFolder -ChildPath "idempotency-folder1.zip"

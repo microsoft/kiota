@@ -25,7 +25,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.4.1",
     "@types/node": "^26.1.1",
-    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.39.5",
     "glob": "^13.0.6",
@@ -38,7 +38,7 @@
   ],
   "overrides": {
     "diff": "^8.0.3",
-    "serialize-javascript": "^7.0.5",
+    "serialize-javascript": "7.0.3",
     "@microsoft/applicationinsights-web-basic": "3.4.1"
   }
 }
