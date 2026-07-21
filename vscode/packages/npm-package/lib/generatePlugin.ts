@@ -2,7 +2,7 @@ import * as rpc from "vscode-jsonrpc/node.js";
 
 import connectToKiota from "./connect.js";
 import { KiotaPluginType, GeneratePluginResult, ConsumerOperation, GenerationConfiguration, KiotaLogEntry, PluginAuthType } from "./types.js";
-import * as path from "path";
+import * as path from "node:path";
 import { checkForSuccess } from "./utils.js";
 
 export interface PluginGenerationOptions {

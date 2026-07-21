@@ -1,9 +1,9 @@
 import AdmZip from 'adm-zip';
-import { createHash } from 'crypto';
-import * as https from 'https';
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
+import { createHash } from 'node:crypto';
+import * as https from 'node:https';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getKiotaConfig } from './config.js';
 
 import runtimeJson from './runtime.json' with { type: 'json' };
