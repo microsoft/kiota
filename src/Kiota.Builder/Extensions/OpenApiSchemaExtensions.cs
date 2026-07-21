@@ -322,7 +322,8 @@ public static class OpenApiSchemaExtensions
                     ((ignoreNullableObjects && !schema.IsObjectType()) ||
                     !ignoreNullableObjects)) ||
                 !string.IsNullOrEmpty(schema.Format) ||
-                !string.IsNullOrEmpty(schema.GetReferenceId());
+                !string.IsNullOrEmpty(schema.GetReferenceId()) ||
+                !string.IsNullOrEmpty(schema.DynamicRef);
     }
     public static IEnumerable<string> GetSchemaReferenceIds(this IOpenApiSchema schema, HashSet<IOpenApiSchema>? visitedSchemas = null)
     {

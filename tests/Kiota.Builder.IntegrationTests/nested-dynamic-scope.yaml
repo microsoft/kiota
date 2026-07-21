@@ -1,0 +1,38 @@
+openapi: 3.1.0
+info:
+  title: Nested Dynamic Scope API
+  version: 0.1.0
+paths:
+  /outer:
+    get:
+      responses:
+        '200':
+          description: Inline outer type containing a nested recursive type
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [middle]
+                properties:
+                  middle:
+                    $ref: '#/components/schemas/Middle'
+        default:
+          description: Error response
+components:
+  schemas:
+    Middle:
+      $id: https://example.com/schemas/Middle
+      $dynamicAnchor: node
+      type: object
+      required: [id, next]
+      properties:
+        id:
+          type: string
+        next:
+          $dynamicRef: '#node'
+    OtherNode:
+      $dynamicAnchor: node
+      type: object
+      properties:
+        ignored:
+          type: string
