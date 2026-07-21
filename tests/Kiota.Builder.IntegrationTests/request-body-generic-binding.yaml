@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Request Body Generic Binding API
+  version: 0.1.0
+paths:
+  /users/search:
+    post:
+      operationId: searchUsers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $defs:
+                itemType:
+                  $dynamicAnchor: itemType
+                  $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/SearchTemplate'
+      responses:
+        '200':
+          description: Search results
+        default:
+          description: Error
+  /groups/search:
+    post:
+      operationId: searchGroups
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $defs:
+                itemType:
+                  $dynamicAnchor: itemType
+                  $ref: '#/components/schemas/Group'
+              $ref: '#/components/schemas/SearchTemplate'
+      responses:
+        '200':
+          description: Search results
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Group:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+    SearchTemplate:
+      $id: https://example.com/schemas/SearchTemplate
+      $dynamicAnchor: itemType
+      type: object
+      required: [query, filters]
+      properties:
+        query:
+          type: string
+        filters:
+          type: array
+          items:
+            $dynamicRef: '#itemType'

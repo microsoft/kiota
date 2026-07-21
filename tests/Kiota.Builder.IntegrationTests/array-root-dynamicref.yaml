@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Array Root Generic Binding API
+  version: 0.1.0
+paths:
+  /users/list:
+    get:
+      operationId: listUsersArray
+      responses:
+        '200':
+          description: Array of users via dynamic ref
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                type: array
+                items:
+                  $dynamicRef: '#itemType'
+        default:
+          description: Error
+  /groups/list:
+    get:
+      operationId: listGroupsArray
+      responses:
+        '200':
+          description: Array of groups via dynamic ref
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                type: array
+                items:
+                  $dynamicRef: '#itemType'
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Group:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string

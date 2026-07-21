@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Multi-Anchor Generic Binding API
+  version: 0.1.0
+paths:
+  /user-messages:
+    get:
+      operationId: listUserMessages
+      responses:
+        '200':
+          description: User message envelope
+          content:
+            application/json:
+              schema:
+                $defs:
+                  dataType:
+                    $dynamicAnchor: dataType
+                    $ref: '#/components/schemas/User'
+                  errorType:
+                    $dynamicAnchor: errorType
+                    $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/EnvelopeTemplate'
+        default:
+          description: Error
+  /group-messages:
+    get:
+      operationId: listGroupMessages
+      responses:
+        '200':
+          description: Group message envelope
+          content:
+            application/json:
+              schema:
+                $defs:
+                  dataType:
+                    $dynamicAnchor: dataType
+                    $ref: '#/components/schemas/Group'
+                  errorType:
+                    $dynamicAnchor: errorType
+                    $ref: '#/components/schemas/ProblemDetails'
+                $ref: '#/components/schemas/EnvelopeTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Group:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+    ProblemDetails:
+      type: object
+      required: [code, detail]
+      properties:
+        code:
+          type: integer
+        detail:
+          type: string
+    EnvelopeTemplate:
+      $id: https://example.com/schemas/EnvelopeTemplate
+      $dynamicAnchor: dataType
+      type: object
+      required: [data, errors]
+      properties:
+        data:
+          $dynamicRef: '#dataType'
+        errors:
+          type: array
+          items:
+            $dynamicRef: '#errorType'

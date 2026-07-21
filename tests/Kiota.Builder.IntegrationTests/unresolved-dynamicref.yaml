@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Unresolved Anchor API
+  version: 0.1.0
+paths:
+  /items:
+    get:
+      operationId: listItems
+      responses:
+        '200':
+          description: Items with unresolved dynamic ref
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemContainer'
+        default:
+          description: Error
+components:
+  schemas:
+    ItemContainer:
+      type: object
+      required: [value]
+      properties:
+        value:
+          $dynamicRef: '#nonexistent'

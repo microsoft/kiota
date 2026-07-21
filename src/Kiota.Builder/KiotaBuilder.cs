@@ -1767,6 +1767,8 @@ public partial class KiotaBuilder
         try
         {
             var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, response: response, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
+            if (TryGetDynamicBindingSuffix(schema, currentNode) is { } bindingSuffix)
+                className = $"{className}{bindingSuffix}";
             var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
             return new CodeType { TypeDefinition = codeDeclaration };
         }
@@ -2053,22 +2055,33 @@ public partial class KiotaBuilder
                 // Stack<T> enumerates innermost-first (top to bottom); reverse to walk outermost-first.
                 foreach (var frame in scope.Reverse())
                 {
-                    // Unwrap references to their target: ResolveDynamicAnchorInContext checks a reference's
-                    // own sibling $dynamicAnchor / $defs, but the anchor is usually declared on the target.
-                    var context = frame is OpenApiSchemaReference { Target: { } t } ? t : frame;
-                    if (OpenApiWorkspace.ResolveDynamicAnchorInContext(context, anchorName) is { } resolved)
+                    // Try frame as-is (binding $defs), then unwrapped target.
+                    if (TryResolveAnchor(frame) is { } result)
+                        return result;
+                    if (frame is OpenApiSchemaReference { Target: { } target }
+                        && TryResolveAnchor(target) is { } result2)
+                        return result2;
+
+                    CodeTypeBase? TryResolveAnchor(IOpenApiSchema context)
                     {
-                        // Use the resolved schema's reference ID first, fall back to the resolving frame's.
+                        if (OpenApiWorkspace.ResolveDynamicAnchorInContext(context, anchorName) is not { } resolved)
+                            return null;
+                        // resolved may lack refId; fall back to frame's.
                         var refId = resolved.GetReferenceId() ?? frame.GetReferenceId();
-                        if (!string.IsNullOrEmpty(refId))
+                        if (string.IsNullOrEmpty(refId))
+                            return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+                        var className = refId.Split('/').Last().Split('.').Last().CleanupSymbolName();
+                        var nsName = GetModelsNamespaceNameFromReferenceId(refId);
+                        var searchNs = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
+                        if (GetExistingDeclaration(searchNs, currentNode, className) is CodeClass existing)
+                            return new CodeType { TypeDefinition = existing };
+                        // Recursive: forward-reference with enclosing suffix (combined recursive + generic).
+                        if (scope.Any(f => f.GetReferenceId() == refId))
                         {
-                            var className = refId.Split('/').Last().Split('.').Last().CleanupSymbolName();
-                            var nsName = GetModelsNamespaceNameFromReferenceId(refId);
-                            var searchNs = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
-                            if (GetExistingDeclaration(searchNs, currentNode, className) is CodeClass existing)
-                                return new CodeType { TypeDefinition = existing };
-                            // Forward reference — the class will be created by the enclosing materialization.
-                            return new CodeType { Name = className };
+                            var enclosingSuffix = scope.Reverse()
+                                .Select(f => TryGetDynamicBindingSuffix(f, currentNode))
+                                .FirstOrDefault(s => !string.IsNullOrEmpty(s));
+                            return new CodeType { Name = enclosingSuffix is null ? className : $"{className}{enclosingSuffix}" };
                         }
                         return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
                     }
@@ -2087,29 +2100,58 @@ public partial class KiotaBuilder
     /// Extracts the bare anchor name from a <c>$dynamicRef</c> value (e.g. <c>#category</c> → <c>category</c>,
     /// <c>https://example.com/schema#itemType</c> → <c>itemType</c>). Per JSON Schema 2020-12 §7.3.3.
     /// </summary>
-    private static string? ExtractAnchorName(string? dynamicRef)
+    internal static string? ExtractAnchorName(string? dynamicRef)
     {
         if (string.IsNullOrEmpty(dynamicRef))
             return null;
         var hashIndex = dynamicRef.LastIndexOf('#');
         return hashIndex >= 0 ? dynamicRef[(hashIndex + 1)..] : dynamicRef;
     }
+    private static string? TryGetDynamicBindingSuffix(IOpenApiSchema schema, OpenApiUrlTreeNode currentNode)
+    {
+        if (schema.Definitions is null || schema.Definitions.Count == 0)
+            return null;
+        var suffix = string.Empty;
+        foreach (var def in schema.Definitions.Values)
+        {
+            if (string.IsNullOrEmpty(def.DynamicAnchor))
+                continue;
+            var refId = def.GetReferenceId();
+            if (!string.IsNullOrEmpty(refId))
+                suffix += refId.Split('/').Last().Split('.').Last().CleanupSymbolName().ToFirstCharacterUpperCase();
+            else
+            {
+                var pathSuffix = string.Join(string.Empty, currentNode.Path
+                    .Split('\\', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(static segment => segment.CleanupSymbolName().ToFirstCharacterUpperCase()));
+                if (!string.IsNullOrEmpty(pathSuffix))
+                    suffix += pathSuffix;
+            }
+        }
+        return suffix.Length > 0 ? suffix : null;
+    }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
-        CodeTypeBase? type = GetPrimitiveType(schema.Items);
-        var isEnumOrComposedCollectionType = schema.Items.IsEnum() //the collection could be an enum type so override with strong type instead of string type.
-                                    || schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items?.Format);//the collection could be a composed type with an enum type so override with strong type instead of string type.
-        if ((string.IsNullOrEmpty(type?.Name)
-               || isEnumOrComposedCollectionType)
-               && schema.Items != null)
+        var shouldPush = schema.Definitions?.Values.Any(static d => !string.IsNullOrEmpty(d.DynamicAnchor)) == true;
+        if (shouldPush) _dynamicScope.Value!.Push(schema);
+        try
         {
-            var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
-            type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
+            CodeTypeBase? type = GetPrimitiveType(schema.Items);
+            var isEnumOrComposedCollectionType = schema.Items.IsEnum()
+                                        || schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items?.Format);
+            if ((string.IsNullOrEmpty(type?.Name)
+                   || isEnumOrComposedCollectionType)
+                   && schema.Items != null)
+            {
+                var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
+                type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
+            }
+            if (type is null)
+                return new CodeType { Name = UntypedNodeName, IsExternal = true };
+            type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+            return type;
         }
-        if (type is null)
-            return new CodeType { Name = UntypedNodeName, IsExternal = true };
-        type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
-        return type;
+        finally { if (shouldPush) _dynamicScope.Value!.Pop(); }
     }
     private CodeElement? GetExistingDeclaration(CodeNamespace currentNamespace, OpenApiUrlTreeNode currentNode, string declarationName)
     {
