@@ -529,7 +529,7 @@
     "@vscode/test-electron": "^3.0.0",
     "chai": "^6.2.2",
     "mocha": "^11.7.6",
-    "sinon": "^22.0.0",
+    "sinon": "^22.1.0",
     "webpack": "^5.108.4",
     "webpack-cli": "^7.2.1"
   }
