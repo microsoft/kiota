@@ -38,7 +38,7 @@
   ],
   "overrides": {
     "diff": "^8.0.3",
-    "serialize-javascript": "^7.0.5",
+    "serialize-javascript": "7.0.3",
     "@microsoft/applicationinsights-web-basic": "3.4.1"
   }
 }
