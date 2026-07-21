@@ -50,6 +50,10 @@ public partial class KiotaBuilder
     private readonly HttpClient httpClient;
     private OpenApiDocument? openApiDocument;
     private readonly ISettingsManagementService settingsFileManagementService;
+    /// <summary>
+    /// Tracks dynamic scopes for unresolved <c>$dynamicRef</c>; thread-local because generation is parallel.
+    /// </summary>
+    private static readonly ThreadLocal<Stack<IOpenApiSchema>> _dynamicScope = new(() => new(), trackAllValues: false);
     internal void SetOpenApiDocument(OpenApiDocument document) => openApiDocument = document ?? throw new ArgumentNullException(nameof(document));
 
     public KiotaBuilder(ILogger<KiotaBuilder> logger, GenerationConfiguration config, HttpClient client, bool useKiotaConfig = false, ISettingsManagementService? settingsManagementService = null)
@@ -582,15 +586,19 @@ public partial class KiotaBuilder
         StopLogAndReset(stopwatch, nameof(InitializeInheritanceIndex));
         if (root != null)
         {
+            stopwatch.Start();
             CreateRequestBuilderClass(codeNamespace, root, root);
             StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
+            stopwatch.Start();
             CreateWebhookModels();
             StopLogAndReset(stopwatch, nameof(CreateWebhookModels));
             stopwatch.Start();
             MapTypeDefinitions(codeNamespace);
             StopLogAndReset(stopwatch, nameof(MapTypeDefinitions));
+            stopwatch.Start();
             TrimInheritedModels();
             StopLogAndReset(stopwatch, nameof(TrimInheritedModels));
+            stopwatch.Start();
             CleanUpInternalState();
             StopLogAndReset(stopwatch, nameof(CleanUpInternalState));
 
@@ -1755,12 +1763,14 @@ public partial class KiotaBuilder
     }
     private CodeType CreateModelDeclarationAndType(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string classNameSuffix = "", IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false)
     {
-        var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, response: response, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
-        var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
-        return new CodeType
+        _dynamicScope.Value!.Push(schema);
+        try
         {
-            TypeDefinition = codeDeclaration,
-        };
+            var className = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: classNameSuffix, response: response, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
+            var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
+            return new CodeType { TypeDefinition = codeDeclaration };
+        }
+        finally { _dynamicScope.Value!.Pop(); }
     }
     private CodeType CreateInheritedModelDeclarationAndType(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
@@ -1770,6 +1780,15 @@ public partial class KiotaBuilder
         };
     }
     private CodeClass CreateInheritedModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
+    {
+        _dynamicScope.Value!.Push(schema);
+        try
+        {
+            return CreateInheritedModelDeclarationCore(currentNode, schema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isViaDiscriminator);
+        }
+        finally { _dynamicScope.Value!.Pop(); }
+    }
+    private CodeClass CreateInheritedModelDeclarationCore(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string classNameSuffix, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isViaDiscriminator = false)
     {
         var flattenedAllOfs = schema.AllOf.FlattenSchemaIfRequired(static x => x.AllOf).ToArray();
         var referenceId = schema.GetReferenceId();
@@ -1837,7 +1856,7 @@ public partial class KiotaBuilder
         };
         if (codeDeclaration is not CodeClass currentClass) throw new InvalidOperationException("Inheritance is only supported for classes");
         if (!currentClass.Documentation.DescriptionAvailable &&
-            new string[] { schema.Description ?? string.Empty }
+            new string[] { GetModelClassDescription(schema) }
                         .Union(schema.AllOf?
                                     .OfType<OpenApiSchema>()
                                     .Select(static x => x.Description) ?? [])
@@ -2021,7 +2040,59 @@ public partial class KiotaBuilder
         if ((schema.AnyOf is { Count: > 0 } || schema.OneOf is { Count: > 0 } || schema.AllOf is { Count: > 0 }) &&
            (schema.AnyOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
             return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+        // $dynamicRef resolution: when the library couldn't resolve Target (multi-candidate case),
+        // walk the dynamic scope outermost-first and resolve against the first frame
+        // whose schema or $defs declare a matching $dynamicAnchor (JSON Schema 2020-12 §7.7.2).
+        if (schema is OpenApiSchemaReference { Target: null } dynRefSchema
+            && !string.IsNullOrEmpty(dynRefSchema.DynamicRef)
+            && _dynamicScope.Value is { Count: > 0 } scope)
+        {
+            var anchorName = ExtractAnchorName(dynRefSchema.DynamicRef);
+            if (!string.IsNullOrEmpty(anchorName))
+            {
+                // Stack<T> enumerates innermost-first (top to bottom); reverse to walk outermost-first.
+                foreach (var frame in scope.Reverse())
+                {
+                    // Unwrap references to their target: ResolveDynamicAnchorInContext checks a reference's
+                    // own sibling $dynamicAnchor / $defs, but the anchor is usually declared on the target.
+                    var context = frame is OpenApiSchemaReference { Target: { } t } ? t : frame;
+                    if (OpenApiWorkspace.ResolveDynamicAnchorInContext(context, anchorName) is { } resolved)
+                    {
+                        // Use the resolved schema's reference ID first, fall back to the resolving frame's.
+                        var refId = resolved.GetReferenceId() ?? frame.GetReferenceId();
+                        if (!string.IsNullOrEmpty(refId))
+                        {
+                            var className = refId.Split('/').Last().Split('.').Last().CleanupSymbolName();
+                            var nsName = GetModelsNamespaceNameFromReferenceId(refId);
+                            var searchNs = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
+                            if (GetExistingDeclaration(searchNs, currentNode, className) is CodeClass existing)
+                                return new CodeType { TypeDefinition = existing };
+                            // Forward reference — the class will be created by the enclosing materialization.
+                            return new CodeType { Name = className };
+                        }
+                        return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+                    }
+                }
+            }
+        }
+        if (!string.IsNullOrEmpty(schema.DynamicRef))
+        {
+            var schemaRefId = schema.GetReferenceId();
+            var location = !string.IsNullOrEmpty(schemaRefId) ? schemaRefId : currentNode.Path;
+            logger.LogWarning("Schema at {Location} uses $dynamicRef '{DynamicRef}' which could not be resolved. Generating UntypedNode.", location, schema.DynamicRef);
+        }
         return new CodeType { Name = UntypedNodeName, IsExternal = true };
+    }
+    /// <summary>
+    /// Extracts the bare anchor name from a <c>$dynamicRef</c> value (e.g. <c>#category</c> → <c>category</c>,
+    /// <c>https://example.com/schema#itemType</c> → <c>itemType</c>). Per JSON Schema 2020-12 §7.3.3.
+    /// </summary>
+    private static string? ExtractAnchorName(string? dynamicRef)
+    {
+        if (string.IsNullOrEmpty(dynamicRef))
+            return null;
+        var hashIndex = dynamicRef.LastIndexOf('#');
+        return hashIndex >= 0 ? dynamicRef[(hashIndex + 1)..] : dynamicRef;
     }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
     {
@@ -2153,6 +2224,20 @@ public partial class KiotaBuilder
         }
         return currentNamespace;
     }
+    private static string GetModelClassDescription(IOpenApiSchema schema)
+    {
+        // The class description must be derived from the schema definition, never from a $ref site's
+        // own (sibling) description. A reference object's Description overrides the target's, and since
+        // the same component can be referenced from multiple properties with different descriptions
+        // (built by parallel tasks), using it makes generation non-deterministic (see issue #7927).
+        // The reference-level description is only relevant to the property, which is handled in CreateProperty.
+        var descriptionSource = schema is OpenApiSchemaReference schemaReference ? schemaReference.Target : schema;
+        if (descriptionSource is null)
+            return string.Empty;
+        return (string.IsNullOrEmpty(descriptionSource.Description) ?
+                    descriptionSource.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description :
+                    descriptionSource.Description) ?? string.Empty;
+    }
     private CodeClass AddModelClass(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, OpenApiOperation? currentOperation, CodeClass? inheritsFrom = null)
     {
         if (inheritsFrom == null && schema.AllOf?.OfType<OpenApiSchemaReference>().ToArray() is { Length: 1 } referencedSchemas)
@@ -2169,7 +2254,7 @@ public partial class KiotaBuilder
             {
                 DocumentationLabel = schema.ExternalDocs?.Description ?? string.Empty,
                 DocumentationLink = schema.ExternalDocs?.Url,
-                DescriptionTemplate = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
+                DescriptionTemplate = GetModelClassDescription(schema).CleanupDescription(),
             },
             Deprecation = schema.GetDeprecationInformation(),
         };

@@ -1,0 +1,51 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Non-Identifier Schema Key API
+  version: 0.1.0
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://api.dynamicref.test
+security: []
+paths:
+  /categories/non-identifier-tree:
+    get:
+      summary: Get category tree with non-identifier schema keys
+      operationId: getNonIdentifierCategoryTree
+      tags: [Categories]
+      responses:
+        '200':
+          description: Localized recursive category tree with non-identifier schema keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/localized-category'
+        default:
+          description: Error response
+components:
+  schemas:
+    base-category:
+      $id: https://example.com/schemas/base-category
+      $dynamicAnchor: category
+      type: object
+      required: [id, children]
+      properties:
+        id:
+          type: string
+        children:
+          type: array
+          items:
+            $dynamicRef: '#category'
+    localized-category:
+      $id: https://example.com/schemas/localized-category
+      $dynamicAnchor: category
+      allOf:
+        - $ref: '#/components/schemas/base-category'
+        - type: object
+          required: [displayName, locale]
+          properties:
+            displayName:
+              type: string
+            locale:
+              type: string

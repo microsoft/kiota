@@ -1,12 +1,13 @@
 package integrationtest
 
 import (
+	"context"
+	"fmt"
 	c "integrationtest/client"
+
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	a "github.com/microsoft/kiota-authentication-azure-go"
 	r "github.com/microsoft/kiota-http-go"
-    "fmt"
-    "context"
 )
 
 func main() {

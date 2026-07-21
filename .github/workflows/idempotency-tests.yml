@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - name: Restore dependencies
@@ -39,15 +39,15 @@ jobs:
       matrix:
         description:
           - "oas::petstore"
-          - "apisguru::twitter.com:current"
-          - "apisguru::notion.com"
-          - "apisguru::stripe.com"
+          - "https://api.twitter.com/2/openapi.json"
+          - "https://developers.notion.com/openapi.json"
+          - "https://raw.githubusercontent.com/stripe/openapi/refs/heads/master/latest/openapi.spec3.json"
           - "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml"
-          - "apisguru::meraki.com"
+          - "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json"
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
-          - "apisguru::twilio.com:api"
-          - "apisguru::docusign.net"
-          - "apisguru::github.com:api.github.com"
+          - "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml"
+          - "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json"
+          - "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v7
@@ -65,7 +65,10 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
-          path: it/openapi.yaml
+          # Output is either openapi.json or openapi.yml. Try to upload the one that is found.
+          path: |
+            it/openapi.yaml
+            it/openapi.json
 
   idempotency:
     runs-on: ubuntu-latest
@@ -86,15 +89,15 @@ jobs:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
           - "oas::petstore"
-          - "apisguru::twitter.com:current"
-          - "apisguru::notion.com"
-          - "apisguru::stripe.com"
+          - "https://api.twitter.com/2/openapi.json"
+          - "https://developers.notion.com/openapi.json"
+          - "https://raw.githubusercontent.com/stripe/openapi/refs/heads/master/latest/openapi.spec3.json"
           - "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml"
-          - "apisguru::meraki.com"
+          - "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json"
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
-          - "apisguru::twilio.com:api"
-          - "apisguru::docusign.net"
-          - "apisguru::github.com:api.github.com"
+          - "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml"
+          - "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json"
+          - "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v7

@@ -104,6 +104,34 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains(optionName.ToUpperInvariant(), result);
     }
     [Fact]
+    public void AlignsFlagsEnumConstValuesIntoColumns()
+    {
+        // gofmt column-aligns the values of a const block, so options of different lengths get padded
+        var root = CodeNamespace.InitRootNamespace();
+        var myEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "MoveType",
+            Flags = true
+        }).First();
+        myEnum.AddOption(new CodeEnumOption { Name = "rock" }, new CodeEnumOption { Name = "paper" }, new CodeEnumOption { Name = "scissors" });
+        writer.Write(myEnum);
+        var result = tw.ToString();
+        Assert.Contains("\tROCK_MOVETYPE     = 1", result);
+        Assert.Contains("\tPAPER_MOVETYPE    = 2", result);
+        Assert.Contains("\tSCISSORS_MOVETYPE = 4", result);
+    }
+    [Fact]
+    public void WritesSingleBlankLinesBetweenTopLevelDeclarations()
+    {
+        // gofmt: exactly one blank line between top-level declarations, none at the end of the file
+        currentEnum.AddOption(new CodeEnumOption { Name = "option1" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.DoesNotContain($"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}", result);
+        Assert.Contains($"){Environment.NewLine}{Environment.NewLine}func (i SomeEnum) String() string {{", result);
+        Assert.EndsWith($"}}{Environment.NewLine}", result);
+    }
+    [Fact]
     public void DoesntWriteAnythingOnNoOption()
     {
         writer.Write(currentEnum);
