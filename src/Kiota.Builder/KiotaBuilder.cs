@@ -586,13 +586,19 @@ public partial class KiotaBuilder
         StopLogAndReset(stopwatch, nameof(InitializeInheritanceIndex));
         if (root != null)
         {
+            stopwatch.Start();
             CreateRequestBuilderClass(codeNamespace, root, root);
             StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
             stopwatch.Start();
+            CreateWebhookModels();
+            StopLogAndReset(stopwatch, nameof(CreateWebhookModels));
+            stopwatch.Start();
             MapTypeDefinitions(codeNamespace);
             StopLogAndReset(stopwatch, nameof(MapTypeDefinitions));
+            stopwatch.Start();
             TrimInheritedModels();
             StopLogAndReset(stopwatch, nameof(TrimInheritedModels));
+            stopwatch.Start();
             CleanUpInternalState();
             StopLogAndReset(stopwatch, nameof(CleanUpInternalState));
 
@@ -602,6 +608,51 @@ public partial class KiotaBuilder
         }
 
         return rootNamespace;
+    }
+
+    private readonly ConcurrentDictionary<CodeElement, bool> webhookModels = new();
+    private void CreateWebhookModels()
+    {
+        if (openApiDocument?.Webhooks is not { Count: > 0 } webhooks || modelsNamespace is null)
+            return;
+
+        var webhookRoot = OpenApiUrlTreeNode.Create();
+        foreach (var webhook in webhooks)
+        {
+            var webhookNode = webhookRoot.Attach(webhook.Key, webhook.Value, Constants.DefaultOpenApiLabel);
+            if (webhook.Value.Operations is null)
+                continue;
+
+            foreach (var operationEntry in webhook.Value.Operations)
+            {
+                var operationType = operationEntry.Key.Method.ToLowerInvariant().ToFirstCharacterUpperCase();
+                var operation = operationEntry.Value;
+                if (operation.GetRequestSchema(config.StructuredMimeTypes) is { } requestSchema)
+                {
+                    var requestType = CreateModelDeclarations(webhookNode, requestSchema, operation, modelsNamespace,
+                        $"{operationType}RequestBody", isRequestBody: true);
+                    TrackWebhookModels(requestType);
+                }
+
+                if (operation.Responses is null)
+                    continue;
+                foreach (var responseEntry in operation.Responses)
+                {
+                    if (responseEntry.Value.GetResponseSchema(config.StructuredMimeTypes) is { } responseSchema)
+                    {
+                        var responseType = CreateModelDeclarations(webhookNode, responseSchema, operation, modelsNamespace,
+                            $"{operationType}{responseEntry.Key.ToUpperInvariant()}Response", response: responseEntry.Value);
+                        TrackWebhookModels(responseType);
+                    }
+                }
+            }
+        }
+    }
+    private void TrackWebhookModels(CodeTypeBase webhookType)
+    {
+        foreach (var type in webhookType.AllTypes)
+            if (type.TypeDefinition is CodeElement model)
+                webhookModels.TryAdd(model, true);
     }
 
     private void AddOperationSecurityRequirementToDOM(OpenApiOperation operation, CodeClass codeClass)
@@ -2310,7 +2361,7 @@ public partial class KiotaBuilder
     {
         if (modelsNamespace is null || rootNamespace is null || modelsNamespace.Parent is not CodeNamespace clientNamespace) return;
         var reusableModels = GetAllModels(modelsNamespace).ToArray();//to avoid multiple enumerations
-        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).Union(multipartPropertiesModels.Keys).ToArray();
+        var modelsDirectlyInUse = GetTypeDefinitionsInNamespace(rootNamespace).Union(multipartPropertiesModels.Keys).Union(webhookModels.Keys).ToArray();
         var classesDirectlyInUse = modelsDirectlyInUse.OfType<CodeClass>().ToHashSet();
         var allModelClassesIndex = GetDerivationIndex(GetAllModels(clientNamespace).OfType<CodeClass>());
         var derivedClassesInUse = GetDerivedDefinitions(allModelClassesIndex, classesDirectlyInUse.ToArray());
@@ -2774,6 +2825,7 @@ public partial class KiotaBuilder
             lifecycle.Dispose();
         classLifecycles.Clear();
         multipartPropertiesModels.Clear();
+        webhookModels.Clear();
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Cleaning output directory {Path}")]
