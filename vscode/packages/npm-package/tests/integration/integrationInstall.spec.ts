@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
-import { setKiotaConfig } from '../../config';
-import { ensureKiotaIsPresentInPath, getCurrentPlatform, getKiotaPath, Package } from '../../install';
+import { setKiotaConfig } from '../../lib/config';
+import { ensureKiotaIsPresentInPath, getCurrentPlatform, getKiotaPath, Package } from '../../lib/install';
 import testRuntimeJson from '../test_runtime.json';
 import path from 'path';
 

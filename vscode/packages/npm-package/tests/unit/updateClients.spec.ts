@@ -1,4 +1,4 @@
-import { KiotaLogEntry } from '../../types';
+import { KiotaLogEntry } from '../../lib/types';
 import { updateClients } from '../../lib/updateClients';
 import { setupKiotaStubs } from './stubs.util';
 

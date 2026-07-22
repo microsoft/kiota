@@ -18,8 +18,6 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^dist/(.*)$': '<rootDir>/src/$1'
   },
-  globalSetup: "<rootDir>/tests/integration/setup.ts",
+  globalSetup: "<rootDir>/tests/integration/setup.cjs",
   globalTeardown: "<rootDir>/tests/integration/teardown.ts",
 };
-
-

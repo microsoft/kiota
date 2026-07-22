@@ -58,9 +58,17 @@ $extensionVersion = $versionParts[0] + "." + $versionParts[1] + "." + $updatedPa
 $packageJson.version = $extensionVersion
 $runtimeDependencies = $runtimeJson.runtimeDependencies
 
-# Update the version in the package.json located in the same directory as runtimeJson
+# Update the version in the npm-package package.json.
+# It normally sits next to runtime.json, but when runtime.json lives in a sub-folder
+# (e.g. lib/) the package.json is in the parent directory instead.
 $runtimeJsonDirectory = Split-Path -Path $runtimeFilePath -Parent
 $runtimePackageJsonFilePath = Join-Path -Path $runtimeJsonDirectory -ChildPath "package.json"
+if (-not (Test-Path $runtimePackageJsonFilePath)) {
+  $runtimeJsonParentDirectory = Split-Path -Path $runtimeJsonDirectory -Parent
+  if ($runtimeJsonParentDirectory) {
+    $runtimePackageJsonFilePath = Join-Path -Path $runtimeJsonParentDirectory -ChildPath "package.json"
+  }
+}
 if (Test-Path $runtimePackageJsonFilePath) {
   $runtimePackageJson = Get-Content $runtimePackageJsonFilePath | ConvertFrom-Json
   $runtimePackageJson.version = $version
