@@ -36,7 +36,7 @@ mypy-extensions==1.1.0 ; python_version >= '3.5'
 
 packaging==26.2 ; python_version >= '3.7'
 
-platformdirs==4.10.1 ; python_version >= '3.7'
+platformdirs==4.11.0 ; python_version >= '3.7'
 
 pluggy==1.6.0 ; python_version >= '3.7'
 
