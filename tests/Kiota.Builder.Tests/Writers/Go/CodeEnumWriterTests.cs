@@ -164,7 +164,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains(GoTestConstants.LineFeed, result);
-        var firstline = result[0..^result.IndexOf(GoTestConstants.LineFeed, StringComparison.Ordinal)];
+        var firstline = result[0..result.IndexOf(GoTestConstants.LineFeed, StringComparison.Ordinal)];
         Assert.Contains("DO NOT EDIT", firstline);
     }
     [Fact]
