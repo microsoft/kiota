@@ -24,6 +24,8 @@ configuration:
       requiresConversationResolution: true
       # Are merge commits prohibited from being pushed to this branch. boolean
       requiresLinearHistory: false
+      # Indicates whether "Require merge queue" ("Use merge queue") is enabled for this branch. boolean
+      requiresMergeQueue: true
       # Required status checks to pass before merging. Values can be any string, but if the value does not correspond to any existing status check, the status check will be stuck on pending for status since nothing exists to push an actual status
       requiredStatusChecks:
         - license/cla
@@ -33,7 +35,7 @@ configuration:
         - check-integration-tests
         - build_extension
       # Require branches to be up to date before merging
-      requiresStrictStatusChecks: true
+      requiresStrictStatusChecks: false
       # Indicates whether there are restrictions on who can push. boolean. Should be set with whoCanPush.
       restrictsPushes: false
       # Restrict who can dismiss pull request reviews. boolean
