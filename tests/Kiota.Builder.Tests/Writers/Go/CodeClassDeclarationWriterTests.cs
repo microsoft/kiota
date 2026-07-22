@@ -92,7 +92,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         // gofmt: exactly one blank line between top-level declarations
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains($"package {Environment.NewLine}{Environment.NewLine}type ParentClass struct {{", result);
+        Assert.Contains($"package {GoTestConstants.LineFeed}{GoTestConstants.LineFeed}type ParentClass struct {{", result);
     }
     [Fact]
     public void AlignsCommentLessFieldsIntoColumns()
@@ -141,7 +141,7 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         });
         codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
         var result = tw.ToString();
-        Assert.Contains($"\t// The displayName property{Environment.NewLine}\tdisplayName *string", result);
-        Assert.Contains($"\t// The id property{Environment.NewLine}\tid *string", result);
+        Assert.Contains($"\t// The displayName property{GoTestConstants.LineFeed}\tdisplayName *string", result);
+        Assert.Contains($"\t// The id property{GoTestConstants.LineFeed}\tid *string", result);
     }
 }

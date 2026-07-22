@@ -1789,7 +1789,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("[see more]: ", result);
-        Assert.DoesNotContain($"{Environment.NewLine}more", result);
+        Assert.DoesNotContain($"{GoTestConstants.LineFeed}more", result);
     }
     [Fact]
     public void Defensive()
@@ -2560,10 +2560,10 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void SanitizesDeprecationVersionInComments()
     {
         setup();
-        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), $"v2.0{Environment.NewLine}VERSION_MARKER");
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), $"v2.0{GoTestConstants.LineFeed}VERSION_MARKER");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain($"as of v2.0{Environment.NewLine}VERSION_MARKER", result);
+        Assert.DoesNotContain($"as of v2.0{GoTestConstants.LineFeed}VERSION_MARKER", result);
         Assert.Contains("as of v2.0VERSION_MARKER", result);
     }
     [Fact]

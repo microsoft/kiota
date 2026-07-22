@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- golang: generated code now always uses LF line endings, so `gofmt` no longer reports formatting differences when generating on Windows.
 - golang: make sure all generated code adheres to golangs coding standards
 - Fixed non-deterministic model class descriptions when a component schema is referenced from multiple properties with differing reference-level descriptions. [#7927](https://github.com/microsoft/kiota/issues/7927)
 
