@@ -36,7 +36,7 @@ jest.mock('crypto', () => ({
 }));
 
 // We need to import after mocking
-import { ensureKiotaIsPresentInPath, Package } from '../../install';
+import { ensureKiotaIsPresentInPath, Package } from '../../lib/install';
 
 describe('install async file operations', () => {
   beforeEach(() => {

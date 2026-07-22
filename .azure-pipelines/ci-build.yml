@@ -205,6 +205,13 @@ extends:
                 inputs:
                   version: 10.0.x
 
+              # Pinned to a specific Go version for deterministic tool availability and formatting,
+              # so the integration tests can run gofmt against the generated Go code.
+              - task: GoTool@0
+                displayName: "Use Go 1.26.5"
+                inputs:
+                  version: "1.26.5"
+
               # Install the nuget tool.
               - task: NuGetToolInstaller@1
                 displayName: "Use NuGet >=6.11.0"
@@ -655,7 +662,7 @@ extends:
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
               - script: npm i -g @vscode/vsce rimraf
                 displayName: "Install Global dependencies"
@@ -774,7 +781,7 @@ extends:
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
                 displayName: "Get Kiota's version-number from .csproj"
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update NPM package version-number"
               - script: |
                   npm i -g rimraf

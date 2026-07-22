@@ -1,6 +1,6 @@
-import * as rpc from "vscode-jsonrpc/node";
+import * as rpc from "vscode-jsonrpc/node.js";
 
-import connectToKiota from '../connect';
+import connectToKiota from './connect.js';
 
 /**
  * Retrieves the version of Kiota by connecting to the Kiota service.

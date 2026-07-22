@@ -37,6 +37,6 @@ public class GoConventionServiceTests
         var result = textWriter.ToString();
 
         Assert.Contains("// line1line2 line3", result);
-        Assert.DoesNotContain($"{Environment.NewLine}line2", result);
+        Assert.DoesNotContain($"{GoTestConstants.LineFeed}line2", result);
     }
 }

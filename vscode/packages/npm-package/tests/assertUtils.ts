@@ -1,4 +1,4 @@
-import { KiotaLogEntry, LogLevel } from "../types";
+import { KiotaLogEntry, LogLevel } from "../lib/types";
 
 export function existsEqualOrGreaterThanLevelLogs(logs: KiotaLogEntry[] | undefined, level: LogLevel): boolean {
   if (!logs) return false;

@@ -7,7 +7,7 @@ import {
   ApiKeySecurityScheme,
   OpenIdSecurityScheme,
   OpenApiSpecVersion,
-} from "../../types";
+} from "../../lib/types";
 import { getKiotaTree } from "../../lib/getKiotaTree";
 import { existsEqualOrGreaterThanLevelLogs } from "../assertUtils";
 
