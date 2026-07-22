@@ -1,4 +1,4 @@
-namespace Kiota.Builder.Tests.Writers.Go;
+﻿namespace Kiota.Builder.Tests.Writers.Go;
 
 internal static class GoTestConstants
 {
