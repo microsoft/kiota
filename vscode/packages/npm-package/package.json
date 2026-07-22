@@ -30,7 +30,7 @@
     "test:integration": "jest --config=jest.config.integration.cjs --runInBand",
     "build": "npm run clean && tsc --project ./tsconfig.json",
     "clean": "rimraf dist",
-    "generate-readme": "node scripts/generate-readme.js",
+    "generate-readme": "node scripts/generate-readme.cjs",
     "test:coverage": "jest --coverage --runInBand",
     "prepack": "npm run build",
     "package": "npm pack"
