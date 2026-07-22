@@ -33,8 +33,16 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
     /// By making this a separate step, we can instantiate the LanguageWriter, then get the suffix, then create the writer.</remarks>
     public void SetTextWriter(TextWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
+        writer.NewLine = LineSeparator;
         this.writer = writer;
     }
+    /// <summary>
+    /// The line ending used to terminate the lines written to the output.
+    /// Defaults to the host OS newline; languages whose tooling mandates a specific
+    /// line ending (e.g. Go, whose gofmt requires LF) override this.
+    /// </summary>
+    protected virtual string LineSeparator => Environment.NewLine;
     public IPathSegmenter? PathSegmenter
     {
         get; protected set;

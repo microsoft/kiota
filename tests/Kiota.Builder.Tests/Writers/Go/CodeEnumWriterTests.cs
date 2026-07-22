@@ -127,9 +127,9 @@ public sealed class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(new CodeEnumOption { Name = "option1" });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.DoesNotContain($"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}", result);
-        Assert.Contains($"){Environment.NewLine}{Environment.NewLine}func (i SomeEnum) String() string {{", result);
-        Assert.EndsWith($"}}{Environment.NewLine}", result);
+        Assert.DoesNotContain($"{GoTestConstants.LineFeed}{GoTestConstants.LineFeed}{GoTestConstants.LineFeed}", result);
+        Assert.Contains($"){GoTestConstants.LineFeed}{GoTestConstants.LineFeed}func (i SomeEnum) String() string {{", result);
+        Assert.EndsWith($"}}{GoTestConstants.LineFeed}", result);
     }
     [Fact]
     public void DoesntWriteAnythingOnNoOption()
@@ -163,8 +163,8 @@ public sealed class CodeEnumWriterTests : IDisposable
         currentEnum.AddOption(option);
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains(Environment.NewLine, result);
-        var firstline = result[0..^result.IndexOf(Environment.NewLine)];
+        Assert.Contains(GoTestConstants.LineFeed, result);
+        var firstline = result[0..result.IndexOf(GoTestConstants.LineFeed, StringComparison.Ordinal)];
         Assert.Contains("DO NOT EDIT", firstline);
     }
     [Fact]
@@ -200,7 +200,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
 
         Assert.Contains("// Some optioninjected", result);
-        Assert.DoesNotContain($"{Environment.NewLine}injected", result);
+        Assert.DoesNotContain($"{GoTestConstants.LineFeed}injected", result);
     }
     [Fact]
     public void DoesNotWriteImportOnEmptyImports()
