@@ -1,5 +1,5 @@
 import * as cp from 'node:child_process';
-import * as rpc from 'vscode-jsonrpc/node.js';
+import * as rpc from 'vscode-jsonrpc/node';
 import { ensureKiotaIsPresent, getKiotaPath } from './install.js';
 
 
