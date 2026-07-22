@@ -205,6 +205,13 @@ extends:
                 inputs:
                   version: 10.0.x
 
+              # Pinned to match the version used by the CI pipeline (.github/workflows/dotnet.yml),
+              # required so the integration tests can run gofmt against the generated Go code.
+              - task: GoTool@0
+                displayName: "Use Go 1.26.5"
+                inputs:
+                  version: "1.26.5"
+
               # Install the nuget tool.
               - task: NuGetToolInstaller@1
                 displayName: "Use NuGet >=6.11.0"
