@@ -73,6 +73,20 @@ if (Test-Path $runtimePackageJsonFilePath) {
   $runtimePackageJson = Get-Content $runtimePackageJsonFilePath | ConvertFrom-Json
   $runtimePackageJson.version = $version
   Set-Content $runtimePackageJsonFilePath ($runtimePackageJson | ConvertTo-Json -Depth 10)
+
+  # For preview builds the npm-package version becomes a prerelease (e.g. 1.x.y-preview.*).
+  # A caret range such as ^1.x.y does not satisfy a prerelease of a different patch tuple, so
+  # `npm ci` would stop resolving the dependency to the local workspace and instead pull it (plus
+  # its transitive dependencies) from the registry, breaking the committed lockfile's sync check.
+  # Pin the extension's dependency to the exact preview version so npm keeps linking the local
+  # workspace. This is intentionally limited to preview builds to preserve `npm ci` validity for
+  # regular releases, whose plain versions still satisfy the committed caret range.
+  if ($version -like "*-preview.*") {
+    $dependencyName = $runtimePackageJson.name
+    if ($dependencyName -and $packageJson.dependencies -and ($packageJson.dependencies.PSObject.Properties.Name -contains $dependencyName)) {
+      $packageJson.dependencies.$dependencyName = $version
+    }
+  }
 }
 
 if ($online) {
