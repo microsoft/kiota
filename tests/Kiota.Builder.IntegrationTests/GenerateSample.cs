@@ -465,6 +465,7 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("class PaginatedTemplate\n", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class PaginatedTemplate ", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class PaginatedTemplate:", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("type PaginatedTemplate struct", allModelText, StringComparison.Ordinal);
         switch (language)
         {
             case GenerationLanguage.CSharp:
@@ -517,6 +518,8 @@ public sealed class GenerateSample : IDisposable
         Assert.Contains("PaginatedTemplateGroups", allModelText, StringComparison.Ordinal);
         Assert.Contains("PaginatedTemplateOrgsUsers", allModelText, StringComparison.Ordinal);
         Assert.Contains("PaginatedTemplateTeamsUsers", allModelText, StringComparison.Ordinal);
+        if (language is GenerationLanguage.CSharp)
+            Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.PaginatedTemplateUsersListUsers_items>", allModelText, StringComparison.Ordinal);
     }
 
     [InlineData(GenerationLanguage.CSharp)]
@@ -546,6 +549,7 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("class TreeTemplate\n", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class TreeTemplate ", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class TreeTemplate:", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("type TreeTemplate struct", allModelText, StringComparison.Ordinal);
     }
 
     [InlineData(GenerationLanguage.CSharp)]
@@ -573,6 +577,70 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("class SearchTemplate\n", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class SearchTemplate ", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class SearchTemplate:", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("type SearchTemplate struct", allModelText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ResolvesInheritedGenericBindingDynamicRefAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("inherited-generic-binding.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "InheritedGenericBinding", "CSharp"),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "InheritedGenericBinding", "CSharp"));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        Assert.Contains("class InheritedTemplateUser", allModelText, StringComparison.Ordinal);
+        Assert.Contains("class InheritedTemplateGroup", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.User>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.Group>", allModelText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DisambiguatesRequestResponseInlineBindingDynamicRefAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("request-response-inline-binding.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "RequestResponseInlineBinding", "CSharp"),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "RequestResponseInlineBinding", "CSharp"));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        Assert.Contains("partial class SharedTemplateSharedSubmitSharedRequestBody :", allModelText, StringComparison.Ordinal);
+        Assert.Contains("partial class SharedTemplateSharedSubmitShared :", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.SharedTemplateSharedSubmitSharedRequestBody_items>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.SharedTemplateSharedSubmitShared_items>", allModelText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DisambiguatesMultipleErrorInlineBindingDynamicRefAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("multi-error-inline-binding.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "MultiErrorInlineBinding", "CSharp"),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "MultiErrorInlineBinding", "CSharp"));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        Assert.Contains("partial class ErrorTemplateSharedErrorsGetSharedErrorsFourZeroZeroError :", allModelText, StringComparison.Ordinal);
+        Assert.Contains("partial class ErrorTemplateSharedErrorsGetSharedErrorsFourZeroFourError :", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.ErrorTemplateSharedErrorsGetSharedErrorsFourZeroZeroError_items>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.ErrorTemplateSharedErrorsGetSharedErrorsFourZeroFourError_items>", allModelText, StringComparison.Ordinal);
     }
 
     [InlineData(GenerationLanguage.CSharp)]
@@ -601,6 +669,7 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("class EnvelopeTemplate\n", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class EnvelopeTemplate ", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class EnvelopeTemplate:", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("type EnvelopeTemplate struct", allModelText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -643,5 +712,50 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("UntypedNode", allText, StringComparison.Ordinal);
         Assert.Contains("User", allText, StringComparison.Ordinal);
         Assert.Contains("Group", allText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ResolvesMultiInlineBindingDynamicRefAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("multi-inline-binding.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "MultiInlineBinding", "CSharp"),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "MultiInlineBinding", "CSharp"));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        // Context suffix (route + operation) must appear exactly once, not duplicated per inline anchor.
+        var classDecl = "class CompositeTemplateCompositeGetComposite";
+        Assert.Contains(classDecl + " ", allModelText, StringComparison.Ordinal);
+        // If duplicated, the class name would contain the context twice — verify it doesn't.
+        Assert.DoesNotContain(classDecl + "Composite", allModelText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ResolvesMixedAnchorBindingDynamicRefAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("mixed-anchor-binding.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "MixedAnchorBinding", "CSharp"),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "MixedAnchorBinding", "CSharp"));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        // Mixed anchors: one $ref (zRef → User) + one inline (aInline).
+        // Ref suffixes come first (sorted), context appended once after.
+        Assert.Contains("MixedTemplateUserMixedGetMixed", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class MixedTemplate\n", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class MixedTemplate ", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class MixedTemplate:", allModelText, StringComparison.Ordinal);
     }
 }

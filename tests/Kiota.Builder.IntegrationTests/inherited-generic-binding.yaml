@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Inherited Generic Binding API
+  version: 0.1.0
+paths:
+  /inherited/users:
+    get:
+      operationId: listInheritedUsers
+      responses:
+        '200':
+          description: User page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/InheritedTemplate'
+        default:
+          description: Error
+  /inherited/groups:
+    get:
+      operationId: listInheritedGroups
+      responses:
+        '200':
+          description: Group page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/InheritedTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Group:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+    PageBase:
+      type: object
+      properties:
+        nextLink:
+          type: string
+    InheritedTemplate:
+      $id: https://example.com/schemas/InheritedTemplate
+      $dynamicAnchor: itemType
+      allOf:
+        - $ref: '#/components/schemas/PageBase'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $dynamicRef: '#itemType'
