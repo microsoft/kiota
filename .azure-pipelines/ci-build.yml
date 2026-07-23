@@ -105,7 +105,11 @@ extends:
         # manifests against public registries (e.g. the Maven detector runs `mvn dependency:tree`,
         # reaching repo.maven.apache.org), which fails network isolation. These fixtures are not
         # dependencies of the shipped kiota binary, so exclude them from CG scanning.
-        ignoreDirectories: "$(Build.SourcesDirectory)/it"
+        # ignoreDirectories maps to Component Detection's --IgnoreDirectories (comma-separated absolute
+        # paths, matched against the scan root — not globs). The scan root can be either
+        # $(Build.SourcesDirectory) or $(Build.Repository.LocalPath) depending on the injected job, so
+        # list the fixture directory under both roots to guarantee the exclusion matches.
+        ignoreDirectories: "$(Build.SourcesDirectory)/it,$(Build.Repository.LocalPath)/it"
     stages:
       - stage: build
         jobs:
