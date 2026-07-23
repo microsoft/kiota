@@ -99,6 +99,13 @@ extends:
         name: Azure-Pipelines-1ESPT-ExDShared
         os: windows
         image: windows-latest
+      componentgovernance:
+        # The it/ directory holds per-language integration-test fixtures (Java/Maven, PHP/Composer,
+        # Dart/Pub, Python, Go, Ruby, TypeScript). Component Detection would otherwise resolve those
+        # manifests against public registries (e.g. the Maven detector runs `mvn dependency:tree`,
+        # reaching repo.maven.apache.org), which fails network isolation. These fixtures are not
+        # dependencies of the shipped kiota binary, so exclude them from CG scanning.
+        ignoreDirectories: "$(Build.SourcesDirectory)/it"
     stages:
       - stage: build
         jobs:
