@@ -107,6 +107,11 @@ extends:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
               image: ubuntu-latest
+            variables:
+              # Base URL for the authenticated Azure Artifacts feed (GraphDeveloperExperiences_Public) used
+              # to route package-version lookups through configured upstream sources instead of public registries.
+              # NOTE: confirm these against the feed's "Connect to Feed" dialog if the feed/org/project changes.
+              privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
             templateContext:
               sdl:
                 baseline:
@@ -118,8 +123,20 @@ extends:
                 clean: true
                 submodules: true
 
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
+              # Route package-version lookups through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
+              # NuGet, npm, PyPI and Maven Central are configured as upstream sources on that feed.
+              # PHP (Packagist), Dart (pub.dev), Go (api.github.com) and Ruby (rubygems.org) have no
+              # Azure Artifacts upstream type, so those lookups remain on public (allow-listed) registries.
+              - pwsh: >
+                  $(Build.SourcesDirectory)/scripts/update-versions.ps1
+                  -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                  -NpmRegistryUrl "$(privateFeedBaseUrl)/npm/registry"
+                  -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
+                  -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
                 displayName: "Update dependencies versions"
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
 
               - pwsh: |
                   New-Item -Path $(Build.ArtifactStagingDirectory)/AppSettings -ItemType Directory -Force -Verbose
