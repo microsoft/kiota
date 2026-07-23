@@ -73,9 +73,14 @@ function Get-LatestNpmVersion {
     param(
         [string]$packageId
     )
-    $url = "$NpmRegistryUrl/$($packageId.ToLowerInvariant())/latest"
+    # Azure Artifacts npm feeds do not implement the /{package}/latest dist-tag shortcut (they return
+    # 404 for it). Fetch the full packument at /{package} instead and read dist-tags.latest, which works
+    # against both the private feed and public registry.npmjs.org. Scoped names (e.g.
+    # @microsoft/kiota-abstractions) must have their '/' encoded as %2F for the packument request.
+    $encodedId = $packageId.ToLowerInvariant().Replace('/', '%2F')
+    $url = "$NpmRegistryUrl/$encodedId"
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:FeedAuthHeaders
-    $response.version
+    $response.'dist-tags'.latest
 }
 # Get the latest version of a maven package
 function Get-LatestMavenVersion {
