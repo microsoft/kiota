@@ -147,7 +147,7 @@ jobs:
           node-version: 22.x
       - name: Setup Ruby
         if: matrix.language == 'ruby'
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@v1.319.0
         with:
           ruby-version: "3.3"
           bundler-cache: true
