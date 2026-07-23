@@ -487,6 +487,21 @@ extends:
                   - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
                     displayName: "Set version suffix in csproj for generators"
 
+                  - task: NuGetAuthenticate@1
+                    displayName: 'Authenticate to Azure Artifacts'
+
+                  - pwsh: |
+                      @"
+                      <?xml version="1.0" encoding="utf-8"?>
+                      <configuration>
+                        <packageSources>
+                          <clear />
+                          <add key="GraphDeveloperExperiences_Public" value="https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public/nuget/v3/index.json" />
+                        </packageSources>
+                      </configuration>
+                      "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
+                    displayName: 'Create nuget.config (central feed)'
+
                   - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ distribution.architecture }} -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }} --version-suffix "$(versionSuffix)" -f net10.0
                     condition: eq(variables['isPrerelease'], 'true')
                     displayName: publish kiota as executable
