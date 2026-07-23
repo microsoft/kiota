@@ -1,0 +1,53 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Multi-Candidate No Binding API
+  version: 0.1.0
+paths:
+  /container:
+    get:
+      operationId: getContainer
+      responses:
+        '200':
+          description: Container with an unbound dynamic ref
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Container'
+        default:
+          description: Error
+components:
+  schemas:
+    Container:
+      type: object
+      required: [item]
+      properties:
+        item:
+          $dynamicRef: '#node'
+    TreeNode:
+      $id: https://example.com/schemas/TreeNode
+      $dynamicAnchor: node
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+    LeafA:
+      $id: https://example.com/schemas/LeafA
+      $dynamicAnchor: node
+      type: object
+      required: [id, value]
+      properties:
+        id:
+          type: string
+        value:
+          type: string
+    LeafB:
+      $id: https://example.com/schemas/LeafB
+      $dynamicAnchor: node
+      type: object
+      required: [id, count]
+      properties:
+        id:
+          type: string
+        count:
+          type: integer
