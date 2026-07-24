@@ -102,7 +102,8 @@ extends:
       # "Permissive" base policy is intentionally omitted so other banned-endpoint calls still fail the
       # run, surfacing exactly which steps egress to public registries.
       # See https://aka.ms/1espt-networkisolation
-      networkIsolationPolicy: Preferred,GitHub,CFSClean
+      # explicitly unset until we can get an approval for our required use-cases as these policies will break the build.
+      # networkIsolationPolicy: Preferred,GitHub,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
@@ -156,7 +157,6 @@ extends:
                   -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
                 displayName: "Update dependencies versions"
                 name: update_versions
-                condition: false
                 env:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
 
