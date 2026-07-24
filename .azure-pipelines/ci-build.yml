@@ -316,9 +316,10 @@ extends:
                   projects: '$(Build.SourcesDirectory)\kiota.slnx'
                   arguments: '--configuration $(BuildConfiguration) --no-build --collect:"XPlat Code Coverage"'
 
-              - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool
+              - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool --configfile "$(Build.SourcesDirectory)/nuget.config"
                 condition: succeededOrFailed()
                 displayName: "Install ReportGenerator"
+                name: install_reportgenerator
 
               - pwsh: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
                 condition: succeeded()
