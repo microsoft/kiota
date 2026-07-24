@@ -155,6 +155,8 @@ extends:
                   -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
                   -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
                 displayName: "Update dependencies versions"
+                name: update_versions
+                condition: false
                 env:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
 
