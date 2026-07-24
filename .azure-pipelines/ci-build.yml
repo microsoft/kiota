@@ -96,12 +96,14 @@ extends:
   parameters:
     settings:
       # Network isolation policy. "CFSClean" enforces Central Feed Service isolation: package restores
-      # are constrained to approved/authenticated feeds and direct calls to public registries
-      # (nuget.org, npmjs, pypi.org, Maven Central, etc.) are blocked. The "Permissive" base policy is
-      # intentionally omitted so banned-endpoint calls fail the run (rather than being allowed),
-      # surfacing exactly which steps still egress to public registries.
+      # are constrained to approved/authenticated feeds and direct calls to public package registries
+      # (nuget.org, npmjs, pypi.org, Maven Central, etc.) are blocked. "GitHub" is a shared allow policy
+      # that permits github.com / api.github.com (needed for the Go dependency release lookups). The
+      # "Permissive" base policy is intentionally omitted so other banned-endpoint calls still fail the
+      # run, surfacing exactly which steps egress to public registries.
       # See https://aka.ms/1espt-networkisolation
-      networkIsolationPolicy: CFSClean
+      networkIsolationPolicy: CFSClean,GitHub
+    sdl:
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
