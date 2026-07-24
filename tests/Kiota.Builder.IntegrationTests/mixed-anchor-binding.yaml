@@ -1,0 +1,47 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Mixed Anchor Binding API
+  version: 0.1.0
+paths:
+  /mixed:
+    get:
+      operationId: getMixed
+      responses:
+        '200':
+          description: Mixed ref + inline anchors
+          content:
+            application/json:
+              schema:
+                $defs:
+                  aRef:
+                    $dynamicAnchor: aRef
+                    $ref: '#/components/schemas/User'
+                  zInline:
+                    $dynamicAnchor: zInline
+                    type: object
+                    required: [code]
+                    properties:
+                      code:
+                        type: integer
+                $ref: '#/components/schemas/MixedTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    MixedTemplate:
+      $id: https://example.com/schemas/MixedTemplate
+      type: object
+      required: [inline, ref]
+      properties:
+        inline:
+          $dynamicRef: '#zInline'
+        ref:
+          $dynamicRef: '#aRef'

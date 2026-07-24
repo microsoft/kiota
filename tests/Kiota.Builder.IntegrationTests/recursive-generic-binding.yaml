@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Recursive + Generic Binding API
+  version: 0.1.0
+paths:
+  /trees:
+    get:
+      operationId: listTrees
+      responses:
+        '200':
+          description: Tree page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Branch'
+                $ref: '#/components/schemas/TreeTemplate'
+        default:
+          description: Error
+  /leaves:
+    get:
+      operationId: listLeaves
+      responses:
+        '200':
+          description: Leaf page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Leaf'
+                $ref: '#/components/schemas/TreeTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    Branch:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Leaf:
+      type: object
+      required: [id, color]
+      properties:
+        id:
+          type: string
+        color:
+          type: string
+    TreeTemplate:
+      $id: https://example.com/schemas/TreeTemplate
+      $dynamicAnchor: self
+      type: object
+      required: [items, parent]
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+        parent:
+          $dynamicRef: '#self'

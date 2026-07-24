@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Inline Binding API
+  version: 0.1.0
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: User page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    required: [id, name]
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+  /groups:
+    get:
+      operationId: listGroups
+      responses:
+        '200':
+          description: Group page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    required: [id, label]
+                    properties:
+                      id:
+                        type: string
+                      label:
+                        type: string
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+  /orgs/users:
+    get:
+      operationId: listOrgUsers
+      responses:
+        '200':
+          description: Organization user page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    required: [id, orgRole]
+                    properties:
+                      id:
+                        type: string
+                      orgRole:
+                        type: string
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+  /teams/users:
+    get:
+      operationId: listTeamUsers
+      responses:
+        '200':
+          description: Team user page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    required: [id, teamRole]
+                    properties:
+                      id:
+                        type: string
+                      teamRole:
+                        type: string
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    PaginatedTemplate:
+      $id: https://example.com/schemas/PaginatedTemplate
+      $dynamicAnchor: itemType
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'

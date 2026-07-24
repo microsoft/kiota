@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Multi Error Inline Binding API
+  version: 0.1.0
+paths:
+  /shared/errors:
+    get:
+      operationId: getSharedErrors
+      responses:
+        '204':
+          description: No content
+        '400':
+          description: User error
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    required: [id, name]
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                $ref: '#/components/schemas/ErrorTemplate'
+        '404':
+          description: Group error
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    required: [id, label]
+                    properties:
+                      id:
+                        type: string
+                      label:
+                        type: string
+                $ref: '#/components/schemas/ErrorTemplate'
+components:
+  schemas:
+    ErrorTemplate:
+      $id: https://example.com/schemas/ErrorTemplate
+      $dynamicAnchor: itemType
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
