@@ -163,7 +163,9 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
             try
             {
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient);
-                var result = await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
+                var result = Configuration.Generation.Language == GenerationLanguage.PowerShellWrapper
+                    ? await builder.GeneratePowerShellWrapperAsync(cancellationToken).ConfigureAwait(false)
+                    : await builder.GenerateClientAsync(cancellationToken).ConfigureAwait(false);
                 if (result)
                 {
                     DisplaySuccess("Generation completed successfully");

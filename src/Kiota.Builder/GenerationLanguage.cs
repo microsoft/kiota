@@ -10,5 +10,9 @@ public enum GenerationLanguage
     Go,
     Ruby,
     Dart,
-    HTTP
+    HTTP,
+    // Emits PowerShell cmdlet classes that call a Kiota-generated C# client. Bypasses the
+    // CodeDOM/refiner/writer pipeline, same shape as plugin generation; see
+    // KiotaBuilder.GeneratePowerShellWrapperAsync.
+    PowerShellWrapper
 }
