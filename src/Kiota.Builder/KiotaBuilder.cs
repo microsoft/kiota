@@ -27,6 +27,7 @@ using Kiota.Builder.Logging;
 using Kiota.Builder.Manifest;
 using Kiota.Builder.OpenApiExtensions;
 using Kiota.Builder.Plugins;
+using Kiota.Builder.PowerShellWrapper;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Settings;
 using Kiota.Builder.WorkspaceManagement;
@@ -208,7 +209,7 @@ public partial class KiotaBuilder
             }
             StopLogAndReset(sw, $"step {++stepId} - checking whether the output should be updated - took");
 
-            if (shouldGenerate && generating)
+            if (shouldGenerate && generating && config.Language != GenerationLanguage.PowerShellWrapper)
             {
                 modelNamespacePrefixToTrim = GetDeeperMostCommonNamespaceNameForModels(openApiDocument);
             }
@@ -219,10 +220,15 @@ public partial class KiotaBuilder
                 CleanupOperationIdForPlugins(openApiDocument);
             }
 
-            // Create Uri Space of API
-            sw.Start();
-            openApiTree = CreateUriSpace(openApiDocument);
-            StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
+            // Create Uri Space of API. PowerShellWrapperGenerationService walks document.Paths
+            // directly and never reads this tree, so building it would be wasted work for that
+            // language.
+            if (config.Language != GenerationLanguage.PowerShellWrapper)
+            {
+                sw.Start();
+                openApiTree = CreateUriSpace(openApiDocument);
+                StopLogAndReset(sw, $"step {++stepId} - create uri space - took");
+            }
         }
 
         return (stepId, openApiTree, shouldGenerate, readResult?.Diagnostic);
@@ -275,6 +281,27 @@ public partial class KiotaBuilder
             }
 
             StopLogAndReset(sw, $"step {++stepId} - generate plugin - took");
+            return stepId;
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Generates PowerShell wrapper cmdlets straight from the filtered OpenAPI document,
+    /// bypassing the CodeDOM/refiner/writer pipeline. Sibling to GeneratePluginAsync, for
+    /// GenerationLanguage.PowerShellWrapper; the work happens in PowerShellWrapperGenerationService.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>Whether the generated code was updated or not</returns>
+    public async Task<bool> GeneratePowerShellWrapperAsync(CancellationToken cancellationToken)
+    {
+        return await GenerateConsumerAsync(async (sw, stepId, openApiTree, ct) =>
+        {
+            if (openApiDocument is null)
+                throw new InvalidOperationException("The OpenAPI document must be loaded before generating the PowerShell wrapper cmdlets");
+            sw.Start();
+            var wrapperService = new PowerShellWrapperGenerationService(openApiDocument, config, logger);
+            await wrapperService.GenerateAsync(ct).ConfigureAwait(false);
+            StopLogAndReset(sw, $"step {++stepId} - generate PowerShell wrapper cmdlets - took");
             return stepId;
         }, cancellationToken).ConfigureAwait(false);
     }
