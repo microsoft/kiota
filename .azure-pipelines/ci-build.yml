@@ -102,7 +102,7 @@ extends:
       # "Permissive" base policy is intentionally omitted so other banned-endpoint calls still fail the
       # run, surfacing exactly which steps egress to public registries.
       # See https://aka.ms/1espt-networkisolation
-      networkIsolationPolicy: GitHub,CFSClean
+      networkIsolationPolicy: Preferred,GitHub,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
