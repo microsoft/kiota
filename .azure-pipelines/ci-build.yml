@@ -95,12 +95,13 @@ extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     settings:
-      # Network isolation policy. "Permissive" is the base outbound policy; "CFSClean" overlays the
-      # Central Feed Service enforcement so package restores are constrained to approved/authenticated
-      # feeds and direct calls to public registries (nuget.org, npmjs, pypi.org, Maven Central, etc.)
-      # are blocked. This complements routing package-version lookups and restores through the
-      # GraphDeveloperExperiences_Public Azure Artifacts feed. See https://aka.ms/1espt-networkisolation
-      networkIsolationPolicy: Permissive,CFSClean
+      # Network isolation policy. "CFSClean" enforces Central Feed Service isolation: package restores
+      # are constrained to approved/authenticated feeds and direct calls to public registries
+      # (nuget.org, npmjs, pypi.org, Maven Central, etc.) are blocked. The "Permissive" base policy is
+      # intentionally omitted so banned-endpoint calls fail the run (rather than being allowed),
+      # surfacing exactly which steps still egress to public registries.
+      # See https://aka.ms/1espt-networkisolation
+      networkIsolationPolicy: CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
