@@ -1,4 +1,4 @@
-namespace Kiota.Builder.PowerShellWrapper;
+﻿namespace Kiota.Builder.PowerShellWrapper;
 
 // The per-module values CmdletEmitter's templates need, so the emitter stays module-agnostic.
 // ClientNamespace is whatever --namespace-name the module was generated with, for example
