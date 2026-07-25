@@ -501,8 +501,7 @@ extends:
                   # config is authored with cmd rather than pwsh because pwsh is not available yet on
                   # this host (that is exactly what we are bootstrapping).
                   - task: NuGetAuthenticate@1
-                    displayName: "Authenticate to Azure Artifacts (arm64 PowerShell bootstrap)"
-                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                    displayName: "Authenticate to Azure Artifacts"
                   - script: |
                       set "CFG=$(Build.SourcesDirectory)\nuget.config"
                       > "%CFG%" echo ^<?xml version="1.0" encoding="utf-8"?^>
@@ -526,9 +525,6 @@ extends:
 
                   - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
                     displayName: "Set version suffix in csproj for generators"
-
-                  - task: NuGetAuthenticate@1
-                    displayName: 'Authenticate to Azure Artifacts'
 
                   - pwsh: |
                       @"
