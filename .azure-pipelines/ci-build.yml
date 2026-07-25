@@ -495,7 +495,24 @@ extends:
                     inputs:
                       version: 9.x
 
-                  - script: dotnet tool install --global PowerShell
+                  # On arm64 (Windows) PowerShell Core is not preinstalled, so it is acquired via
+                  # `dotnet tool install`. That restore must flow through the authenticated central feed,
+                  # so both NuGetAuthenticate and a nuget.config have to exist *before* this step. The
+                  # config is authored with cmd rather than pwsh because pwsh is not available yet on
+                  # this host (that is exactly what we are bootstrapping).
+                  - task: NuGetAuthenticate@1
+                    displayName: "Authenticate to Azure Artifacts (arm64 PowerShell bootstrap)"
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                  - script: |
+                      set "CFG=$(Build.SourcesDirectory)\nuget.config"
+                      > "%CFG%" echo ^<?xml version="1.0" encoding="utf-8"?^>
+                      >>"%CFG%" echo ^<configuration^>
+                      >>"%CFG%" echo   ^<packageSources^>
+                      >>"%CFG%" echo     ^<clear /^>
+                      >>"%CFG%" echo     ^<add key="GraphDeveloperExperiences_Public" value="https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public/nuget/v3/index.json" /^>
+                      >>"%CFG%" echo   ^</packageSources^>
+                      >>"%CFG%" echo ^</configuration^>
+                      dotnet tool install --global PowerShell --configfile "%CFG%"
                     displayName: "Install PowerShell"
                     condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
                     # powershell is not installed by default on arm64 images
