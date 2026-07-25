@@ -144,6 +144,12 @@ extends:
                 clean: true
                 submodules: true
 
+              # The it/ integration-test fixtures are not used by this pipeline and their per-language
+              # manifests trigger Component Governance to reach public registries under network isolation.
+              # Remove them right after checkout so no later scan/build sees them.
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
               # Route package-version lookups through the authenticated Azure Artifacts feed
               # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
               # NuGet, npm, PyPI and Maven Central are configured as upstream sources on that feed.
@@ -229,6 +235,9 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
 
               - pwsh: |
                   Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
@@ -480,6 +489,8 @@ extends:
                   - checkout: self
                     clean: true
                     submodules: true
+                  - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                    displayName: "Remove unused integration-test fixtures (it/)"
                   - task: UseDotNet@2
                     displayName: "Use .NET 6" # needed for ESRP signing
                     inputs:
@@ -723,6 +734,8 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
                 inputs:
                   version: "22.x"
@@ -842,6 +855,8 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
                 inputs:
                   version: "22.x"
@@ -1157,6 +1172,9 @@ extends:
               os: linux
             steps:
               - checkout: self
+
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
 
               - task: AzureCLI@2
                 displayName: "Login to Azure Container Registry"
