@@ -1199,9 +1199,17 @@ extends:
                 displayName: "Get Kiota version number"
                 name: getversion
 
-              - pwsh: |
+              # Route package-version lookups through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
+              - pwsh: >
                   ./scripts/update-versions.ps1
+                  -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                  -NpmRegistryUrl "$(privateFeedBaseUrl)/npm/registry"
+                  -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
+                  -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
                 displayName: "Update dependencies versions"
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
 
               - script: |
                   docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
