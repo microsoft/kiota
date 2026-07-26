@@ -36,6 +36,11 @@ variables:
   IMAGE_NAME: "public/openapi/kiota"
   PREVIEW_BRANCH: "refs/heads/main"
   TAG: "$(Build.BuildId)"
+  # Base URL for the authenticated Azure Artifacts feed (GraphDeveloperExperiences_Public) used to route
+  # package operations (version lookups + NuGet restore) through configured upstream sources instead of
+  # public registries. Defined once here and referenced as $(privateFeedBaseUrl) throughout the pipeline.
+  # NOTE: confirm this against the feed's "Connect to Feed" dialog if the feed/org/project changes.
+  privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
 
 parameters:
   - name: previewBranch
@@ -109,17 +114,6 @@ extends:
         name: Azure-Pipelines-1ESPT-ExDShared
         os: windows
         image: windows-latest
-      componentgovernance:
-        # The it/ directory holds per-language integration-test fixtures (Java/Maven, PHP/Composer,
-        # Dart/Pub, Python, Go, Ruby, TypeScript). Component Detection would otherwise resolve those
-        # manifests against public registries (e.g. the Maven detector runs `mvn dependency:tree`,
-        # reaching repo.maven.apache.org), which fails network isolation. These fixtures are not
-        # dependencies of the shipped kiota binary, so exclude them from CG scanning.
-        # ignoreDirectories maps to Component Detection's --IgnoreDirectories (comma-separated absolute
-        # paths, matched against the scan root — not globs). The scan root can be either
-        # $(Build.SourcesDirectory) or $(Build.Repository.LocalPath) depending on the injected job, so
-        # list the fixture directory under both roots to guarantee the exclusion matches.
-        ignoreDirectories: "$(Build.SourcesDirectory)/it,$(Build.Repository.LocalPath)/it"
     stages:
       - stage: build
         jobs:
@@ -128,11 +122,6 @@ extends:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
               image: ubuntu-latest
-            variables:
-              # Base URL for the authenticated Azure Artifacts feed (GraphDeveloperExperiences_Public) used
-              # to route package-version lookups through configured upstream sources instead of public registries.
-              # NOTE: confirm these against the feed's "Connect to Feed" dialog if the feed/org/project changes.
-              privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
             templateContext:
               sdl:
                 baseline:
@@ -296,7 +285,7 @@ extends:
                   <configuration>
                     <packageSources>
                       <clear />
-                      <add key="GraphDeveloperExperiences_Public" value="https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public/nuget/v3/index.json" />
+                      <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
                     </packageSources>
                   </configuration>
                   "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
@@ -519,7 +508,7 @@ extends:
                       >>"%CFG%" echo ^<configuration^>
                       >>"%CFG%" echo   ^<packageSources^>
                       >>"%CFG%" echo     ^<clear /^>
-                      >>"%CFG%" echo     ^<add key="GraphDeveloperExperiences_Public" value="https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public/nuget/v3/index.json" /^>
+                      >>"%CFG%" echo     ^<add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" /^>
                       >>"%CFG%" echo   ^</packageSources^>
                       >>"%CFG%" echo ^</configuration^>
                       dotnet tool install --global PowerShell --configfile "%CFG%"
@@ -543,7 +532,7 @@ extends:
                       <configuration>
                         <packageSources>
                           <clear />
-                          <add key="GraphDeveloperExperiences_Public" value="https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public/nuget/v3/index.json" />
+                          <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
                         </packageSources>
                       </configuration>
                       "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
