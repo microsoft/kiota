@@ -2195,16 +2195,16 @@ public partial class KiotaBuilder
         target.AddOption(schema.Enum?.OfType<JsonValue>()
                         .Where(static x => x.GetValueKind() is JsonValueKind.String or JsonValueKind.Number)
                         .Select(static x => x.GetValueKind() is JsonValueKind.String ? x.GetValue<string>() : x.GetValue<decimal>().ToString(CultureInfo.InvariantCulture))
-                        .Where(static x => !string.IsNullOrEmpty(x))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Select((x) =>
                         {
                             var optionDescription = extensionInformation?.ValuesDescriptions.Find(y => y.Value.Equals(x, StringComparison.OrdinalIgnoreCase));
+                            var optionName = optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
+                                name :
+                                string.IsNullOrEmpty(x) ? "Empty" : x;
                             return new CodeEnumOption
                             {
-                                Name = (optionDescription?.Name is string name && !string.IsNullOrEmpty(name) ?
-                                        name :
-                                        x).CleanupSymbolName(),
+                                Name = optionName.CleanupSymbolName(),
                                 SerializationName = x,
                                 Documentation = new()
                                 {
