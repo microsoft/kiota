@@ -136,7 +136,10 @@ function Get-LatestPypiVersion {
     )
     # Use the PEP 503/691 simple index (supported by both public PyPI and Azure Artifacts feeds) instead of
     # the legacy pypi.org "/pypi/{pkg}/json" API, which private Azure Artifacts feeds do not expose.
-    $normalizedId = $packageId.ToLowerInvariant().Replace("_", "-").Replace(".", "-")
+    # Normalize the project name per PEP 503: collapse any run of '-', '_' or '.' into a single '-' and
+    # lowercase. The previous per-character Replace() did not collapse consecutive separators (e.g. "a..b"
+    # -> "a--b", "a--b" left as-is), which produces a non-canonical name the simple index 404s on.
+    $normalizedId = ($packageId -replace '[-_.]+', '-').ToLowerInvariant()
     $url = "$PyPiSimpleIndexUrl/$normalizedId/"
     $headers = $script:PyPiAuthHeaders.Clone()
     $headers["Accept"] = "application/vnd.pypi.simple.v1+json"
