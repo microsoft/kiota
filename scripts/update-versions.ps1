@@ -129,6 +129,27 @@ function Get-LatestComposerVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.packages.$packageId[0].version
 }
+# Extract the version from a PyPI distribution filename. In both wheel ("{name}-{version}-...whl") and
+# sdist ("{name}-{version}.tar.gz") filenames the normalized project name contains no '-' (PEP 427/625
+# replace separators with '_'), and versions never contain '-', so the version is always the second
+# '-'-separated field once the archive extension is removed.
+function Get-VersionFromPypiFilename {
+    param([string]$filename)
+    if ([string]::IsNullOrWhiteSpace($filename)) { return $null }
+    $stem = $filename -replace '\.(whl|egg|tar\.gz|tar\.bz2|tar\.xz|zip)$', ''
+    $parts = $stem.Split('-')
+    if ($parts.Count -ge 2) { return $parts[1] }
+    return $null
+}
+
+# Build a sortable key for a purely-numeric (final) release version without using [version], which is
+# limited to four segments and throws on longer ones. Each dotted segment is zero-padded so an ordinal
+# string sort orders the versions numerically for any number of segments.
+function Get-PypiVersionSortKey {
+    param([string]$version)
+    ($version.Split('.') | ForEach-Object { '{0:D10}' -f [int]$_ }) -join '.'
+}
+
 # Get the latest version of a pypi package
 function Get-LatestPypiVersion {
     param(
@@ -144,13 +165,25 @@ function Get-LatestPypiVersion {
     $headers = $script:PyPiAuthHeaders.Clone()
     $headers["Accept"] = "application/vnd.pypi.simple.v1+json"
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers
+    # The top-level "versions" array is a PEP 700 addition and is optional; PEP 691 only guarantees "files".
+    # Prefer "versions" when present, otherwise recover the version list from the distribution filenames so
+    # the resolver works against feeds that implement PEP 691 but not PEP 700.
+    $candidateVersions = $response.versions
+    if (-not $candidateVersions) {
+        $candidateVersions = $response.files |
+            ForEach-Object { Get-VersionFromPypiFilename -filename $_.filename } |
+            Where-Object { $_ } |
+            Select-Object -Unique
+    }
     # Prefer the highest final (non pre-release) version to match the previous behaviour of pypi's info.version.
-    $stableVersions = $response.versions | Where-Object { $_ -match '^[0-9]+(\.[0-9]+)*$' }
+    $stableVersions = $candidateVersions | Where-Object { $_ -match '^[0-9]+(\.[0-9]+)*$' }
     if ($stableVersions) {
-        ($stableVersions | ForEach-Object { [version]$_ } | Sort-Object | Select-Object -Last 1).ToString()
+        $stableVersions | Sort-Object -Property @{ Expression = { Get-PypiVersionSortKey -version $_ } } | Select-Object -Last 1
     }
     else {
-        $response.versions | Select-Object -Last 1
+        # No final release found (only pre/post/dev releases). Sort deterministically so the choice does not
+        # depend on the order the index happened to return, then take the highest.
+        $candidateVersions | Sort-Object | Select-Object -Last 1
     }
 }
 # Get the latest version of a rubygem package
