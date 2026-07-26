@@ -18,11 +18,40 @@ $NpmRegistryUrl = $NpmRegistryUrl.TrimEnd('/')
 $PyPiSimpleIndexUrl = $PyPiSimpleIndexUrl.TrimEnd('/')
 $MavenRepositoryUrl = $MavenRepositoryUrl.TrimEnd('/')
 
-# Build the auth headers once. Azure Artifacts protocol endpoints accept the pipeline OAuth token as a Bearer token.
-$script:FeedAuthHeaders = @{}
-if (-not [string]::IsNullOrWhiteSpace($FeedAccessToken)) {
-    $script:FeedAuthHeaders["Authorization"] = "Bearer $FeedAccessToken"
+# Azure Artifacts protocol endpoints accept the pipeline OAuth token as a Bearer token. That token must
+# only ever be sent to a private Azure Artifacts feed - never to a public registry (nuget.org, npmjs.org,
+# pypi.org, Maven Central, ...) where it could be leaked. Decide per-feed whether to attach it.
+$script:HasFeedAccessToken = -not [string]::IsNullOrWhiteSpace($FeedAccessToken)
+
+# True when the URL points at an Azure Artifacts feed. Those are served from pkgs.dev.azure.com and the
+# legacy *.pkgs.visualstudio.com hosts; anything else is treated as a public registry (no token sent).
+function Test-IsAzureArtifactsUrl {
+    param([string]$Url)
+    if ([string]::IsNullOrWhiteSpace($Url)) { return $false }
+    try {
+        $feedHost = ([uri]$Url).Host
+    }
+    catch {
+        return $false
+    }
+    return $feedHost -eq "pkgs.dev.azure.com" -or $feedHost.EndsWith(".pkgs.visualstudio.com")
 }
+
+# Build the auth headers for a feed URL: attach the Bearer token only when a token is available AND the
+# URL is a private Azure Artifacts feed; otherwise return empty headers so nothing is sent to public hosts.
+function Get-FeedAuthHeaders {
+    param([string]$Url)
+    if ($script:HasFeedAccessToken -and (Test-IsAzureArtifactsUrl -Url $Url)) {
+        return @{ "Authorization" = "Bearer $FeedAccessToken" }
+    }
+    return @{}
+}
+
+# Resolve the headers once per feed type, since each feed's URL is fixed for the run.
+$script:NuGetAuthHeaders = Get-FeedAuthHeaders -Url $NuGetServiceIndexUrl
+$script:NpmAuthHeaders = Get-FeedAuthHeaders -Url $NpmRegistryUrl
+$script:PyPiAuthHeaders = Get-FeedAuthHeaders -Url $PyPiSimpleIndexUrl
+$script:MavenAuthHeaders = Get-FeedAuthHeaders -Url $MavenRepositoryUrl
 
 # Cache for the resolved NuGet registrations base URL so the service index is only read once.
 $script:NuGetRegistrationsBaseUrl = $null
@@ -34,7 +63,7 @@ function Get-NugetRegistrationsBaseUrl {
     if ($null -ne $script:NuGetRegistrationsBaseUrl) {
         return $script:NuGetRegistrationsBaseUrl
     }
-    $index = Invoke-RestMethod -Uri $NuGetServiceIndexUrl -Method Get -Headers $script:FeedAuthHeaders
+    $index = Invoke-RestMethod -Uri $NuGetServiceIndexUrl -Method Get -Headers $script:NuGetAuthHeaders
     $preferredTypes = @("RegistrationsBaseUrl/3.6.0", "RegistrationsBaseUrl/Versioned", "RegistrationsBaseUrl")
     foreach ($type in $preferredTypes) {
         $resource = $index.resources | Where-Object { $_.'@type' -eq $type } | Select-Object -First 1
@@ -54,7 +83,7 @@ function Get-LatestNugetVersion {
 
     $registrationsBaseUrl = Get-NugetRegistrationsBaseUrl
     $url = "$registrationsBaseUrl/$($packageId.ToLowerInvariant())/index.json"
-    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:FeedAuthHeaders
+    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:NuGetAuthHeaders
     $version = $response.items | Select-Object -ExpandProperty upper | ForEach-Object { [System.Management.Automation.SemanticVersion]$_ } | sort-object | Select-Object -Last 1
     $version.ToString()
 }
@@ -79,7 +108,7 @@ function Get-LatestNpmVersion {
     # @microsoft/kiota-abstractions) must have their '/' encoded as %2F for the packument request.
     $encodedId = $packageId.ToLowerInvariant().Replace('/', '%2F')
     $url = "$NpmRegistryUrl/$encodedId"
-    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:FeedAuthHeaders
+    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:NpmAuthHeaders
     $response.'dist-tags'.latest
 }
 # Get the latest version of a maven package
@@ -88,7 +117,7 @@ function Get-LatestMavenVersion {
         [string]$packageId
     )
     $url = "$MavenRepositoryUrl/$($packageId.Replace(":", "/").Replace(".", "/").Replace("|", "."))/maven-metadata.xml"
-    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:FeedAuthHeaders
+    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:MavenAuthHeaders
     $response.metadata.versioning.latest
 }
 # Get the latest version of a composer package
@@ -109,7 +138,7 @@ function Get-LatestPypiVersion {
     # the legacy pypi.org "/pypi/{pkg}/json" API, which private Azure Artifacts feeds do not expose.
     $normalizedId = $packageId.ToLowerInvariant().Replace("_", "-").Replace(".", "-")
     $url = "$PyPiSimpleIndexUrl/$normalizedId/"
-    $headers = $script:FeedAuthHeaders.Clone()
+    $headers = $script:PyPiAuthHeaders.Clone()
     $headers["Accept"] = "application/vnd.pypi.simple.v1+json"
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers
     # Prefer the highest final (non pre-release) version to match the previous behaviour of pypi's info.version.
