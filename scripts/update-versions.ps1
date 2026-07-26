@@ -129,14 +129,23 @@ function Get-LatestComposerVersion {
     $response = Invoke-RestMethod -Uri $url -Method Get
     $response.packages.$packageId[0].version
 }
-# Extract the version from a PyPI distribution filename. In both wheel ("{name}-{version}-...whl") and
-# sdist ("{name}-{version}.tar.gz") filenames the normalized project name contains no '-' (PEP 427/625
-# replace separators with '_'), and versions never contain '-', so the version is always the second
-# '-'-separated field once the archive extension is removed.
+# Extract the version from a PyPI distribution filename ("{name}-{version}-...whl" or "{name}-{version}.tar.gz").
+# The distribution name in the filename may separate its components with '-', '_' or '.' (wheels/PEP 625
+# sdists normalize to '_', but legacy sdists can keep '-'), so we cannot assume the name is '-'-free. When the
+# expected project name is known we match it tolerant of any separator and take the field that immediately
+# follows it as the version (versions never contain '-'). Only when the name is unknown do we fall back to the
+# second '-'-separated field.
 function Get-VersionFromPypiFilename {
-    param([string]$filename)
+    param(
+        [string]$filename,
+        [string]$packageId
+    )
     if ([string]::IsNullOrWhiteSpace($filename)) { return $null }
     $stem = $filename -replace '\.(whl|egg|tar\.gz|tar\.bz2|tar\.xz|zip)$', ''
+    if (-not [string]::IsNullOrWhiteSpace($packageId)) {
+        $namePattern = ($packageId -split '[-_.]+' | Where-Object { $_ } | ForEach-Object { [regex]::Escape($_) }) -join '[-_.]'
+        if ($stem -match "(?i)^$namePattern-([^-]+)") { return $matches[1] }
+    }
     $parts = $stem.Split('-')
     if ($parts.Count -ge 2) { return $parts[1] }
     return $null
@@ -171,7 +180,7 @@ function Get-LatestPypiVersion {
     $candidateVersions = $response.versions
     if (-not $candidateVersions) {
         $candidateVersions = $response.files |
-            ForEach-Object { Get-VersionFromPypiFilename -filename $_.filename } |
+            ForEach-Object { Get-VersionFromPypiFilename -filename $_.filename -packageId $normalizedId } |
             Where-Object { $_ } |
             Select-Object -Unique
     }
