@@ -171,8 +171,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var paramName = composedParam.Name.ToFirstCharacterLowerCase();
             writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
             bool isFirst = true;
+            var writtenTypeChecks = new HashSet<string>(StringComparer.Ordinal);
             foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)))
             {
+                var nodeType = conventions.GetTypeString(type, codeElement, false);
+                if (!string.IsNullOrEmpty(nodeType) && !writtenTypeChecks.Add($"{nodeType}|{type.IsCollection}")) continue;
                 var ifElse = isFirst ? "" : "else ";
                 WriteCaseStatementForPrimitiveTypeSerialization(type, "undefined", paramName, codeElement, writer, ifElse);
                 isFirst = false;
@@ -567,13 +570,15 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
 
         bool isFirst = true;
+        var writtenTypeChecks = new HashSet<string>(StringComparer.Ordinal);
         foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType)))
         {
-            var isElse = isFirst ? "" : "else ";
             var nodeType = conventions.GetTypeString(type, method, false);
             var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
             if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
+            if (!writtenTypeChecks.Add($"{nodeType}|{type.IsCollection}")) continue;
 
+            var isElse = isFirst ? "" : "else ";
             writer.StartBlock(GetPrimitiveTypeCheck(type, $"{modelParamName}.{codePropertyName}", nodeType, isElse));
 
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");

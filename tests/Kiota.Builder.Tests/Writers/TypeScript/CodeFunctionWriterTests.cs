@@ -2155,6 +2155,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("if (parentClass.media instanceof ArrayBuffer) {", result);
         Assert.Contains("writer.writeByteArrayValue(\"media\", parentClass.media as ArrayBuffer);", result);
         Assert.DoesNotContain("writeObjectValue", result);
+        // duplicate primitive union members (binary | base64 both map to ArrayBuffer) must not emit a
+        // redundant else-if branch, which narrows the value to null and breaks TypeScript compilation (TS2358).
+        Assert.DoesNotContain("else if (parentClass.media instanceof ArrayBuffer)", result);
     }
 
     [Fact]
