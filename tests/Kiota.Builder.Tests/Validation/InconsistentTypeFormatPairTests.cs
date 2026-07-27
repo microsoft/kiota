@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Kiota.Builder.Validation;
@@ -107,6 +108,7 @@ paths:
     [InlineData("[integer, string, 'null']", "int64")]
     [InlineData("[number, string]", "float")]
     [InlineData("[number, string, 'null']", "double")]
+    [InlineData("[integer, string]", "uint16")]
     public async Task DoesntAddAWarningWhenNumericStringUnionWithNumericFormat(string type, string format)
     {
         var documentTxt = $"""
@@ -152,7 +154,8 @@ paths:
                 format: date-time
 """;
         var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
-        Assert.Single(diagnostic.Warnings);
+        var warning = Assert.Single(diagnostic.Warnings);
+        Assert.EndsWith("will be ignored.", warning.Message, StringComparison.Ordinal);
     }
     private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
     {

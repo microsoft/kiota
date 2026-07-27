@@ -1911,9 +1911,13 @@ paths:
     [InlineData(JsonSchemaType.Number | JsonSchemaType.String, "double", "double")]
     [InlineData(JsonSchemaType.Number | JsonSchemaType.String, "float", "float")]
     [InlineData(JsonSchemaType.Number | JsonSchemaType.String | JsonSchemaType.Null, "double", "double")]
+    [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, "uint16", "integer")]
     // without a format, the scalar union keeps being generated as a composed type wrapper
     [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, null, "forecastGetResponse_temperature")]
     [InlineData(JsonSchemaType.Number | JsonSchemaType.String, null, "forecastGetResponse_temperature")]
+    // with a non-numeric format, the union is not mappable and keeps falling back to untyped
+    [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, "uuid", KiotaBuilder.UntypedNodeName)]
+    [InlineData(JsonSchemaType.Number | JsonSchemaType.String, "date-time", KiotaBuilder.UntypedNodeName)]
     public void NumericStringScalarUnionsMapToNumericTypes(JsonSchemaType schemaType, string? format, string expectedTypeName)
     {
         // System.Text.Json's JsonNumberHandling.AllowReadingFromString (the ASP.NET Core default)
