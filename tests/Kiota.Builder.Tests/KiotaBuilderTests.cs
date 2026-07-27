@@ -1914,7 +1914,7 @@ paths:
     // without a format, the scalar union keeps being generated as a composed type wrapper
     [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, null, "forecastGetResponse_temperature")]
     [InlineData(JsonSchemaType.Number | JsonSchemaType.String, null, "forecastGetResponse_temperature")]
-    public void NumericStringScalarUnionsMapToNumericTypes(JsonSchemaType schemaType, string format, string expectedTypeName)
+    public void NumericStringScalarUnionsMapToNumericTypes(JsonSchemaType schemaType, string? format, string expectedTypeName)
     {
         // System.Text.Json's JsonNumberHandling.AllowReadingFromString (the ASP.NET Core default)
         // advertises numeric members as type ["integer"/"number", "string"] with a digit pattern.
