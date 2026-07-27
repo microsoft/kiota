@@ -1299,6 +1299,7 @@ public partial class KiotaBuilder
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
         var schemaType = typeName & ~JsonSchemaType.Null;
         if (schemaType is { } schemaTypeValue &&
+            !string.IsNullOrEmpty(format) &&
             (schemaTypeValue & JsonSchemaType.String) is JsonSchemaType.String &&
             (schemaTypeValue & (JsonSchemaType.Integer | JsonSchemaType.Number)) != 0)
             // System.Text.Json's JsonNumberHandling.AllowReadingFromString (the ASP.NET Core default)
