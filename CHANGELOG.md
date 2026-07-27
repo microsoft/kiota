@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - golang: generated code now always uses LF line endings, so `gofmt` no longer reports formatting differences when generating on Windows.
 - golang: make sure all generated code adheres to golangs coding standards
 - Fixed non-deterministic model class descriptions when a component schema is referenced from multiple properties with differing reference-level descriptions. [#7927](https://github.com/microsoft/kiota/issues/7927)
+- TypeScript: fixed generation for primitive binary unions by handling `ArrayBuffer` as a primitive type.
 
 ## [1.34.1] - 2026-07-09
 
@@ -1818,4 +1819,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
