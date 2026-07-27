@@ -2064,6 +2064,100 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task WritesPrimitiveBinaryUnionFactoryAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "media" };
+        composedType.AddType(new CodeType { Name = "binary" }, new CodeType { Name = "base64" });
+        var factoryMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "createMediaFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = composedType,
+            IsStatic = true,
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode", IsExternal = true },
+        });
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var factoryFunction = root.FindChildByName<CodeFunction>("createMediaFromDiscriminatorValue");
+        Assert.NotNull(factoryFunction);
+
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("export function createMediaFromDiscriminatorValue(parseNode: ParseNode | undefined) : ArrayBuffer | ArrayBuffer", result);
+        Assert.Contains("return parseNode?.getByteArrayValue() ?? parseNode?.getByteArrayValue();", result);
+        Assert.DoesNotContain("getObjectValue", result);
+    }
+
+    [Fact]
+    public async Task WritesPrimitiveBinaryUnionDeserializerAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "media" };
+        composedType.AddType(new CodeType { Name = "binary" }, new CodeType { Name = "base64" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "media",
+            SerializationName = "media",
+            Type = composedType,
+            Kind = CodePropertyKind.Custom,
+        });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("\"media\": n => { parentClass.media = n.getByteArrayValue() ?? n.getByteArrayValue(); }", result);
+        Assert.DoesNotContain("getObjectValue", result);
+    }
+
+    [Fact]
+    public async Task WritesPrimitiveBinaryUnionSerializerAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "media" };
+        composedType.AddType(new CodeType { Name = "binary" }, new CodeType { Name = "base64" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "media",
+            SerializationName = "media",
+            Type = composedType,
+            Kind = CodePropertyKind.Custom,
+        });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("if (parentClass.media instanceof ArrayBuffer) {", result);
+        Assert.Contains("writer.writeByteArrayValue(\"media\", parentClass.media as ArrayBuffer);", result);
+        Assert.DoesNotContain("writeObjectValue", result);
+    }
+
+    [Fact]
     public async Task WritesOneOfWithInheritanceDeserializationAsync()
     {
         // Create base class "Device"
@@ -2127,4 +2221,3 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(managedDeviceIndex < deviceIndex, "ManagedPrivilegedDevice should appear before Device in the deserialization chain");
     }
 }
-

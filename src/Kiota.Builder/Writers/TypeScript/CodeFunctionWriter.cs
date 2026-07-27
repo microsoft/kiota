@@ -85,6 +85,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
     private const string FactoryMethodReturnType = "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)";
+    private const string ArrayBufferTypeName = "ArrayBuffer";
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
@@ -258,9 +259,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
         if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
 
-        writer.StartBlock(type.IsCollection
-            ? $"{prefix}if (Array.isArray({modelParamName}) && ({modelParamName}).every(item => typeof item === '{nodeType}')) {{"
-            : $"{prefix}if (typeof {modelParamName} === \"{nodeType}\" ) {{");
+        writer.StartBlock(GetPrimitiveTypeCheck(type, modelParamName, nodeType, prefix));
 
         writer.WriteLine($"writer.{serializationName}({key}, {modelParamName} as {conventions.GetTypeString(type, method)});");
         writer.CloseBlock();
@@ -575,14 +574,24 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
             if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
 
-            writer.StartBlock(type.IsCollection
-                ? $"{isElse}if (Array.isArray({modelParamName}.{codePropertyName}) && ({modelParamName}.{codePropertyName}).every(item => typeof item === '{nodeType}')) {{"
-                : $"{isElse}if ( typeof {modelParamName}.{codePropertyName} === \"{nodeType}\") {{");
+            writer.StartBlock(GetPrimitiveTypeCheck(type, $"{modelParamName}.{codePropertyName}", nodeType, isElse));
 
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
             writer.CloseBlock();
             isFirst = false;
         }
+    }
+
+    private static string GetPrimitiveTypeCheck(CodeTypeBase type, string valueReference, string nodeType, string prefix)
+    {
+        if (type.IsCollection)
+            return ArrayBufferTypeName.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
+                ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof ArrayBuffer)) {{"
+                : $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => typeof item === '{nodeType}')) {{";
+
+        return ArrayBufferTypeName.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
+            ? $"{prefix}if ({valueReference} instanceof ArrayBuffer) {{"
+            : $"{prefix}if (typeof {valueReference} === \"{nodeType}\" ) {{";
     }
 
     private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)

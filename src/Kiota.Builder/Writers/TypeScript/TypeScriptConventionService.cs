@@ -233,6 +233,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_NUMBER or
             TYPE_LOWERCASE_STRING or
             TYPE_BYTE_ARRAY or
+            "ArrayBuffer" or
             TYPE_LOWERCASE_BOOLEAN or
             TYPE_LOWERCASE_VOID => true,
             _ => false,
