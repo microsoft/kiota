@@ -59,6 +59,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SerializationNamespaceName,
                 "IComposedTypeWrapper"
             );
+            AddAdditionalDataPropertiesToComposedTypeWrappers(generatedCode, _configuration.UsesBackingStore);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
@@ -139,6 +140,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                         .ToList()
                         .ForEach(x => x.Type.IsNullable = true);
         CrawlTree(currentElement, MakeEnumPropertiesNullable);
+    }
+    private static void AddAdditionalDataPropertiesToComposedTypeWrappers(CodeElement currentElement, bool usesBackingStore)
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.Model) &&
+            currentClass.OriginalComposedType is not null)
+            KiotaBuilder.AddSerializationMembers(currentClass, true, usesBackingStore, static s => s);
+        CrawlTree(currentElement, x => AddAdditionalDataPropertiesToComposedTypeWrappers(x, usesBackingStore));
     }
     private const string AbstractionsNamespaceName = "Microsoft.Kiota.Abstractions";
     private const string SerializationNamespaceName = $"{AbstractionsNamespaceName}.Serialization";
