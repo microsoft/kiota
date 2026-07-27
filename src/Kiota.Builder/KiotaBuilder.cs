@@ -1297,7 +1297,15 @@ public partial class KiotaBuilder
         var typeName = typeNames.Find(static x => x is not null && !typeNamesToSkip.Contains(x.Value));
 
         var format = typeSchema?.Format ?? typeSchema?.Items?.Format;
-        return (typeName & ~JsonSchemaType.Null, format?.ToLowerInvariant()) switch
+        var schemaType = typeName & ~JsonSchemaType.Null;
+        if (schemaType is { } schemaTypeValue &&
+            (schemaTypeValue & JsonSchemaType.String) is JsonSchemaType.String &&
+            (schemaTypeValue & (JsonSchemaType.Integer | JsonSchemaType.Number)) != 0)
+            // System.Text.Json's JsonNumberHandling.AllowReadingFromString (the ASP.NET Core default)
+            // advertises numeric members as type ["integer"/"number", "string"]. Prefer the numeric type
+            // over a scalar union that would otherwise not be mappable and fall back to untyped.
+            schemaType = schemaTypeValue & ~JsonSchemaType.String;
+        return (schemaType, format?.ToLowerInvariant()) switch
         {
             // byte and binary can apply to any type
             (_, "byte") => new CodeType { Name = "base64", IsExternal = true },

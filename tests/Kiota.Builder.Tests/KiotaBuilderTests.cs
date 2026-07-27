@@ -1904,6 +1904,72 @@ paths:
         Assert.NotNull(unknownProp);
         Assert.Equal(KiotaBuilder.UntypedNodeName, unknownProp.Type.Name);// left out property is an UntypedNode
     }
+    [Theory]
+    [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, "int32", "integer")]
+    [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, "int64", "int64")]
+    [InlineData(JsonSchemaType.Integer | JsonSchemaType.String | JsonSchemaType.Null, "int32", "integer")]
+    [InlineData(JsonSchemaType.Number | JsonSchemaType.String, "double", "double")]
+    [InlineData(JsonSchemaType.Number | JsonSchemaType.String, "float", "float")]
+    [InlineData(JsonSchemaType.Number | JsonSchemaType.String | JsonSchemaType.Null, "double", "double")]
+    // without a format, the scalar union keeps being generated as a composed type wrapper
+    [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, null, "forecastGetResponse_temperature")]
+    [InlineData(JsonSchemaType.Number | JsonSchemaType.String, null, "forecastGetResponse_temperature")]
+    public void NumericStringScalarUnionsMapToNumericTypes(JsonSchemaType schemaType, string format, string expectedTypeName)
+    {
+        // System.Text.Json's JsonNumberHandling.AllowReadingFromString (the ASP.NET Core default)
+        // advertises numeric members as type ["integer"/"number", "string"] with a digit pattern.
+        // https://github.com/microsoft/kiota/issues/6541
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["forecast"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>()
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                Type = JsonSchemaType.Object,
+                                                Properties = new Dictionary<string, IOpenApiSchema> {
+                                                    {
+                                                        "temperature", new OpenApiSchema {
+                                                            Type = schemaType,
+                                                            Format = format,
+                                                            Pattern = "^-?(?:0|[1-9]\\d*)$"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+        };
+        document.SetReferenceHostDocument();
+        var mockLogger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var responseClass = codeModel.FindNamespaceByName("ApiSdk.forecast").FindChildByName<CodeClass>("ForecastGetResponse", false);
+        Assert.NotNull(responseClass);
+        var temperatureProp = responseClass.FindChildByName<CodeProperty>("temperature", false);
+        Assert.NotNull(temperatureProp);
+        Assert.Equal(expectedTypeName, temperatureProp.Type.Name);
+    }
     [Fact]
     public void TextPlainEndpointsAreSupported()
     {
