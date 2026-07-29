@@ -40,6 +40,43 @@ public class PythonLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Contains("annotations", declaration.Usings.Select(x => x.Name));
     }
+
+    [Fact]
+    public async Task ConvertsNamespaceSegmentsToSnakeCaseAsync()
+    {
+        var clientNamespace = root.AddNamespace("graphSdk");
+        var childNamespace = root.AddNamespace("graphSdk.someNamespace");
+
+        await ILanguageRefiner.RefineAsync(
+            new GenerationConfiguration
+            {
+                Language = GenerationLanguage.Python,
+                ClientNamespaceName = "graphSdk",
+            },
+            root,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("graph_sdk", clientNamespace.Name);
+        Assert.Equal("graph_sdk.some_namespace", childNamespace.Name);
+        Assert.Same(childNamespace, root.FindNamespaceByName("graph_sdk.some_namespace"));
+    }
+
+    [Fact]
+    public async Task PreservesNamespacesWhenSnakeCasingWouldCauseACollisionAsync()
+    {
+        var clientNamespace = root.AddNamespace("graphSdk");
+        var camelCaseNamespace = root.AddNamespace("graphSdk.someNamespace");
+        var snakeCaseNamespace = root.AddNamespace("graphSdk.some_namespace");
+
+        await ILanguageRefiner.RefineAsync(
+            new GenerationConfiguration { Language = GenerationLanguage.Python },
+            root,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(clientNamespace.Namespaces, x => ReferenceEquals(x, camelCaseNamespace));
+        Assert.Contains(clientNamespace.Namespaces, x => ReferenceEquals(x, snakeCaseNamespace));
+    }
+
     [Fact]
     public async Task AddsQueryParameterMapperMethodAsync()
     {
