@@ -153,12 +153,15 @@ extends:
               # anonymous rather than failing.
               - pwsh: |
                   $token = ""
-                  $line = git -C "$(Build.SourcesDirectory)" config --local --get-regexp 'http\..*\.extraheader' 2>$null | Select-Object -First 1
-                  if (-not [string]::IsNullOrWhiteSpace($line)) {
+                  # Ask git for the extraheader that applies to github.com specifically; it resolves the
+                  # right entry even when other hosts (e.g. the Azure Artifacts feed) also have one, so we
+                  # never decode a non-GitHub token.
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader https://github.com/ 2>$null
+                  if (-not [string]::IsNullOrWhiteSpace($header)) {
                     try {
-                      $b64 = ($line.Trim() -split '\s+')[-1]
+                      $b64 = ($header.Trim() -split '\s+')[-1]
                       $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
-                      $token = $decoded.Substring($decoded.IndexOf(':') + 1)
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
                     } catch {
                       Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
                     }
@@ -1207,12 +1210,15 @@ extends:
               # anonymous rather than failing.
               - pwsh: |
                   $token = ""
-                  $line = git -C "$(Build.SourcesDirectory)" config --local --get-regexp 'http\..*\.extraheader' 2>$null | Select-Object -First 1
-                  if (-not [string]::IsNullOrWhiteSpace($line)) {
+                  # Ask git for the extraheader that applies to github.com specifically; it resolves the
+                  # right entry even when other hosts (e.g. the Azure Artifacts feed) also have one, so we
+                  # never decode a non-GitHub token.
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader https://github.com/ 2>$null
+                  if (-not [string]::IsNullOrWhiteSpace($header)) {
                     try {
-                      $b64 = ($line.Trim() -split '\s+')[-1]
+                      $b64 = ($header.Trim() -split '\s+')[-1]
                       $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
-                      $token = $decoded.Substring($decoded.IndexOf(':') + 1)
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
                     } catch {
                       Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
                     }
