@@ -63,6 +63,83 @@ paths:
         Assert.Equal(OpenApiSpecVersion.OpenApi3_0, diagnostics.SpecificationVersion);
     }
     [Fact]
+    public async Task GeneratesSharedModelWhenConcurrentCallersPassInitialLookup()
+    {
+        var specPath = Path.GetTempFileName();
+        _tempFiles.Add(specPath);
+        var outputPath = Path.Combine(Path.GetTempPath(), $"kiota-shared-model-{Guid.NewGuid():N}");
+        await File.WriteAllTextAsync(specPath, """
+            openapi: 3.0.3
+            info:
+              title: Shared model API
+              version: 1.0.0
+            servers:
+              - url: https://example.com
+            paths:
+              /first:
+                get:
+                  operationId: getFirst
+                  responses:
+                    '200':
+                      description: User
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/User'
+              /second:
+                get:
+                  operationId: getSecond
+                  responses:
+                    '200':
+                      description: User
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/User'
+            components:
+              schemas:
+                User:
+                  type: object
+                  properties:
+                    displayName:
+                      type: string
+            """, TestContext.Current.CancellationToken);
+
+        using var barrier = new Barrier(2);
+        var arrivals = 0;
+        var publicationAttempts = 0;
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration
+        {
+            ClientClassName = "ApiClient",
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = specPath,
+            OutputPath = outputPath,
+            NoWorkspace = true,
+            MaxDegreeOfParallelism = 2,
+        }, _httpClient);
+        builder.BeforeModelDeclarationCreation = () =>
+        {
+            if (Interlocked.Increment(ref arrivals) <= 2)
+                Assert.True(barrier.SignalAndWait(TimeSpan.FromSeconds(10)));
+        };
+        builder.BeforeModelClassPublication = () => Interlocked.Increment(ref publicationAttempts);
+        try
+        {
+            await builder.GenerateClientAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal(2, arrivals);
+            Assert.Equal(1, publicationAttempts);
+            Assert.Single(Directory.EnumerateFiles(outputPath, "User.cs", SearchOption.AllDirectories));
+        }
+        finally
+        {
+            builder.BeforeModelDeclarationCreation = null;
+            builder.BeforeModelClassPublication = null;
+            if (Directory.Exists(outputPath))
+                Directory.Delete(outputPath, true);
+        }
+    }
+    [Fact]
     public async Task SupportsExternalReferences()
     {
         var tempFilePathReferee = Path.GetTempFileName();
