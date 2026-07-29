@@ -99,7 +99,10 @@ resources:
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
-    settings:
+    # An explicit empty object avoids YAML parsing this as `settings: null` (the block below is all
+    # comments), which the 1ES template can reject. To enable the network isolation policy, replace
+    # `settings: {}` with a `settings:` mapping and uncomment `networkIsolationPolicy` below.
+    settings: {}
       # Network isolation policy. "CFSClean" enforces Central Feed Service isolation: package restores
       # are constrained to approved/authenticated feeds and direct calls to public package registries
       # (nuget.org, npmjs, pypi.org, Maven Central, etc.) are blocked. "GitHub" is a shared allow policy
