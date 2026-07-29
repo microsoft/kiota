@@ -171,7 +171,10 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!codeNamespace.Name.Equals(normalizedName, StringComparison.Ordinal))
             {
                 if (codeNamespace.Parent is CodeNamespace parentNamespace)
-                    parentNamespace.RenameChildElement(codeNamespace.Name, normalizedName);
+                {
+                    if (parentNamespace.FindChildByName<CodeNamespace>(normalizedName, false) is null)
+                        parentNamespace.RenameChildElement(codeNamespace.Name, normalizedName);
+                }
                 else
                     codeNamespace.Name = normalizedName;
             }

@@ -62,6 +62,22 @@ public class PythonLanguageRefinerTests
     }
 
     [Fact]
+    public async Task PreservesNamespacesWhenSnakeCasingWouldCauseACollisionAsync()
+    {
+        var clientNamespace = root.AddNamespace("graphSdk");
+        var camelCaseNamespace = root.AddNamespace("graphSdk.someNamespace");
+        var snakeCaseNamespace = root.AddNamespace("graphSdk.some_namespace");
+
+        await ILanguageRefiner.RefineAsync(
+            new GenerationConfiguration { Language = GenerationLanguage.Python },
+            root,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(clientNamespace.Namespaces, x => ReferenceEquals(x, camelCaseNamespace));
+        Assert.Contains(clientNamespace.Namespaces, x => ReferenceEquals(x, snakeCaseNamespace));
+    }
+
+    [Fact]
     public async Task AddsQueryParameterMapperMethodAsync()
     {
         var model = graphNS.AddClass(new CodeClass
