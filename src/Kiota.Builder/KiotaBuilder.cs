@@ -2192,6 +2192,7 @@ public partial class KiotaBuilder
         OpenApiEnumValuesDescriptionExtension? extensionInformation = null;
         if (schema.Extensions is not null && schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
+        var optionNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         target.AddOption(schema.Enum?.OfType<JsonValue>()
                         .Where(static x => x.GetValueKind() is JsonValueKind.String or JsonValueKind.Number)
                         .Select(static x => x.GetValueKind() is JsonValueKind.String ? x.GetValue<string>() : x.GetValue<decimal>().ToString(CultureInfo.InvariantCulture))
@@ -2204,7 +2205,7 @@ public partial class KiotaBuilder
                                 string.IsNullOrEmpty(x) ? "Empty" : x;
                             return new CodeEnumOption
                             {
-                                Name = optionName.CleanupSymbolName(),
+                                Name = GetUniqueEnumOptionName(optionName.CleanupSymbolName(), optionNames),
                                 SerializationName = x,
                                 Documentation = new()
                                 {
@@ -2214,6 +2215,16 @@ public partial class KiotaBuilder
                         })
                         .Where(static x => !string.IsNullOrEmpty(x.Name))
                         .ToArray() ?? []);
+    }
+    private static string GetUniqueEnumOptionName(string optionName, HashSet<string> optionNames)
+    {
+        if (string.IsNullOrEmpty(optionName) || optionNames.Add(optionName))
+            return optionName;
+
+        var suffix = 1;
+        while (!optionNames.Add($"{optionName}{suffix}"))
+            suffix++;
+        return $"{optionName}{suffix}";
     }
     private CodeNamespace GetShortestNamespace(CodeNamespace currentNamespace, IOpenApiSchema currentSchema)
     {

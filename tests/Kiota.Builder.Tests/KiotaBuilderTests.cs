@@ -530,6 +530,7 @@ components:
         - Standard_RAGRS
         - Premium_LRS
         - Premium_LRS
+        - Empty
         - ''
       x-ms-enum:
         name: AccountType
@@ -569,9 +570,12 @@ components:
         Assert.Equal("StandardLocalRedundancy", thirdOption.Name);
         Assert.NotEmpty(thirdOption.Documentation.DescriptionTemplate);
         Assert.Single(enumDef.Options, static x => x.Name.Equals("Premium_LRS", StringComparison.OrdinalIgnoreCase));
-        var emptyOption = Assert.Single(enumDef.Options, static x => x.Name.Equals("Empty", StringComparison.OrdinalIgnoreCase));
+        var emptyOption = Assert.Single(enumDef.Options, static x => x.WireName.Length == 0);
+        Assert.Equal("Empty1", emptyOption.Name);
         Assert.Empty(emptyOption.SerializationName);
         Assert.Empty(emptyOption.WireName);
+        var nonEmptyOption = Assert.Single(enumDef.Options, static x => x.WireName.Equals("Empty", StringComparison.Ordinal));
+        Assert.Equal("Empty", nonEmptyOption.Name);
     }
 
     [Fact]
