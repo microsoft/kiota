@@ -10,7 +10,12 @@ param(
     [string]$MavenRepositoryUrl = "https://repo1.maven.org/maven2",
     # Access token used to authenticate to the private feed (e.g. the pipeline System.AccessToken).
     # Leave empty for anonymous access to the public registries.
-    [string]$FeedAccessToken = $env:FEED_ACCESS_TOKEN
+    [string]$FeedAccessToken = $env:FEED_ACCESS_TOKEN,
+    # GitHub token used only for api.github.com release lookups so they use the higher authenticated
+    # rate limit (5000/hr) instead of the unauthenticated one (60/hr). This is a GitHub credential
+    # (PAT or GitHub App/Actions token) - NOT the Azure DevOps System.AccessToken, which GitHub rejects.
+    # Leave empty for anonymous (rate-limited) access.
+    [string]$GitHubToken = $env:GITHUB_TOKEN
 )
 
 # Normalize trailing slashes so URL composition is predictable.
@@ -53,6 +58,12 @@ $script:NpmAuthHeaders = Get-FeedAuthHeaders -Url $NpmRegistryUrl
 $script:PyPiAuthHeaders = Get-FeedAuthHeaders -Url $PyPiSimpleIndexUrl
 $script:MavenAuthHeaders = Get-FeedAuthHeaders -Url $MavenRepositoryUrl
 
+# GitHub release lookups always target the fixed public host api.github.com (there is no Azure Artifacts
+# upstream for GitHub releases). Attach the GitHub token when supplied so those calls use the authenticated
+# rate limit; the token is only ever used by Get-LatestGithubRelease, so it never reaches any other host.
+$script:HasGitHubToken = -not [string]::IsNullOrWhiteSpace($GitHubToken)
+$script:GitHubAuthHeaders = if ($script:HasGitHubToken) { @{ "Authorization" = "Bearer $GitHubToken" } } else { @{} }
+
 # Cache for the resolved NuGet registrations base URL so the service index is only read once.
 $script:NuGetRegistrationsBaseUrl = $null
 
@@ -94,7 +105,7 @@ function Get-LatestGithubRelease {
     )
     $packageId = $packageId.Replace("github.com/", "")
     $url = "https://api.github.com/repos/$packageId/releases/latest"
-    $response = Invoke-RestMethod -Uri $url -Method Get
+    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:GitHubAuthHeaders
     $response.tag_name
 }
 # Get the latest version of a npm package

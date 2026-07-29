@@ -154,6 +154,11 @@ extends:
                 name: update_versions
                 env:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
+                  # GitHub release lookups use the authenticated rate limit (5000/hr vs 60/hr anonymous).
+                  # This must be a GitHub credential (PAT), not System.AccessToken which GitHub rejects.
+                  # Inline steps can't read a service-connection secret, so store the PAT behind the
+                  # microsoftkiota connection as a secret pipeline variable named GITHUB_TOKEN.
+                  GITHUB_TOKEN: $(GITHUB_TOKEN)
 
               - pwsh: |
                   New-Item -Path $(Build.ArtifactStagingDirectory)/AppSettings -ItemType Directory -Force -Verbose
@@ -1210,6 +1215,11 @@ extends:
                 displayName: "Update dependencies versions"
                 env:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
+                  # GitHub release lookups use the authenticated rate limit (5000/hr vs 60/hr anonymous).
+                  # This must be a GitHub credential (PAT), not System.AccessToken which GitHub rejects.
+                  # Inline steps can't read a service-connection secret, so store the PAT behind the
+                  # microsoftkiota connection as a secret pipeline variable named GITHUB_TOKEN.
+                  GITHUB_TOKEN: $(GITHUB_TOKEN)
 
               - script: |
                   docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
