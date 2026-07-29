@@ -132,12 +132,39 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+                # Persist the ephemeral GitHub App token that the microsoftkiota connection mints for the
+                # checkout so the version-lookup step can reuse it for GitHub's authenticated rate limit.
+                # No PAT is stored anywhere; the token is short-lived and scoped to this job only.
+                persistCredentials: true
 
               # The it/ integration-test fixtures are not used by this pipeline and their per-language
               # manifests trigger Component Governance to reach public registries under network isolation.
               # Remove them right after checkout so no later scan/build sees them.
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
+
+              # Recover the short-lived GitHub token that persistCredentials wrote to the local git config
+              # (AUTHORIZATION: basic base64(x-access-token:<token>)) and expose it as a masked variable so
+              # update-versions.ps1 can authenticate api.github.com calls (5000/hr vs the shared-IP 60/hr
+              # anonymous limit). Emits an empty value when no credential is present, keeping GitHub lookups
+              # anonymous rather than failing.
+              - pwsh: |
+                  $token = ""
+                  $line = git -C "$(Build.SourcesDirectory)" config --local --get-regexp 'http\..*\.extraheader' 2>$null | Select-Object -First 1
+                  if (-not [string]::IsNullOrWhiteSpace($line)) {
+                    try {
+                      $b64 = ($line.Trim() -split '\s+')[-1]
+                      $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1)
+                    } catch {
+                      Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    }
+                  }
+                  if ([string]::IsNullOrWhiteSpace($token)) {
+                    Write-Host "No GitHub token available; release lookups will use the anonymous rate limit."
+                  }
+                  Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
+                displayName: "Extract GitHub token for release lookups"
 
               # Route package-version lookups through the authenticated Azure Artifacts feed
               # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
@@ -154,11 +181,7 @@ extends:
                 name: update_versions
                 env:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
-                  # GitHub release lookups use the authenticated rate limit (5000/hr vs 60/hr anonymous).
-                  # This must be a GitHub credential (PAT), not System.AccessToken which GitHub rejects.
-                  # Inline steps can't read a service-connection secret, so store the PAT behind the
-                  # microsoftkiota connection as a secret pipeline variable named GITHUB_TOKEN.
-                  GITHUB_TOKEN: $(GITHUB_TOKEN)
+                  GITHUB_TOKEN: $(githubToken)
 
               - pwsh: |
                   New-Item -Path $(Build.ArtifactStagingDirectory)/AppSettings -ItemType Directory -Force -Verbose
@@ -1166,9 +1189,36 @@ extends:
               os: linux
             steps:
               - checkout: self
+                # Persist the ephemeral GitHub App token that the microsoftkiota connection mints for the
+                # checkout so the version-lookup step can reuse it for GitHub's authenticated rate limit.
+                # No PAT is stored anywhere; the token is short-lived and scoped to this job only.
+                persistCredentials: true
 
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
+
+              # Recover the short-lived GitHub token that persistCredentials wrote to the local git config
+              # (AUTHORIZATION: basic base64(x-access-token:<token>)) and expose it as a masked variable so
+              # update-versions.ps1 can authenticate api.github.com calls (5000/hr vs the shared-IP 60/hr
+              # anonymous limit). Emits an empty value when no credential is present, keeping GitHub lookups
+              # anonymous rather than failing.
+              - pwsh: |
+                  $token = ""
+                  $line = git -C "$(Build.SourcesDirectory)" config --local --get-regexp 'http\..*\.extraheader' 2>$null | Select-Object -First 1
+                  if (-not [string]::IsNullOrWhiteSpace($line)) {
+                    try {
+                      $b64 = ($line.Trim() -split '\s+')[-1]
+                      $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1)
+                    } catch {
+                      Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    }
+                  }
+                  if ([string]::IsNullOrWhiteSpace($token)) {
+                    Write-Host "No GitHub token available; release lookups will use the anonymous rate limit."
+                  }
+                  Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
+                displayName: "Extract GitHub token for release lookups"
 
               - task: AzureCLI@2
                 displayName: "Login to Azure Container Registry"
@@ -1215,11 +1265,7 @@ extends:
                 displayName: "Update dependencies versions"
                 env:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
-                  # GitHub release lookups use the authenticated rate limit (5000/hr vs 60/hr anonymous).
-                  # This must be a GitHub credential (PAT), not System.AccessToken which GitHub rejects.
-                  # Inline steps can't read a service-connection secret, so store the PAT behind the
-                  # microsoftkiota connection as a secret pipeline variable named GITHUB_TOKEN.
-                  GITHUB_TOKEN: $(GITHUB_TOKEN)
+                  GITHUB_TOKEN: $(githubToken)
 
               - script: |
                   docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
