@@ -94,7 +94,10 @@ function Get-LatestNugetVersion {
 
     $registrationsBaseUrl = Get-NugetRegistrationsBaseUrl
     $url = "$registrationsBaseUrl/$($packageId.ToLowerInvariant())/index.json"
-    $response = Invoke-RestMethod -Uri $url -Method Get -Headers $script:NuGetAuthHeaders
+    # Compute headers from the actual registrations URL, not the service-index-derived headers: a private
+    # feed's service index can advertise a RegistrationsBaseUrl on a different (e.g. public upstream) host,
+    # and the feed token must only ever be sent to Azure Artifacts hosts.
+    $response = Invoke-RestMethod -Uri $url -Method Get -Headers (Get-FeedAuthHeaders -Url $url)
     $version = $response.items | Select-Object -ExpandProperty upper | ForEach-Object { [System.Management.Automation.SemanticVersion]$_ } | sort-object | Select-Object -Last 1
     $version.ToString()
 }
