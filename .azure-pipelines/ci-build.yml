@@ -774,6 +774,21 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
+              # Route npm dependency resolution through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry. The .npmrc points
+              # npm at the feed's npm endpoint and npmAuthenticate injects a build-identity token scoped
+              # to that registry, so every subsequent npm command in this job (global tools + workspace
+              # installs) restores from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/vscode/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
               - script: npm i -g @vscode/vsce rimraf
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
@@ -895,9 +910,25 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update NPM package version-number"
+              # Route npm dependency resolution through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry. The .npmrc points
+              # npm at the feed's npm endpoint and npmAuthenticate injects a build-identity token scoped
+              # to that registry, so every subsequent npm command in this job (global tools + workspace
+              # installs) restores from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/vscode/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
               - script: |
                   npm i -g rimraf
                 displayName: "Install Global dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: npm install
                 displayName: "Install package dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
