@@ -153,10 +153,16 @@ extends:
               # anonymous rather than failing.
               - pwsh: |
                   $token = ""
-                  # Ask git for the extraheader that applies to github.com specifically; it resolves the
-                  # right entry even when other hosts (e.g. the Azure Artifacts feed) also have one, so we
-                  # never decode a non-GitHub token.
-                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader https://github.com/ 2>$null
+                  # Resolve the extraheader git actually uses for this repo by matching against its own
+                  # remote URL. --get-urlmatch returns the single best match, so it finds the entry whether
+                  # checkout keyed it to the host or the full repo path, and never decodes a different
+                  # host's (e.g. the Azure Artifacts feed) credential.
+                  $remoteUrl = git -C "$(Build.SourcesDirectory)" remote get-url origin 2>$null
+                  if ([string]::IsNullOrWhiteSpace($remoteUrl)) { $remoteUrl = "https://github.com/" }
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader $remoteUrl 2>$null
+                  # git exits non-zero when no extraheader matches; that is a graceful (anonymous) outcome
+                  # here, so clear it rather than let the task surface it as a step failure.
+                  $global:LASTEXITCODE = 0
                   if (-not [string]::IsNullOrWhiteSpace($header)) {
                     try {
                       $b64 = ($header.Trim() -split '\s+')[-1]
@@ -1210,10 +1216,16 @@ extends:
               # anonymous rather than failing.
               - pwsh: |
                   $token = ""
-                  # Ask git for the extraheader that applies to github.com specifically; it resolves the
-                  # right entry even when other hosts (e.g. the Azure Artifacts feed) also have one, so we
-                  # never decode a non-GitHub token.
-                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader https://github.com/ 2>$null
+                  # Resolve the extraheader git actually uses for this repo by matching against its own
+                  # remote URL. --get-urlmatch returns the single best match, so it finds the entry whether
+                  # checkout keyed it to the host or the full repo path, and never decodes a different
+                  # host's (e.g. the Azure Artifacts feed) credential.
+                  $remoteUrl = git -C "$(Build.SourcesDirectory)" remote get-url origin 2>$null
+                  if ([string]::IsNullOrWhiteSpace($remoteUrl)) { $remoteUrl = "https://github.com/" }
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader $remoteUrl 2>$null
+                  # git exits non-zero when no extraheader matches; that is a graceful (anonymous) outcome
+                  # here, so clear it rather than let the task surface it as a step failure.
+                  $global:LASTEXITCODE = 0
                   if (-not [string]::IsNullOrWhiteSpace($header)) {
                     try {
                       $b64 = ($header.Trim() -split '\s+')[-1]
