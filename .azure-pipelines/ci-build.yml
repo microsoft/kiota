@@ -111,7 +111,7 @@ extends:
       # run, surfacing exactly which steps egress to public registries.
       # See https://aka.ms/1espt-networkisolation
       # explicitly unset until we can get an approval for our required use-cases as these policies will break the build.
-      # networkIsolationPolicy: Preferred,GitHub,CFSClean
+    networkIsolationPolicy: Preferred,GitHub,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
@@ -973,7 +973,22 @@ extends:
               - task: UseNode@1
                 inputs:
                   version: "22.x"
+              # Route the vsce tool install through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry, so this
+              # release job resolves the global tool from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Pipeline.Workspace)/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Pipeline.Workspace)/.npmrc
               - pwsh: npm i -g @vscode/vsce
+                displayName: "Install vsce (central feed)"
+                workingDirectory: $(Pipeline.Workspace)
               - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - task: AzureCLI@2
