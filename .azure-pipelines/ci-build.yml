@@ -100,14 +100,15 @@ extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
     settings:
-      # Network isolation policy. "CFSClean" enforces Central Feed Service isolation: package restores
-      # are constrained to approved/authenticated feeds and direct calls to public package registries
-      # (nuget.org, npmjs, pypi.org, Maven Central, etc.) are blocked. "GitHub" is a shared allow policy
-      # that permits github.com / api.github.com (needed for the Go dependency release lookups). The
-      # "Permissive" base policy is intentionally omitted so other banned-endpoint calls still fail the
-      # run, surfacing exactly which steps egress to public registries.
+      # Network isolation policy. The "Permissive" base allows all outbound connections except a few
+      # vetted-malicious endpoints; the "CFSClean" deny policy then blocks the public package feeds it
+      # governs (nuget.org, npmjs, pypi.org, Maven Central, yarnpkg, crates.io), forcing those restores
+      # through the authenticated Azure Artifacts feed. Registries CFSClean does not cover -- Dart
+      # (pub.dev), PHP (Packagist), Ruby (rubygems.org) -- and github.com / api.github.com stay reachable
+      # under Permissive, which the Dart/PHP/Ruby/Go version lookups rely on. (A "Preferred" base instead
+      # of "Permissive" is deny-by-default and would block those un-upstreamed registries, e.g. pub.dev.)
       # See https://aka.ms/1espt-networkisolation
-      networkIsolationPolicy: Preferred,GitHub,CFSClean
+      networkIsolationPolicy: Permissive,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
