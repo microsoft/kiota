@@ -111,7 +111,7 @@ extends:
       # run, surfacing exactly which steps egress to public registries.
       # See https://aka.ms/1espt-networkisolation
       # explicitly unset until we can get an approval for our required use-cases as these policies will break the build.
-    networkIsolationPolicy: Preferred,GitHub,CFSClean
+      # networkIsolationPolicy: Preferred,GitHub,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
