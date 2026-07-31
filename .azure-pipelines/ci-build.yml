@@ -99,10 +99,7 @@ resources:
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
-    # An explicit empty object avoids YAML parsing this as `settings: null` (the block below is all
-    # comments), which the 1ES template can reject. To enable the network isolation policy, replace
-    # `settings: {}` with a `settings:` mapping and uncomment `networkIsolationPolicy` below.
-    settings: {}
+    settings:
       # Network isolation policy. "CFSClean" enforces Central Feed Service isolation: package restores
       # are constrained to approved/authenticated feeds and direct calls to public package registries
       # (nuget.org, npmjs, pypi.org, Maven Central, etc.) are blocked. "GitHub" is a shared allow policy
@@ -110,8 +107,7 @@ extends:
       # "Permissive" base policy is intentionally omitted so other banned-endpoint calls still fail the
       # run, surfacing exactly which steps egress to public registries.
       # See https://aka.ms/1espt-networkisolation
-      # explicitly unset until we can get an approval for our required use-cases as these policies will break the build.
-      # networkIsolationPolicy: Preferred,GitHub,CFSClean
+      networkIsolationPolicy: Preferred,GitHub,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
