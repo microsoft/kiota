@@ -908,6 +908,32 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
+    public void WritesPrimaryErrorMessageDeserializer()
+    {
+        setup();
+        parentClass.IsErrorDefinition = true;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "detail",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("def deserialize_detail(n: ParseNode) -> None:", result);
+        Assert.Contains("self.detail = n.get_str_value()", result);
+        Assert.Contains("self.message = '' if self.detail is None else str(self.detail)", result);
+        Assert.Contains("\"detail\": deserialize_detail,", result);
+    }
+    [Fact]
     public void WritesInheritedSerializerBody()
     {
         setup(true);
@@ -1029,6 +1055,28 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var deserializerResult = tw.ToString();
         Assert.Contains("\"line1\\\"\\nline2\": lambda n : setattr(self, 'dummy_string', n.get_str_value())", deserializerResult);
+    }
+    [Fact]
+    public void EscapesPropertyNamesInDeserializerBody()
+    {
+        setup();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "line1'\nline2",
+            SerializationName = "value",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("setattr(self, 'line1\\'\\nline2', n.get_str_value())", result);
     }
     [Fact]
     public void WritesMethodAsyncDescription()
