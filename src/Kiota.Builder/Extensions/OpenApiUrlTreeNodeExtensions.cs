@@ -93,10 +93,10 @@ public static partial class OpenApiUrlTreeNodeExtensions
     ///<summary>
     /// Returns the class name for the node with more or less precision depending on the provided arguments
     ///</summary>
-    internal static string GetClassName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, IOpenApiResponse? response = default, IOpenApiSchema? schema = default, bool requestBody = false)
+    internal static string GetClassName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, IOpenApiResponse? response = default, IOpenApiSchema? schema = default, bool requestBody = false, string? placeholder = null)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
-        return currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => x.LastOrDefault() ?? string.Empty);
+        return currentNode.GetSegmentName(structuredMimeTypes, suffix, prefix, operation, response, schema, requestBody, static x => x.LastOrDefault() ?? string.Empty, placeholder: placeholder);
     }
     internal static string GetNavigationPropertyName(this OpenApiUrlTreeNode currentNode, StructuredMimeTypesCollection structuredMimeTypes, string? suffix = default, string? prefix = default, OpenApiOperation? operation = default, OpenApiResponse? response = default, OpenApiSchema? schema = default, bool requestBody = false, string? placeholder = null)
     {
