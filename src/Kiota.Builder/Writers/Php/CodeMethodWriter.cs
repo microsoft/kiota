@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -680,22 +681,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     }
     private void WriteDeserializerBodyForInheritedModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer, bool extendsModelClass = false)
     {
-        var codeProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).ToArray();
+        var codeProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+            .Where(static x => !x.ExistsInBaseType && x.Setter != null)
+            .OrderBy(static x => x.Name)
+            .ToArray();
+        var hasNumericPropertyName = codeProperties.Any(static x => IsNumericArrayKey(x.WireName));
         writer.WriteLine("$o = $this;");
+        if (hasNumericPropertyName)
+            writer.WriteLine("/** @var array<string, callable(ParseNode): void> $deserializers */");
         writer.WriteLines(
-            $"return {((extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [")}");
+            $"{(hasNumericPropertyName ? "$deserializers =" : "return")} {((extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [")}");
         writer.IncreaseIndent();
         if (codeProperties.Length != 0)
-        {
             codeProperties
-                .Where(static x => !x.ExistsInBaseType && x.Setter != null)
-                .OrderBy(static x => x.Name)
                 .ToList()
                 .ForEach(x => WriteDeserializerPropertyCallback(x, method, writer));
-        }
         writer.DecreaseIndent();
         writer.WriteLine(extendsModelClass ? "]);" : "];");
+        if (hasNumericPropertyName)
+            writer.WriteLine("return $deserializers;");
     }
+
+    private static bool IsNumericArrayKey(string key) =>
+        long.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) &&
+        value.ToString(CultureInfo.InvariantCulture).Equals(key, StringComparison.Ordinal);
 
     private void WriteDeserializerPropertyCallback(CodeProperty property, CodeMethod method, LanguageWriter writer)
     {
