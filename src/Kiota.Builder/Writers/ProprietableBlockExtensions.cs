@@ -14,7 +14,8 @@ internal static class ProprietableBlockExtensions
         Func<CodeProperty, string> propertyNameNormalization,
         Func<CodeMethod, string> methodNameNormalization,
         string pathSegment = ".",
-        HashSet<CodeElement>? visitedElements = default) where TBlockKind : Enum where TBlockDeclaration : ProprietableBlockDeclaration, new()
+        HashSet<CodeElement>? visitedElements = default,
+        Func<CodeTypeBase, string>? pathSegmentFactory = default) where TBlockKind : Enum where TBlockDeclaration : ProprietableBlockDeclaration, new()
     {
         visitedElements ??= new();
         if (visitedElements.Contains(block))
@@ -29,10 +30,10 @@ internal static class ProprietableBlockExtensions
                 return propertyNameNormalization(primaryErrorMessageProperty);
             else if (currentInterface.Methods
                                         .Where(isGetterMethod)
-                                        .Select(x => new { Value = x.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface && codeInterface.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements) is string segment && !string.IsNullOrEmpty(segment) ? $"{methodNameNormalization(x)}{pathSegment}{segment}" : string.Empty, IsMethod = true })
+                                        .Select(x => new { Value = x.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface && codeInterface.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements, pathSegmentFactory) is string segment && !string.IsNullOrEmpty(segment) ? $"{methodNameNormalization(x)}{pathSegmentFactory?.Invoke(x.ReturnType) ?? pathSegment}{segment}" : string.Empty, IsMethod = true })
                                         .Union(currentInterface.Properties
                                                 .Where(isCustomProperty)
-                                                .Select(x => new { Value = x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface && codeInterface.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements) is string segment && !string.IsNullOrEmpty(segment) ? $"{propertyNameNormalization(x)}{pathSegment}{segment}" : string.Empty, IsMethod = false }))
+                                                .Select(x => new { Value = x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface && codeInterface.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements, pathSegmentFactory) is string segment && !string.IsNullOrEmpty(segment) ? $"{propertyNameNormalization(x)}{pathSegmentFactory?.Invoke(x.Type) ?? pathSegment}{segment}" : string.Empty, IsMethod = false }))
                                         .OrderBy(static x => x.IsMethod)
                                         .ThenBy(static x => x.Value, StringComparer.OrdinalIgnoreCase)
                                         .FirstOrDefault(static x => !string.IsNullOrEmpty(x.Value)) is { } primaryMessageCodePath)
@@ -47,10 +48,10 @@ internal static class ProprietableBlockExtensions
                 return propertyNameNormalization(primaryErrorMessageProperty);
             else if (currentClass.Methods
                                         .Where(isGetterMethod)
-                                        .Select(x => new { Value = x.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass && codeClass.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements) is string segment && !string.IsNullOrEmpty(segment) ? $"{methodNameNormalization(x)}{pathSegment}{segment}" : string.Empty, IsMethod = true })
+                                        .Select(x => new { Value = x.ReturnType is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass && codeClass.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements, pathSegmentFactory) is string segment && !string.IsNullOrEmpty(segment) ? $"{methodNameNormalization(x)}{pathSegmentFactory?.Invoke(x.ReturnType) ?? pathSegment}{segment}" : string.Empty, IsMethod = true })
                                         .Union(currentClass.Properties
                                                 .Where(isCustomProperty)
-                                                .Select(x => new { Value = x.Type is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass && codeClass.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements) is string segment && !string.IsNullOrEmpty(segment) ? $"{propertyNameNormalization(x)}{pathSegment}{segment}" : string.Empty, IsMethod = false }))
+                                                .Select(x => new { Value = x.Type is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass && codeClass.GetPrimaryMessageCodePath(propertyNameNormalization, methodNameNormalization, pathSegment, visitedElements, pathSegmentFactory) is string segment && !string.IsNullOrEmpty(segment) ? $"{propertyNameNormalization(x)}{pathSegmentFactory?.Invoke(x.Type) ?? pathSegment}{segment}" : string.Empty, IsMethod = false }))
                                         .OrderBy(static x => x.IsMethod)
                                         .ThenBy(static x => x.Value, StringComparer.OrdinalIgnoreCase)
                                         .FirstOrDefault(static x => !string.IsNullOrEmpty(x.Value)) is { } primaryMessageCodePath)
