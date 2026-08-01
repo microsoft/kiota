@@ -48,7 +48,8 @@ public class InconsistentTypeFormatPair : ValidationRule<IOpenApiSchema>
     ];
     public InconsistentTypeFormatPair() : base(nameof(InconsistentTypeFormatPair), static (context, schema) =>
     {
-        if (schema is null || !schema.Type.HasValue || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type.Value))
+        if (KnownAndNotSupportedFormats.IsHeaderSchema(context.PathString) ||
+            schema is null || !schema.Type.HasValue || string.IsNullOrEmpty(schema.Format) || KnownAndNotSupportedFormats.knownAndUnsupportedFormats.Contains(schema.Format) || escapedTypes.Contains(schema.Type.Value))
             return;
         var sanitizedType = schema.Type.Value & ~JsonSchemaType.Null;
         if (!validPairs.TryGetValue(sanitizedType, out var validFormats) || !validFormats.Contains(schema.Format))
