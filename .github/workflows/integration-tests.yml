@@ -16,9 +16,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Restore dependencies
@@ -26,7 +26,7 @@ jobs:
       - name: Build
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: generator
           path: publish
@@ -51,8 +51,8 @@ jobs:
           - "apisguru::apis.guru"
           - "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: generator
           path: publish
@@ -63,7 +63,7 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           # Output is either openapi.json or openapi.yml. Try to upload the one that is found.
@@ -108,23 +108,23 @@ jobs:
           - "https://github.com/microsoftgraph/msgraph-metadata/raw/refs/heads/master/openapi/beta/openapi.yaml"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         if: startsWith(matrix.description, './') != true
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           path: description
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: generator
           path: publish
       - run: chmod a+x ./publish/kiota
       # Common dependency needed to run MockServer
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           java-version: "17"
           distribution: "temurin"
@@ -132,39 +132,39 @@ jobs:
 
       - name: Setup .NET
         if: matrix.language == 'csharp'
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Setup Go
         if: matrix.language == 'go'
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "^1.25"
       - name: Setup Typescript
         if: matrix.language == 'typescript'
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.x
       - name: Setup Ruby
         if: matrix.language == 'ruby'
-        uses: ruby/setup-ruby@v1.319.0
+        uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1.319.0
         with:
           ruby-version: "3.3"
           bundler-cache: true
       - name: Setup PHP
         if: matrix.language == 'php'
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
           php-version: "8.2"
           coverage: xdebug
       - name: Setup Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
       - name: Setup Dart
         if: matrix.language == 'dart'
-        uses: dart-lang/setup-dart@v1
+        uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
         with:
           sdk: "stable"
 
@@ -188,7 +188,7 @@ jobs:
         run: ./it/do-clean.ps1 -language ${{ matrix.language }}
         if: always()
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
@@ -198,7 +198,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: integration
     steps:
-      - uses: jimschubert/delete-artifacts-action@v1
+      - uses: jimschubert/delete-artifacts-action@a6a85fe6cc7f54a2abb2aff7440825d98b8eb6e4 # v1.0.3
         with:
           artifact_name: "generator"
           min_bytes: "0"
