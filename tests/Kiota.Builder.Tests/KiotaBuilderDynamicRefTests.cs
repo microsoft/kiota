@@ -197,4 +197,111 @@ components:
 
         Assert.Equal("PaginatedTemplateUser_entriesUser", entries.TypeDefinition!.Name);
     }
+
+    [Fact]
+    public async Task MultiCandidateDottedKeysLandInDistinctNamespacesAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+paths:
+  /container:
+    get:
+      operationId: getContainer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Container'
+components:
+  schemas:
+    Container:
+      type: object
+      properties:
+        item:
+          $dynamicRef: '#node'
+    v1.UserModel:
+      $dynamicAnchor: node
+      type: object
+      properties:
+        version: { type: string }
+    v2.AdminModel:
+      $dynamicAnchor: node
+      type: object
+      properties:
+        version: { type: integer }
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var v1Ns = codeModel.FindNamespaceByName("ApiSdk.models.v1");
+        var v2Ns = codeModel.FindNamespaceByName("ApiSdk.models.v2");
+        Assert.NotNull(v1Ns);
+        Assert.NotNull(v2Ns);
+        Assert.NotNull(v1Ns.FindChildByName<CodeClass>("UserModel", true));
+        Assert.NotNull(v2Ns.FindChildByName<CodeClass>("AdminModel", true));
+
+        var container = codeModel.FindNamespaceByName("ApiSdk.models")!.FindChildByName<CodeClass>("Container", true)!;
+        var itemType = Assert.IsType<CodeUnionType>(container.Properties.Single(x => x.Name == "item").Type);
+        Assert.Equal(["ApiSdk.models.v1.UserModel", "ApiSdk.models.v2.AdminModel"], itemType.Types.Select(x => $"{((CodeNamespace)x.TypeDefinition!.Parent!).Name}.{x.TypeDefinition.Name}").OrderBy(x => x));
+    }
+
+    [Fact]
+    public async Task ArrayRootBindingSuffixAppliesToTemplateItemsAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    User:
+      type: object
+    PaginatedTemplate:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models")!;
+        Assert.NotNull(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateUser", true));
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplate", true));
+    }
 }

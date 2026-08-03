@@ -2046,7 +2046,7 @@ public partial class KiotaBuilder
             !schema.Items.IsArray()) // Only handle collections of primitives and complex types. Otherwise, multi-dimensional arrays would be recursively unwrapped undesirably to lead to incorrect serialization types.
         {
             // collections at root
-            return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, typeNameForInlineSchema, isRequestBody);
+            return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         }
 
         if (schema.Type is not null && (schema.Type & ~JsonSchemaType.Null) != 0 || !string.IsNullOrEmpty(schema.Format))
@@ -2118,8 +2118,9 @@ public partial class KiotaBuilder
                     if (candidates.Count == 1)
                     {
                         var c = candidates[0];
-                        var ns = GetShortestNamespace(codeNamespace, c.Schema);
                         var className = c.Name.Split('/').Last().Split('.').Last().CleanupSymbolName();
+                        var nsName = GetModelsNamespaceNameFromReferenceId(c.Name);
+                        var ns = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
                         return new CodeType { TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, c.Schema, className, ns) };
                     }
                     var unionName = string.IsNullOrEmpty(typeNameForInlineSchema) ?
@@ -2128,8 +2129,9 @@ public partial class KiotaBuilder
                     var unionType = new CodeUnionType { Name = unionName };
                     foreach (var c in candidates)
                     {
-                        var ns = GetShortestNamespace(codeNamespace, c.Schema);
                         var className = c.Name.Split('/').Last().Split('.').Last().CleanupSymbolName();
+                        var nsName = GetModelsNamespaceNameFromReferenceId(c.Name);
+                        var ns = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
                         var decl = AddModelDeclarationIfDoesntExist(currentNode, operation, c.Schema, className, ns);
                         unionType.AddType(new CodeType { TypeDefinition = decl });
                     }
@@ -2217,10 +2219,11 @@ public partial class KiotaBuilder
                schema.AnyOf?.Any(x => ContainsDynamicReference(x, visited)) == true ||
                schema.OneOf?.Any(x => ContainsDynamicReference(x, visited)) == true;
     }
-    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string typeNameForInlineSchema, bool isRequestBody)
+    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string suffixForInlineSchema, IOpenApiResponse? response, string typeNameForInlineSchema, bool isRequestBody)
     {
         var shouldPush = schema.Definitions?.Values.Any(static d => !string.IsNullOrEmpty(d.DynamicAnchor)) == true;
-        if (shouldPush) _dynamicScope.Value!.Push(new(schema, null));
+        var bindingSuffix = shouldPush ? TryGetDynamicBindingSuffix(schema, currentNode, operation, response, isRequestBody, suffixForInlineSchema) : null;
+        if (shouldPush) _dynamicScope.Value!.Push(new(schema, bindingSuffix));
         try
         {
             CodeTypeBase? type = GetPrimitiveType(schema.Items);
