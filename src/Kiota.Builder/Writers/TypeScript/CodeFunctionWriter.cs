@@ -85,7 +85,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
     private const string FactoryMethodReturnType = "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)";
-    private const string ArrayBufferTypeName = "ArrayBuffer";
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
@@ -131,7 +130,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private string GetSerializationMethodsForPrimitiveUnionTypes(CodeComposedTypeBase composedType, string parseNodeParameterName, CodeFile codeFile, bool nodeParameterCanBeNull = true)
     {
         var optionalChainingSymbol = nodeParameterCanBeNull ? "?" : string.Empty;
-        return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile)));
+        return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile)).Distinct(StringComparer.Ordinal));
     }
 
     private static CodeParameter? GetComposedTypeParameter(CodeFunction codeElement)
@@ -147,7 +146,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.StartBlock("return {");
         if (composedType.Types.Any(x => IsPrimitiveType(x, composedType, false)))
         {
-            var expression = string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
+            var expression = string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType, false)).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}").Distinct(StringComparer.Ordinal));
             writer.WriteLine($"\"\" : n => {{ {composedParam.Name.ToFirstCharacterLowerCase()} = {expression}}},");
         }
         foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType, false)))
@@ -590,11 +589,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private static string GetPrimitiveTypeCheck(CodeTypeBase type, string valueReference, string nodeType, string prefix)
     {
         if (type.IsCollection)
-            return ArrayBufferTypeName.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
+            return TYPE_ARRAYBUFFER.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
                 ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof ArrayBuffer)) {{"
                 : $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => typeof item === '{nodeType}')) {{";
 
-        return ArrayBufferTypeName.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
+        return TYPE_ARRAYBUFFER.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
             ? $"{prefix}if ({valueReference} instanceof ArrayBuffer) {{"
             : $"{prefix}if (typeof {valueReference} === \"{nodeType}\" ) {{";
     }
@@ -739,7 +738,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else if (GetOriginalComposedType(otherProp.Type) is { } composedType)
         {
-            var expression = string.Join(" ?? ", SortTypesByInheritance(composedType.Types).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}"));
+            var expression = string.Join(" ?? ", SortTypesByInheritance(composedType.Types).Select(codeType => $"n.{conventions.GetDeserializationMethodName(codeType, codeFile, composedType.IsCollection)}").Distinct(StringComparer.Ordinal));
             writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = {expression};{suffix} }},");
         }
         else

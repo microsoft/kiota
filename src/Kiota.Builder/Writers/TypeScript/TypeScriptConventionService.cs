@@ -34,6 +34,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     public const string TYPE_LOWERCASE_BOOLEAN = "boolean";
     public const string TYPE_LOWERCASE_VOID = "void";
     public const string TYPE_BYTE_ARRAY = "byte[]";
+    public const string TYPE_ARRAYBUFFER = "ArrayBuffer";
     public const string TYPE_NUMBER = "number";
     public const string TYPE_DATE = "Date";
     public const string TYPE_DATE_ONLY = "DateOnly";
@@ -52,7 +53,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         writer.WriteLine("/* tslint:enable */");
         writer.WriteLine("/* eslint-enable */");
     }
-    public override string StreamTypeName => "ArrayBuffer";
+    public override string StreamTypeName => TYPE_ARRAYBUFFER;
     public override string VoidTypeName => "void";
     public override string DocCommentPrefix => " * ";
     public override string ParseNodeInterfaceName => "ParseNode";
@@ -207,7 +208,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return type?.Name switch
         {
             TYPE_INTEGER or TYPE_INT or TYPE_INT64 or TYPE_FLOAT or TYPE_DOUBLE or TYPE_BYTE or TYPE_SBYTE or TYPE_DECIMAL => TYPE_NUMBER,
-            TYPE_BINARY or TYPE_BASE64 or TYPE_BASE64URL => "ArrayBuffer",
+            TYPE_BINARY or TYPE_BASE64 or TYPE_BASE64URL => TYPE_ARRAYBUFFER,
             TYPE_STRING or TYPE_OBJECT or TYPE_BOOLEAN or TYPE_VOID or TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_OBJECT or TYPE_LOWERCASE_BOOLEAN or TYPE_LOWERCASE_VOID => type.Name.ToFirstCharacterLowerCase(),
             null => TYPE_OBJECT,
             _ when type is CodeComposedTypeBase composedType => composedType.Name.ToFirstCharacterUpperCase(),
@@ -233,7 +234,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_NUMBER or
             TYPE_LOWERCASE_STRING or
             TYPE_BYTE_ARRAY or
-            "ArrayBuffer" or
+            TYPE_ARRAYBUFFER or
             TYPE_LOWERCASE_BOOLEAN or
             TYPE_LOWERCASE_VOID => true,
             _ => false,

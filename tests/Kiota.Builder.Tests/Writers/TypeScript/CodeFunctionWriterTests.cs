@@ -2091,8 +2091,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(factoryFunction);
         var result = tw.ToString();
 
-        Assert.Contains("export function createMediaFromDiscriminatorValue(parseNode: ParseNode | undefined) : ArrayBuffer | ArrayBuffer", result);
-        Assert.Contains("return parseNode?.getByteArrayValue() ?? parseNode?.getByteArrayValue();", result);
+        Assert.Contains("export function createMediaFromDiscriminatorValue(parseNode: ParseNode | undefined) : ArrayBuffer", result);
+        Assert.Contains("return parseNode?.getByteArrayValue();", result);
+        Assert.DoesNotContain("getByteArrayValue() ?? parseNode?.getByteArrayValue()", result);
         Assert.DoesNotContain("getObjectValue", result);
     }
 
@@ -2122,7 +2123,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(deserializerFunction);
         var result = tw.ToString();
 
-        Assert.Contains("\"media\": n => { parentClass.media = n.getByteArrayValue() ?? n.getByteArrayValue(); }", result);
+        Assert.Contains("\"media\": n => { parentClass.media = n.getByteArrayValue(); }", result);
+        Assert.DoesNotContain("getByteArrayValue() ?? n.getByteArrayValue()", result);
         Assert.DoesNotContain("getObjectValue", result);
     }
 
