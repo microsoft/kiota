@@ -786,7 +786,7 @@ extends:
                 displayName: "Authenticate npm to Azure Artifacts"
                 inputs:
                   workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
-              - script: npm i -g @vscode/vsce rimraf
+              - script: npm i -g @vscode/vsce rimraf --userconfig $(Build.SourcesDirectory)/vscode/.npmrc
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: |
@@ -923,7 +923,7 @@ extends:
                 inputs:
                   workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
               - script: |
-                  npm i -g rimraf
+                  npm i -g rimraf --userconfig $(Build.SourcesDirectory)/vscode/.npmrc
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: npm install
