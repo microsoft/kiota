@@ -200,24 +200,8 @@
     ],
     "IdempotencySuppressions": [
       {
-        "Language": "csharp",
-        "Rationale": "Non-deterministic generation of Models/Analytics.cs - https://github.com/microsoft/kiota/issues/7997"
-      },
-      {
-        "Language": "dart",
-        "Rationale": "Non-deterministic generation of models/news.dart - https://github.com/microsoft/kiota/issues/7997"
-      },
-      {
-        "Language": "java",
-        "Rationale": "Non-deterministic generation of apisdk/models/Analytics.java - https://github.com/microsoft/kiota/issues/7997"
-      },
-      {
-        "Language": "ruby",
-        "Rationale": "Non-deterministic generation of models/analytics.rb and models/models.rb - https://github.com/microsoft/kiota/issues/7997"
-      },
-      {
-        "Language": "typescript",
-        "Rationale": "Non-deterministic generation of models/index.ts - https://github.com/microsoft/kiota/issues/7997"
+        "Language": "all",
+        "Rationale": "Non-deterministic generation of the Analytics/models set (e.g. Models/Analytics.cs, models/news.dart, apisdk/models/Analytics.java, models/analytics.rb, models/analytics.go, models/index.ts). The instability is language-agnostic and surfaces on a different language each run, so all languages are suppressed until the ordering is stabilized - https://github.com/microsoft/kiota/issues/7997"
       }
     ],
     "ExcludePatterns": [
