@@ -16,16 +16,16 @@ jobs:
       pull-requests: read
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Setup Go
         # required so the integration tests can run gofmt against the generated Go code
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: stable
       - name: Restore dependencies
@@ -43,13 +43,13 @@ jobs:
       - name: Add coverage to job summary
         run: cat ./reports/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       - name: Upload coverage report
-        uses: actions/upload-code-coverage@v1.4.0
+        uses: actions/upload-code-coverage@a72ab75b4dee0e479386fb9bf33c8dcf64b9c772 # v1.4.0
         if: github.event_name != 'merge_group' && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') || (github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch))
         with:
           file: ./reports/coverage/Cobertura.xml
           language: CSharp
           label: code-coverage/dotnet
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage
           path: reports/coverage
@@ -68,9 +68,9 @@ jobs:
           ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Restore dependencies
@@ -79,7 +79,7 @@ jobs:
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }} -f net10.0
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.os }}
           path: ./${{ matrix.os }}
