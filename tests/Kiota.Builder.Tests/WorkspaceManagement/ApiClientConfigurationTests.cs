@@ -122,8 +122,8 @@ public sealed class ApiClientConfigurationTests
         Assert.Equal(clientConfiguration.OutputPath, generationConfiguration.OutputPath);
         Assert.Equal(clientConfiguration.StructuredMimeTypes, generationConfiguration.StructuredMimeTypes);
         Assert.Equal(clientConfiguration.UsesBackingStore, generationConfiguration.UsesBackingStore);
-        Assert.Empty(generationConfiguration.Serializers);
-        Assert.Empty(generationConfiguration.Deserializers);
+        Assert.NotEmpty(generationConfiguration.Serializers);
+        Assert.NotEmpty(generationConfiguration.Deserializers);
         Assert.Equal(2, generationConfiguration.PatternsOverride.Count);
     }
 
