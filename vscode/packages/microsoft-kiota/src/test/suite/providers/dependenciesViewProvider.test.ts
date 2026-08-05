@@ -80,6 +80,6 @@ suite('DependenciesViewProvider Test Suite', () => {
         (provider as any).resolveWebviewView({ webview, show: () => { } } as unknown as vscode.WebviewView, {} as vscode.WebviewViewResolveContext<unknown>, {} as vscode.CancellationToken);
 
         assert.ok(webview.html.includes('Content-Security-Policy'), 'expected a CSP meta tag in the webview HTML');
-        assert.ok(webview.html.includes("script-src 'nonce-"), 'expected script-src to be restricted to a nonce');
+        assert.ok(webview.html.includes("script-src 'none'"), 'expected script-src to be disabled entirely');
     });
 });

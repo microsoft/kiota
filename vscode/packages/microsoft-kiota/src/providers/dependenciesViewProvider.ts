@@ -4,7 +4,7 @@ import {
 } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 
-import { escapeHtml, getNonce } from '../utilities/html';
+import { escapeHtml } from '../utilities/html';
 
 export class DependenciesViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
@@ -16,8 +16,7 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
     public resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext<unknown>, token: vscode.CancellationToken): void | Thenable<void> {
         this._view = webviewView;
         webviewView.webview.options = {
-            // Allow scripts in the webview
-            enableScripts: true,
+            enableScripts: false,
 
             localResourceRoots: [
                 this._extensionUri
@@ -52,7 +51,6 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
         if (dependenciesList.filter(dep => dep.DependencyType === DependencyType.bundle).length > 0) {
             dependenciesList = dependenciesList.filter(dep => dep.DependencyType === DependencyType.bundle || dep.DependencyType === DependencyType.additional || dep.DependencyType === DependencyType.authentication);
         }
-        const nonce = getNonce();
         const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>${escapeHtml(installationCommands)}</h2>
             <pre>${dependenciesList.map(dep => escapeHtml(this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version))).join('\n')}</pre>`
             : '';
@@ -61,7 +59,7 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource}; script-src 'none';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
