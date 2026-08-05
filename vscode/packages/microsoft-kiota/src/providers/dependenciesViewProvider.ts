@@ -4,6 +4,8 @@ import {
 } from '@microsoft/kiota';
 import * as vscode from 'vscode';
 
+import { escapeHtml, getNonce } from '../utilities/html';
+
 export class DependenciesViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     public constructor(
@@ -50,25 +52,27 @@ export class DependenciesViewProvider implements vscode.WebviewViewProvider {
         if (dependenciesList.filter(dep => dep.DependencyType === DependencyType.bundle).length > 0) {
             dependenciesList = dependenciesList.filter(dep => dep.DependencyType === DependencyType.bundle || dep.DependencyType === DependencyType.additional || dep.DependencyType === DependencyType.authentication);
         }
-        const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>${installationCommands}</h2>
-            <pre>${dependenciesList.map(dep => this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version)).join('\n')}</pre>`
+        const nonce = getNonce();
+        const installationBlock = this._languageInformation?.DependencyInstallCommand ? `<h2>${escapeHtml(installationCommands)}</h2>
+            <pre>${dependenciesList.map(dep => escapeHtml(this._languageInformation!.DependencyInstallCommand.replace(/\{0\}/g, dep.Name).replace(/\{1\}/g, dep.Version))).join('\n')}</pre>`
             : '';
 
         return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link href="${styleResetUri}" rel="stylesheet">
 				<link href="${styleVSCodeUri}" rel="stylesheet">
-				<title>${title}</title>
+				<title>${escapeHtml(title)}</title>
 			</head>
 			<body>
-                <h1>${this._language !== undefined ? generationLanguageToString(this._language) : noLanguageSelected}</h1>
-                <h2>${dependencies}</h2>
+                <h1>${this._language !== undefined ? escapeHtml(generationLanguageToString(this._language)) : escapeHtml(noLanguageSelected)}</h1>
+                <h2>${escapeHtml(dependencies)}</h2>
                 <table>
-                    <tr><th>${name}</th><th>${version}</th><th>${type}</th></tr>
-                    ${dependenciesList.map(dep => `<tr><td>${dep.Name}</td><td>${dep.Version}</td><td>${dependencyTypeToString(dep.DependencyType)}</td></tr>`).join('')}
+                    <tr><th>${escapeHtml(name)}</th><th>${escapeHtml(version)}</th><th>${escapeHtml(type)}</th></tr>
+                    ${dependenciesList.map(dep => `<tr><td>${escapeHtml(dep.Name)}</td><td>${escapeHtml(dep.Version)}</td><td>${escapeHtml(dependencyTypeToString(dep.DependencyType))}</td></tr>`).join('')}
                 </table>
                 ${installationBlock}
 			</body>
