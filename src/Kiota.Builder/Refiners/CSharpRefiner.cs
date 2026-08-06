@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Kiota.Builder.Writers;
 
 namespace Kiota.Builder.Refiners;
 
@@ -166,6 +167,10 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
             "System", "String"),
         new (static x => x is CodeClass,
             "System.Collections.Generic", "List", "Dictionary"),
+        new (static x => x is CodeClass { IsErrorDefinition: true } @class &&
+                         @class.GetPrimaryMessageCodePath(static y => y.Name, static y => y.Name, pathSegmentFactory: static y => y.IsCollection ? ".FirstOrDefault()." : ".")
+                               .Contains(".FirstOrDefault().", StringComparison.Ordinal),
+            "System.Linq", "Enumerable"),
         new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model, CodeClassKind.RequestBuilder),
             "System.IO", "Stream"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),

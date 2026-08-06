@@ -500,6 +500,43 @@ public class CSharpLanguageRefinerTests
         Assert.True(properties[1].IsPrimaryErrorMessage);// property is IsPrimaryErrorMessage so that information deserialized into it shows up in the error information.
     }
     [Fact]
+    public async Task AddsLinqImportForPrimaryErrorMessageInCollectionAsync()
+    {
+        var processResult = root.AddClass(new CodeClass
+        {
+            Name = "processResult",
+            Kind = CodeClassKind.Model,
+        }).First();
+        processResult.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType { Name = "string" },
+        });
+        var exception = root.AddClass(new CodeClass
+        {
+            Name = "error403",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        exception.AddProperty(new CodeProperty
+        {
+            Name = "processResults",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = processResult.Name,
+                TypeDefinition = processResult,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(exception.StartBlock.Usings, static x => x.Declaration?.Name.Equals("System.Linq", StringComparison.Ordinal) is true);
+    }
+    [Fact]
     public async Task RenamesExceptionClassWithReservedPropertyNameAsync()
     {
         var exception = root.AddClass(new CodeClass
