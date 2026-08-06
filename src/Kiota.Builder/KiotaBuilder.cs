@@ -2123,11 +2123,15 @@ public partial class KiotaBuilder
         return currentNamespace;
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
+    // Test-only hook for coordinating callers between the initial lookup and class publication.
+    internal Action? BeforeModelDeclarationCreation { get; set; }
+    internal Action? BeforeModelClassPublication { get; set; }
     private static readonly ThreadLocal<HashSet<string>> schemasBeingProcessedForDiscriminators = new(() => new(StringComparer.OrdinalIgnoreCase));
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
+            BeforeModelDeclarationCreation?.Invoke();
             if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
                 return enumDeclaration;
 
@@ -2266,8 +2270,16 @@ public partial class KiotaBuilder
         var includeAdditionalDataProperties = config.IncludeAdditionalData && (schema.AdditionalPropertiesAllowed || schema.AdditionalProperties is not null);
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore, static s => s);
 
-        var newClass = currentNamespace.AddClass(newClassStub).First();
         var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
+        CodeClass newClass;
+        lock (lifecycle)
+        {
+            // Another thread may have added this class while we were creating the stub.
+            if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is CodeClass existingClass)
+                return existingClass;
+            BeforeModelClassPublication?.Invoke();
+            newClass = currentNamespace.AddClass(newClassStub).First();
+        }
         if (!lifecycle.IsPropertiesBuilt() && !lifecycle.IsPropertiesBuildingInProgress())
         {
             try
