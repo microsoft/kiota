@@ -36,6 +36,11 @@ variables:
   IMAGE_NAME: "public/openapi/kiota"
   PREVIEW_BRANCH: "refs/heads/main"
   TAG: "$(Build.BuildId)"
+  # Base URL for the authenticated Azure Artifacts feed (GraphDeveloperExperiences_Public) used to route
+  # package operations (version lookups + NuGet restore) through configured upstream sources instead of
+  # public registries. Defined once here and referenced as $(privateFeedBaseUrl) throughout the pipeline.
+  # NOTE: confirm this against the feed's "Connect to Feed" dialog if the feed/org/project changes.
+  privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
 
 parameters:
   - name: previewBranch
@@ -94,6 +99,17 @@ resources:
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
+    settings: {}
+      # Network isolation policy (currently disabled). The "Permissive" base allows all outbound
+      # connections except a few vetted-malicious endpoints; the "CFSClean" deny policy then blocks the
+      # public package feeds it governs (nuget.org, npmjs, pypi.org, Maven Central, yarnpkg, crates.io),
+      # forcing those restores through the authenticated Azure Artifacts feed. Registries CFSClean does
+      # not cover -- Dart (pub.dev), PHP (Packagist), Ruby (rubygems.org) -- and github.com /
+      # api.github.com stay reachable under Permissive, which the Dart/PHP/Ruby/Go version lookups rely
+      # on. (A "Preferred" base instead of "Permissive" is deny-by-default and would block those
+      # un-upstreamed registries, e.g. pub.dev.) To enable, remove the "{}" above and uncomment the line
+      # below. See https://aka.ms/1espt-networkisolation
+      # networkIsolationPolicy: Permissive,CFSClean
     sdl:
       sourceAnalysisPool:
         name: Azure-Pipelines-1ESPT-ExDShared
@@ -117,9 +133,65 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+                # Persist the ephemeral GitHub App token that the microsoftkiota connection mints for the
+                # checkout so the version-lookup step can reuse it for GitHub's authenticated rate limit.
+                # No PAT is stored anywhere; the token is short-lived and scoped to this job only.
+                persistCredentials: true
 
-              - pwsh: $(Build.SourcesDirectory)/scripts/update-versions.ps1
+              # The it/ integration-test fixtures are not used by this pipeline and their per-language
+              # manifests trigger Component Governance to reach public registries under network isolation.
+              # Remove them right after checkout so no later scan/build sees them.
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
+              # Recover the short-lived GitHub token that persistCredentials wrote to the local git config
+              # (AUTHORIZATION: basic base64(x-access-token:<token>)) and expose it as a masked variable so
+              # update-versions.ps1 can authenticate api.github.com calls (5000/hr vs the shared-IP 60/hr
+              # anonymous limit). Emits an empty value when no credential is present, keeping GitHub lookups
+              # anonymous rather than failing.
+              - pwsh: |
+                  $token = ""
+                  # Resolve the extraheader git actually uses for this repo by matching against its own
+                  # remote URL. --get-urlmatch returns the single best match, so it finds the entry whether
+                  # checkout keyed it to the host or the full repo path, and never decodes a different
+                  # host's (e.g. the Azure Artifacts feed) credential.
+                  $remoteUrl = git -C "$(Build.SourcesDirectory)" remote get-url origin 2>$null
+                  if ([string]::IsNullOrWhiteSpace($remoteUrl)) { $remoteUrl = "https://github.com/" }
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader $remoteUrl 2>$null
+                  # git exits non-zero when no extraheader matches; that is a graceful (anonymous) outcome
+                  # here, so clear it rather than let the task surface it as a step failure.
+                  $global:LASTEXITCODE = 0
+                  if (-not [string]::IsNullOrWhiteSpace($header)) {
+                    try {
+                      $b64 = ($header.Trim() -split '\s+')[-1]
+                      $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
+                    } catch {
+                      Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    }
+                  }
+                  if ([string]::IsNullOrWhiteSpace($token)) {
+                    Write-Host "No GitHub token available; release lookups will use the anonymous rate limit."
+                  }
+                  Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
+                displayName: "Extract GitHub token for release lookups"
+
+              # Route package-version lookups through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
+              # NuGet, npm, PyPI and Maven Central are configured as upstream sources on that feed.
+              # PHP (Packagist), Dart (pub.dev), Go (api.github.com) and Ruby (rubygems.org) have no
+              # Azure Artifacts upstream type, so those lookups remain on public (allow-listed) registries.
+              - pwsh: >
+                  $(Build.SourcesDirectory)/scripts/update-versions.ps1
+                  -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                  -NpmRegistryUrl "$(privateFeedBaseUrl)/npm/registry"
+                  -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
+                  -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
                 displayName: "Update dependencies versions"
+                name: update_versions
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
+                  GITHUB_TOKEN: $(githubToken)
 
               - pwsh: |
                   New-Item -Path $(Build.ArtifactStagingDirectory)/AppSettings -ItemType Directory -Force -Verbose
@@ -191,6 +263,9 @@ extends:
                 clean: true
                 submodules: true
 
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
               - pwsh: |
                   Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
                 displayName: Copy the appsettings.json
@@ -248,7 +323,7 @@ extends:
                   <configuration>
                     <packageSources>
                       <clear />
-                      <add key="GraphDeveloperExperiences_Public" value="https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public/nuget/v3/index.json" />
+                      <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
                     </packageSources>
                   </configuration>
                   "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
@@ -277,9 +352,10 @@ extends:
                   projects: '$(Build.SourcesDirectory)\kiota.slnx'
                   arguments: '--configuration $(BuildConfiguration) --no-build --collect:"XPlat Code Coverage"'
 
-              - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool
+              - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool --configfile "$(Build.SourcesDirectory)/nuget.config"
                 condition: succeededOrFailed()
                 displayName: "Install ReportGenerator"
+                name: install_reportgenerator
 
               - pwsh: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
                 condition: succeeded()
@@ -440,6 +516,8 @@ extends:
                   - checkout: self
                     clean: true
                     submodules: true
+                  - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                    displayName: "Remove unused integration-test fixtures (it/)"
                   - task: UseDotNet@2
                     displayName: "Use .NET 6" # needed for ESRP signing
                     inputs:
@@ -455,7 +533,23 @@ extends:
                     inputs:
                       version: 9.x
 
-                  - script: dotnet tool install --global PowerShell
+                  # On arm64 (Windows) PowerShell Core is not preinstalled, so it is acquired via
+                  # `dotnet tool install`. That restore must flow through the authenticated central feed,
+                  # so both NuGetAuthenticate and a nuget.config have to exist *before* this step. The
+                  # config is authored with cmd rather than pwsh because pwsh is not available yet on
+                  # this host (that is exactly what we are bootstrapping).
+                  - task: NuGetAuthenticate@1
+                    displayName: "Authenticate to Azure Artifacts"
+                  - script: |
+                      set "CFG=$(Build.SourcesDirectory)\nuget.config"
+                      > "%CFG%" echo ^<?xml version="1.0" encoding="utf-8"?^>
+                      >>"%CFG%" echo ^<configuration^>
+                      >>"%CFG%" echo   ^<packageSources^>
+                      >>"%CFG%" echo     ^<clear /^>
+                      >>"%CFG%" echo     ^<add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" /^>
+                      >>"%CFG%" echo   ^</packageSources^>
+                      >>"%CFG%" echo ^</configuration^>
+                      dotnet tool install --global PowerShell --configfile "%CFG%"
                     displayName: "Install PowerShell"
                     condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
                     # powershell is not installed by default on arm64 images
@@ -469,6 +563,18 @@ extends:
 
                   - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
                     displayName: "Set version suffix in csproj for generators"
+
+                  - pwsh: |
+                      @"
+                      <?xml version="1.0" encoding="utf-8"?>
+                      <configuration>
+                        <packageSources>
+                          <clear />
+                          <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
+                        </packageSources>
+                      </configuration>
+                      "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
+                    displayName: 'Create nuget.config (central feed)'
 
                   - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ distribution.architecture }} -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }} --version-suffix "$(versionSuffix)" -f net10.0
                     condition: eq(variables['isPrerelease'], 'true')
@@ -655,6 +761,8 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
                 inputs:
                   version: "22.x"
@@ -664,7 +772,22 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update VSCode extension version-number"
-              - script: npm i -g @vscode/vsce rimraf
+              # Route npm dependency resolution through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry. The .npmrc points
+              # npm at the feed's npm endpoint and npmAuthenticate injects a build-identity token scoped
+              # to that registry, so every subsequent npm command in this job (global tools + workspace
+              # installs) restores from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/vscode/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
+              - script: npm i -g @vscode/vsce rimraf --userconfig $(Build.SourcesDirectory)/vscode/.npmrc
                 displayName: "Install Global dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: |
@@ -774,6 +897,8 @@ extends:
               - checkout: self
                 clean: true
                 submodules: true
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
                 inputs:
                   version: "22.x"
@@ -783,9 +908,25 @@ extends:
                 displayName: "Get Kiota's version-number from .csproj"
               - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
                 displayName: "Update NPM package version-number"
+              # Route npm dependency resolution through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry. The .npmrc points
+              # npm at the feed's npm endpoint and npmAuthenticate injects a build-identity token scoped
+              # to that registry, so every subsequent npm command in this job (global tools + workspace
+              # installs) restores from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/vscode/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
               - script: |
-                  npm i -g rimraf
+                  npm i -g rimraf --userconfig $(Build.SourcesDirectory)/vscode/.npmrc
                 displayName: "Install Global dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
               - script: npm install
                 displayName: "Install package dependencies"
                 workingDirectory: $(Build.SourcesDirectory)/vscode
@@ -830,7 +971,22 @@ extends:
               - task: UseNode@1
                 inputs:
                   version: "22.x"
+              # Route the vsce tool install through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry, so this
+              # release job resolves the global tool from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Pipeline.Workspace)/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Pipeline.Workspace)/.npmrc
               - pwsh: npm i -g @vscode/vsce
+                displayName: "Install vsce (central feed)"
+                workingDirectory: $(Pipeline.Workspace)
               - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - task: AzureCLI@2
@@ -1089,6 +1245,45 @@ extends:
               os: linux
             steps:
               - checkout: self
+                # Persist the ephemeral GitHub App token that the microsoftkiota connection mints for the
+                # checkout so the version-lookup step can reuse it for GitHub's authenticated rate limit.
+                # No PAT is stored anywhere; the token is short-lived and scoped to this job only.
+                persistCredentials: true
+
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
+              # Recover the short-lived GitHub token that persistCredentials wrote to the local git config
+              # (AUTHORIZATION: basic base64(x-access-token:<token>)) and expose it as a masked variable so
+              # update-versions.ps1 can authenticate api.github.com calls (5000/hr vs the shared-IP 60/hr
+              # anonymous limit). Emits an empty value when no credential is present, keeping GitHub lookups
+              # anonymous rather than failing.
+              - pwsh: |
+                  $token = ""
+                  # Resolve the extraheader git actually uses for this repo by matching against its own
+                  # remote URL. --get-urlmatch returns the single best match, so it finds the entry whether
+                  # checkout keyed it to the host or the full repo path, and never decodes a different
+                  # host's (e.g. the Azure Artifacts feed) credential.
+                  $remoteUrl = git -C "$(Build.SourcesDirectory)" remote get-url origin 2>$null
+                  if ([string]::IsNullOrWhiteSpace($remoteUrl)) { $remoteUrl = "https://github.com/" }
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader $remoteUrl 2>$null
+                  # git exits non-zero when no extraheader matches; that is a graceful (anonymous) outcome
+                  # here, so clear it rather than let the task surface it as a step failure.
+                  $global:LASTEXITCODE = 0
+                  if (-not [string]::IsNullOrWhiteSpace($header)) {
+                    try {
+                      $b64 = ($header.Trim() -split '\s+')[-1]
+                      $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
+                    } catch {
+                      Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    }
+                  }
+                  if ([string]::IsNullOrWhiteSpace($token)) {
+                    Write-Host "No GitHub token available; release lookups will use the anonymous rate limit."
+                  }
+                  Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
+                displayName: "Extract GitHub token for release lookups"
 
               - task: AzureCLI@2
                 displayName: "Login to Azure Container Registry"
@@ -1124,9 +1319,18 @@ extends:
                 displayName: "Get Kiota version number"
                 name: getversion
 
-              - pwsh: |
+              # Route package-version lookups through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
+              - pwsh: >
                   ./scripts/update-versions.ps1
+                  -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                  -NpmRegistryUrl "$(privateFeedBaseUrl)/npm/registry"
+                  -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
+                  -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
                 displayName: "Update dependencies versions"
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
+                  GITHUB_TOKEN: $(githubToken)
 
               - script: |
                   docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
