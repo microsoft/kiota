@@ -963,6 +963,14 @@ public sealed class CodeMethodWriterTests : IDisposable
         },
         new object[]
         {
+            new CodeProperty { Name = "fiveHundred", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom, SerializationName = "500" },
+            "/** @var array<string, callable(ParseNode): void> $deserializers */",
+            "$deserializers =",
+            "'500' => fn(ParseNode $n) => $o->setFiveHundred($n->getIntegerValue()),",
+            "return $deserializers;"
+        },
+        new object[]
+        {
             new CodeProperty { Name = "story", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
             "'story' => fn(ParseNode $n) => $o->setStory($n->getBinaryContent()),"
         },
