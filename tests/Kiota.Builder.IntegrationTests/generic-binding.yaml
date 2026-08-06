@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Generic Binding API
+  version: 0.1.0
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: User page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+  /groups:
+    get:
+      operationId: listGroups
+      responses:
+        '200':
+          description: Group page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+  /profiles:
+    get:
+      operationId: listProfiles
+      responses:
+        '200':
+          description: Profile page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/user-profile'
+                $ref: '#/components/schemas/PaginatedTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Group:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+    user-profile:
+      type: object
+      required: [id, displayName]
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+    PaginatedTemplate:
+      $id: https://example.com/schemas/PaginatedTemplate
+      $dynamicAnchor: itemType
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'

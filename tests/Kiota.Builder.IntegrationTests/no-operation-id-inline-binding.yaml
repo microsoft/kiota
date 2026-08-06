@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef No Operation ID Inline Binding API
+  version: 0.1.0
+paths:
+  /shared:
+    get:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $defs:
+                itemType:
+                  $dynamicAnchor: itemType
+                  type: object
+                  properties:
+                    name:
+                      type: string
+              $ref: '#/components/schemas/SharedTemplate'
+      responses:
+        '204':
+          description: No content
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $defs:
+                itemType:
+                  $dynamicAnchor: itemType
+                  type: object
+                  properties:
+                    count:
+                      type: integer
+              $ref: '#/components/schemas/SharedTemplate'
+      responses:
+        '204':
+          description: No content
+components:
+  schemas:
+    SharedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'

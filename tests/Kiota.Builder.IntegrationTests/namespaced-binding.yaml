@@ -1,0 +1,53 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Namespaced Binding API
+  version: 0.1.0
+paths:
+  /v1/users:
+    get:
+      operationId: listV1Users
+      responses:
+        '200':
+          description: V1 user page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/v1.User'
+                $ref: '#/components/schemas/PageTemplate'
+  /v2/users:
+    get:
+      operationId: listV2Users
+      responses:
+        '200':
+          description: V2 user page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/v2.User'
+                $ref: '#/components/schemas/PageTemplate'
+components:
+  schemas:
+    v1.User:
+      type: object
+      properties:
+        legacyId:
+          type: string
+    v2.User:
+      type: object
+      properties:
+        id:
+          type: integer
+    PageTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
