@@ -43,4 +43,4 @@ function Get-UnreleasedEntries {
 $baseEntries = @(Get-UnreleasedEntries -changelogPath $baseChangelogPath)
 $headEntries = @(Get-UnreleasedEntries -changelogPath $headChangelogPath)
 
-return $headEntries.Count -gt $baseEntries.Count
+return ($headEntries | Where-Object { $baseEntries -notcontains $_ }).Count -gt 0
