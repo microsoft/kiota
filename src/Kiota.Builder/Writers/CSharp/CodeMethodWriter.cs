@@ -370,7 +370,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name, StringComparer.Ordinal))
         {
-            writer.WriteLine($"{{ \"{otherProp.WireName.SanitizeDoubleQuote()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            var deserializationCall = GetDeserializationMethodName(otherProp.Type, codeElement);
+            var nullCoalesce = otherProp.IsRequired && conventions.GetTypeString(otherProp.Type, codeElement).EndsWith('?') ? " ?? default" : string.Empty;
+            writer.WriteLine($"{{ \"{otherProp.WireName.SanitizeDoubleQuote()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{deserializationCall}{nullCoalesce}; }} }},");
         }
         writer.CloseBlock("};");
     }

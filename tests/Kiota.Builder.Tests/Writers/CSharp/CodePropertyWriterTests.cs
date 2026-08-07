@@ -271,5 +271,41 @@ public sealed class CodePropertyWriterTests : IDisposable
         // Then
         Assert.Contains("public override string Message { get => Prop1 ?? string.Empty; }", result);
     }
+    [Fact]
+    public void WritesRequiredAttributeOnRequiredCustomProperty()
+    {
+        var requiredProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requiredProp",
+            Kind = CodePropertyKind.Custom,
+            IsRequired = true,
+            Type = new CodeType { Name = TypeName },
+        }).First();
+        writer.Write(requiredProp);
+        var result = tw.ToString();
+        Assert.Contains("[Required]", result);
+    }
+    [Fact]
+    public void DoesNotWriteRequiredAttributeOnNonRequiredCustomProperty()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.DoesNotContain("[Required]", result);
+    }
+    [Fact]
+    public void DoesNotWriteRequiredAttributeOnRequiredQueryParameter()
+    {
+        var requiredParam = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requiredParam",
+            Kind = CodePropertyKind.QueryParameter,
+            IsRequired = true,
+            Type = new CodeType { Name = "string" },
+        }).First();
+        writer.Write(requiredParam);
+        var result = tw.ToString();
+        Assert.DoesNotContain("[Required]", result);
+    }
 }
 

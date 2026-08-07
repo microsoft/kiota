@@ -13,12 +13,17 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
         var propertyType = conventions.GetTypeString(codeElement.Type, codeElement);
+        if (codeElement.IsRequired && propertyType.EndsWith('?'))
+            propertyType = propertyType[..^1];
         var isNullableReferenceType = !propertyType.EndsWith('?')
+                                      && !codeElement.IsRequired
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
+        if (codeElement.IsRequired && codeElement.IsOfKind(CodePropertyKind.Custom))
+            writer.WriteLine("[Required]");
         if (isNullableReferenceType)
         {
             CSharpConventionService.WriteNullableOpening(writer);
