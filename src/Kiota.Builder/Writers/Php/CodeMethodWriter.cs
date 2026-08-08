@@ -689,8 +689,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         writer.WriteLine("$o = $this;");
         if (hasNumericPropertyName)
             writer.WriteLine("/** @var array<string, callable(ParseNode): void> $deserializers */");
+        var deserializers = extendsModelClass ?
+            $"{(hasNumericPropertyName ? "array_replace" : "array_merge")}(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" :
+            " [";
         writer.WriteLines(
-            $"{(hasNumericPropertyName ? "$deserializers =" : "return")} {((extendsModelClass) ? $"array_merge(parent::{method.Name.ToFirstCharacterLowerCase()}(), [" : " [")}");
+            $"{(hasNumericPropertyName ? "$deserializers =" : "return")} {deserializers}");
         writer.IncreaseIndent();
         if (codeProperties.Length != 0)
             codeProperties

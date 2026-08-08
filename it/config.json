@@ -162,18 +162,7 @@
         "Rationale": "Compilation fails only on linux systems (CI) with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7828"
       }
     ],
-    "ExcludePatterns": [
-      {
-        "Language": "php",
-        "Pattern": "/organizations/{organizationId}/apiRequests/overview",
-        "Rationale": "Fails for php with api dated 2026-06-24 - https://github.com/microsoft/kiota/issues/7830"
-      },
-      {
-        "Language": "php",
-        "Pattern": "/networks/{networkId}/clients/{clientId}/splashAuthorizationStatus",
-        "Rationale": "Fails for php with api dated 2026-06-24 (GET and PUT) - https://github.com/microsoft/kiota/issues/7830"
-      }
-    ]
+    "ExcludePatterns": []
   },
   "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json": {
     "Suppressions": [
