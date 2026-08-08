@@ -963,6 +963,14 @@ public sealed class CodeMethodWriterTests : IDisposable
         },
         new object[]
         {
+            new CodeProperty { Name = "fiveHundred", Type = new CodeType { Name = "int32" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom, SerializationName = "500" },
+            "/** @var array<string, callable(ParseNode): void> $deserializers */",
+            "$deserializers =",
+            "'500' => fn(ParseNode $n) => $o->setFiveHundred($n->getIntegerValue()),",
+            "return $deserializers;"
+        },
+        new object[]
+        {
             new CodeProperty { Name = "story", Type = new CodeType { Name = "binary" }, Access = AccessModifier.Private, Kind = CodePropertyKind.Custom },
             "'story' => fn(ParseNode $n) => $o->setStory($n->getBinaryContent()),"
         },
@@ -1216,6 +1224,41 @@ public sealed class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(deserializerMethod, languageWriter);
         var result = stringWriter.ToString();
         Assert.Contains("array_merge(parent::getFieldDeserializers()", result);
+    }
+
+    [Fact]
+    public async Task WriteDeserializerPreservesNumericKeysWhenHasParentAsync()
+    {
+        setup(true);
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "fiveHundred",
+            SerializationName = "500",
+            Access = AccessModifier.Private,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "int32" }
+        });
+        var deserializerMethod = new CodeMethod
+        {
+            Name = "getFieldDeserializers",
+            Kind = CodeMethodKind.Deserializer,
+            ReturnType = new CodeType
+            {
+                IsNullable = false,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                Name = "array"
+            }
+        };
+        parentClass.AddMethod(deserializerMethod);
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+        languageWriter.Write(deserializerMethod);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("$deserializers = array_replace(parent::getFieldDeserializers(), [", result);
+        Assert.Contains("'500' => fn(ParseNode $n) => $o->setFiveHundred($n->getIntegerValue()),", result);
+        Assert.DoesNotContain("array_merge", result);
     }
 
     [Fact]
