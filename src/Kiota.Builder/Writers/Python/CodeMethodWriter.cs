@@ -577,9 +577,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             foreach (var primaryErrorMessageProperty in customProperties.Where(static x => x.IsPrimaryErrorMessage))
             {
-                writer.StartBlock($"def deserialize_{primaryErrorMessageProperty.Name}(n: ParseNode) -> None:");
-                writer.WriteLine($"self.{primaryErrorMessageProperty.Name} = n.{GetDeserializationMethodName(primaryErrorMessageProperty.Type, codeElement, parentClass)}");
-                writer.WriteLine($"self.message = '' if self.{primaryErrorMessageProperty.Name} is None else str(self.{primaryErrorMessageProperty.Name})");
+                var deserializerName = $"deserialize_{primaryErrorMessageProperty.Name.CleanupSymbolName()}";
+                writer.StartBlock($"def {deserializerName}(n: ParseNode) -> None:");
+                writer.WriteLine($"value = n.{GetDeserializationMethodName(primaryErrorMessageProperty.Type, codeElement, parentClass)}");
+                writer.WriteLine($"setattr(self, '{primaryErrorMessageProperty.Name.SanitizeSingleQuote()}', value)");
+                writer.WriteLine("self.message = '' if value is None else str(value)");
                 writer.CloseBlock(string.Empty);
             }
         }
@@ -587,7 +589,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         foreach (var otherProp in customProperties)
         {
             var deserializer = parentClass.IsErrorDefinition && otherProp.IsPrimaryErrorMessage ?
-                $"deserialize_{otherProp.Name}" :
+                $"deserialize_{otherProp.Name.CleanupSymbolName()}" :
                 $"lambda n : setattr(self, '{otherProp.Name.SanitizeSingleQuote()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)})";
             writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": {deserializer},");
         }
