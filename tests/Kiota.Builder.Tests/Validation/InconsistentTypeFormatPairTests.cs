@@ -126,6 +126,26 @@ paths:
         var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
         Assert.Empty(diagnostic.Warnings);
     }
+    [Fact]
+    public async Task DoesntAddAWarningForComponentHeaders()
+    {
+        var documentTxt =
+    """
+openapi: 3.0.1
+info:
+  title: Sample API
+  version: 1.0.0
+paths: {}
+components:
+  headers:
+    Location:
+      schema:
+        type: string
+        format: int32
+""";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
     private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
     {
         var rule = new InconsistentTypeFormatPair();

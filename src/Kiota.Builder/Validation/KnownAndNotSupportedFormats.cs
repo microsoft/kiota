@@ -25,8 +25,9 @@ public class KnownAndNotSupportedFormats : ValidationRule<IOpenApiSchema>
     };
     public KnownAndNotSupportedFormats() : base(nameof(KnownAndNotSupportedFormats), static (context, schema) =>
     {
-        if (!IsHeaderSchema(context.PathString) &&
-            !string.IsNullOrEmpty(schema.Format) && knownAndUnsupportedFormats.Contains(schema.Format))
+        if (!string.IsNullOrEmpty(schema.Format) &&
+            knownAndUnsupportedFormats.Contains(schema.Format) &&
+            !IsHeaderSchema(context.PathString))
             context.CreateWarning(nameof(KnownAndNotSupportedFormats), $"The format {schema.Format} is not supported by Kiota and the string type will be used.");
     })
     {
