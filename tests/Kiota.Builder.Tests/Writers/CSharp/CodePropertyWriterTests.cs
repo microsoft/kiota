@@ -271,5 +271,43 @@ public sealed class CodePropertyWriterTests : IDisposable
         // Then
         Assert.Contains("public override string Message { get => Prop1 ?? string.Empty; }", result);
     }
-}
+    [Fact]
+    public void WritesMessageOverrideOnPrimaryInCollection()
+    {
+        parentClass.IsErrorDefinition = true;
+        var processResult = rootNamespace.AddClass(new CodeClass
+        {
+            Name = "processResult",
+            Kind = CodeClassKind.Model,
+        }).First();
+        processResult.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType { Name = "string" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "processResults",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = processResult.Name,
+                TypeDefinition = processResult,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        var overrideProperty = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "Message",
+            Kind = CodePropertyKind.ErrorMessageOverride,
+            Type = new CodeType { Name = "string" },
+        }).First();
 
+        writer.Write(overrideProperty);
+        var result = tw.ToString();
+
+        Assert.Contains("public override string Message { get => ProcessResults?.FirstOrDefault()?.Message ?? string.Empty; }", result);
+    }
+}
