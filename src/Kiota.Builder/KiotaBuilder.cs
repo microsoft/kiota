@@ -2188,7 +2188,7 @@ public partial class KiotaBuilder
                 suffix += string.IsNullOrEmpty(operation?.OperationId) && !string.IsNullOrEmpty(suffixForInlineSchema) ?
                     suffixForInlineSchema.CleanupSymbolName().ToFirstCharacterUpperCase() :
                     RequestBodySuffix;
-            else if (response is not null)
+            else if (response is not null || (string.IsNullOrEmpty(operation?.OperationId) && !string.IsNullOrEmpty(suffixForInlineSchema)))
                 suffix += string.IsNullOrEmpty(suffixForInlineSchema) ? ResponseSuffix : suffixForInlineSchema.CleanupSymbolName().ToFirstCharacterUpperCase();
         }
         return suffix.Length > 0 ? suffix : null;

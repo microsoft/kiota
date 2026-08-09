@@ -19,6 +19,19 @@ paths:
                       type: string
               $ref: '#/components/schemas/SharedTemplate'
       responses:
+        '200':
+          description: GET response
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    properties:
+                      label:
+                        type: string
+                $ref: '#/components/schemas/SharedTemplate'
         '204':
           description: No content
     post:
@@ -36,6 +49,19 @@ paths:
                       type: integer
               $ref: '#/components/schemas/SharedTemplate'
       responses:
+        '200':
+          description: POST response
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                $ref: '#/components/schemas/SharedTemplate'
         '204':
           description: No content
 components:

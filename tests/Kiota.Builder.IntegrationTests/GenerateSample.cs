@@ -820,6 +820,9 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
         Assert.Contains("class SharedTemplateSharedGetRequestBody", allModelText, StringComparison.Ordinal);
         Assert.Contains("class SharedTemplateSharedPostRequestBody", allModelText, StringComparison.Ordinal);
+        // Distinct 2xx response bindings on the same path without operationIds must not collide.
+        Assert.Contains("class SharedTemplateSharedGetResponse", allModelText, StringComparison.Ordinal);
+        Assert.Contains("class SharedTemplateSharedPostResponse", allModelText, StringComparison.Ordinal);
     }
 
     [Fact]
