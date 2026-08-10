@@ -526,7 +526,7 @@
     "@types/sinon": "^22.0.0",
     "@types/vscode": "^1.125.0",
     "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0",
+    "@vscode/test-electron": "^3.1.0",
     "chai": "^6.2.2",
     "mocha": "^11.8.0",
     "sinon": "^22.1.0",
