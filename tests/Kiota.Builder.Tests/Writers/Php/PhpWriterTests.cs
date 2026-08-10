@@ -32,6 +32,19 @@ public sealed class PhpWriterTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => new PhpWriter(null, "graph"));
         Assert.Throws<ArgumentNullException>(() => new PhpWriter("./", null));
     }
+    [Theory]
+    [InlineData("**//", "** //")] // deletion would re-form "*/"; replacement must not
+    [InlineData("**\\/", "** //")] // backslash normalization must not re-form "*/"
+    [InlineData("*/", "* /")]
+    [InlineData("/*", "//*")]
+    [InlineData("legit /* nested */ text", "legit //* nested * / text")]
+    [InlineData("normal description", "normal description")]
+    public void RemoveInvalidDescriptionCharactersNeutralizesCommentBreakout(string input, string expected)
+    {
+        var result = PhpConventionService.RemoveInvalidDescriptionCharacters(input);
+        Assert.Equal(expected, result);
+        Assert.DoesNotContain("*/", result, StringComparison.Ordinal);
+    }
     public void Dispose()
     {
         tw?.Dispose();

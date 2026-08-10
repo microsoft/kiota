@@ -154,7 +154,7 @@ public partial class JavaConventionService : CommonLanguageConventionService
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ?
             originalDescription :
-            nonAsciiReplaceRegex().Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase).Replace("*/", string.Empty, StringComparison.OrdinalIgnoreCase), string.Empty).CleanupXMLString();
+            nonAsciiReplaceRegex().Replace(originalDescription.Replace("\\", "/", StringComparison.OrdinalIgnoreCase), string.Empty).NeutralizeBlockCommentDelimiters().CleanupXMLString();
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
