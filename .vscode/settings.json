@@ -45,7 +45,6 @@
     "pwsh",
     "samespaceprefix",
     "serializers",
-    "sonarcloud",
     "Xunit"
   ],
   "java.configuration.updateBuildConfiguration": "automatic",
