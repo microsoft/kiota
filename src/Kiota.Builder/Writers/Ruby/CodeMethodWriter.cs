@@ -18,6 +18,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+        if (parentClass.Properties.Any(static x => x.IsOfKind(CodePropertyKind.QueryParameter, CodePropertyKind.QueryParameters, CodePropertyKind.Headers, CodePropertyKind.Options)))
+            writer.WriteLine();
         WriteMethodDocumentation(codeElement, writer);
         var inherits = parentClass.StartBlock.Inherits != null;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);

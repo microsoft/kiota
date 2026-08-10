@@ -30,7 +30,6 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
                 writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
-                writer.WriteLine();
                 break;
             default:
                 writer.WriteLine($"@{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}");
