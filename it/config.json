@@ -3,13 +3,7 @@
     "MockServerITFolder": "basic"
   },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
-    "MockServerITFolder": "query-params",
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/59" 
-      }
-    ]
+    "MockServerITFolder": "query-params"
   },
   "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
     "MockServerITFolder": "discriminator",

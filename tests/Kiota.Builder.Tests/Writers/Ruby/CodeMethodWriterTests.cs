@@ -1335,6 +1335,42 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("else", result);
     }
     [Fact]
+    public void WritesNameMapperMethodWithWhenAtSameLevelAsCase()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24select",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "originalName",
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        var lines = result.Split(Environment.NewLine);
+        var caseLine = Array.Find(lines, static l => l.TrimStart().StartsWith("case", StringComparison.Ordinal));
+        var whenLine = Array.Find(lines, static l => l.TrimStart().StartsWith("when", StringComparison.Ordinal));
+        Assert.NotNull(caseLine);
+        Assert.NotNull(whenLine);
+        var caseIndent = caseLine.Length - caseLine.TrimStart().Length;
+        var whenIndent = whenLine.Length - whenLine.TrimStart().Length;
+        Assert.Equal(caseIndent, whenIndent);
+    }
+    [Fact]
     public void EscapesNameMapperMethodSerializationNames()
     {
         setup();
