@@ -129,6 +129,19 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
     }
     [Fact]
+    public void WritesAccessedPropertyWithTrailingEmptyLine()
+    {
+        emptyProperty.Kind = CodePropertyKind.QueryParameter;
+        writer.Write(emptyProperty);
+        var result = tw.ToString();
+        Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
+        var lines = result.Split(Environment.NewLine);
+        var attrLine = Array.FindIndex(lines, static l => l.Contains("attr_accessor"));
+        Assert.NotEqual(-1, attrLine);
+        Assert.True(attrLine + 1 < lines.Length, "Expected a line after attr_accessor");
+        Assert.Equal(string.Empty, lines[attrLine + 1].Trim());
+    }
+    [Fact]
     public void WritesCustomProperty()
     {
         property.Kind = CodePropertyKind.Custom;
