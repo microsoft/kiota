@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a code injection vulnerability in C# doc comments via unescaped newlines. [#7831](https://github.com/microsoft/kiota/pull/7831)
 - Fixed a code injection vulnerability in PHP generation by escaping `$` in double-quoted string literals. [#7863](https://github.com/microsoft/kiota/pull/7863)
 - Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths. [#7884](https://github.com/microsoft/kiota/pull/7884)
+- Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace. [#7885](https://github.com/microsoft/kiota/pull/7885)
 
 ## [1.32.3] - 2026-06-24
 

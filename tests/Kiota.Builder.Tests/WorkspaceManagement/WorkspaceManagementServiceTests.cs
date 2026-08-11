@@ -47,7 +47,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
-            OutputPath = tempPath,
+            OutputPath = Path.Combine(tempPath, "client"),
             OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
             CleanOutput = cleanOutput,
         };
@@ -65,11 +65,12 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
-            OutputPath = tempPath,
+            OutputPath = Path.Combine(tempPath, "client"),
             OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
             ApiRootUrl = "https://graph.microsoft.com",
         };
         Directory.CreateDirectory(tempPath);
+        Directory.CreateDirectory(configuration.OutputPath);
         await service.UpdateStateFromConfigurationAsync(
             configuration,
             "foo",
@@ -89,7 +90,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
-            OutputPath = tempPath,
+            OutputPath = Path.Combine(tempPath, "client"),
             OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
             ApiRootUrl = "https://graph.microsoft.com",
         };
@@ -114,7 +115,7 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var configuration = new GenerationConfiguration
         {
             ClientClassName = "clientName",
-            OutputPath = tempPath,
+            OutputPath = Path.Combine(tempPath, "plugin"),
             OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
             ApiRootUrl = "https://graph.microsoft.com",
             PluginTypes = [PluginType.APIManifest],
