@@ -64,7 +64,7 @@ dotnet run -c Release --project src/kiota/kiota.csproj -- <arguments you would p
 3. Make your changes and commit them: `git commit -am 'Add some feature'`
     - Include tests that cover your changes.
     - Update the documentation to reflect your changes, where appropriate.
-    - Add an entry to the `CHANGELOG.md` file describing your changes if appropriate.
+    - Add an entry to the `CHANGELOG.md` file under `## [Unreleased]` if appropriate: bug fixes go under `### Changed`, and new features go under `### Added`.
 4. Push your changes to your fork: `git push origin my-new-feature`
 5. Create a pull request from your fork to the main repository. `gh pr create` (with the GitHub CLI)
 

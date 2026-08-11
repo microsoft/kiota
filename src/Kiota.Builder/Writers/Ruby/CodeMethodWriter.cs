@@ -18,6 +18,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
+        if (parentClass.Properties.Any(static x => x.IsOfKind(CodePropertyKind.QueryParameter, CodePropertyKind.QueryParameters, CodePropertyKind.Headers, CodePropertyKind.Options)))
+            writer.WriteLine();
         WriteMethodDocumentation(codeElement, writer);
         var inherits = parentClass.StartBlock.Inherits != null;
         var requestBodyParam = codeElement.Parameters.OfKind(CodeParameterKind.RequestBody);
@@ -93,14 +95,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
             writer.StartBlock($"unless {NodeVarName}.nil? then");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
-            writer.StartBlock($"case {DiscriminatorMappingVarName}");
+            writer.StartBlock($"case {DiscriminatorMappingVarName}", false);
             foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
             {
                 writer.StartBlock($"when \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedType.Key)}\"");
                 writer.WriteLine($"return {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}.new");
                 writer.DecreaseIndent();
             }
-            writer.CloseBlock("end");
+            writer.CloseBlock("end", false);
             writer.CloseBlock("end");
         }
         writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new");
@@ -119,7 +121,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var parameter = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter));
         if (parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
         var parameterName = parameter.Name.ToSnakeCase();
-        writer.StartBlock($"case {parameterName}");
+        writer.StartBlock($"case {parameterName}", false);
         var escapedProperties = parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
         foreach (var escapedProperty in escapedProperties)
         {
@@ -130,7 +132,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         writer.StartBlock("else");
         writer.WriteLine($"return {parameterName}");
         writer.DecreaseIndent();
-        writer.CloseBlock("end");
+        writer.CloseBlock("end", false);
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {

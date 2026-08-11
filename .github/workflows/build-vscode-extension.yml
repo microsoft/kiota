@@ -11,19 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  checksecret:
-    name: check if SONAR_TOKEN is set in github secrets
-    runs-on: ubuntu-latest
-    outputs:
-      is_SONAR_TOKEN_set: ${{ steps.checksecret_job.outputs.is_SONAR_TOKEN_set }}
-    steps:
-      - name: Check whether unity activation requests should be done
-        id: checksecret_job
-        run: |
-          echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
-
   test_and_generate_binaries:
-    needs: [checksecret]
     strategy:
       fail-fast: false
       matrix:
@@ -95,16 +83,6 @@ jobs:
           fi
         shell: bash
         working-directory: vscode
-
-      - name: Run sonar cloud analysis
-        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
-        uses: SonarSource/sonarqube-scan-action@v8
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: vscode
-          args: >
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

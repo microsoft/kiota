@@ -365,6 +365,20 @@ public static partial class StringExtensions
         => SecurityElement.Escape(original) ?? string.Empty;
 
     /// <summary>
+    /// Neutralizes block comment delimiters (<c>/*</c> and <c>*/</c>) in schema-derived text so it
+    /// cannot break out of a generated block/doc comment. The delimiters are <b>replaced</b> (not
+    /// deleted): deleting a two-character sequence lets the surrounding characters join back into a
+    /// new delimiter (e.g. <c>**//</c> collapses to <c>*/</c>). Replacing with a spaced variant
+    /// guarantees no residual <c>*/</c> can re-form.
+    /// </summary>
+    /// <param name="original">The original string.</param>
+    /// <returns>The string with block comment delimiters neutralized.</returns>
+    public static string NeutralizeBlockCommentDelimiters(this string? original)
+        => string.IsNullOrEmpty(original) ? string.Empty :
+            original.Replace("/*", "//*", StringComparison.Ordinal)
+                .Replace("*/", "* /", StringComparison.Ordinal);
+
+    /// <summary>
     /// Checks if 2 strings are equal, case insensitive
     /// </summary>
     /// <param name="a">The first or current string</param>
