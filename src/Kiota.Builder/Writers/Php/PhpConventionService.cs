@@ -174,7 +174,11 @@ public class PhpConventionService : CommonLanguageConventionService
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
             if (documentation.ExternalDocumentationAvailable)
-                writer.WriteLine($"{DocCommentPrefix}@link {documentation.DocumentationLink} {documentation.DocumentationLabel}");
+            {
+                var documentationLink = RemoveInvalidDescriptionCharacters(documentation.DocumentationLink?.ToString() ?? string.Empty);
+                var documentationLabel = RemoveInvalidDescriptionCharacters(documentation.DocumentationLabel);
+                writer.WriteLine($"{DocCommentPrefix}@link {documentationLink} {documentationLabel}");
+            }
             writer.WriteLine(DocCommentEnd);
         }
 
@@ -262,7 +266,7 @@ public class PhpConventionService : CommonLanguageConventionService
         writer.WriteLine($"${TempDictionaryVarName} = {pathParametersReference};");
         if (parameters.Length != 0)
             writer.WriteLines(parameters.Select(p =>
-                $"${TempDictionaryVarName}['{p.Item2}'] = {p.Item3};"
+                $"${TempDictionaryVarName}['{p.Item2.SanitizeSingleQuote()}'] = {p.Item3};"
             ));
     }
 
