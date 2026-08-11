@@ -24,7 +24,9 @@ public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityCompare
         if (x is null || y is null) return object.Equals(x, y);
         return _stringComparer.Equals(x.DescriptionLocation, y.DescriptionLocation)
                && _stringComparer.Equals(x.OutputPath, y.OutputPath)
-               && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns);
+               && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns)
+               && _stringIEnumerableDeepComparer.Equals(x.ExcludePatterns, y.ExcludePatterns)
+               && _stringIEnumerableDeepComparer.Equals(x.AllowedExternalOrigins, y.AllowedExternalOrigins);
     }
 
     public virtual int GetHashCode([DisallowNull] T obj)
@@ -35,6 +37,7 @@ public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityCompare
         hash.Add(obj.OutputPath, _stringComparer);
         hash.Add(obj.IncludePatterns, _stringIEnumerableDeepComparer);
         hash.Add(obj.ExcludePatterns, _stringIEnumerableDeepComparer);
+        hash.Add(obj.AllowedExternalOrigins, _stringIEnumerableDeepComparer);
         return hash.ToHashCode();
     }
 }

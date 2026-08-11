@@ -73,6 +73,10 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -104,6 +108,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, clearCache, disableSSLValidation, cleanOutput, output,
@@ -150,6 +155,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         if (structuredMimeTypes.Count != 0)
             Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                             .Select(static x => x.TrimQuotes()));
+        AssignAllowedExternalOrigins(allowedExternalOrigins);
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));

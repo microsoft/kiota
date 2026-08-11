@@ -12,9 +12,11 @@ public class KiotaLockTests
         var kiotaLock = new KiotaLock
         {
             DescriptionLocation = "description",
+            AllowedExternalOrigins = ["https://contoso.com/*"],
         };
         var generationConfiguration = new GenerationConfiguration();
         kiotaLock.UpdateGenerationConfigurationFromLock(generationConfiguration);
         Assert.Equal(kiotaLock.DescriptionLocation, generationConfiguration.OpenAPIFilePath);
+        Assert.Equal(kiotaLock.AllowedExternalOrigins, generationConfiguration.AllowedExternalOrigins);
     }
 }

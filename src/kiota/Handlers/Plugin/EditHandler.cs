@@ -61,6 +61,10 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -82,6 +86,7 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, pluginTypes, pluginAuthType, pluginAuthRefId0, skipGeneration, output, includePatterns, excludePatterns,
@@ -135,6 +140,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (pluginTypes is { Count: > 0 })
                     Configuration.Generation.PluginTypes = pluginTypes.ToHashSet();
+                AssignAllowedExternalOrigins(allowedExternalOrigins);
                 Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
                 Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
                 DefaultSerializersAndDeserializers(Configuration.Generation);

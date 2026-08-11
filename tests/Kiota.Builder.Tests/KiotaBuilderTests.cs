@@ -120,7 +120,7 @@ components:
           type: string
 """);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePathReferrer, Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePathReferrer, Serializers = ["none"], Deserializers = ["none"], AllowedExternalOrigins = [tempFilePathReferee] }, _httpClient);
         await using var fs = new FileStream(tempFilePathReferrer, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs);
         var node = builder.CreateUriSpace(document);

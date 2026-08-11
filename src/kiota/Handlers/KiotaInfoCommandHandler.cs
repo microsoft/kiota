@@ -55,6 +55,10 @@ internal class
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -75,6 +79,7 @@ internal class
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, searchTerm0, openapi0, version0, language, clearCache,
@@ -119,6 +124,7 @@ internal class
             Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(openapi);
             Configuration.Generation.ClearCache = clearCache;
             Configuration.Generation.Language = language.Value;
+            AssignAllowedExternalOrigins(allowedExternalOrigins);
 
             var instructions = Configuration.Languages;
             if (!string.IsNullOrEmpty(openapi))
