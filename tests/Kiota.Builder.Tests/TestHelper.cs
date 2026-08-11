@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Tests;
+
 public static class TestHelper
 {
     public static CodeClass CreateModelClassInModelsNamespace(GenerationConfiguration config, CodeNamespace codeSpace, string className = "model", bool withInheritance = false)

@@ -8,6 +8,7 @@ using Kiota.Builder.Refiners;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Refiners;
+
 public class JavaLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();

@@ -7,6 +7,7 @@ using Kiota.Builder.Extensions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
+
 public class CodeMethodTests
 {
     [Fact]

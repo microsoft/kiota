@@ -2,6 +2,7 @@
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Java;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConventionService>
 {
     public CodePropertyWriter(JavaConventionService conventionService) : base(conventionService) { }

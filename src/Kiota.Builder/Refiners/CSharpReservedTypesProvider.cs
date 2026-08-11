@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners;
+
 public class CSharpReservedTypesProvider : IReservedNamesProvider
 {
     private readonly Lazy<HashSet<string>> _reservedNames = new(static () =>

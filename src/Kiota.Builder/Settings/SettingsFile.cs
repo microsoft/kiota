@@ -2,6 +2,7 @@
 using Kiota.Builder.Configuration;
 
 namespace Kiota.Builder.Settings;
+
 public class SettingsFile
 {
     [JsonPropertyName("rest-client.environmentVariables")]

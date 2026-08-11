@@ -1,6 +1,7 @@
 ﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Tests;
+
 public static class CodeDomExtensions
 {
     public static void AddBackingStoreProperty(this CodeClass codeClass)

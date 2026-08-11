@@ -11,6 +11,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
+
 public sealed class OpenApiAiReasoningInstructionsExtensionTest : IDisposable
 {
     private readonly HttpClient _httpClient = new();

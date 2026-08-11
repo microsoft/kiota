@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class PythonConventionService : CommonLanguageConventionService
 {
     public override string StreamTypeName => "bytes";

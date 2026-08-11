@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Kiota.Builder.Extensions;
+
 public static partial class StringExtensions
 {
     private const int MaxStackLimit = 1024;

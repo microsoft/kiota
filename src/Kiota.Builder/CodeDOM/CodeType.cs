@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
+
 public class CodeType : CodeTypeBase, ICloneable
 {
     public override string Name

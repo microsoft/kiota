@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class CodeInterfaceDeclarationWriter : BaseElementWriter<InterfaceDeclaration, TypeScriptConventionService>
 {
     private readonly CodeUsingWriter _codeUsingWriter;

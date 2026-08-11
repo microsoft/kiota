@@ -6,6 +6,7 @@ using Kiota.Builder.OrderComparers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OrderComparers;
+
 public class CodeElementComparerTests
 {
     [Fact]

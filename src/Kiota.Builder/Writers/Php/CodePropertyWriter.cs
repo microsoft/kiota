@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionService>
 {
     public CodePropertyWriter(PhpConventionService conventionService) : base(conventionService) { }

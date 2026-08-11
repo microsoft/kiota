@@ -5,6 +5,7 @@ using Kiota.Builder.Writers.Dart;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Dart;
+
 public class DartWriterTests
 {
     [Fact]

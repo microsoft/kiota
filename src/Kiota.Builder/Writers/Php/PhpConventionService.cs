@@ -7,6 +7,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Php;
+
 public class PhpConventionService : CommonLanguageConventionService
 {
     public override string TempDictionaryVarName => "urlTplParams";

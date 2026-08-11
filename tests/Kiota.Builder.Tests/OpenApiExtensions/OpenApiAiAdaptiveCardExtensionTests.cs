@@ -12,6 +12,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.OpenApiExtensions;
+
 public sealed class OpenApiAiAdaptiveCardExtensionTest : IDisposable
 {
     private readonly HttpClient _httpClient = new();

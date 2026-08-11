@@ -3,6 +3,7 @@
 using Xunit;
 
 namespace Kiota.Builder.Tests.Extensions;
+
 public class StringExtensionsTests
 {
     [Fact]

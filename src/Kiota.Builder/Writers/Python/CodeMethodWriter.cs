@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionService>
 {
     private readonly CodeUsingWriter _codeUsingWriter;
@@ -480,17 +481,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 if (!(codeElement.AccessedProperty?.Type?.IsNullable ?? true) &&
                     !(codeElement.AccessedProperty?.ReadOnly ?? true) &&
                     !string.IsNullOrEmpty(codeElement.AccessedProperty?.DefaultValue))
-            {
-                writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement, true, writer)} = self.{backingStore.NamePrefix}{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\")",
-                    "if not value:");
-                writer.IncreaseIndent();
-                writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()}",
-                    $"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name} = value");
-                writer.DecreaseIndent();
-                writer.WriteLines("return value");
-            }
-            else
-                writer.WriteLine($"return self.{backingStore.NamePrefix}{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\")");
+                {
+                    writer.WriteLines($"value: {conventions.GetTypeString(codeElement.AccessedProperty.Type, codeElement, true, writer)} = self.{backingStore.NamePrefix}{backingStore.Name}.get(\"{codeElement.AccessedProperty.Name}\")",
+                        "if not value:");
+                    writer.IncreaseIndent();
+                    writer.WriteLines($"value = {codeElement.AccessedProperty.DefaultValue.SanitizeQuotedStringLiteral()}",
+                        $"self.{codeElement.AccessedProperty?.NamePrefix}{codeElement.AccessedProperty?.Name} = value");
+                    writer.DecreaseIndent();
+                    writer.WriteLines("return value");
+                }
+                else
+                    writer.WriteLine($"return self.{backingStore.NamePrefix}{backingStore.Name}.get(\"{codeElement.AccessedProperty?.Name}\")");
             writer.CloseBlock(string.Empty);
         }
         else

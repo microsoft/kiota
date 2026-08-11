@@ -9,6 +9,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Python;
+
 public sealed class CodeMethodWriterTests : IDisposable
 {
     private const string DefaultPath = "./";

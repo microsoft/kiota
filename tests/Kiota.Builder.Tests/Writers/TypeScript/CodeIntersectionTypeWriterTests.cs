@@ -5,6 +5,7 @@ using Moq;
 using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests;
+
 public sealed class CodeIntersectionTypeWriterTests : IDisposable
 {
     private const string DefaultPath = "./";

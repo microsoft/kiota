@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace kiota.Handlers.Plugin;
+
 internal class RemoveHandler : BaseKiotaCommandHandler
 {
     private readonly KeyValuePair<string, object?>[] _commonTags =

@@ -1,6 +1,7 @@
 ﻿using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers;
+
 public interface ILanguageConventionService
 {
     string GetAccessModifier(AccessModifier access);

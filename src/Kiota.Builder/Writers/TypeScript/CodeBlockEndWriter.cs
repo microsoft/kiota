@@ -2,6 +2,7 @@
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, TypeScriptConventionService>
 {
     public CodeBlockEndWriter(TypeScriptConventionService conventionService) : base(conventionService)

@@ -5,6 +5,7 @@ using Kiota.Builder.WorkspaceManagement;
 using Xunit;
 
 namespace Kiota.Builder.Tests.WorkspaceManagement;
+
 public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
 {
     [Fact]

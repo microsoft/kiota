@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
+
 public abstract class CodeTypeBase : CodeTerminal, ICloneable
 {
     public enum CodeTypeCollectionKind

@@ -6,6 +6,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.PathSegmenters;
+
 public abstract class CommonPathSegmenter : IPathSegmenter
 {
     protected CommonPathSegmenter(string rootPath, string clientNamespaceName)

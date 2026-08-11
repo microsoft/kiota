@@ -5,6 +5,7 @@ using Kiota.Builder.Writers.CSharp;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
+
 public class CSharpWriterTests
 {
     [Fact]

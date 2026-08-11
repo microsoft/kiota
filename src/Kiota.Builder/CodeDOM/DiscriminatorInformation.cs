@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
+
 public class DiscriminatorInformation : CodeElement, ICloneable
 {
     private ConcurrentDictionary<string, CodeType> discriminatorMappings = new(StringComparer.OrdinalIgnoreCase);

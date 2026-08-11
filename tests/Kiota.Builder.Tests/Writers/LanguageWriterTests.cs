@@ -10,6 +10,7 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers;
+
 public class LanguageWriterTests
 {
     private const string DefaultPath = "./";

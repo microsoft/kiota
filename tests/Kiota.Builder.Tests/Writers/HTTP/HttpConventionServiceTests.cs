@@ -3,6 +3,7 @@ using Kiota.Builder.Writers.Http;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Http;
+
 public sealed class HttpConventionServiceTest
 {
 

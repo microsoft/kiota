@@ -5,6 +5,7 @@ using kiota.Rpc;
 using Nerdbank.Streams;
 using StreamJsonRpc;
 namespace kiota.Handlers;
+
 internal class KiotaRpcCommandHandler : ICommandHandler
 {
     public required Option<RpcMode> ModeOption

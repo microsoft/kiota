@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
+
 public static class GoNamespaceExtensions
 {
     public static string GetLastNamespaceSegment(this string nsName)

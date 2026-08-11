@@ -3,6 +3,7 @@
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers;
+
 public abstract class BaseElementWriter<TElement, TConventionsService> : ICodeElementWriter<TElement> where TElement : CodeElement where TConventionsService : ILanguageConventionService
 {
     protected BaseElementWriter(TConventionsService conventionService)

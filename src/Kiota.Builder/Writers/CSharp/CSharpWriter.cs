@@ -1,6 +1,7 @@
 ﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CSharpWriter : LanguageWriter
 {
     public CSharpWriter(string rootPath, string clientNamespaceName)

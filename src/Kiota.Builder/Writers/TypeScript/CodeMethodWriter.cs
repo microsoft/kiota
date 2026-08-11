@@ -7,6 +7,7 @@ using Kiota.Builder.OrderComparers;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class CodeMethodWriter(TypeScriptConventionService conventionService) : BaseElementWriter<CodeMethod, TypeScriptConventionService>(conventionService)
 {
     public override void WriteCodeElement(CodeMethod codeElement, LanguageWriter writer)

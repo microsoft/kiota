@@ -5,6 +5,7 @@ using System.Linq;
 using Kiota.Builder.Lock;
 
 namespace Kiota.Builder.WorkspaceManagement;
+
 public abstract class BaseApiConsumerConfigurationComparer<T> : IEqualityComparer<T> where T : BaseApiConsumerConfiguration
 {
     private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;

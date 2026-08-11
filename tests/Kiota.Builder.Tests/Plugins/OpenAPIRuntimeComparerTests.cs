@@ -4,6 +4,7 @@ using Microsoft.DeclarativeAgents.Manifest;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Plugins;
+
 public class OpenAPIRuntimeComparerTests
 {
     private readonly OpenAPIRuntimeComparer _comparer = new();

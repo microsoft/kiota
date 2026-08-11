@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Refiners;
+
 public class CodeUsingDeclarationNameComparer(StringComparer? stringComparer = null) : IEqualityComparer<CodeUsing>
 {
     private readonly StringComparer _stringComparer = stringComparer ?? StringComparer.OrdinalIgnoreCase;

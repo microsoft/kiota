@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder;
+
 public class StructuralPropertiesReservedNameProvider : IReservedNamesProvider
 {
     private readonly Lazy<HashSet<string>> _reservedNames = new(static () => new(StringComparer.OrdinalIgnoreCase)

@@ -11,6 +11,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
+
 public class CodePropertyWriterTests
 {
     private const string DefaultPath = "./";

@@ -3,6 +3,7 @@ using kiota.Handlers.Client;
 using Kiota.Builder.Configuration;
 
 namespace kiota;
+
 public static class KiotaClientCommands
 {
     public static Command GetClientNodeCommand()

@@ -6,6 +6,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionService>
 {
     public CodeMethodWriter(CSharpConventionService conventionService) : base(conventionService)

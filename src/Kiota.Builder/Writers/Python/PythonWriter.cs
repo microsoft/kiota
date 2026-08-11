@@ -1,6 +1,7 @@
 ﻿using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class PythonWriter : LanguageWriter
 {
     public PythonWriter(string rootPath, string clientNamespaceName, bool usesBackingStore = false)

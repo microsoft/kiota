@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Dart;
+
 public class DartConventionService : CommonLanguageConventionService
 {
     private static string AutoGenerationHeader => "/// auto generated";

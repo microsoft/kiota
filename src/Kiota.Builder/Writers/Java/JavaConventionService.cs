@@ -9,6 +9,7 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Java;
+
 public partial class JavaConventionService : CommonLanguageConventionService
 {
     internal static string AutoGenerationHeader => "@jakarta.annotation.Generated(\"com.microsoft.kiota\")";

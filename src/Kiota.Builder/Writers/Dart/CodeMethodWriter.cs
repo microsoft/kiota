@@ -7,6 +7,7 @@ using Kiota.Builder.OrderComparers;
 using static Kiota.Builder.CodeDOM.CodeTypeBase;
 
 namespace Kiota.Builder.Writers.Dart;
+
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionService>
 {
     public CodeMethodWriter(DartConventionService conventionService) : base(conventionService)

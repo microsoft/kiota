@@ -6,6 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Xunit;
 
 namespace Kiota.Builder.Tests.CodeDOM;
+
 public class DiscriminatorInformationTests
 {
 
