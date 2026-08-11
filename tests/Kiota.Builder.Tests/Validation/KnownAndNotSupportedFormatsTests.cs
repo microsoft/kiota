@@ -75,6 +75,77 @@ paths:
         var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
         Assert.Empty(diagnostic.Warnings);
     }
+    [Fact]
+    public async Task DoesntAddAWarningForResponseHeaders()
+    {
+        var documentTxt =
+    """
+openapi: 3.0.1
+info:
+  title: Sample API
+  version: 1.0.0
+paths:
+  /items:
+    post:
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+""";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task DoesntAddAWarningForComponentHeaders()
+    {
+        var documentTxt =
+    """
+openapi: 3.0.1
+info:
+  title: Sample API
+  version: 1.0.0
+paths: {}
+components:
+  headers:
+    Location:
+      schema:
+        type: string
+        format: uri
+""";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task AddsAWarningForSchemaPropertyNamedHeaders()
+    {
+        var documentTxt =
+    """
+openapi: 3.0.1
+info:
+  title: Sample API
+  version: 1.0.0
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  headers:
+                    type: string
+                    format: uri
+""";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Single(diagnostic.Warnings);
+    }
     private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
     {
         var rule = new KnownAndNotSupportedFormats();
