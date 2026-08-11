@@ -139,7 +139,10 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
 
-        var envelope = codeModel.FindNamespaceByName("ApiSdk.models")!.FindChildByName<CodeClass>("Envelope", true)!;
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var envelope = modelsNamespace.FindChildByName<CodeClass>("Envelope", true);
+        Assert.NotNull(envelope);
         var dataType = Assert.IsType<CodeUnionType>(envelope.Properties.Single(x => x.Name == "data").Type);
         var errorType = Assert.IsType<CodeUnionType>(envelope.Properties.Single(x => x.Name == "error").Type);
 
@@ -192,7 +195,10 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
 
-        var template = codeModel.FindNamespaceByName("ApiSdk.models")!.FindChildByName<CodeClass>("PaginatedTemplateUser", true)!;
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var template = modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateUser", true);
+        Assert.NotNull(template);
         var entries = Assert.IsType<CodeType>(template.Properties.Single(x => x.Name == "entries").Type);
 
         Assert.Equal("PaginatedTemplateUser_entriesUser", entries.TypeDefinition!.Name);
@@ -250,7 +256,10 @@ components:
         Assert.NotNull(v1Ns.FindChildByName<CodeClass>("UserModel", true));
         Assert.NotNull(v2Ns.FindChildByName<CodeClass>("AdminModel", true));
 
-        var container = codeModel.FindNamespaceByName("ApiSdk.models")!.FindChildByName<CodeClass>("Container", true)!;
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var container = modelsNamespace.FindChildByName<CodeClass>("Container", true);
+        Assert.NotNull(container);
         var itemType = Assert.IsType<CodeUnionType>(container.Properties.Single(x => x.Name == "item").Type);
         Assert.Equal(["ApiSdk.models.v1.UserModel", "ApiSdk.models.v2.AdminModel"], itemType.Types.Select(x => $"{((CodeNamespace)x.TypeDefinition!.Parent!).Name}.{x.TypeDefinition.Name}").OrderBy(x => x));
     }
@@ -300,7 +309,8 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
 
-        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models")!;
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
         Assert.NotNull(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateUser", true));
         Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplate", true));
     }
