@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension. [#7883](https://github.com/microsoft/kiota/pull/7883)
+- Fixed a code generation literal injection vulnerability affecting nearly every language writer. [#7603](https://github.com/microsoft/kiota/pull/7603)
+- Fixed a code injection vulnerability in Python generation via `x-ms-enum` description newlines. [#7735](https://github.com/microsoft/kiota/pull/7735)
+- Fixed a code injection vulnerability in Ruby generation via unescaped `#` interpolation markers. [#7746](https://github.com/microsoft/kiota/pull/7746)
+- Fixed a code injection vulnerability in C# doc comments via unescaped newlines. [#7831](https://github.com/microsoft/kiota/pull/7831)
+- Fixed a code injection vulnerability in PHP generation by escaping `$` in double-quoted string literals. [#7863](https://github.com/microsoft/kiota/pull/7863)
+- Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths. [#7884](https://github.com/microsoft/kiota/pull/7884)
 
 ## [1.32.3] - 2026-06-24
 

@@ -33,8 +33,8 @@ internal static class KiotaConfigurationExtensions
         {
             var lngInfo = new LanguageInformation
             {
-                ClientClassName = section[nameof(LanguageInformation.ClientClassName)] ?? string.Empty,
-                ClientNamespaceName = section[nameof(LanguageInformation.ClientNamespaceName)] ?? string.Empty,
+                ClientClassName = GenerationConfiguration.SanitizeClientClassName(section[nameof(LanguageInformation.ClientClassName)], string.Empty),
+                ClientNamespaceName = GenerationConfiguration.SanitizeClientNamespaceName(section[nameof(LanguageInformation.ClientNamespaceName)], string.Empty),
                 DependencyInstallCommand = section[nameof(LanguageInformation.DependencyInstallCommand)] ?? string.Empty,
                 MaturityLevel = Enum.TryParse<LanguageMaturityLevel>(section[nameof(LanguageInformation.MaturityLevel)], true, out var ml) ? ml : LanguageMaturityLevel.Experimental,
                 SupportExperience = Enum.TryParse<SupportExperience>(section[nameof(LanguageInformation.SupportExperience)], true, out var se) ? se : SupportExperience.Community,
@@ -55,9 +55,9 @@ internal static class KiotaConfigurationExtensions
         configObject.Generation.Language = Enum.TryParse<GenerationLanguage>(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.Language)}"], true, out var language) ? language : GenerationLanguage.CSharp;
         configObject.Generation.OpenAPIFilePath = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.OpenAPIFilePath)}"] is string openApiFilePath && !string.IsNullOrEmpty(openApiFilePath) ? openApiFilePath : configObject.Generation.OpenAPIFilePath;
         configObject.Generation.OutputPath = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.OutputPath)}"] is string outputPath && !string.IsNullOrEmpty(outputPath) ? outputPath : configObject.Generation.OutputPath;
-        configObject.Generation.ClientClassName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientClassName)}"] is string clientClassName && !string.IsNullOrEmpty(clientClassName) ? clientClassName : configObject.Generation.ClientClassName;
+        configObject.Generation.ClientClassName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientClassName)}"] is string clientClassName && !string.IsNullOrEmpty(clientClassName) ? GenerationConfiguration.SanitizeClientClassName(clientClassName, configObject.Generation.ClientClassName) : configObject.Generation.ClientClassName;
         configObject.Generation.TypeAccessModifier = Enum.TryParse<AccessModifier>(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.TypeAccessModifier)}"], true, out var accessModifier) ? accessModifier : AccessModifier.Public;
-        configObject.Generation.ClientNamespaceName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientNamespaceName)}"] is string clientNamespaceName && !string.IsNullOrEmpty(clientNamespaceName) ? clientNamespaceName : configObject.Generation.ClientNamespaceName;
+        configObject.Generation.ClientNamespaceName = configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.ClientNamespaceName)}"] is string clientNamespaceName && !string.IsNullOrEmpty(clientNamespaceName) ? GenerationConfiguration.SanitizeClientNamespaceName(clientNamespaceName, configObject.Generation.ClientNamespaceName) : configObject.Generation.ClientNamespaceName;
         configObject.Generation.UsesBackingStore = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.UsesBackingStore)}"], out var usesBackingStore) && usesBackingStore;
         configObject.Generation.IncludeAdditionalData = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.IncludeAdditionalData)}"], out var includeAdditionalData) && includeAdditionalData;
         configObject.Generation.CleanOutput = bool.TryParse(configuration[$"{nameof(configObject.Generation)}:{nameof(GenerationConfiguration.CleanOutput)}"], out var cleanOutput) && cleanOutput;
