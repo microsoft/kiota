@@ -90,7 +90,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where error responses including text/plain would cause binary responses to be generated as string responses [#3855](https://github.com/microsoft/kiota/issues/3855)
 - Fixed a bug where TypeScript deserialization of oneOf types with inheritance would incorrectly place derived type properties in additionalProperties. [#6896](https://github.com/microsoft/kiota/issues/6896)
 
->>>>>>> e1d6d76c6 (fix: do not use the install command from the OpenAPI extension (#7883))
 ## [1.29.0] - 2025-10-23
 
 ### Added
@@ -1767,8 +1766,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
-<<<<<<< HEAD
-
-=======
->>>>>>> e1d6d76c6 (fix: do not use the install command from the OpenAPI extension (#7883))
