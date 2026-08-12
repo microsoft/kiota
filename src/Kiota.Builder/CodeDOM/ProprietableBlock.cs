@@ -71,6 +71,8 @@ public abstract class ProprietableBlock<TBlockKind, TBlockDeclaration> : CodeBlo
     public IEnumerable<CodeMethod> Methods => InnerChildElements.Values.OfType<CodeMethod>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
     public IEnumerable<CodeMethod> UnorderedMethods => InnerChildElements.Values.OfType<CodeMethod>();
     public IEnumerable<CodeClass> InnerClasses => InnerChildElements.Values.OfType<CodeClass>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+    public IReadOnlyList<CodeTypeParameter> TypeParameters => StartBlock.TypeParameters;
+    public bool IsGeneric => StartBlock.IsGeneric;
     public bool ContainsMember(string name)
     {
         return InnerChildElements.ContainsKey(name);
@@ -121,4 +123,16 @@ public class ProprietableBlockDeclaration : BlockDeclaration
             implements.TryRemove(type.Name, out var _);
     }
     public IEnumerable<CodeType> Implements => implements.Values.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, CodeTypeParameter> typeParameters = new(StringComparer.OrdinalIgnoreCase);
+    public void AddTypeParameter(params CodeTypeParameter[] parameters)
+    {
+        if (parameters == null || parameters.Any(static x => x == null))
+            throw new ArgumentNullException(nameof(parameters));
+        EnsureElementsAreChildren(parameters);
+        foreach (var parameter in parameters)
+            typeParameters.TryAdd(parameter.Name, parameter);
+    }
+    public IReadOnlyList<CodeTypeParameter> TypeParameters => typeParameters.Values.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    public bool IsGeneric => !typeParameters.IsEmpty;
 }

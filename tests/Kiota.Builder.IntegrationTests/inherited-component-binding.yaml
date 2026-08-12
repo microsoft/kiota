@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Inherited Component Binding API
+  version: 0.1.0
+paths:
+  /pages/users:
+    get:
+      operationId: listUserPages
+      responses:
+        '200':
+          description: User page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/DerivedPage'
+  /pages/groups:
+    get:
+      operationId: listGroupPages
+      responses:
+        '200':
+          description: Group page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/DerivedPage'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+    BasePage:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+    DerivedPage:
+      allOf:
+        - $ref: '#/components/schemas/BasePage'
+        - type: object
+          properties:
+            page:
+              type: integer
