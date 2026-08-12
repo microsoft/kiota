@@ -51,7 +51,7 @@ jobs:
           curl -o twitter.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/twitter.com/current/2.61/openapi.json
           curl -o notion.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/notion.com/1.0.0/openapi.json
           curl -o stripe.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/stripe.com/2022-11-15/openapi.json
-          curl -o maps.yaml https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml
+          curl -o maps.yaml https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml
           curl -o meraki.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/meraki.com/0.0.0-streaming/openapi.json
           curl -o pipedrive.yaml https://developers.pipedrive.com/docs/api/v1/openapi.yaml
           curl -o twilio.json https://raw.githubusercontent.com/APIs-guru/openapi-directory/gh-pages/v2/specs/twilio.com/api/1.42.0/openapi.json
