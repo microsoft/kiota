@@ -32,6 +32,14 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "dart",
+        "Rationale": "Multiple compilation errors - https://github.com/microsoft/kiota/issues/7821"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "Multiple compilation errors - https://github.com/microsoft/kiota/issues/7862"
       }
     ],
     "ExcludePatterns": [
@@ -46,6 +54,11 @@
       {
         "Pattern": "/user/gpg_keys/**",
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Language": "java",
+        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
+        "Rationale": "Compilation fails for Java - https://github.com/microsoft/kiota/issues/7829"
       }
     ]
   },
