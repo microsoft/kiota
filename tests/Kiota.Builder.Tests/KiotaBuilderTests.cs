@@ -5127,6 +5127,55 @@ components:
         Assert.Equal("\"{+baseurl}/api/contracts/{?type*}\"", emptyProperty.DefaultValue);
     }
     [Fact]
+    public void GeneratesInlineObjectArrayResponseForTrailingSlashPath()
+    {
+        var documentJSON =
+    """
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Sample API",
+    "version": "1.0"
+  },
+  "paths": {
+    "/test/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+""";
+        var (document, _) = OpenApiDocument.Parse(documentJSON, OpenApiConstants.Json);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+
+        var codeModel = builder.CreateSourceModel(node);
+
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("EmptyPathSegmentRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var executor = requestBuilder.Methods.Single(static x => x.Kind is CodeMethodKind.RequestExecutor);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, returnType.CollectionKind);
+        var responseModel = Assert.IsType<CodeClass>(returnType.TypeDefinition);
+        Assert.Equal(KiotaBuilder.TrailingSlashPlaceholder, responseModel.Name);
+    }
+    [Fact]
     public void MapsArrayOfTypesAsUnionType()
     {
         var document = new OpenApiDocument
