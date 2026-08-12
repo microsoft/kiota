@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check-changelog-entry:
-    if: github.repository == 'microsoft/kiota'
+    if: github.repository == 'microsoft/kiota' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
