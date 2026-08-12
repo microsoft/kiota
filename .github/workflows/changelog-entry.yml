@@ -1,0 +1,49 @@
+name: Changelog entry
+
+on:
+  pull_request_target:
+    types:
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-changelog-entry:
+    if: github.repository == 'microsoft/kiota'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Check for a new changelog entry
+        id: changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $baseContent = gh api "repos/$env:BASE_REPOSITORY/contents/CHANGELOG.md?ref=$env:BASE_SHA" --jq .content
+          $headContent = gh api "repos/$env:HEAD_REPOSITORY/contents/CHANGELOG.md?ref=$env:HEAD_SHA" --jq .content
+          [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($baseContent -join ""))) | Set-Content -Path base_CHANGELOG.md -NoNewline
+          [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($headContent -join ""))) | Set-Content -Path head_CHANGELOG.md -NoNewline
+
+          $hasEntry = ./scripts/check-changelog-entry.ps1 -baseChangelogPath base_CHANGELOG.md -headChangelogPath head_CHANGELOG.md
+          "has_entry=$($hasEntry.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Comment on missing changelog entry
+        if: steps.changelog.outputs.has_entry == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: pwsh
+        run: |
+          gh api --method POST "repos/$env:BASE_REPOSITORY/issues/$env:PR_NUMBER/comments" `
+            -f body='Thanks for opening this pull request! Please add a changelog entry under `## [Unreleased]` in `CHANGELOG.md`, before the first released version section, so users can see what changed. Add bug fixes under `### Changed` and new features under `### Added`.'

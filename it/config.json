@@ -3,13 +3,7 @@
     "MockServerITFolder": "basic"
   },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
-    "MockServerITFolder": "query-params",
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/59" 
-      }
-    ]
+    "MockServerITFolder": "query-params"
   },
   "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
     "MockServerITFolder": "discriminator",
@@ -188,9 +182,22 @@
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
+      },
+      {
+        "Language": "dart",
+        "Rationale": "dart analyze fails on unnecessary_null_comparison for primitive binary union media models - https://github.com/microsoft/kiota/issues/7997"
+      },
+      {
+        "Language": "php",
+        "Rationale": "PHPStan fails on strict !== between null and null in binary union getters - https://github.com/microsoft/kiota/issues/7997"
       }
     ],
-    "IdempotencySuppressions": [],
+    "IdempotencySuppressions": [
+      {
+        "Language": "all",
+        "Rationale": "Non-deterministic generation of the Analytics/models set (e.g. Models/Analytics.cs, models/news.dart, apisdk/models/Analytics.java, models/analytics.rb, models/analytics.go, models/index.ts). The instability is language-agnostic and surfaces on a different language each run, so all languages are suppressed until the ordering is stabilized - https://github.com/microsoft/kiota/issues/7997"
+      }
+    ],
     "ExcludePatterns": [
       {
         "Language": "typescript",
