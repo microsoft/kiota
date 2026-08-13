@@ -648,6 +648,7 @@ public partial class PluginsGenerationService
     }
     private sealed class SelectFirstAnyOneOfVisitor : OpenApiVisitorBase
     {
+        private static readonly HashSet<string> numericFormats = new(StringComparer.OrdinalIgnoreCase) { "int8", "uint8", "int16", "uint16", "int32", "int64", "float", "double", "decimal" };
         public override void Visit(IOpenApiSchema schema)
         {
             if (schema.AnyOf is { Count: > 0 })
@@ -667,10 +668,10 @@ public partial class PluginsGenerationService
         /// Since 2.12.0 the reader folds a union of primitive types, such as anyOf: [string, integer],
         /// into a single Type carrying several flags and clears AnyOf, so the loop above never sees the
         /// union. Plugin descriptions still need a single type, so narrow it here instead.
-        /// JsonSchemaType is a flags enum, which means the order the types were authored in is not
-        /// recoverable and "the first entry" can no longer be honoured. String wins when present
-        /// because every JSON scalar round trips through it, otherwise the lowest flag wins so the
-        /// choice stays deterministic.
+        /// A numeric type paired with a string and a numeric format is the shape System.Text.Json's
+        /// JsonNumberHandling.AllowReadingFromString produces, so the numeric type wins there, matching
+        /// what GetPrimitiveType already does for clients. Otherwise a string wins, since every JSON
+        /// scalar round trips through it.
         /// </summary>
         private static void NarrowMultipleTypes(IOpenApiSchema schema)
         {
@@ -678,6 +679,11 @@ public partial class PluginsGenerationService
             var nullable = type & JsonSchemaType.Null;
             var declared = type & ~JsonSchemaType.Null;
             if (declared is 0 || ((uint)declared & ((uint)declared - 1)) is 0) return; // unset, or already a single type
+            var numeric = declared & (JsonSchemaType.Integer | JsonSchemaType.Number);
+            if (numeric is not 0 &&
+                (declared & JsonSchemaType.String) is JsonSchemaType.String &&
+                schema.Format is { } format && numericFormats.Contains(format))
+                declared = numeric;
             var selected = declared.HasFlag(JsonSchemaType.String)
                 ? JsonSchemaType.String
                 : (JsonSchemaType)((uint)declared & (uint)-(int)declared);
