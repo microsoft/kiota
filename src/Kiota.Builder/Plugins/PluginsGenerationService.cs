@@ -774,8 +774,8 @@ public partial class PluginsGenerationService
                     openApiSchema.Xml = source.Xml;
                 if (source.ExternalDocs is not null)
                     openApiSchema.ExternalDocs = source.ExternalDocs;
-                if (source.Example is not null)
-                    openApiSchema.Example = source.Example;
+                if (source.Examples is not null)
+                    openApiSchema.Examples = [.. source.Examples];
                 if (source.Extensions is not null)
                     openApiSchema.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
                 if (source.Discriminator is not null && includeDiscriminator)
