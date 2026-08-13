@@ -137,6 +137,27 @@ public class PythonLanguageRefinerTests
         Assert.Equal(input.ToFirstCharacterUpperCase() + "_", model.Options.First().Name);// we need to escape this in python
     }
     [Fact]
+    public async Task RenamesTypesCollidingOnceSnakeCasedAsync()
+    {
+        // python modules are named after the snake cased type name, so these two would land in the same file
+        var component = graphNS.AddEnum(new CodeEnum { Name = "ModelStatus" }).First();
+        var inline = graphNS.AddEnum(new CodeEnum { Name = "Model_status" }).First();
+        var model = graphNS.AddClass(new CodeClass { Name = "Model", Kind = CodeClassKind.Model }).First();
+        model.AddProperty(new CodeProperty
+        {
+            Name = "status",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = inline.Name, TypeDefinition = inline },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, graphNS);
+
+        Assert.Equal("ModelStatus", component.Name);
+        Assert.Equal("Model_status_", inline.Name);
+        Assert.NotEqual(component.Name.ToSnakeCase(), inline.Name.ToSnakeCase());
+        // the property type follows the rename so the import symbol matches the declared class
+        Assert.Equal("Model_status_", model.Properties.First(static x => x.Name.Equals("status", StringComparison.Ordinal)).Type.Name);
+    }
+    [Fact]
     public async Task AddsExceptionInheritanceOnErrorClassesAsync()
     {
         var model = root.AddClass(new CodeClass

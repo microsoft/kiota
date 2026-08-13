@@ -26,6 +26,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ComposedTypeWrapper"
             );
             CorrectCommonNames(generatedCode);
+            DisambiguateSnakeCasedNames(generatedCode);
             RemoveMethodByKind(generatedCode, CodeMethodKind.RawUrlConstructor);
             RemoveUntypedNodeTypeValues(generatedCode);
             DisableActionOf(generatedCode,
@@ -263,6 +264,33 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
 
         CrawlTree(currentElement, CorrectCommonNames);
+    }
+    /// <summary>
+    /// Python modules are named after the snake cased type name, so two sibling types whose names only differ
+    /// by casing or underscore placement (e.g. the inline schema `CodeScanningVariantAnalysis_status` next to the
+    /// `CodeScanningVariantAnalysisStatus` component) map to the same module and one silently overwrites the other,
+    /// leaving the imports of the loser pointing at a symbol that doesn't exist.
+    /// Renaming the type is enough as the file name, the import path, the import symbol and the type references are
+    /// all derived from it. Only sibling classes/enums are considered, not a type colliding with a sub namespace folder.
+    /// </summary>
+    private static void DisambiguateSnakeCasedNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace currentNamespace)
+        {
+            var usedModuleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var element in currentNamespace.GetChildElements(true)
+                                                    .Where(static x => x is CodeClass or CodeEnum)
+                                                    .OrderBy(static x => x.Name, StringComparer.Ordinal)// deterministic: the first one in ordinal order keeps its name
+                                                    .ToArray())
+            {
+                var newName = element.Name;
+                while (!usedModuleNames.Add(newName.ToSnakeCase()))
+                    newName += "_";
+                if (!newName.Equals(element.Name, StringComparison.Ordinal))
+                    currentNamespace.RenameChildElement(element.Name, newName);
+            }
+        }
+        CrawlTree(currentElement, DisambiguateSnakeCasedNames);
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {
