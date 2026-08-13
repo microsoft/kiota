@@ -720,7 +720,33 @@ public partial class PluginsGenerationService
                 CopyRelevantInformation(schema.OneOf[0], schema);
                 schema.OneOf.Clear();
             }
+            NarrowMultipleTypes(schema);
             base.Visit(schema);
+        }
+        /// <summary>
+        /// Since 3.10.0 the reader folds a union of primitive types, such as anyOf: [string, integer],
+        /// into a single Type carrying several flags and clears AnyOf, so the loop above never sees the
+        /// union. Plugin descriptions still need a single type, so narrow it here instead.
+        /// A numeric type paired with a string and a numeric format is the shape System.Text.Json's
+        /// JsonNumberHandling.AllowReadingFromString produces, so the numeric type wins there, matching
+        /// what GetPrimitiveType already does for clients. Otherwise a string wins, since every JSON
+        /// scalar round trips through it.
+        /// </summary>
+        private static void NarrowMultipleTypes(IOpenApiSchema schema)
+        {
+            if (schema is not OpenApiSchema openApiSchema || schema.Type is not { } type) return;
+            var nullable = type & JsonSchemaType.Null;
+            var declared = type & ~JsonSchemaType.Null;
+            if (declared is 0 || ((uint)declared & ((uint)declared - 1)) is 0) return; // unset, or already a single type
+            var numeric = declared & (JsonSchemaType.Integer | JsonSchemaType.Number);
+            if (numeric is not 0 &&
+                (declared & JsonSchemaType.String) is JsonSchemaType.String &&
+                schema.Format is { } format && KiotaBuilder.numericFormats.Contains(format))
+                declared = numeric;
+            var selected = declared.HasFlag(JsonSchemaType.String)
+                ? JsonSchemaType.String
+                : (JsonSchemaType)((uint)declared & (uint)-(int)declared);
+            openApiSchema.Type = selected | nullable;
         }
         internal static void CopyRelevantInformation(IOpenApiSchema source, IOpenApiSchema target, bool includeProperties = true, bool includeDiscriminator = true)
         {
