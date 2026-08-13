@@ -660,7 +660,28 @@ public partial class PluginsGenerationService
                 CopyRelevantInformation(schema.OneOf[0], schema);
                 schema.OneOf.Clear();
             }
+            NarrowMultipleTypes(schema);
             base.Visit(schema);
+        }
+        /// <summary>
+        /// Since 2.12.0 the reader folds a union of primitive types, such as anyOf: [string, integer],
+        /// into a single Type carrying several flags and clears AnyOf, so the loop above never sees the
+        /// union. Plugin descriptions still need a single type, so narrow it here instead.
+        /// JsonSchemaType is a flags enum, which means the order the types were authored in is not
+        /// recoverable and "the first entry" can no longer be honoured. String wins when present
+        /// because every JSON scalar round trips through it, otherwise the lowest flag wins so the
+        /// choice stays deterministic.
+        /// </summary>
+        private static void NarrowMultipleTypes(IOpenApiSchema schema)
+        {
+            if (schema is not OpenApiSchema openApiSchema || schema.Type is not { } type) return;
+            var nullable = type & JsonSchemaType.Null;
+            var declared = type & ~JsonSchemaType.Null;
+            if (declared is 0 || ((uint)declared & ((uint)declared - 1)) is 0) return; // unset, or already a single type
+            var selected = declared.HasFlag(JsonSchemaType.String)
+                ? JsonSchemaType.String
+                : (JsonSchemaType)((uint)declared & (uint)-(int)declared);
+            openApiSchema.Type = selected | nullable;
         }
         internal static void CopyRelevantInformation(IOpenApiSchema source, IOpenApiSchema target, bool includeProperties = true, bool includeDiscriminator = true)
         {
@@ -714,8 +735,8 @@ public partial class PluginsGenerationService
                     openApiSchema.Xml = source.Xml;
                 if (source.ExternalDocs is not null)
                     openApiSchema.ExternalDocs = source.ExternalDocs;
-                if (source.Example is not null)
-                    openApiSchema.Example = source.Example;
+                if (source.Examples is not null)
+                    openApiSchema.Examples = [.. source.Examples];
                 if (source.Extensions is not null)
                     openApiSchema.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
                 if (source.Discriminator is not null && includeDiscriminator)
