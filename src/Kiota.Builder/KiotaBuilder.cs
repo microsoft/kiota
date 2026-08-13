@@ -1937,9 +1937,22 @@ public partial class KiotaBuilder
         if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
             unionType.TargetNamespace = codeNamespace.GetRootNamespace().FindOrAddNamespace(GetModelsNamespaceNameFromReferenceId(refId));
         unionType.DiscriminatorInformation.DiscriminatorPropertyName = schema.GetDiscriminatorPropertyName();
-        GetDiscriminatorMappings(currentNode, schema, codeNamespace, null, operation)
-            ?.ToList()
-            .ForEach(x => unionType.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
+        // Same guard as AddDiscriminatorMethodIfNeeded: a component schema with no explicit mapping maps to
+        // itself, so resolving that mapping re-enters this method for the same schema and never terminates.
+        var composedRefId = schema.GetReferenceId();
+        var composedVisited = schemasBeingProcessedForDiscriminators.Value!;
+        if (string.IsNullOrEmpty(composedRefId) || composedVisited.Add(composedRefId))
+            try
+            {
+                GetDiscriminatorMappings(currentNode, schema, codeNamespace, null, operation)
+                    ?.ToList()
+                    .ForEach(x => unionType.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(composedRefId))
+                    composedVisited.Remove(composedRefId);
+            }
         var membersWithNoName = 0;
         if (schemas is not null)
             foreach (var currentSchema in schemas)
