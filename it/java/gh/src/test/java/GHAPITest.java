@@ -12,14 +12,14 @@ public class GHAPITest {
         adapter.setBaseUrl("http://127.0.0.1:1080");
         var client = new ApiClient(adapter);
 
-        client.repos().byOrgId("my-owner").byRepoId("my-repo").get();
+        client.repos().byOwnerId("my-owner").byRepoId("my-repo").get();
         final GeneratePostRequestBody body = new GeneratePostRequestBody();
         body.setDescription("my description");
         body.setIncludeAllBranches(true);
         body.setName("my-repo2");
         body.setOwner("my-owner2");
         body.setPrivate(false);
-        client.repos().byOrgId("my-owner").byRepoId("my-repo").generate().post(body);
+        client.repos().byOwnerId("my-owner").byRepoId("my-repo").generate().post(body);
     }
 
 }
