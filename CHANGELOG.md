@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.29.1] - 2026-08-13
+
+### Added
+
 - Added the `--allowed-external-origins` parameter to commands that load OpenAPI descriptions. External references are now not loaded by default to improve security; use this parameter to allow `*`, full URIs, URI patterns, full paths, relative paths, or path patterns. [#7888](https://github.com/microsoft/kiota/pull/7888) [GHSA-rg4h-fpcp-2qm8](https://github.com/microsoft/kiota/security/advisories/GHSA-rg4h-fpcp-2qm8) / CVE-2026-59867
 
 ### Changed
