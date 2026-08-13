@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionService>
 {
     public CodePropertyWriter(PhpConventionService conventionService) : base(conventionService) { }
@@ -42,7 +43,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
         writer.WriteLine(PhpConventionService.DocCommentStart);
         if (codeProperty.IsOfKind(CodePropertyKind.QueryParameter) && codeProperty.IsNameEscaped)
         {
-            writer.WriteLine($"{conventions.DocCommentPrefix}@QueryParameter(\"{codeProperty.SerializationName}\")");
+            writer.WriteLine($"{conventions.DocCommentPrefix}@QueryParameter(\"{PhpConventionService.SanitizePhpDoubleQuoteLiteral(codeProperty.SerializationName)}\")");
         }
         writer.WriteLine($"{conventions.DocCommentPrefix}@var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name.ToFirstCharacterLowerCase()} " +
                             $"{(hasDescription ? propertyDescription : string.Empty)}");

@@ -109,4 +109,11 @@ public class TypeScriptConventionServiceTests
         // Assert
         Assert.False(result);
     }
+
+    [Fact]
+    public void RemoveInvalidDescriptionCharacters_SanitizesCommentBreakoutCharacters()
+    {
+        var result = TypeScriptConventionService.RemoveInvalidDescriptionCharacters("line1*/\r\nline2");
+        Assert.Equal("line1* /line2", result);
+    }
 }

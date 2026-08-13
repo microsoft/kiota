@@ -42,12 +42,12 @@ jobs:
           - "apisguru::twitter.com:current"
           - "apisguru::notion.com"
           - "apisguru::stripe.com"
-          - "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml"
+          - "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml"
           - "apisguru::meraki.com"
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
           - "apisguru::twilio.com:api"
           - "apisguru::docusign.net"
-          - "apisguru::github.com:api.github.com"
+          - "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
           - "apisguru::apis.guru"
     steps:
       - uses: actions/checkout@v5
@@ -93,12 +93,12 @@ jobs:
           - "apisguru::twitter.com:current"
           - "apisguru::notion.com"
           - "apisguru::stripe.com"
-          - "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml"
+          - "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml"
           - "apisguru::meraki.com"
           - "https://developers.pipedrive.com/docs/api/v1/openapi.yaml"
           - "apisguru::twilio.com:api"
           - "apisguru::docusign.net"
-          - "apisguru::github.com:api.github.com"
+          - "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json"
           - "apisguru::apis.guru"
 
     steps:

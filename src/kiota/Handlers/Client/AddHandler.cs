@@ -80,6 +80,10 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -101,6 +105,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         List<string>? excludePatterns0 = context.ParseResult.GetValueForOption(ExcludePatternsOption);
         List<string>? disabledValidationRules0 = context.ParseResult.GetValueForOption(DisabledValidationRulesOption);
         List<string>? structuredMimeTypes0 = context.ParseResult.GetValueForOption(StructuredMimeTypesOption);
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var logLevel = context.ParseResult.FindResultFor(LogLevelOption)?.GetValueOrDefault() as LogLevel?;
         CancellationToken cancellationToken = context.BindingContext.GetService(typeof(CancellationToken)) is CancellationToken token ? token : CancellationToken.None;
 
@@ -149,6 +154,7 @@ internal class AddHandler : BaseKiotaCommandHandler
         if (structuredMimeTypes.Count != 0)
             Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                             .Select(static x => x.TrimQuotes()));
+        AssignAllowedExternalOrigins(allowedExternalOrigins);
 
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));

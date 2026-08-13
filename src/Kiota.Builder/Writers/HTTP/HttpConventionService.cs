@@ -4,6 +4,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Http;
+
 public class HttpConventionService : CommonLanguageConventionService
 {
     public HttpConventionService()
@@ -21,11 +22,16 @@ public class HttpConventionService : CommonLanguageConventionService
         if (!element.Documentation.DescriptionAvailable) return false;
         if (element is not CodeElement codeElement) return false;
 
-        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement));
+        var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
         writer.WriteLine($"{DocCommentPrefix} {prefix}{description}{prefix}");
 
         return true;
     }
+    internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
+        string.IsNullOrEmpty(originalDescription) ? string.Empty :
+        originalDescription.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
     public override string GetAccessModifier(AccessModifier access)
     {
         return access switch
@@ -75,9 +81,10 @@ public class HttpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
         var defaultValue = parameter switch
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {parameter.DefaultValue}",
+            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {sanitizedDefaultValue}",
             _ when parameter.Optional => " = default",
             _ => string.Empty,
         };

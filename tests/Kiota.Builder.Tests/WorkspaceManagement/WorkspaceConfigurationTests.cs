@@ -2,6 +2,7 @@
 using Xunit;
 
 namespace Kiota.Builder.Tests.Manifest;
+
 public sealed class WorkspaceConfigurationTests
 {
     [Fact]

@@ -2,6 +2,7 @@
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
+
 public enum CodePropertyKind
 {
     Custom,

@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
+
 public class PhpPathSegmenter : CommonPathSegmenter
 {
     public PhpPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }

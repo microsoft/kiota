@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Logging;
+
 public class AggregateLogger<T> : ILogger<T>
 {
     private readonly ILogger<T>[] Loggers;

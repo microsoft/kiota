@@ -4,6 +4,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
 
 namespace Kiota.Builder.Writers.Dart;
+
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, DartConventionService>
 {
     private readonly RelativeImportManager relativeImportManager;

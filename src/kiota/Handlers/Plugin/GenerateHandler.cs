@@ -7,6 +7,7 @@ using kiota.Extension;
 using kiota.Telemetry;
 using Kiota.Builder;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,10 @@ internal class GenerateHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -42,6 +47,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, refresh, className0, logLevel, out var tags);
@@ -86,6 +92,8 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                     var generationConfiguration = new GenerationConfiguration();
                     var requests = !refresh && manifest is not null && manifest.ApiDependencies.TryGetValue(clientEntry.Key, out var value) ? value.Requests : [];
                     clientEntry.Value.UpdateGenerationConfigurationFromApiPluginConfiguration(generationConfiguration, clientEntry.Key, requests);
+                    if (allowedExternalOrigins is { Count: > 0 })
+                        generationConfiguration.AllowedExternalOrigins = allowedExternalOrigins.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                     DefaultSerializersAndDeserializers(generationConfiguration);
                     generationConfiguration.ClearCache = refresh;
                     generationConfiguration.CleanOutput = refresh;

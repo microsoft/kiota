@@ -2,6 +2,7 @@
 using System.Linq;
 
 namespace Kiota.Builder.Writers.Go;
+
 public static class StringExtensions
 {
     public static string TrimCollectionAndPointerSymbols(this string s) =>

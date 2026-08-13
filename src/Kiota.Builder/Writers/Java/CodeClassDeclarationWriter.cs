@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Java;
+
 public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, JavaConventionService>
 {
     public CodeClassDeclarationWriter(JavaConventionService conventionService) : base(conventionService) { }

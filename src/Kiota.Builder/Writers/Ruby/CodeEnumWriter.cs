@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby;
+
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
 {
     public CodeEnumWriter(RubyConventionService conventionService) : base(conventionService) { }

@@ -295,7 +295,9 @@ components:
         Assert.Single(originalDocument.Paths["/test"].Operations[HttpMethod.Get].Extensions); // 1 UNsupported extension
         Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses.Count); // 2 responses originally
         Assert.Single(originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Extensions); // 1 supported extension
-        Assert.Equal(2, originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf.Count); // anyOf we selected
+        // since 2.12.0 the reader folds anyOf: [string, integer] into a single Type carrying both flags and clears AnyOf
+        Assert.Null(originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].AnyOf);
+        Assert.Equal(JsonSchemaType.Integer | JsonSchemaType.String, originalDocument.Paths["/test/{id}"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema.AllOf[0].Properties["id"].Type!.Value);
 
         // Validate the output open api file
         using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));

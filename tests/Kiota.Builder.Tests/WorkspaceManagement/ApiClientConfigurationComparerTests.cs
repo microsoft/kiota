@@ -5,6 +5,7 @@ using Kiota.Builder.WorkspaceManagement;
 using Xunit;
 
 namespace Kiota.Builder.Tests.WorkspaceManagement;
+
 public sealed class ApiClientConfigurationComparerTests
 {
     private readonly ApiClientConfigurationComparer _comparer = new();
@@ -35,7 +36,22 @@ public sealed class ApiClientConfigurationComparerTests
         hash2.Add(string.Empty, stringComparer);
         hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
         hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
+        hash2.Add(new HashSet<string>(StringComparer.OrdinalIgnoreCase), iEnumComparer);
         hash.Add(hash2.ToHashCode());
         Assert.Equal(hash.ToHashCode(), _comparer.GetHashCode(new() { UsesBackingStore = true }));
+    }
+
+    [Fact]
+    public void ConsidersAllowedExternalOrigins()
+    {
+        Assert.False(_comparer.Equals(
+            new()
+            {
+                AllowedExternalOrigins = ["https://contoso.com/*"]
+            },
+            new()
+            {
+                AllowedExternalOrigins = ["https://example.com/*"]
+            }));
     }
 }

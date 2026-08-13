@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Ruby;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConventionService>
 {
     public CodePropertyWriter(RubyConventionService conventionService) : base(conventionService) { }

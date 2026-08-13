@@ -3,6 +3,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConventionService>
 {
     public CodeIndexerWriter(CSharpConventionService conventionService) : base(conventionService) { }

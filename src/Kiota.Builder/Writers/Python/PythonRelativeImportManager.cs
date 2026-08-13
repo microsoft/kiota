@@ -6,6 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class PythonRelativeImportManager : RelativeImportManager
 {
     public PythonRelativeImportManager(string namespacePrefix, char namespaceSeparator) : base(namespacePrefix, namespaceSeparator)

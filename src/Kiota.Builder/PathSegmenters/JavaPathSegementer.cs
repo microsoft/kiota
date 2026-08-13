@@ -2,6 +2,7 @@
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
+
 public class JavaPathSegmenter : CommonPathSegmenter
 {
     public JavaPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }

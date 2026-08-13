@@ -6,6 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Php;
+
 public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionService>
 {
     public CodeEnumWriter(PhpConventionService conventionService) : base(conventionService) { }
@@ -47,7 +48,7 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
         writer.IncreaseIndent();
         foreach (var enumProperty in enumProperties)
         {
-            writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = \"{enumProperty.WireName}\";");
+            writer.WriteLine($"public const {GetEnumValueName(enumProperty.Name)} = \"{PhpConventionService.SanitizePhpDoubleQuoteLiteral(enumProperty.WireName)}\";");
         }
     }
     [GeneratedRegex(@"([A-Z]{1})", RegexOptions.Singleline, 500)]

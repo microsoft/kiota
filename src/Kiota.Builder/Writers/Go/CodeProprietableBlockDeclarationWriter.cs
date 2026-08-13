@@ -5,6 +5,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
+
 public abstract class CodeProprietableBlockDeclarationWriter<T> : BaseElementWriter<T, GoConventionService>
     where T : ProprietableBlockDeclaration
 {

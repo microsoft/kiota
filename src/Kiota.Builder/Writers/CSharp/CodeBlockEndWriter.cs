@@ -2,6 +2,7 @@
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.CSharp;
+
 public class CodeBlockEndWriter : BaseElementWriter<BlockEnd, CSharpConventionService>
 {
     public CodeBlockEndWriter(CSharpConventionService conventionService) : base(conventionService) { }

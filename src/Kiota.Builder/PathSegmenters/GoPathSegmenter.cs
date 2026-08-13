@@ -6,6 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
+
 public class GoPathSegmenter(string rootPath, string clientNamespaceName) : CommonPathSegmenter(rootPath, clientNamespaceName)
 {
     private static readonly HashSet<string> specialFileNameSuffixes = new(StringComparer.OrdinalIgnoreCase) {

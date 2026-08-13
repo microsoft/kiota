@@ -2,6 +2,7 @@
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Java;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConventionService>
 {
     public CodePropertyWriter(JavaConventionService conventionService) : base(conventionService) { }
@@ -30,7 +31,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, JavaConvention
                 writer.CloseBlock();
                 break;
             case CodePropertyKind.Headers or CodePropertyKind.Options when !string.IsNullOrEmpty(codeElement.DefaultValue):
-                defaultValue = $" = {codeElement.DefaultValue}";
+                defaultValue = $" = {codeElement.DefaultValue.SanitizeQuotedStringLiteral()}";
                 goto default;
             case CodePropertyKind.QueryParameters:
                 defaultValue = $" = new {returnType}()";

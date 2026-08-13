@@ -6,6 +6,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.PathSegmenters;
+
 public class RubyPathSegmenter : CommonPathSegmenter
 {
     public RubyPathSegmenter(string rootPath, string clientNamespaceName) : base(rootPath, clientNamespaceName) { }

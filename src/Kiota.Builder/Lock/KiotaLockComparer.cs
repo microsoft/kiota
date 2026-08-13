@@ -41,7 +41,8 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
                && _stringIEnumerableDeepComparer.Equals(x.Deserializers, y.Deserializers)
                && _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes)
                && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns)
-               && _stringIEnumerableDeepComparer.Equals(x.ExcludePatterns, y.ExcludePatterns);
+               && _stringIEnumerableDeepComparer.Equals(x.ExcludePatterns, y.ExcludePatterns)
+               && _stringIEnumerableDeepComparer.Equals(x.AllowedExternalOrigins, y.AllowedExternalOrigins);
     }
     /// <inheritdoc/>
     public int GetHashCode([DisallowNull] KiotaLock obj)
@@ -66,6 +67,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
         hash.Add(obj.StructuredMimeTypes, _stringIEnumerableDeepComparer);
         hash.Add(obj.IncludePatterns, _stringIEnumerableDeepComparer);
         hash.Add(obj.ExcludePatterns, _stringIEnumerableDeepComparer);
+        hash.Add(obj.AllowedExternalOrigins, _stringIEnumerableDeepComparer);
         return hash.ToHashCode();
     }
 }

@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -12,6 +12,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
+## [1.29.1] - 2026-08-13
+
+### Added
+
+- Added the `--allowed-external-origins` parameter to commands that load OpenAPI descriptions. External references are now not loaded by default to improve security; use this parameter to allow `*`, full URIs, URI patterns, full paths, relative paths, or path patterns. [#7888](https://github.com/microsoft/kiota/pull/7888) [GHSA-rg4h-fpcp-2qm8](https://github.com/microsoft/kiota/security/advisories/GHSA-rg4h-fpcp-2qm8) / CVE-2026-59867
+
+### Changed
+
+- Removed support for specifying dependency install commands through the `x-ms-kiota-info` OpenAPI description extension. [#7883](https://github.com/microsoft/kiota/pull/7883)
+- Fixed a code generation literal injection vulnerability affecting nearly every language writer. [#7603](https://github.com/microsoft/kiota/pull/7603) [GHSA-2hx3-vp6r-mg3f](https://github.com/microsoft/kiota/security/advisories/GHSA-2hx3-vp6r-mg3f) / CVE-2026-41134
+- Fixed a code injection vulnerability in Python generation via `x-ms-enum` description newlines. [#7735](https://github.com/microsoft/kiota/pull/7735) [GHSA-7f3j-j7jj-r3vr](https://github.com/microsoft/kiota/security/advisories/GHSA-7f3j-j7jj-r3vr) / CVE-2026-59862
+- Fixed a code injection vulnerability in Ruby generation via unescaped `#` interpolation markers. [#7746](https://github.com/microsoft/kiota/pull/7746) [GHSA-xg2h-5xr2-29jw](https://github.com/microsoft/kiota/security/advisories/GHSA-xg2h-5xr2-29jw) / CVE-2026-59861
+- Fixed a code injection vulnerability in C# doc comments via unescaped newlines. [#7831](https://github.com/microsoft/kiota/pull/7831) [GHSA-3hrf-2gc2-mx32](https://github.com/microsoft/kiota/security/advisories/GHSA-3hrf-2gc2-mx32) / CVE-2026-59860
+- Fixed a code injection vulnerability in PHP generation by escaping `$` in double-quoted string literals. [#7863](https://github.com/microsoft/kiota/pull/7863) [GHSA-jqwh-526h-c92j](https://github.com/microsoft/kiota/security/advisories/GHSA-jqwh-526h-c92j) / CVE-2026-59859
+- Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths. [#7884](https://github.com/microsoft/kiota/pull/7884) [GHSA-4vv7-jj25-4gh6](https://github.com/microsoft/kiota/security/advisories/GHSA-4vv7-jj25-4gh6) / CVE-2026-59866
+- Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace. [#7885](https://github.com/microsoft/kiota/pull/7885) [GHSA-4rj6-vrwv-wr8m](https://github.com/microsoft/kiota/security/advisories/GHSA-4rj6-vrwv-wr8m) / CVE-2026-59863
+- Plugin manifest generation now rejects `static_template.file` references that escape the output directory. [#7892](https://github.com/microsoft/kiota/pull/7892) [GHSA-4jwf-m4wg-8p66](https://github.com/microsoft/kiota/security/advisories/GHSA-4jwf-m4wg-8p66)
+- Bumped the OpenTelemetry packages from 1.13.1 to 1.15.3 to pick up their security fixes. [GHSA-4625-4j76-fww9](https://github.com/microsoft/kiota/security/advisories/GHSA-4625-4j76-fww9), [GHSA-mr8r-92fq-pj8p](https://github.com/microsoft/kiota/security/advisories/GHSA-mr8r-92fq-pj8p), [GHSA-q834-8qmm-v933](https://github.com/microsoft/kiota/security/advisories/GHSA-q834-8qmm-v933)
+- Bumped `Microsoft.OpenApi` and `Microsoft.OpenApi.YamlReader` from 2.0.0 to 2.12.0, which picks up their security fixes ([GHSA-v5pm-xwqc-g5wc](https://github.com/microsoft/kiota/security/advisories/GHSA-v5pm-xwqc-g5wc)). This also fixes resolution of allowed external references, which previously failed with a spurious circular reference error.
+- Plugin descriptions: a union of primitive types, such as `anyOf: [string, integer]`, is now narrowed to a single type. A numeric type paired with a string and a numeric format, the shape System.Text.Json's `JsonNumberHandling.AllowReadingFromString` produces, resolves to the numeric type, otherwise the string type wins. `Microsoft.OpenApi` 2.12.0 folds such unions into a single multi-valued type before kiota sees them, and that fold does not preserve the order the types were declared in, so the previous "take the first entry" behaviour can no longer be applied literally.
 
 ## [1.29.0] - 2025-10-23
 
@@ -1689,5 +1710,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
-

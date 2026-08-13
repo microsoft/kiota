@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners;
+
 public class DartReservedNamesProvider : IReservedNamesProvider
 {
     private readonly Lazy<HashSet<string>> _reservedNames = new(() => new(StringComparer.OrdinalIgnoreCase) {

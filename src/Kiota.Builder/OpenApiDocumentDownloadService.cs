@@ -113,6 +113,8 @@ internal class OpenApiDocumentDownloadService
             LoadExternalRefs = true,
             LeaveStreamOpen = true,
         };
+        if (!config.AllowedExternalOrigins.Contains("*"))
+            settings.CustomExternalLoader = new AllowedExternalOriginsStreamLoader(HttpClient, config.AllowedExternalOrigins);
 
         // Add all extensions for generation
         settings.AddGenerationExtensions();

@@ -10,6 +10,7 @@ using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace kiota;
+
 public static partial class KiotaHost
 {
     internal const string KiotaPreviewEnvironmentVariable = "KIOTA_CONFIG_PREVIEW";
@@ -107,6 +108,7 @@ public static partial class KiotaHost
         var versionOption = GetVersionOption();
         var logLevelOption = GetLogLevelOption();
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultGenerationConfiguration.AllowedExternalOrigins);
         var searchTermOption = GetSearchKeyOption();
         var languageOption = new Option<GenerationLanguage?>("--language", "The target language for the dependencies instructions.");
         var dependencyTypesOption = GetDependencyTypesOption();
@@ -119,6 +121,7 @@ public static partial class KiotaHost
             versionOption,
             logLevelOption,
             clearCacheOption,
+            allowedExternalOriginsOption,
             searchTermOption,
             languageOption,
             jsonOption,
@@ -131,6 +134,7 @@ public static partial class KiotaHost
             VersionOption = versionOption,
             LogLevelOption = logLevelOption,
             ClearCacheOption = clearCacheOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             SearchTermOption = searchTermOption,
             GenerationLanguage = languageOption,
             JsonOption = jsonOption,
@@ -166,6 +170,7 @@ public static partial class KiotaHost
         var logLevelOption = GetLogLevelOption();
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultGenerationConfiguration.IncludePatterns, defaultGenerationConfiguration.ExcludePatterns);
         var clearCacheOption = GetClearCacheOption(defaultGenerationConfiguration.ClearCache);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultGenerationConfiguration.AllowedExternalOrigins);
         var searchTermOption = GetSearchKeyOption();
         var maxDepthOption = new Option<uint>("--max-depth", () => 5, "The maximum depth of the tree to display");
         maxDepthOption.AddAlias("--m-d");
@@ -180,6 +185,7 @@ public static partial class KiotaHost
             includePatterns,
             excludePatterns,
             clearCacheOption,
+            allowedExternalOriginsOption,
             disableSSLValidationOption,
         };
         displayCommand.Handler = new KiotaShowCommandHandler
@@ -193,6 +199,7 @@ public static partial class KiotaHost
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
             ClearCacheOption = clearCacheOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
             DisableSSLValidationOption = disableSSLValidationOption,
         };
         return displayCommand;
@@ -485,6 +492,7 @@ public static partial class KiotaHost
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
 
         var disableSSLValidationOption = GetDisableSSLValidationOption(defaultConfiguration.DisableSSLValidation);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultConfiguration.AllowedExternalOrigins);
 
         var command = new Command("generate", "Generates a REST HTTP API client from an OpenAPI description file.") {
             descriptionOption,
@@ -507,6 +515,7 @@ public static partial class KiotaHost
             dvrOption,
             clearCacheOption,
             disableSSLValidationOption,
+            allowedExternalOriginsOption,
         };
         command.Handler = new KiotaGenerateCommandHandler
         {
@@ -530,6 +539,7 @@ public static partial class KiotaHost
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
             DisableSSLValidationOption = disableSSLValidationOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
         };
         return command;
     }
@@ -543,12 +553,14 @@ public static partial class KiotaHost
         var cleanOutputOption = GetCleanOutputOption(defaultConfiguration.CleanOutput);
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
+        var allowedExternalOriginsOption = GetAllowedExternalOriginsOption(defaultConfiguration.AllowedExternalOrigins);
 
         var command = new Command("update", "Updates existing clients under the target directory using their lock files.") {
             outputOption,
             logLevelOption,
             cleanOutputOption,
             clearCacheOption,
+            allowedExternalOriginsOption,
         };
         command.Handler = new KiotaUpdateCommandHandler
         {
@@ -556,6 +568,7 @@ public static partial class KiotaHost
             LogLevelOption = logLevelOption,
             CleanOutputOption = cleanOutputOption,
             ClearCacheOption = clearCacheOption,
+            AllowedExternalOriginsOption = allowedExternalOriginsOption,
         };
         return command;
     }
@@ -573,6 +586,16 @@ public static partial class KiotaHost
             "The paths to exclude from the generation. Glob patterns accepted. Accepts multiple values. Append #OPERATION to the pattern to specify the operation to exclude. e.g. users/*/messages#GET");
         excludePatterns.AddAlias("-e");
         return (includePatterns, excludePatterns);
+    }
+    internal static Option<List<string>> GetAllowedExternalOriginsOption(HashSet<string> defaultValue)
+    {
+        var allowedExternalOrigins = new Option<List<string>>(
+            "--allowed-external-origins",
+            () => [.. defaultValue],
+            "The external reference origins allowed when loading the OpenAPI description. Accepts '*', full URIs, URI patterns, full paths, relative paths, and path patterns.");
+        allowedExternalOrigins.Arity = ArgumentArity.ZeroOrMore;
+        allowedExternalOrigins.ArgumentHelpName = "origins";
+        return allowedExternalOrigins;
     }
     internal static Option<LogLevel> GetLogLevelOption()
     {

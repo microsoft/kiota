@@ -409,7 +409,7 @@ describe("getKiotaTree", () => {
   });
 
   test('testGetKiotaTree_from_valid_external', async () => {
-    const descriptionUrl = 'https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/dev/openApiDocs/v1.0/Mail.yml';
+    const descriptionUrl = 'https://raw.githubusercontent.com/microsoftgraph/msgraph-sdk-powershell/refs/heads/main/openApiDocs/v1.0/Mail.yml';
 
     const actual = await getKiotaTree({ includeFilters: [], descriptionPath: descriptionUrl, excludeFilters: [], clearCache: false });
 

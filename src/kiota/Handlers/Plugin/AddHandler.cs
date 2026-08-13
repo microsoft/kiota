@@ -66,6 +66,10 @@ internal class AddHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
         // Span start time
@@ -87,6 +91,7 @@ internal class AddHandler : BaseKiotaCommandHandler
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, pluginTypes, pluginAuthType, pluginAuthRefId, skipGeneration, output, includePatterns0, excludePatterns0,
@@ -116,6 +121,7 @@ internal class AddHandler : BaseKiotaCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns0 is { Count: > 0 })
             Configuration.Generation.ExcludePatterns = excludePatterns0.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        AssignAllowedExternalOrigins(allowedExternalOrigins);
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(context, Configuration.Generation.OutputPath);

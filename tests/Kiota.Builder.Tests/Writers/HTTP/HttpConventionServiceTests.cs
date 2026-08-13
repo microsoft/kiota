@@ -3,6 +3,7 @@ using Kiota.Builder.Writers.Http;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Http;
+
 public sealed class HttpConventionServiceTest
 {
 
@@ -68,5 +69,11 @@ public sealed class HttpConventionServiceTest
 
         // Assert
         Assert.Equal("null", result);
+    }
+    [Fact]
+    public void SanitizesInvalidDescriptionCharacters()
+    {
+        var result = HttpConventionService.RemoveInvalidDescriptionCharacters("line1\r\nline2\tline3");
+        Assert.Equal("line1line2 line3", result);
     }
 }

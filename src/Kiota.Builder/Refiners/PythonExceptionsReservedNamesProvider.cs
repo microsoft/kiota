@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 namespace Kiota.Builder.Refiners;
+
 public class PythonExceptionsReservedNamesProvider : IReservedNamesProvider
 {
     private readonly Lazy<HashSet<string>> _reservedNames = new(static () => new(StringComparer.OrdinalIgnoreCase)

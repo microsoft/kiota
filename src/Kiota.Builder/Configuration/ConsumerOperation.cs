@@ -1,4 +1,5 @@
 ﻿namespace Kiota.Builder.Configuration;
+
 public enum ConsumerOperation
 {
     Add,

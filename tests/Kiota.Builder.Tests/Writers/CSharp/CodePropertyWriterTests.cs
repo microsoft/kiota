@@ -7,6 +7,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.CSharp;
+
 public sealed class CodePropertyWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -124,6 +125,27 @@ public sealed class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         Assert.Contains("[QueryParameter(\"someserializationname\")", result);
+    }
+    [Fact]
+    public void WritesEscapedSerializationAttribute()
+    {
+        property.Kind = CodePropertyKind.QueryParameter;
+        property.SerializationName = "line1\"\nline2";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"[QueryParameter(\"{property.SerializationName.SanitizeDoubleQuote()}\")", result);
+    }
+    [Fact]
+    public void MapsCustomPropertiesToBackingStoreWithEscapedKey()
+    {
+        parentClass.AddBackingStoreProperty();
+        property.Kind = CodePropertyKind.Custom;
+        property.SerializationName = "line1\"\nline2";
+        writer.Write(property);
+        var result = tw.ToString();
+        var sanitizedWireName = property.WireName.SanitizeDoubleQuote();
+        Assert.Contains($"BackingStore?.Get<global::{rootNamespace.Name}.SomeCustomClass>(\"{sanitizedWireName}\")", result);
+        Assert.Contains($"BackingStore?.Set(\"{sanitizedWireName}\", value);", result);
     }
     [Fact]
     public void DoesntWritePropertiesExistingInParentType()

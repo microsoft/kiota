@@ -203,7 +203,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
         if (!string.IsNullOrEmpty(property.Name))
         {
             // Write the property documentation as a comment
-            writer.WriteLine($"# {property.Documentation.DescriptionTemplate}");
+            writer.WriteLine($"# {HttpConventionService.RemoveInvalidDescriptionCharacters(property.Documentation.DescriptionTemplate)}");
 
             // Write the property name and an assignment placeholder
             writer.WriteLine($"@{property.Name.ToFirstCharacterLowerCase()} = ");
@@ -233,7 +233,7 @@ public class CodeClassDeclarationWriter(HttpConventionService conventionService)
     {
 
         // Write the method documentation as a comment
-        writer.WriteLine($"# {method.Documentation.DescriptionTemplate}");
+        writer.WriteLine($"# {HttpConventionService.RemoveInvalidDescriptionCharacters(method.Documentation.DescriptionTemplate)}");
 
         // Build the actual URL string and replace all required fields (path and query) with placeholder variables
         var url = BuildUrlStringFromTemplate(

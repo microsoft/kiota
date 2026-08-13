@@ -4,6 +4,7 @@ using System.Linq;
 using Kiota.Builder.CodeDOM;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionService>
 {
     public CodeEnumWriter(PythonConventionService conventionService) : base(conventionService) { }
@@ -25,7 +26,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
             codeElement.Options.ToList().ForEach(x =>
             {
                 conventions.WriteInLineDescription(x, writer);
-                writer.WriteLine($"{x.Name} = \"{x.WireName}\",");
+                writer.WriteLine($"{x.Name} = \"{x.WireName.SanitizeDoubleQuote()}\",");
             });
         }
     }

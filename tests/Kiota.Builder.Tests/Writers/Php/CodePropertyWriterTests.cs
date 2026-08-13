@@ -11,6 +11,7 @@ using Kiota.Builder.Writers.Php;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Php;
+
 public class CodePropertyWriterTests
 {
     private const string DefaultPath = "./";
@@ -222,6 +223,27 @@ public class CodePropertyWriterTests
         Assert.Contains("@QueryParameter(\"%24select\")", result);
         Assert.Contains("@var array<string>|null $select", result);
         Assert.Contains("private ?array $select", result);
+    }
+    [Fact]
+    public void EscapesQueryParameter()
+    {
+        var queryParameter = new CodeProperty
+        {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "li\"ne\nbreak",
+            Access = AccessModifier.Private,
+            Type = new CodeType
+            {
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                Name = "string"
+            }
+        };
+        parentClass.AddProperty(queryParameter);
+        propertyWriter.WriteCodeElement(queryParameter, languageWriter);
+        var result = stringWriter.ToString();
+
+        Assert.Contains("@QueryParameter(\"li\\\"ne\\nbreak\")", result);
     }
 
     [Fact]

@@ -2047,7 +2047,7 @@ public partial class KiotaBuilder
                                 SerializationName = x,
                                 Documentation = new()
                                 {
-                                    DescriptionTemplate = optionDescription?.Description ?? string.Empty,
+                                    DescriptionTemplate = optionDescription?.Description?.CleanupDescription() ?? string.Empty,
                                 },
                             };
                         })
@@ -2318,6 +2318,14 @@ public partial class KiotaBuilder
         newClass.DiscriminatorInformation.DiscriminatorPropertyName = discriminatorPropertyName;
         newClass.AddMethod(factoryMethod);
     }
+    // Component schemas currently being resolved as discriminator targets on this thread.
+    // A discriminator mapping can point at a composed (oneOf/anyOf) schema whose own discriminator
+    // maps back to an ancestor, e.g. A -> B -> A. That cycle runs
+    // GetDiscriminatorMappings -> GetCodeTypeForMapping -> CreateModelDeclarations ->
+    // CreateComposedModelDeclaration -> GetDiscriminatorMappings with nothing to break it,
+    // overflowing the stack. Entries are pushed before recursing and popped in a finally, so only
+    // true ancestor cycles are cut; the same component referenced from sibling branches still resolves.
+    private static readonly ThreadLocal<HashSet<string>> discriminatorResolutionStack = new(static () => new HashSet<string>(StringComparer.OrdinalIgnoreCase));
     private CodeType? GetCodeTypeForMapping(OpenApiUrlTreeNode currentNode, string referenceId, CodeNamespace currentNamespace, CodeClass? baseClass, OpenApiOperation? currentOperation)
     {
         var componentKey = referenceId?.Replace("#/components/schemas/", string.Empty, StringComparison.OrdinalIgnoreCase);
@@ -2326,20 +2334,33 @@ public partial class KiotaBuilder
             logger.LogWarning("Discriminator {ComponentKey} not found in the OpenAPI document.", componentKey);
             return null;
         }
-        var schemaClone = discriminatorSchema.CreateShallowCopy();
-        // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator.
-        if (CreateModelDeclarations(currentNode, schemaClone, currentOperation, GetShortestNamespace(currentNamespace, schemaClone), string.Empty, null, string.Empty, false, true) is not CodeType result)
+        var resolutionStack = discriminatorResolutionStack.Value!;
+        if (!resolutionStack.Add(componentKey))
         {
-            logger.LogWarning("Discriminator {ComponentKey} is not a valid model and points to a union type.", componentKey);
+            logger.LogDebug("Discriminator {ComponentKey} is already being resolved higher in the mapping chain, skipping to avoid a circular reference.", componentKey);
             return null;
         }
-        if (baseClass is not null && (result.TypeDefinition is not CodeClass codeClass || codeClass.StartBlock.Inherits is null))
+        try
         {
-            if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case.
-                logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
-            return null;
+            var schemaClone = discriminatorSchema.CreateShallowCopy();
+            // Call CreateModelDeclarations with isViaDiscriminator=true. This is for a special case where we always generate a base class when types are referenced via a oneOf discriminator.
+            if (CreateModelDeclarations(currentNode, schemaClone, currentOperation, GetShortestNamespace(currentNamespace, schemaClone), string.Empty, null, string.Empty, false, true) is not CodeType result)
+            {
+                logger.LogWarning("Discriminator {ComponentKey} is not a valid model and points to a union type.", componentKey);
+                return null;
+            }
+            if (baseClass is not null && (result.TypeDefinition is not CodeClass codeClass || codeClass.StartBlock.Inherits is null))
+            {
+                if (!baseClass.Equals(result.TypeDefinition))// don't log warning if the discriminator points to the base type itself as this is implicitly the default case.
+                    logger.LogWarning("Discriminator {ComponentKey} is not inherited from {ClassName}.", componentKey, baseClass.Name);
+                return null;
+            }
+            return result;
         }
-        return result;
+        finally
+        {
+            resolutionStack.Remove(componentKey);
+        }
     }
     private void CreatePropertiesForModelClass(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, CodeNamespace ns, CodeClass model)
     {

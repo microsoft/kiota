@@ -56,6 +56,10 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -77,6 +81,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, searchTerm0, version0, clearCache, includePatterns0, excludePatterns0, logLevel, out var tags);
@@ -123,6 +128,7 @@ internal class KiotaShowCommandHandler : KiotaSearchBasedCommandHandler
             Configuration.Generation.ApiManifestPath = manifest;
             Configuration.Generation.IncludePatterns = [.. includePatterns];
             Configuration.Generation.ExcludePatterns = [.. excludePatterns];
+            AssignAllowedExternalOrigins(allowedExternalOrigins);
             Configuration.Generation.ClearCache = clearCache;
             try
             {

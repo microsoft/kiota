@@ -4,10 +4,12 @@ using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
+using Kiota.Builder.Writers.Dart;
 
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Dart;
+
 public sealed class CodeEnumWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -83,5 +85,20 @@ public sealed class CodeEnumWriterTests : IDisposable
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains($"{OptionName}('{SerializationValue}')", result);
+    }
+    [Fact]
+    public void WritesEscapedEnumSerializationValue()
+    {
+        var optionName = "plus1";
+        var serializationValue = "line1'\n$line2";
+        var option = new CodeEnumOption
+        {
+            Name = optionName,
+            SerializationName = serializationValue
+        };
+        currentEnum.AddOption(option);
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"{optionName}('{DartConventionService.SanitizeDartSingleQuoteLiteral(serializationValue)}')", result);
     }
 }

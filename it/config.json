@@ -26,12 +26,20 @@
       }
     ]
   },
-  "apisguru::github.com:api.github.com": {
+  "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json": {
     "MockServerITFolder": "gh",
     "Suppressions": [
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota/issues/1816"
+      },
+      {
+        "Language": "dart",
+        "Rationale": "Multiple compilation errors - https://github.com/microsoft/kiota/issues/7821"
+      },
+      {
+        "Language": "typescript",
+        "Rationale": "Multiple compilation errors - https://github.com/microsoft/kiota/issues/7862"
       }
     ],
     "ExcludePatterns": [
@@ -46,6 +54,16 @@
       {
         "Pattern": "/user/gpg_keys/**",
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
+      },
+      {
+        "Language": "typescript",
+        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
+        "Rationale": "Kiota fails for typescript - https://github.com/microsoft/kiota/issues/7803"
+      },
+      {
+        "Language": "java",
+        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
+        "Rationale": "Compilation fails for Java - https://github.com/microsoft/kiota/issues/7829"
       }
     ]
   },
@@ -79,7 +97,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.yml": {
+  "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
     "ExcludePatterns": [
       {
         "Pattern": "/maps/api/directions/json",

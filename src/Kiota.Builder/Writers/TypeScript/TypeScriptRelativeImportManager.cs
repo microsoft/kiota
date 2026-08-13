@@ -2,6 +2,7 @@
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.TypeScript;
+
 public class TypescriptRelativeImportManager(string namespacePrefix, char namespaceSeparator) : RelativeImportManager(namespacePrefix, namespaceSeparator)
 {
     private const string IndexFileName = "index.js";

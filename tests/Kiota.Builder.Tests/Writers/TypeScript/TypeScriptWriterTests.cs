@@ -5,6 +5,7 @@ using Kiota.Builder.Writers.TypeScript;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.TypeScript;
+
 public class TypeScriptWriterTests
 {
     [Fact]

@@ -2,6 +2,7 @@
 using Kiota.Builder.OrderComparers;
 
 namespace Kiota.Builder.Writers.Python;
+
 public class PythonCodeParameterOrderComparer : BaseCodeParameterOrderComparer
 {
     // Non-default parameters must come before parameters with defaults in python.

@@ -8,6 +8,7 @@ using Kiota.Builder.Writers;
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Go;
+
 public sealed class CodePropertyWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
@@ -91,6 +92,17 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.SerializationName = "someserializationname";
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("`uriparametername:\"someserializationname\"`", result);
+        Assert.Contains("\"uriparametername:\\\"someserializationname\\\"\"", result);
+    }
+    [Fact]
+    public void EscapesSerializationTag()
+    {
+        property.Kind = CodePropertyKind.QueryParameter;
+        property.SerializationName = "line1\"\nline2";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("uriparametername:\\\"line1", result);
+        Assert.Contains("line2\\\"", result);
+        Assert.Contains("\\n", result);
     }
 }

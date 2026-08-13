@@ -80,6 +80,10 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> AllowedExternalOriginsOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(InvocationContext context)
     {
@@ -106,6 +110,7 @@ internal class EditHandler : BaseKiotaCommandHandler
 
         var host = context.GetHost();
         var instrumentation = host.Services.GetService<Instrumentation>();
+        List<string>? allowedExternalOrigins = context.ParseResult.GetValueForOption(AllowedExternalOriginsOption);
         var activitySource = instrumentation?.ActivitySource;
 
         CreateTelemetryTags(activitySource, language, backingStore, excludeBackwardCompatible, skipGeneration, output0,
@@ -175,6 +180,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                 if (structuredMimeTypes is { Count: > 0 })
                     Configuration.Generation.StructuredMimeTypes = new(structuredMimeTypes.SelectMany(static x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                                                                     .Select(static x => x.TrimQuotes()));
+                AssignAllowedExternalOrigins(allowedExternalOrigins);
 
                 DefaultSerializersAndDeserializers(Configuration.Generation);
                 var builder = new KiotaBuilder(logger, Configuration.Generation, httpClient, true);

@@ -648,6 +648,7 @@ public partial class PluginsGenerationService
     }
     private sealed class SelectFirstAnyOneOfVisitor : OpenApiVisitorBase
     {
+        private static readonly HashSet<string> numericFormats = new(StringComparer.OrdinalIgnoreCase) { "int8", "uint8", "int16", "uint16", "int32", "int64", "float", "double", "decimal" };
         public override void Visit(IOpenApiSchema schema)
         {
             if (schema.AnyOf is { Count: > 0 })
@@ -660,7 +661,33 @@ public partial class PluginsGenerationService
                 CopyRelevantInformation(schema.OneOf[0], schema);
                 schema.OneOf.Clear();
             }
+            NarrowMultipleTypes(schema);
             base.Visit(schema);
+        }
+        /// <summary>
+        /// Since 2.12.0 the reader folds a union of primitive types, such as anyOf: [string, integer],
+        /// into a single Type carrying several flags and clears AnyOf, so the loop above never sees the
+        /// union. Plugin descriptions still need a single type, so narrow it here instead.
+        /// A numeric type paired with a string and a numeric format is the shape System.Text.Json's
+        /// JsonNumberHandling.AllowReadingFromString produces, so the numeric type wins there, matching
+        /// what GetPrimitiveType already does for clients. Otherwise a string wins, since every JSON
+        /// scalar round trips through it.
+        /// </summary>
+        private static void NarrowMultipleTypes(IOpenApiSchema schema)
+        {
+            if (schema is not OpenApiSchema openApiSchema || schema.Type is not { } type) return;
+            var nullable = type & JsonSchemaType.Null;
+            var declared = type & ~JsonSchemaType.Null;
+            if (declared is 0 || ((uint)declared & ((uint)declared - 1)) is 0) return; // unset, or already a single type
+            var numeric = declared & (JsonSchemaType.Integer | JsonSchemaType.Number);
+            if (numeric is not 0 &&
+                (declared & JsonSchemaType.String) is JsonSchemaType.String &&
+                schema.Format is { } format && numericFormats.Contains(format))
+                declared = numeric;
+            var selected = declared.HasFlag(JsonSchemaType.String)
+                ? JsonSchemaType.String
+                : (JsonSchemaType)((uint)declared & (uint)-(int)declared);
+            openApiSchema.Type = selected | nullable;
         }
         internal static void CopyRelevantInformation(IOpenApiSchema source, IOpenApiSchema target, bool includeProperties = true, bool includeDiscriminator = true)
         {
@@ -714,8 +741,8 @@ public partial class PluginsGenerationService
                     openApiSchema.Xml = source.Xml;
                 if (source.ExternalDocs is not null)
                     openApiSchema.ExternalDocs = source.ExternalDocs;
-                if (source.Example is not null)
-                    openApiSchema.Example = source.Example;
+                if (source.Examples is not null)
+                    openApiSchema.Examples = [.. source.Examples];
                 if (source.Extensions is not null)
                     openApiSchema.Extensions = new Dictionary<string, IOpenApiExtension>(source.Extensions);
                 if (source.Discriminator is not null && includeDiscriminator)
@@ -1093,13 +1120,13 @@ public partial class PluginsGenerationService
 
     private static FunctionCapabilities? GetFunctionCapabilitiesFromOperation(OpenApiOperation openApiOperation, GenerationConfiguration configuration, ILogger<KiotaBuilder> logger)
     {
-        var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name);
+        var capabilities = GetFunctionCapabilitiesFromCapabilitiesExtension(openApiOperation, OpenApiAiCapabilitiesExtension.Name, logger);
         if (capabilities != null)
         {
             return capabilities;
         }
 
-        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name);
+        var responseSemantics = GetResponseSemanticsFromAdaptiveCardExtension(openApiOperation, OpenApiAiAdaptiveCardExtension.Name, logger);
         if (responseSemantics != null)
         {
             return new FunctionCapabilities
@@ -1119,7 +1146,20 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName)
+    // ponytail: backport of GHSA-4jwf-m4wg-8p66 hand-applied against the pre-3.x extension shape (JsonObject/plain string),
+    // not upstream's typed ExtensionResponseSemanticsStaticTemplate model, to avoid dragging in the unrelated logging refactor.
+    private static bool IsSafeStaticTemplateFileReference(string? file)
+    {
+        if (string.IsNullOrEmpty(file))
+            return true;
+        if (Uri.TryCreate(file, UriKind.Absolute, out _))
+            return false;
+        if (Path.IsPathRooted(file))
+            return false;
+        return !file.Split('/', '\\').Any(static segment => segment is "..");
+    }
+
+    private static FunctionCapabilities? GetFunctionCapabilitiesFromCapabilitiesExtension(OpenApiOperation openApiOperation, string extensionName, ILogger<KiotaBuilder> logger)
     {
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var capabilitiesExtension) &&
@@ -1135,9 +1175,17 @@ public partial class PluginsGenerationService
                 responseSemantics.DataPath = capabilities.ResponseSemantics.DataPath;
                 if (capabilities.ResponseSemantics.StaticTemplate is not null && capabilities.ResponseSemantics.StaticTemplate is JsonObject staticTemplateObj)
                 {
-                    using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
-                    JsonElement staticTemplate = doc.RootElement.Clone();
-                    responseSemantics.StaticTemplate = staticTemplate;
+                    var fileReference = staticTemplateObj.TryGetPropertyValue("file", out var fileNode) ? fileNode?.GetValue<string>() : null;
+                    if (!IsSafeStaticTemplateFileReference(fileReference))
+                    {
+                        logger.LogWarning("Skipping unsafe static_template file reference '{FilePath}' in the generated plugin manifest.", fileReference);
+                    }
+                    else
+                    {
+                        using JsonDocument doc = JsonDocument.Parse(staticTemplateObj.ToJsonString());
+                        JsonElement staticTemplate = doc.RootElement.Clone();
+                        responseSemantics.StaticTemplate = staticTemplate;
+                    }
                 }
                 if (capabilities.ResponseSemantics.Properties is not null)
                 {
@@ -1182,7 +1230,7 @@ public partial class PluginsGenerationService
         return null;
     }
 
-    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName)
+    private static ResponseSemantics? GetResponseSemanticsFromAdaptiveCardExtension(OpenApiOperation openApiOperation, string extensionName, ILogger<KiotaBuilder> logger)
     {
         if (openApiOperation.Extensions is not null &&
             openApiOperation.Extensions.TryGetValue(extensionName, out var adaptiveCardExtension) && adaptiveCardExtension is OpenApiAiAdaptiveCardExtension adaptiveCard)
@@ -1190,6 +1238,12 @@ public partial class PluginsGenerationService
             // This is a workaround for integration with TypeSpec when passing empty object from adaptiveCardExtension
             if (string.IsNullOrEmpty(adaptiveCard.DataPath) || string.IsNullOrEmpty(adaptiveCard.File) || string.IsNullOrEmpty(adaptiveCard.Title))
             {
+                return null;
+            }
+
+            if (!IsSafeStaticTemplateFileReference(adaptiveCard.File))
+            {
+                logger.LogWarning("Skipping unsafe static_template file reference '{FilePath}' in the generated plugin manifest.", adaptiveCard.File);
                 return null;
             }
 

@@ -4,6 +4,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.Writers.Go;
+
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, GoConventionService>
 {
     public CodePropertyWriter(GoConventionService conventionService) : base(conventionService) { }
@@ -22,7 +23,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, GoConventionSe
             case CodePropertyKind.ErrorMessageOverride:
                 throw new InvalidOperationException("Error message overrides are implemented with methods in Go.");
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                suffix = $" `uriparametername:\"{codeElement.SerializationName}\"`";
+                suffix = $" \"uriparametername:\\\"{codeElement.SerializationName.SanitizeDoubleQuote()}\\\"\"";
                 goto default;
             default:
                 var returnType = codeElement.Parent is CodeElement parent ? conventions.GetTypeString(codeElement.Type, parent) : string.Empty;
