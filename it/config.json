@@ -56,6 +56,11 @@
         "Rationale": "https://github.com/github/rest-api-description/issues/2247"
       },
       {
+        "Language": "typescript",
+        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
+        "Rationale": "Kiota fails for typescript - https://github.com/microsoft/kiota/issues/7803"
+      },
+      {
         "Language": "java",
         "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
         "Rationale": "Compilation fails for Java - https://github.com/microsoft/kiota/issues/7829"
