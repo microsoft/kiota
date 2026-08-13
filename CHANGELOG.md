@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a code injection vulnerability in PHP generation by escaping `$` in double-quoted string literals. [#7863](https://github.com/microsoft/kiota/pull/7863)
 - Sanitized client class and namespace names loaded from settings or the `x-ms-kiota-info` OpenAPI extension before using them in generated code and file paths. [#7884](https://github.com/microsoft/kiota/pull/7884)
 - Workspace client and plugin generation now rejects workspace configuration entries whose `outputPath` is rooted or escapes the workspace. [#7885](https://github.com/microsoft/kiota/pull/7885)
+- Bumped `Microsoft.OpenApi` and `Microsoft.OpenApi.YamlReader` to 2.12.0. This also fixes resolution of allowed external references, which previously failed with a spurious circular reference error.
+- Plugin descriptions: a union of primitive types, such as `anyOf: [string, integer]`, is now narrowed to a single type by preferring `string` when present and the lowest JSON schema type otherwise. `Microsoft.OpenApi` 2.12.0 folds such unions into a single multi-valued type before kiota sees them, and that fold does not preserve the order the types were declared in, so the previous "take the first entry" behaviour can no longer be applied literally.
 
 ## [1.29.0] - 2025-10-23
 
