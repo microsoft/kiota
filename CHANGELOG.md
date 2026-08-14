@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bumped `Microsoft.OpenApi` and `Microsoft.OpenApi.YamlReader` to 3.10.0.
 - Numeric scalar unions with a format (e.g. `type: ["integer", "string"]` with `format: int32`, as emitted by ASP.NET Core's OpenAPI 3.1 generator under System.Text.Json's default `JsonNumberHandling.AllowReadingFromString`) now map to the numeric type instead of degrading to `UntypedNode`. [#6541](https://github.com/microsoft/kiota/issues/6541)
+- Ruby: removed `then` from multiline `unless` and skipped empty `case` blocks in factory methods to fix RuboCop and SyntaxError offenses. [kiota-abstractions-ruby#66](https://github.com/microsoft/kiota-abstractions-ruby/issues/66) [#7856](https://github.com/microsoft/kiota/issues/7856)
 - Ruby: fixed `case/when` indentation and added empty line after `attr_accessor` to resolve RuboCop offenses in generated code. [kiota-abstractions-ruby#59](https://github.com/microsoft/kiota-abstractions-ruby/issues/59)
 - golang: generated code now always uses LF line endings, so `gofmt` no longer reports formatting differences when generating on Windows.
 - golang: make sure all generated code adheres to golangs coding standards

@@ -90,13 +90,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
-        if (writeDiscriminatorValueRead)
+        var discriminatorMappings = parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key).ToArray();
+        if (writeDiscriminatorValueRead && discriminatorMappings.Length > 0)
         {
             writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
-            writer.StartBlock($"unless {NodeVarName}.nil? then");
+            writer.StartBlock($"unless {NodeVarName}.nil?");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
             writer.StartBlock($"case {DiscriminatorMappingVarName}", false);
-            foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
+            foreach (var mappedType in discriminatorMappings)
             {
                 writer.StartBlock($"when \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedType.Key)}\"");
                 writer.WriteLine($"return {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()}.new");
