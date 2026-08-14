@@ -246,18 +246,43 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
     }
-    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
+    private static readonly HashSet<string> NumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        return propertyType.Name.ToLowerInvariant() switch
+        "byte", "decimal", "double", "float", "int", "int64", "integer", "sbyte"
+    };
+    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
+    {
+        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
         {
-            "boolean" => defaultValue.TrimQuotes(),
             "date" => $"new Date(DateTimeOffset.Parse({defaultValue}).Date)",
             "datetimeoffset" => $"DateTimeOffset.Parse({defaultValue})",
             "time" => $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)",
             "guid" => $"Guid.Parse({defaultValue})",
-            "float" => $"{defaultValue}f", //Append "f" to the float value
             _ => null,
         };
+        if (convertedDefaultValue is not null)
+            return true;
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            if (bool.TryParse(defaultValue.TrimQuotes(), out var booleanDefaultValue))
+                convertedDefaultValue = booleanDefaultValue ? "true" : "false";
+            return true;
+        }
+        if (NumericTypeNames.Contains(propertyType.Name))
+        {
+            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
+            {
+                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+                {
+                    "decimal" => $"{numericDefaultValue}m",
+                    "float" => $"{numericDefaultValue}f",
+                    "int64" => $"{numericDefaultValue}L",
+                    _ => numericDefaultValue,
+                };
+            }
+            return true;
+        }
+        return false;
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
@@ -279,8 +304,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             { // avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propWithDefault.Type is CodeType propertyType && GetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType) is string convertedDefaultValue)
+            else if (propWithDefault.Type is CodeType propertyType &&
+                TryGetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType, out var convertedDefaultValue))
             {
+                if (convertedDefaultValue is null)
+                    continue;
                 defaultValue = convertedDefaultValue;
             }
             else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))

@@ -7651,6 +7651,105 @@ paths:
         Assert.Empty(displayNameProperty?.DefaultValue);
     }
     [Fact]
+    public void NormalizesCompatiblePrimitiveDefaultsAndOmitsInvalidOnes()
+    {
+        var modelSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                ["actualBoolean"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Boolean,
+                    Default = JsonValue.Create(false)
+                },
+                ["stringBoolean"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Boolean,
+                    Default = JsonValue.Create("true")
+                },
+                ["hostileBoolean"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Boolean,
+                    Default = JsonValue.Create("'false; Environment.Exit(1)\\\r\n\t$'")
+                },
+                ["stringNumber"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Number,
+                    Format = "double",
+                    Default = JsonValue.Create("1.5")
+                },
+                ["hostileNumber"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Number,
+                    Format = "double",
+                    Default = JsonValue.Create("1; Environment.Exit(1)")
+                },
+                ["fractionalInteger"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Integer,
+                    Format = "int32",
+                    Default = JsonValue.Create("1.5")
+                },
+                ["overflowingByte"] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Integer,
+                    Format = "uint8",
+                    Default = JsonValue.Create("256")
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["/api"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("sample.model")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("sample.model", modelSchema);
+        document.SetReferenceHostDocument();
+        var logger = new CountLogger<KiotaBuilder>();
+        var builder = new KiotaBuilder(logger, new GenerationConfiguration
+        {
+            ClientClassName = "Graph",
+            ApiRootUrl = "https://localhost"
+        }, _httpClient);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var model = codeModel.FindChildByName<CodeClass>("model");
+
+        Assert.NotNull(model);
+        Assert.Equal("false", model.FindChildByName<CodeProperty>("actualBoolean", false)?.DefaultValue);
+        Assert.Equal("true", model.FindChildByName<CodeProperty>("stringBoolean", false)?.DefaultValue);
+        Assert.Empty(model.FindChildByName<CodeProperty>("hostileBoolean", false)?.DefaultValue);
+        Assert.Equal("1.5", model.FindChildByName<CodeProperty>("stringNumber", false)?.DefaultValue);
+        Assert.Empty(model.FindChildByName<CodeProperty>("hostileNumber", false)?.DefaultValue);
+        Assert.Empty(model.FindChildByName<CodeProperty>("fractionalInteger", false)?.DefaultValue);
+        Assert.Empty(model.FindChildByName<CodeProperty>("overflowingByte", false)?.DefaultValue);
+        Assert.Equal(4, logger.Count[LogLevel.Warning]);
+    }
+    [Fact]
     public void DoesNotAddReservedPathParameterSymbol()
     {
         var userSchema = new OpenApiSchema
