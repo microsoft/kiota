@@ -610,8 +610,11 @@ public partial class PluginsGenerationService
     [LoggerMessage(Level = LogLevel.Warning, Message = "Authentication warning: {OperationId} - {Message}")]
     private static partial void LogAuthenticationWarning(ILogger logger, string operationId, string message);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipping unsafe static_template file reference '{FilePath}' in the generated plugin manifest. A static_template file reference must be a relative path that does not point outside the manifest package (no absolute paths, URIs, or '..' parent-directory segments).")]
-    private static partial void LogUnsafeStaticTemplateFileReference(ILogger logger, string filePath);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipping an unsafe static_template file reference in the generated plugin manifest. A static_template file reference must be a relative path that does not point outside the manifest package (no absolute paths, URIs, or '..' parent-directory segments).")]
+    private static partial void LogUnsafeStaticTemplateFileReference(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipping an unsafe oauth_card_path file reference in the generated plugin manifest. An oauth_card_path file reference must be a relative path that does not point outside the manifest package (no absolute paths, URIs, or '..' parent-directory segments).")]
+    private static partial void LogUnsafeOAuthCardPathFileReference(ILogger logger);
 
     private sealed class MappingCleanupVisitor(OpenApiDocument openApiDocument) : OpenApiVisitorBase
     {
@@ -1226,7 +1229,7 @@ public partial class PluginsGenerationService
                     // instead of copying them verbatim; inlined cards are passed through unchanged.
                     if (staticTemplate.HasUnsafeFileReference)
                     {
-                        LogUnsafeStaticTemplateFileReference(logger, staticTemplate.File!);
+                        LogUnsafeStaticTemplateFileReference(logger);
                     }
                     else
                     {
@@ -1246,7 +1249,17 @@ public partial class PluginsGenerationService
                         TemplateSelector = capabilities.ResponseSemantics.Properties.TemplateSelector
                     };
                 }
-                responseSemantics.OAuthCardPath = capabilities.ResponseSemantics.OauthCardPath;
+                if (capabilities.ResponseSemantics.OauthCardPath is { Length: > 0 } oauthCardPath)
+                {
+                    if (ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(oauthCardPath))
+                    {
+                        responseSemantics.OAuthCardPath = oauthCardPath;
+                    }
+                    else
+                    {
+                        LogUnsafeOAuthCardPathFileReference(logger);
+                    }
+                }
                 functionCapabilities.ResponseSemantics = responseSemantics;
             }
 
@@ -1294,7 +1307,7 @@ public partial class PluginsGenerationService
             // malicious OpenAPI description cannot make the generated manifest point outside the package (CWE-22).
             if (!ExtensionResponseSemanticsStaticTemplate.IsSafeFileReference(adaptiveCard.File))
             {
-                LogUnsafeStaticTemplateFileReference(logger, adaptiveCard.File);
+                LogUnsafeStaticTemplateFileReference(logger);
                 return null;
             }
 
