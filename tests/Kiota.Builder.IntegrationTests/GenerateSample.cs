@@ -457,20 +457,32 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "GenericBinding", language.ToString()));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        Assert.Contains("PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
-        Assert.Contains("PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
-        Assert.Contains("PaginatedTemplateUserProfile", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("PaginatedTemplateUser-profile", allModelText, StringComparison.Ordinal);
-        // The bare template class must NOT exist — each binding context gets its own suffixed class.
-        Assert.DoesNotContain("class PaginatedTemplate\n", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class PaginatedTemplate ", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class PaginatedTemplate:", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("type PaginatedTemplate struct", allModelText, StringComparison.Ordinal);
+        if (language is GenerationLanguage.CSharp)
+        { // C# emits one reusable generic template closed over at the usage sites
+            Assert.Contains("class PaginatedTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SendAsync<global::ApiSdk.Models.PaginatedTemplate<global::ApiSdk.Models.User>>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SendAsync<global::ApiSdk.Models.PaginatedTemplate<global::ApiSdk.Models.Group>>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SendAsync<global::ApiSdk.Models.PaginatedTemplate<global::ApiSdk.Models.UserProfile>>", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Contains("PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.Contains("PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+            Assert.Contains("PaginatedTemplateUserProfile", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateUser-profile", allModelText, StringComparison.Ordinal);
+            // The bare template class must NOT exist — each binding context gets its own suffixed class.
+            Assert.DoesNotContain("class PaginatedTemplate\n", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplate ", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplate:", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("type PaginatedTemplate struct", allModelText, StringComparison.Ordinal);
+        }
         switch (language)
         {
             case GenerationLanguage.CSharp:
-                Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.User>", allModelText, StringComparison.Ordinal);
-                Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.Group>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("GetCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("n => new global::ApiSdk.Models.PaginatedTemplate<global::ApiSdk.Models.User>(global::ApiSdk.Models.User.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
                 break;
             case GenerationLanguage.Java:
                 Assert.Contains("getCollectionOfObjectValues(User::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
@@ -542,14 +554,24 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "RecursiveGenericBinding", language.ToString()));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        // Generic binding: distinct classes per bound type.
-        Assert.Contains("TreeTemplateBranch", allModelText, StringComparison.Ordinal);
-        Assert.Contains("TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
-        // Recursive forward reference must use the suffixed name, not the bare template name.
-        Assert.DoesNotContain("class TreeTemplate\n", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class TreeTemplate ", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class TreeTemplate:", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("type TreeTemplate struct", allModelText, StringComparison.Ordinal);
+        if (language is GenerationLanguage.CSharp)
+        { // one generic template; the recursive '#self' reference closes over the type parameter
+            Assert.Contains("class TreeTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("public global::ApiSdk.Models.TreeTemplate<TItemType>? Parent", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+        }
+        else
+        {
+            // Generic binding: distinct classes per bound type.
+            Assert.Contains("TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.Contains("TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+            // Recursive forward reference must use the suffixed name, not the bare template name.
+            Assert.DoesNotContain("class TreeTemplate\n", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplate ", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplate:", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("type TreeTemplate struct", allModelText, StringComparison.Ordinal);
+        }
     }
 
     [InlineData(GenerationLanguage.CSharp)]
@@ -572,12 +594,23 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "RequestBodyGenericBinding", language.ToString()));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        Assert.Contains("SearchTemplateUser", allModelText, StringComparison.Ordinal);
-        Assert.Contains("SearchTemplateGroup", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class SearchTemplate\n", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class SearchTemplate ", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class SearchTemplate:", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("type SearchTemplate struct", allModelText, StringComparison.Ordinal);
+        if (language is GenerationLanguage.CSharp)
+        { // one generic template; the request body parameter closes over the bound type at the usage site
+            Assert.Contains("class SearchTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("global::ApiSdk.Models.SearchTemplate<global::ApiSdk.Models.User>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("global::ApiSdk.Models.SearchTemplate<global::ApiSdk.Models.Group>", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Contains("SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplate\n", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplate ", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplate:", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("type SearchTemplate struct", allModelText, StringComparison.Ordinal);
+        }
     }
 
     [Fact]
@@ -663,13 +696,24 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "MultiAnchorGenericBinding", language.ToString()));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        // Two anchors bound per route: dataType + errorType → suffix includes both bound type names.
-        Assert.Contains("EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
-        Assert.Contains("EnvelopeTemplateGroupProblemDetails", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class EnvelopeTemplate\n", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class EnvelopeTemplate ", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class EnvelopeTemplate:", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("type EnvelopeTemplate struct", allModelText, StringComparison.Ordinal);
+        if (language is GenerationLanguage.CSharp)
+        { // one generic template with two type parameters; usages close over both bound types
+            Assert.Contains("class EnvelopeTemplate<TDataType, TErrorType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("where TDataType : IParsable where TErrorType : IParsable", allModelText, StringComparison.Ordinal);
+            Assert.Contains("EnvelopeTemplate<global::ApiSdk.Models.User, global::ApiSdk.Models.ProblemDetails>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("EnvelopeTemplate<global::ApiSdk.Models.Group, global::ApiSdk.Models.ProblemDetails>", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+        }
+        else
+        {
+            // Two anchors bound per route: dataType + errorType → suffix includes both bound type names.
+            Assert.Contains("EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+            Assert.Contains("EnvelopeTemplateGroupProblemDetails", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplate\n", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplate ", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplate:", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("type EnvelopeTemplate struct", allModelText, StringComparison.Ordinal);
+        }
     }
 
     [Fact]
@@ -840,8 +884,12 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "NamespacedBinding", "CSharp"));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class PageTemplateV1User", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class PageTemplateV2User", allModelText, StringComparison.Ordinal);
+        // one generic template; the two bindings close over identically-named types from distinct namespaces
+        Assert.Contains("class PageTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.PageTemplate<global::ApiSdk.Models.V1.User>>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.PageTemplate<global::ApiSdk.Models.V2.User>>", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class PageTemplateV1User", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class PageTemplateV2User", allModelText, StringComparison.Ordinal);
     }
 
     [InlineData(GenerationLanguage.CSharp)]

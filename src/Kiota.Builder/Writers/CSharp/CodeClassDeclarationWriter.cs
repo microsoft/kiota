@@ -38,12 +38,28 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                                         .OfType<string>()
                                         .ToArray();
         var derivation = derivedTypes.Length != 0 ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
+        var typeParameters = parentClass.TypeParameters.ToArray();
+        var typeParametersDeclaration = typeParameters.Length != 0 ? $"<{string.Join(", ", typeParameters.Select(static x => x.Name))}>" : string.Empty;
+        var typeParametersConstraints = typeParameters.Length != 0 ? " " + string.Join(" ", typeParameters.Select(static x => $"where {x.Name} : IParsable")) : string.Empty;
         bool hasDescription = conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.WriteLine(GeneratedCodeAttribute);
         if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-        writer.WriteLine($"{conventions.GetAccessModifier(parentClass.Access)} partial class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
+        writer.WriteLine($"{conventions.GetAccessModifier(parentClass.Access)} partial class {codeElement.Name.ToFirstCharacterUpperCase()}{typeParametersDeclaration} {derivation}{typeParametersConstraints}");
         if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
         writer.StartBlock();
+        if (typeParameters.Length != 0)
+        {
+            foreach (var typeParameter in typeParameters)
+            {
+                var factoryParameterName = CSharpConventionService.GetFactoryParameterName(typeParameter);
+                writer.WriteLine($"private readonly ParsableFactory<{typeParameter.Name}> _{factoryParameterName};");
+            }
+            writer.WriteLine($"public {codeElement.Name.ToFirstCharacterUpperCase()}({string.Join(", ", typeParameters.Select(x => $"ParsableFactory<{x.Name}> {CSharpConventionService.GetFactoryParameterName(x)}"))})");
+            writer.StartBlock();
+            foreach (var typeParameter in typeParameters)
+                writer.WriteLine($"_{CSharpConventionService.GetFactoryParameterName(typeParameter)} = {CSharpConventionService.GetFactoryParameterName(typeParameter)};");
+            writer.CloseBlock();
+        }
     }
 }

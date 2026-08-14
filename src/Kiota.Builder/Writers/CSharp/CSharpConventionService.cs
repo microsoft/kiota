@@ -235,6 +235,9 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(type);
 
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return typeParameter.Name;
+
         if (type.TypeDefinition is ITypeDefinition typeDefinition)
             return typeDefinition.GetFullName();
 
@@ -289,4 +292,6 @@ public class CSharpConventionService : CommonLanguageConventionService
         if (!string.IsNullOrEmpty(deprecationMessage))
             writer.WriteLine(deprecationMessage);
     }
+    internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal static string GetFactoryFieldName(CodeTypeParameter typeParameter) => $"_{GetFactoryParameterName(typeParameter)}";
 }
