@@ -1877,6 +1877,139 @@ paths:
         Assert.Contains(safeFile, resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.StaticTemplate.ToString());
     }
 
+    [Theory]
+    [InlineData("../../../../../../etc/passwd")]
+    [InlineData("..\\..\\..\\windows\\system32\\config\\sam")]
+    [InlineData("/etc/passwd")]
+    [InlineData("\\\\server\\share\\oauthCard.json")]
+    [InlineData("C:\\Windows\\System32\\drivers\\etc\\hosts")]
+    [InlineData("http://attacker.example/exfil")]
+    [InlineData("file:///etc/passwd")]
+    [InlineData("%2e%2e/card.json")]
+    [InlineData("%252e%252e%252fcard.json")]
+    [InlineData("card%00.json")]
+    [InlineData("\uFF0E\uFF0E/oauthCard.json")]
+    public async Task DoesNotEmitUnsafeOAuthCardPathFromCapabilitiesExtensionAsync(string maliciousFile)
+    {
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      operationId: testFunction
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+          properties:
+            title: title
+          oauth_card_path: '" + maliciousFile + @"'
+      responses:
+        '200':
+          description: test
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        mockLogger.Setup(logger => logger.IsEnabled(LogLevel.Warning)).Returns(true);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, mockLogger.Object);
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(maliciousFile, manifestContent);
+        Assert.DoesNotContain("\"oauth_card_path\"", manifestContent);
+
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        var responseSemantics = resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics;
+        Assert.Equal("$.test", responseSemantics.DataPath);
+        Assert.Equal("title", responseSemantics.Properties.Title);
+        Assert.Null(responseSemantics.OAuthCardPath);
+        mockLogger.Verify(logger => logger.Log(
+                It.Is<LogLevel>(logLevel => logLevel == LogLevel.Warning),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("oauth_card_path", StringComparison.Ordinal)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EmitsSafeRelativeOAuthCardPathFromCapabilitiesExtensionAsync()
+    {
+        const string safeFile = "./adaptiveCards/oauthCard.json";
+        var simpleDescriptionContent = @"openapi: 3.0.0
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+    description: There's no place like home
+paths:
+  /test:
+    get:
+      description: description for test path
+      operationId: testFunction
+      x-ai-capabilities:
+        response_semantics:
+          data_path: $.test
+          oauth_card_path: '" + safeFile + @"'
+      responses:
+        '200':
+          description: test
+";
+
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var simpleDescriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(simpleDescriptionPath, simpleDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = simpleDescriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(simpleDescriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
+        KiotaBuilder.CleanupOperationIdForPlugins(openApiDocument);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var manifestContent = await File.ReadAllTextAsync(Path.Combine(outputDirectory, ManifestFileName), cancellationToken: TestContext.Current.CancellationToken);
+        using var jsonDocument = JsonDocument.Parse(manifestContent);
+        var resultingManifest = PluginManifestDocument.Load(jsonDocument.RootElement);
+        Assert.NotNull(resultingManifest.Document);
+        Assert.Equal(safeFile, resultingManifest.Document.Functions[0].Capabilities.ResponseSemantics.OAuthCardPath);
+    }
+
     #endregion
 
     #region Validation
@@ -2764,4 +2897,3 @@ paths:
 
     #endregion
 }
-
