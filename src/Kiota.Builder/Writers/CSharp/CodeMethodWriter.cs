@@ -19,6 +19,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
+        // generic model classes declare their constructor (taking per-anchor factories) alongside the class declaration,
+        // and a static parameterless factory cannot exist for them since the bound factories are only known at the usage site
+        if (parentClass.IsGeneric && codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Factory, CodeMethodKind.RawUrlConstructor))
+            return;
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
@@ -416,7 +420,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"GetCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
+                    return $"GetCollectionOfObjectValues<{propertyType}>({GetParsableFactoryExpression(currentType, method)}){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
                 return $"GetEnumValue<{enumType.GetFullName()}>()";
@@ -425,8 +429,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             "byte[]" => "GetByteArrayValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"Get{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
-            _ => $"GetObjectValue<{propertyType}>({propertyType}.CreateFromDiscriminatorValue)",
+            _ => $"GetObjectValue<{propertyType}>({(propType is CodeType getObjectValueType ? GetParsableFactoryExpression(getObjectValueType, method) : $"{propertyType}.CreateFromDiscriminatorValue")})",
         };
+    }
+    private string GetParsableFactoryExpression(CodeType type, CodeElement targetElement)
+    {
+        var typeName = conventions.GetTypeString(type, targetElement, false);
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return CSharpConventionService.GetFactoryFieldName(typeParameter);
+        if (type.TypeDefinition is CodeClass { IsGeneric: true })
+            return $"n => new {typeName}({string.Join(", ", type.GenericTypeParameterValues.Select(x => GetParsableFactoryExpression(x, targetElement)))})";
+        return $"{typeName}.CreateFromDiscriminatorValue";
     }
     protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
     {
@@ -451,13 +464,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
+                var errorMappingType = (CodeType)errorMapping.Value.AllTypes.First();
+                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {GetParsableFactoryExpression(errorMappingType, codeElement)} }},");
             }
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
         var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass || (returnTypeCodeType != null && returnTypeCodeType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
-                                ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
+                                ? $", {GetParsableFactoryExpression(returnTypeCodeType, codeElement)}"
                                 : null;
         var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch
         {

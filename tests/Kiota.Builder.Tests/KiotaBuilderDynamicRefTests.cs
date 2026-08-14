@@ -83,11 +83,13 @@ components:
 
         var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
         Assert.NotNull(modelsNS);
-        var templateClass = modelsNS!.FindChildByName<CodeClass>("PaginatedTemplateUser", true);
+        var templateClass = modelsNS!.FindChildByName<CodeClass>("PaginatedTemplate", true);
         Assert.NotNull(templateClass);
         Assert.True(templateClass!.IsGeneric);
         var parameter = Assert.Single(templateClass.TypeParameters);
         Assert.Equal("TItemType", parameter.Name);
+        // the concrete specialization is gone: the $dynamicRef items property is typed as the type parameter
+        Assert.Null(modelsNS.FindChildByName<CodeClass>("PaginatedTemplateUser", true));
     }
 
     [Fact]
@@ -313,5 +315,144 @@ components:
         Assert.NotNull(modelsNamespace);
         Assert.NotNull(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateUser", true));
         Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplate", true));
+    }
+
+    [Fact]
+    public async Task GenericTemplateReplacesConcreteSpecializationsForCSharpAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PaginatedTemplate'
+  /groups:
+    get:
+      operationId: listGroups
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    User:
+      type: object
+    Group:
+      type: object
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // one reusable generic template instead of per-binding concrete classes
+        var template = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplate", true);
+        Assert.NotNull(template);
+        Assert.True(template!.IsGeneric);
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateUser", true));
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateGroup", true));
+        // the dynamicRef property is typed as the type parameter
+        var itemsProperty = template.Properties.First(static x => x.Name == "items");
+        var itemsType = Assert.IsType<CodeType>(itemsProperty.Type);
+        Assert.IsType<CodeTypeParameter>(itemsType.TypeDefinition);
+        // executor return types carry the bound generic arguments
+        var usersNamespace = codeModel.FindNamespaceByName("ApiSdk.users");
+        Assert.NotNull(usersNamespace);
+        var usersRequestBuilder = usersNamespace!.FindChildByName<CodeClass>("UsersRequestBuilder", true);
+        Assert.NotNull(usersRequestBuilder);
+        var usersExecutor = usersRequestBuilder!.Methods.First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(usersExecutor.ReturnType);
+        Assert.Equal("PaginatedTemplate", returnType.Name);
+        var genericArgument = Assert.Single(returnType.GenericTypeParameterValues);
+        Assert.Equal("User", genericArgument.Name);
+    }
+
+    [Fact]
+    public async Task KeepsConcreteSpecializationsForNonCSharpLanguagesAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    User:
+      type: object
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { Language = GenerationLanguage.Go, ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateUser", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
     }
 }
