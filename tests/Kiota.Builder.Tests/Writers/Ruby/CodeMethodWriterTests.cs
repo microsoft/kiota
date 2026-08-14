@@ -1080,6 +1080,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"@{timePropName.ToSnakeCase()} = Time.parse({defaultValueTime})", result);
     }
     [Fact]
+    public void WritesConstructorWithEnumDefaultValueByWireName()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var enumDef = root.AddEnum(new CodeEnum { Name = "TestEnum" }).First();
+        enumDef.AddOption(new CodeEnumOption { Name = "OneZero", SerializationName = "1.0" });
+        enumDef.AddOption(new CodeEnumOption { Name = "TwoZero", SerializationName = "2.0" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "version",
+            DefaultValue = "2.0",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "TestEnum",
+                TypeDefinition = enumDef,
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[:TwoZero]", result);
+        Assert.DoesNotContain("[:2.0]", result);
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();
