@@ -65,13 +65,6 @@
   "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
   },
   "https://developers.pipedrive.com/docs/api/v1/openapi.yaml": {
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
-      }
-    ],
-    "IdempotencySuppressions": [],
     "ExcludePatterns": [
       {
         "Language": "typescript",
@@ -127,10 +120,6 @@
   },
   "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json": {
     "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
-      },
       {
         "Language": "dart",
         "Rationale": "Compilation fails with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7822"

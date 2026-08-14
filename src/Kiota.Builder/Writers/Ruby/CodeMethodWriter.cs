@@ -200,8 +200,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             string defaultValue = RubyConventionService.SanitizeRubyDoubleQuoteLiteral(propWithDefault.DefaultValue);
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
-                // generates "Rootnamespace::Subnamespace::EnumType[:DefaultValue]"
-                defaultValue = $"{conventions.GetNormalizedNamespacePrefixForType(propWithDefault.Type)}{conventions.GetTypeString(propWithDefault.Type, currentMethod)}[:{defaultValue.TrimQuotes().ToFirstCharacterUpperCase()}]";
+                var trimmedDefault = defaultValue.TrimQuotes();
+                var matchingOption = enumDefinition.Options.FirstOrDefault(x => x.WireName.Equals(trimmedDefault, StringComparison.OrdinalIgnoreCase));
+                var optionName = (matchingOption?.Name ?? trimmedDefault).CleanupSymbolName().ToFirstCharacterUpperCase();
+                defaultValue = $"{conventions.GetNormalizedNamespacePrefixForType(propWithDefault.Type)}{conventions.GetTypeString(propWithDefault.Type, currentMethod)}[:{optionName}]";
             }
             else
             {
