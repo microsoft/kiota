@@ -1269,7 +1269,12 @@ public partial class KiotaBuilder
             stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
             !string.IsNullOrEmpty(stringDefaultValue) &&
             !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
-            prop.DefaultValue = $"\"{stringDefaultValue}\"";
+        {
+            if (TryNormalizeStringDefaultValue(resultType, stringDefaultValue, out var normalizedDefaultValue))
+                prop.DefaultValue = normalizedDefaultValue;
+            else
+                LogInvalidDefaultValue(propertyName, resultType.Name);
+        }
         else if (kind == CodePropertyKind.Custom &&
             propertySchema?.Default is JsonValue stringDefaultJsonValue2 &&
             !stringDefaultJsonValue2.IsJsonNullSentinel() &&
@@ -1285,6 +1290,28 @@ public partial class KiotaBuilder
             LogCreatingProperty(prop.Name, prop.Type.Name);
         }
         return prop;
+    }
+    private static readonly HashSet<string> primitiveNumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "byte", "decimal", "double", "float", "int", "int64", "integer", "sbyte"
+    };
+    private static bool TryNormalizeStringDefaultValue(CodeTypeBase propertyType, string defaultValue, out string normalizedDefaultValue)
+    {
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            if (bool.TryParse(defaultValue, out var booleanDefaultValue))
+            {
+                normalizedDefaultValue = booleanDefaultValue ? "true" : "false";
+                return true;
+            }
+            normalizedDefaultValue = string.Empty;
+            return false;
+        }
+        if (primitiveNumericTypeNames.Contains(propertyType.Name))
+            return PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue, propertyType.Name, out normalizedDefaultValue);
+
+        normalizedDefaultValue = $"\"{defaultValue}\"";
+        return true;
     }
     private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array, JsonSchemaType.Object | JsonSchemaType.Null, JsonSchemaType.Array | JsonSchemaType.Null];
     internal static readonly HashSet<string> numericFormats = new(StringComparer.OrdinalIgnoreCase) { "int8", "uint8", "int16", "uint16", "int32", "int64", "float", "double", "decimal" };
@@ -3016,6 +3043,8 @@ public partial class KiotaBuilder
     private partial void LogCreatingIndexer(string name);
     [LoggerMessage(Level = LogLevel.Trace, Message = "Creating property {Name} of {Type}")]
     private partial void LogCreatingProperty(string name, string type);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for property {PropertyName} because it is incompatible with type {TypeName}.")]
+    private partial void LogInvalidDefaultValue(string propertyName, string typeName);
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not create error type for {Error} in {Operation}")]
     private partial void LogCouldNotCreateErrorType(string error, string? operation);
     [LoggerMessage(Level = LogLevel.Warning, Message = "No paths were found matching the provided patterns. Check your configuration.")]

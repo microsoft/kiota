@@ -2288,6 +2288,72 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains(@"\n", result);
     }
     [Fact]
+    public void DoesNotWriteInvalidPrimitiveDefaultValues()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileBoolean",
+            DefaultValue = "\"'false; Environment.Exit(1)\\\\\r\n\t$'\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "boolean"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileFloat",
+            DefaultValue = "1f; Environment.Exit(1);//",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "float"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "fractionalInteger",
+            DefaultValue = "1.5",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "integer"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "decimalValue",
+            DefaultValue = "1.5",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "decimal"
+            }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "longValue",
+            DefaultValue = "2147483648",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "int64"
+            }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("Environment.Exit", result);
+        Assert.DoesNotContain("HostileBoolean =", result);
+        Assert.DoesNotContain("HostileFloat =", result);
+        Assert.DoesNotContain("FractionalInteger =", result);
+        Assert.Contains("DecimalValue = 1.5m;", result);
+        Assert.Contains("LongValue = 2147483648L;", result);
+    }
+    [Fact]
     public void DoesNotWriteConstructorWithDefaultFromComposedType()
     {
         setup();
