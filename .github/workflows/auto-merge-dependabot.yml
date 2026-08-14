@@ -2,16 +2,14 @@ name: Auto-merge dependabot updates
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   pull-requests: write
   contents: write
 
 jobs:
-
   dependabot-merge:
-
     runs-on: ubuntu-latest
 
     if: ${{ github.actor == 'dependabot[bot]' }}
@@ -19,14 +17,14 @@ jobs:
     steps:
       - name: Dependabot metadata
         id: metadata
-        uses: dependabot/fetch-metadata@v3.1.0
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Enable auto-merge for Dependabot PRs
         # Only if version bump is not a major version change
         if: ${{steps.metadata.outputs.update-type != 'version-update:semver-major'}}
-        run: gh pr merge --auto --squash -d "$PR_URL"
+        run: gh pr merge --auto "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

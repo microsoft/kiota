@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Kiota.Builder.Validation;
@@ -101,6 +102,60 @@ paths:
 """;
         var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
         Assert.Empty(diagnostic.Warnings);
+    }
+    [Theory]
+    [InlineData("[integer, string]", "int32")]
+    [InlineData("[integer, string, 'null']", "int64")]
+    [InlineData("[number, string]", "float")]
+    [InlineData("[number, string, 'null']", "double")]
+    [InlineData("[integer, string]", "uint16")]
+    public async Task DoesntAddAWarningWhenNumericStringUnionWithNumericFormat(string type, string format)
+    {
+        var documentTxt = $"""
+openapi: 3.1.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          description: some description
+          content:
+            application/json:
+              schema:
+                type: {type}
+                format: {format}
+""";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        Assert.Empty(diagnostic.Warnings);
+    }
+    [Fact]
+    public async Task AddsAWarningWhenNumericStringUnionWithUnsupportedFormat()
+    {
+        var documentTxt = """
+openapi: 3.1.1
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/v1.0
+  version: 1.0.1
+paths:
+  /enumeration:
+    get:
+      responses:
+        '200':
+          description: some description
+          content:
+            application/json:
+              schema:
+                type: [integer, string]
+                format: date-time
+""";
+        var diagnostic = await GetDiagnosticFromDocumentAsync(documentTxt);
+        var warning = Assert.Single(diagnostic.Warnings);
+        Assert.EndsWith("will be ignored.", warning.Message, StringComparison.Ordinal);
     }
     private static async Task<OpenApiDiagnostic> GetDiagnosticFromDocumentAsync(string document)
     {

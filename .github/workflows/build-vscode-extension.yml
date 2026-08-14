@@ -11,19 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  checksecret:
-    name: check if SONAR_TOKEN is set in github secrets
-    runs-on: ubuntu-latest
-    outputs:
-      is_SONAR_TOKEN_set: ${{ steps.checksecret_job.outputs.is_SONAR_TOKEN_set }}
-    steps:
-      - name: Check whether unity activation requests should be done
-        id: checksecret_job
-        run: |
-          echo "is_SONAR_TOKEN_set=${{ env.SONAR_TOKEN != '' }}" >> $GITHUB_OUTPUT
-
   test_and_generate_binaries:
-    needs: [checksecret]
     strategy:
       fail-fast: false
       matrix:
@@ -40,14 +28,14 @@ jobs:
             os: macOS-latest
     runs-on: ${{ matrix.binaries.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.x
 
       - name: Use .NET 10
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
 
@@ -96,18 +84,8 @@ jobs:
         shell: bash
         working-directory: vscode
 
-      - name: Run sonar cloud analysis
-        if: needs.checksecret.outputs.is_SONAR_TOKEN_set == 'true'
-        uses: SonarSource/sonarqube-scan-action@v8
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: vscode
-          args: >
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,../npm-package/coverage/lcov.info
-
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.binaries.architecture }}
           path: vscode/packages/npm-package/.kiotabin/${{ steps.last_release.outputs.RELEASE_VERSION }}/${{ matrix.binaries.architecture }}
@@ -128,9 +106,9 @@ jobs:
             id: "package"
             item: "tgz"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.x
 
@@ -168,7 +146,7 @@ jobs:
         if: matrix.builds.id == 'vscode'
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.builds.name }}
           path: vscode/packages/${{ matrix.builds.path }}/*.${{ matrix.builds.item }}

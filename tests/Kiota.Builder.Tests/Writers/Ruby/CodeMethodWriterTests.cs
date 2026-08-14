@@ -350,7 +350,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.Contains("unless mapping_value_node.nil? then", result);
+        Assert.Contains("unless mapping_value_node.nil?", result);
         Assert.Contains("mapping_value = mapping_value_node.get_string_value", result);
         Assert.Contains("case mapping_value", result);
         Assert.Contains("when \"ns.childmodel\"", result);
@@ -506,7 +506,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("unless mapping_value_node.nil? then", result);
+        Assert.DoesNotContain("unless mapping_value_node.nil?", result);
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
@@ -552,7 +552,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("unless mapping_value_node.nil? then", result);
+        Assert.DoesNotContain("unless mapping_value_node.nil?", result);
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
@@ -1080,6 +1080,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"@{timePropName.ToSnakeCase()} = Time.parse({defaultValueTime})", result);
     }
     [Fact]
+    public void WritesConstructorWithEnumDefaultValueByWireName()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        var enumDef = root.AddEnum(new CodeEnum { Name = "TestEnum" }).First();
+        enumDef.AddOption(new CodeEnumOption { Name = "OneZero", SerializationName = "1.0" });
+        enumDef.AddOption(new CodeEnumOption { Name = "TwoZero", SerializationName = "2.0" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "version",
+            DefaultValue = "2.0",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "TestEnum",
+                TypeDefinition = enumDef,
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("[:TwoZero]", result);
+        Assert.DoesNotContain("[:2.0]", result);
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();
@@ -1333,6 +1357,42 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("when \"select\"", result);
         Assert.Contains("return \"%24select\"", result);
         Assert.Contains("else", result);
+    }
+    [Fact]
+    public void WritesNameMapperMethodWithWhenAtSameLevelAsCase()
+    {
+        setup();
+        method.Kind = CodeMethodKind.QueryParametersMapper;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "select",
+            Kind = CodePropertyKind.QueryParameter,
+            SerializationName = "%24select",
+            Type = new CodeType
+            {
+                Name = "string",
+            },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Kind = CodeParameterKind.QueryParametersMapperParameter,
+            Name = "originalName",
+            Type = new CodeType
+            {
+                Name = "string",
+            }
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        var lines = result.Split(Environment.NewLine);
+        var caseLine = Array.Find(lines, static l => l.TrimStart().StartsWith("case", StringComparison.Ordinal));
+        var whenLine = Array.Find(lines, static l => l.TrimStart().StartsWith("when", StringComparison.Ordinal));
+        Assert.NotNull(caseLine);
+        Assert.NotNull(whenLine);
+        var caseIndent = caseLine.Length - caseLine.TrimStart().Length;
+        var whenIndent = whenLine.Length - whenLine.TrimStart().Length;
+        Assert.Equal(caseIndent, whenIndent);
     }
     [Fact]
     public void EscapesNameMapperMethodSerializationNames()

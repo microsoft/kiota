@@ -3,22 +3,10 @@
     "MockServerITFolder": "basic"
   },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
-    "MockServerITFolder": "query-params",
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/59" 
-      }
-    ]
+    "MockServerITFolder": "query-params"
   },
   "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
-    "MockServerITFolder": "discriminator",
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
-      }
-    ]
+    "MockServerITFolder": "discriminator"
   },
   "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json": {
     "MockServerITFolder": "defaultvalues"
@@ -55,10 +43,6 @@
   "https://developers.notion.com/openapi.json": {
     "Suppressions": [
       {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
-      },
-      {
         "Language": "typescript",
         "Rationale": "Kiota client generation fails with api from 2026-06-17 - https://github.com/microsoft/kiota/issues/7802"
       },
@@ -79,21 +63,8 @@
     ]
   },
   "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/7856"
-      }
-    ]
   },
   "https://developers.pipedrive.com/docs/api/v1/openapi.yaml": {
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
-      }
-    ],
-    "IdempotencySuppressions": [],
     "ExcludePatterns": [
       {
         "Language": "typescript",
@@ -150,10 +121,6 @@
   "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json": {
     "Suppressions": [
       {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66"
-      },
-      {
         "Language": "dart",
         "Rationale": "Compilation fails with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7822"
       },
@@ -176,21 +143,28 @@
     ]
   },
   "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json": {
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/59"
-      }
-    ]
   },
   "https://api.twitter.com/2/openapi.json": {
     "Suppressions": [
       {
         "Language": "ruby",
         "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
+      },
+      {
+        "Language": "dart",
+        "Rationale": "dart analyze fails on unnecessary_null_comparison for primitive binary union media models - https://github.com/microsoft/kiota/issues/7997"
+      },
+      {
+        "Language": "php",
+        "Rationale": "PHPStan fails on strict !== between null and null in binary union getters - https://github.com/microsoft/kiota/issues/7997"
       }
     ],
-    "IdempotencySuppressions": [],
+    "IdempotencySuppressions": [
+      {
+        "Language": "all",
+        "Rationale": "Non-deterministic generation of the Analytics/models set (e.g. Models/Analytics.cs, models/news.dart, apisdk/models/Analytics.java, models/analytics.rb, models/analytics.go, models/index.ts). The instability is language-agnostic and surfaces on a different language each run, so all languages are suppressed until the ordering is stabilized - https://github.com/microsoft/kiota/issues/7997"
+      }
+    ],
     "ExcludePatterns": [
       {
         "Language": "typescript",

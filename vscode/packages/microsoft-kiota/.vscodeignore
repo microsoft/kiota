@@ -18,7 +18,6 @@ images/samples/
 coverage/
 ../../
 ../
-sonar-project.properties
 debugging.md
 jest.*.js
 eslint.config.mjs

@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Multi Inline Anchor Binding API
+  version: 0.1.0
+paths:
+  /composite:
+    get:
+      operationId: getComposite
+      responses:
+        '200':
+          description: Composite with two inline dynamic anchors
+          content:
+            application/json:
+              schema:
+                $defs:
+                  dataType:
+                    $dynamicAnchor: dataType
+                    type: object
+                    required: [id, name]
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  errorType:
+                    $dynamicAnchor: errorType
+                    type: object
+                    required: [code, detail]
+                    properties:
+                      code:
+                        type: integer
+                      detail:
+                        type: string
+                $ref: '#/components/schemas/CompositeTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    CompositeTemplate:
+      $id: https://example.com/schemas/CompositeTemplate
+      $dynamicAnchor: dataType
+      type: object
+      required: [data, errors]
+      properties:
+        data:
+          $dynamicRef: '#dataType'
+        errors:
+          type: array
+          items:
+            $dynamicRef: '#errorType'
