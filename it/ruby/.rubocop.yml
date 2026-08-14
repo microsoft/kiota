@@ -122,3 +122,15 @@ Metrics/ModuleLength:
 # Don't raise an error if block is longer than 25 lines. This happens in "spec\defaultvalues\integration_test_defaultvalues.rb"
 Metrics/BlockLength:
   Enabled: false
+
+# Generated property names may contain letter_digit patterns (e.g. heading_1) from the OpenAPI spec
+Naming/VariableNumber:
+  Enabled: false
+
+# Generated factory methods can have many discriminator branches
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+# Generated factory methods may just delegate to super
+Lint/UselessMethodDefinition:
+  Enabled: false

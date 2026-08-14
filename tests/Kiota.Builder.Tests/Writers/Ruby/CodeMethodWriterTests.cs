@@ -350,7 +350,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.Contains("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.Contains("unless mapping_value_node.nil? then", result);
+        Assert.Contains("unless mapping_value_node.nil?", result);
         Assert.Contains("mapping_value = mapping_value_node.get_string_value", result);
         Assert.Contains("case mapping_value", result);
         Assert.Contains("when \"ns.childmodel\"", result);
@@ -506,7 +506,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("unless mapping_value_node.nil? then", result);
+        Assert.DoesNotContain("unless mapping_value_node.nil?", result);
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
@@ -552,7 +552,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(factoryMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("unless mapping_value_node.nil? then", result);
+        Assert.DoesNotContain("unless mapping_value_node.nil?", result);
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
