@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -401,6 +402,381 @@ components:
         Assert.Equal("PaginatedTemplate", returnType.Name);
         var genericArgument = Assert.Single(returnType.GenericTypeParameterValues);
         Assert.Equal("User", genericArgument.Name);
+    }
+
+    [Fact]
+    public async Task GenericInheritedTemplateKeepsConcreteBaseAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /inherited/users:
+    get:
+      operationId: listInheritedUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/InheritedTemplate'
+  /inherited/groups:
+    get:
+      operationId: listInheritedGroups
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/InheritedTemplate'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+    PageBase:
+      type: object
+      properties:
+        nextLink:
+          type: string
+    InheritedTemplate:
+      $id: https://example.com/schemas/InheritedTemplate
+      $dynamicAnchor: itemType
+      allOf:
+        - $ref: '#/components/schemas/PageBase'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the inherited template goes generic, the dynamic-ref items property is typed as the type parameter
+        var template = modelsNamespace!.FindChildByName<CodeClass>("InheritedTemplate", true);
+        Assert.NotNull(template);
+        Assert.True(template!.IsGeneric);
+        Assert.Equal("TItemType", Assert.Single(template.TypeParameters).Name);
+        var itemsType = Assert.IsType<CodeType>(template.Properties.First(static x => x.Name == "items").Type);
+        Assert.IsType<CodeTypeParameter>(itemsType.TypeDefinition);
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("InheritedTemplateUser", true));
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("InheritedTemplateGroup", true));
+        // the base has no dynamic ref and stays concrete
+        var pageBase = modelsNamespace.FindChildByName<CodeClass>("PageBase", true);
+        Assert.NotNull(pageBase);
+        Assert.False(pageBase!.IsGeneric);
+        Assert.Same(pageBase, template.StartBlock.Inherits?.TypeDefinition);
+        // executor return types carry the bound generic arguments
+        Assert.Equal(["Group", "User"], codeModel.FindNamespaceByName("ApiSdk.inherited.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .Union(codeModel.FindNamespaceByName("ApiSdk.inherited.groups")!.FindChildByName<CodeClass>("GroupsRequestBuilder", true)!.Methods)
+            .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get)
+            .Select(static x => Assert.IsType<CodeType>(x.ReturnType).GenericTypeParameterValues.Single().Name)
+            .OrderBy(static x => x, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task GenericInheritedComponentPromotesBaseAndClosesDerivedAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /pages/users:
+    get:
+      operationId: listUserPages
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/DerivedPage'
+  /pages/groups:
+    get:
+      operationId: listGroupPages
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/DerivedPage'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+    BasePage:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+    DerivedPage:
+      allOf:
+        - $ref: '#/components/schemas/BasePage'
+        - type: object
+          properties:
+            page:
+              type: integer
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the base resolves items through the active binding so it becomes generic
+        var basePage = modelsNamespace!.FindChildByName<CodeClass>("BasePage", true);
+        Assert.NotNull(basePage);
+        Assert.True(basePage!.IsGeneric);
+        var itemsType = Assert.IsType<CodeType>(basePage.Properties.First(static x => x.Name == "items").Type);
+        Assert.IsType<CodeTypeParameter>(itemsType.TypeDefinition);
+        // the derived class is generic because its base is, and closes over the base argument with its parameter
+        var derivedPage = modelsNamespace.FindChildByName<CodeClass>("DerivedPage", true);
+        Assert.NotNull(derivedPage);
+        Assert.True(derivedPage!.IsGeneric);
+        var inherits = derivedPage.StartBlock.Inherits;
+        Assert.NotNull(inherits);
+        Assert.Same(basePage, inherits!.TypeDefinition);
+        var baseArgument = Assert.Single(inherits.GenericTypeParameterValues);
+        var derivedParameter = Assert.IsType<CodeTypeParameter>(baseArgument.TypeDefinition);
+        Assert.Equal("TItemType", derivedParameter.Name);
+        // the derived argument closes over the derived's own parameter, the base keeps owning its instance
+        Assert.Same(derivedPage.TypeParameters.Single(), derivedParameter);
+        Assert.Same(derivedPage.StartBlock, derivedParameter.Parent);
+        Assert.Same(basePage.StartBlock, basePage.TypeParameters.Single().Parent);
+        Assert.Equal("TItemType", Assert.Single(derivedPage.TypeParameters).Name);
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("BasePageUser", true));
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("DerivedPageGroup", true));
+        // executor return types carry the bound generic arguments
+        Assert.Equal(["Group", "User"], codeModel.FindNamespaceByName("ApiSdk.pages.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .Union(codeModel.FindNamespaceByName("ApiSdk.pages.groups")!.FindChildByName<CodeClass>("GroupsRequestBuilder", true)!.Methods)
+            .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get)
+            .Select(static x => Assert.IsType<CodeType>(x.ReturnType).GenericTypeParameterValues.Single().Name)
+            .OrderBy(static x => x, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task MixedBoundAndBareTemplateReferencesNeverEmitOpenGenericsAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PaginatedTemplate'
+  /bare:
+    get:
+      operationId: getBare
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    User:
+      type: object
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        // whichever endpoint materializes the shared template first wins its identity; the loser degrades to
+        // UntypedNode, so regardless of ordering no usage may close generic arguments over a non-generic class
+        var executorReturnTypes = codeModel.FindNamespaceByName("ApiSdk.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .Union(codeModel.FindNamespaceByName("ApiSdk.bare")!.FindChildByName<CodeClass>("BareRequestBuilder", true)!.Methods)
+            .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get)
+            .Select(static x => x.ReturnType)
+            .OfType<CodeType>();
+        foreach (var returnType in executorReturnTypes)
+            Assert.True(returnType.TypeDefinition is not CodeClass codeClass || codeClass.IsGeneric || !returnType.GenericTypeParameterValues.Any(),
+                $"open generic reference to {returnType.Name} must never be emitted");
+    }
+
+    [Fact]
+    public async Task PromotesNestedInlineModelsInsideGenericTemplatesAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /pages/users:
+    get:
+      operationId: listUserPages
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PageTemplate'
+  /pages/groups:
+    get:
+      operationId: listGroupPages
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/PageTemplate'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+    PageTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+        metadata:
+          type: object
+          properties:
+            first:
+              $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the nested inline model is shared (no per-binding suffix) and generic over the template's parameter
+        var inlineModel = modelsNamespace!.FindChildByName<CodeClass>("PageTemplate_metadata", true);
+        Assert.NotNull(inlineModel);
+        Assert.True(inlineModel!.IsGeneric);
+        var firstType = Assert.IsType<CodeType>(inlineModel.Properties.First(static x => x.Name == "first").Type);
+        Assert.IsType<CodeTypeParameter>(firstType.TypeDefinition);
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PageTemplate_metadataUser", true));
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PageTemplate_metadataGroup", true));
+        // the template's metadata property stays open over the type parameter, closing only at the usage sites
+        var template = modelsNamespace.FindChildByName<CodeClass>("PageTemplate", true);
+        Assert.NotNull(template);
+        Assert.True(template!.IsGeneric);
+        var metadataType = Assert.IsType<CodeType>(template.Properties.First(static x => x.Name == "metadata").Type);
+        Assert.Same(inlineModel, metadataType.TypeDefinition);
+        Assert.IsType<CodeTypeParameter>(Assert.Single(metadataType.GenericTypeParameterValues).TypeDefinition);
+        // executor return types still close over the bound types
+        Assert.Equal(["Group", "User"], codeModel.FindNamespaceByName("ApiSdk.pages.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .Union(codeModel.FindNamespaceByName("ApiSdk.pages.groups")!.FindChildByName<CodeClass>("GroupsRequestBuilder", true)!.Methods)
+            .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get)
+            .Select(static x => Assert.IsType<CodeType>(x.ReturnType).GenericTypeParameterValues.Single().Name)
+            .OrderBy(static x => x, StringComparer.Ordinal));
     }
 
     [Fact]

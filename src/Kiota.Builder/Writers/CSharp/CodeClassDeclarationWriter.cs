@@ -50,16 +50,28 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
         writer.StartBlock();
         if (typeParameters.Length != 0)
         {
-            foreach (var typeParameter in typeParameters)
-            {
-                var factoryParameterName = CSharpConventionService.GetFactoryParameterName(typeParameter);
-                writer.WriteLine($"private readonly ParsableFactory<{typeParameter.Name}> _{factoryParameterName};");
-            }
-            writer.WriteLine($"public {codeElement.Name.ToFirstCharacterUpperCase()}({string.Join(", ", typeParameters.Select(x => $"ParsableFactory<{x.Name}> {CSharpConventionService.GetFactoryParameterName(x)}"))})");
+            // only the parameters this class's own deserializers consume own a factory field; parameters
+            // only needed by a generic base are accepted by the constructor and forwarded to it
+            var ownedParameters = typeParameters.Where(parameter => parentClass.Properties.Any(property => ReferencesTypeParameter(property.Type, parameter))).ToArray();
+            foreach (var typeParameter in ownedParameters)
+                writer.WriteLine($"private readonly ParsableFactory<{typeParameter.Name}> {CSharpConventionService.GetFactoryFieldName(typeParameter)};");
+            var forwardedParameterNames = (codeElement.Inherits?.GenericTypeParameterValues ?? Enumerable.Empty<CodeType>())
+                .Select(static x => x.TypeDefinition as CodeTypeParameter)
+                .OfType<CodeTypeParameter>()
+                .Select(CSharpConventionService.GetFactoryParameterName)
+                .ToArray();
+            var baseCall = forwardedParameterNames.Length == 0 ? string.Empty : $" : base({string.Join(", ", forwardedParameterNames)})";
+            writer.WriteLine($"public {codeElement.Name.ToFirstCharacterUpperCase()}({string.Join(", ", typeParameters.Select(x => $"ParsableFactory<{x.Name}> {CSharpConventionService.GetFactoryParameterName(x)}"))}){baseCall}");
             writer.StartBlock();
-            foreach (var typeParameter in typeParameters)
-                writer.WriteLine($"_{CSharpConventionService.GetFactoryParameterName(typeParameter)} = {CSharpConventionService.GetFactoryParameterName(typeParameter)};");
+            foreach (var typeParameter in ownedParameters)
+                writer.WriteLine($"{CSharpConventionService.GetFactoryFieldName(typeParameter)} = {CSharpConventionService.GetFactoryParameterName(typeParameter)};");
             writer.CloseBlock();
         }
     }
+    private static bool ReferencesTypeParameter(CodeTypeBase propertyType, CodeTypeParameter parameter) => propertyType switch
+    {
+        CodeType codeType when codeType.TypeDefinition is CodeTypeParameter current => current.Name.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase),
+        CodeType codeType => codeType.GenericTypeParameterValues.Any(x => ReferencesTypeParameter(x, parameter)),
+        _ => false,
+    };
 }
