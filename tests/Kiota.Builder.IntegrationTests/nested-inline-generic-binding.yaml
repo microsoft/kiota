@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: DynamicRef Nested Inline Generic Binding API
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /pages/users:
+    get:
+      operationId: listUserPages
+      responses:
+        '200':
+          description: User page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PageTemplate'
+        default:
+          description: Error
+  /pages/groups:
+    get:
+      operationId: listGroupPages
+      responses:
+        '200':
+          description: Group page
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/PageTemplate'
+        default:
+          description: Error
+components:
+  schemas:
+    User:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+    Group:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+    PageTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      required: [items, metadata]
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+        metadata:
+          type: object
+          required: [first]
+          properties:
+            first:
+              $dynamicRef: '#itemType'
+            count:
+              type: integer

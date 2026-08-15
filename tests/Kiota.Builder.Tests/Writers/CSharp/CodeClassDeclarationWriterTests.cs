@@ -135,4 +135,43 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains($"{accessModifier.ToString().ToLower()} partial class", result);
     }
+
+    [Fact]
+    public void WritesGenericDerivedConstructorForwardingToGenericBase()
+    {
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var baseClass = new CodeClass { Name = "BasePage" };
+        baseClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" }); // the base owns its parameter instance
+        var inherits = new CodeType { TypeDefinition = baseClass };
+        inherits.AddGenericTypeParameterValue(new CodeType { TypeDefinition = parentClass.TypeParameters[0] }); // derived closes over its own parameter
+        parentClass.StartBlock.Inherits = inherits;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "page",
+            Type = new CodeType { Name = "int", IsExternal = true },
+        });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("public ParentClass(ParsableFactory<TItemType> itemTypeFactory) : base(itemTypeFactory)", result);
+        // the derived class deserializes no TItemType property of its own, the base owns the factory field
+        Assert.DoesNotContain("_itemTypeFactory", result);
+    }
+
+    [Fact]
+    public void WritesFactoryFieldOnlyForOwnDeserializers()
+    {
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var itemsType = new CodeType { TypeDefinition = itemTypeParameter, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex };
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Type = itemsType,
+        });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("private readonly ParsableFactory<TItemType> _itemTypeFactory;", result);
+        Assert.Contains("_itemTypeFactory = itemTypeFactory;", result);
+    }
 }

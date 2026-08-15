@@ -628,10 +628,13 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "InheritedGenericBinding", "CSharp"));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class InheritedTemplateUser", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class InheritedTemplateGroup", allModelText, StringComparison.Ordinal);
-        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.User>", allModelText, StringComparison.Ordinal);
-        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.Group>", allModelText, StringComparison.Ordinal);
+        // one reusable generic template inheriting the non-generic PageBase; the inline allOf fragment owns items
+        Assert.Contains("class InheritedTemplate<TItemType> : global::ApiSdk.Models.PageBase", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.InheritedTemplate<global::ApiSdk.Models.User>>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.InheritedTemplate<global::ApiSdk.Models.Group>>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class InheritedTemplateUser", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class InheritedTemplateGroup", allModelText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -841,10 +844,19 @@ public sealed class GenerateSample : IDisposable
 
         var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "InheritedComponentBinding", "CSharp"));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class BasePageUser", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class BasePageGroup", allModelText, StringComparison.Ordinal);
-        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.User>", allModelText, StringComparison.Ordinal);
-        Assert.Contains("GetCollectionOfObjectValues<global::ApiSdk.Models.Group>", allModelText, StringComparison.Ordinal);
+        // the base resolves items through the active binding so it goes generic; the derived class closes over the base argument
+        Assert.Contains("class BasePage<TItemType>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("class DerivedPage<TItemType> : global::ApiSdk.Models.BasePage<TItemType>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("public DerivedPage(ParsableFactory<TItemType> itemTypeFactory) : base(itemTypeFactory)", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.User>>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.Group>>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("new global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.User>(global::ApiSdk.Models.User.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+        Assert.Contains("new global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.Group>(global::ApiSdk.Models.Group.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class BasePageUser", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class BasePageGroup", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class DerivedPageUser", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class DerivedPageGroup", allModelText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -890,6 +902,33 @@ public sealed class GenerateSample : IDisposable
         Assert.Contains("SendAsync<global::ApiSdk.Models.PageTemplate<global::ApiSdk.Models.V2.User>>", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class PageTemplateV1User", allModelText, StringComparison.Ordinal);
         Assert.DoesNotContain("class PageTemplateV2User", allModelText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PromotesNestedInlineModelsInGenericTemplatesAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("nested-inline-generic-binding.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "NestedInlineGenericBinding", "CSharp"),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "NestedInlineGenericBinding", "CSharp"));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        // the nested inline model containing the $dynamicRef is promoted and shared: inside the template it stays
+        // open over the template's type parameter, closing only at the template's usage sites
+        Assert.Contains("class PageTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("class PageTemplate_metadata<TItemType>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("public global::ApiSdk.Models.PageTemplate_metadata<TItemType>? Metadata", allModelText, StringComparison.Ordinal);
+        Assert.Contains("GetObjectValue<global::ApiSdk.Models.PageTemplate_metadata<TItemType>>(n => new global::ApiSdk.Models.PageTemplate_metadata<TItemType>(_itemTypeFactory))", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.PageTemplate<global::ApiSdk.Models.User>>", allModelText, StringComparison.Ordinal);
+        Assert.Contains("SendAsync<global::ApiSdk.Models.PageTemplate<global::ApiSdk.Models.Group>>", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class PageTemplate_metadataUser", allModelText, StringComparison.Ordinal);
+        Assert.DoesNotContain("class PageTemplate_metadataGroup", allModelText, StringComparison.Ordinal);
     }
 
     [InlineData(GenerationLanguage.CSharp)]
