@@ -3256,6 +3256,282 @@ paths:
     }
 
     [Fact]
+    public void SquishesNullableOneOfReferenceProperty()
+    {
+        // ASP.NET Core 10 emits nullable reference types as a oneOf with the target type and a { type: null } branch.
+        var childSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "id", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+        };
+        var parentSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "child", new OpenApiSchema {
+                        OneOf = [
+                            new OpenApiSchemaReference("child"),
+                            new OpenApiSchema { Type = JsonSchemaType.Null }
+                        ]
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["thing"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("parent")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("child", childSchema);
+        document.AddComponent("parent", parentSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var parentClass = codeModel.FindChildByName<CodeClass>("parent");
+        Assert.NotNull(parentClass);
+        var childProperty = parentClass.FindChildByName<CodeProperty>("child", false);
+        Assert.NotNull(childProperty);
+        // the oneOf nullable wrapper must be squished to the plain target type, not a union/composed wrapper
+        Assert.False(childProperty.Type is CodeComposedTypeBase);
+        Assert.Equal("child", childProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+        // no spurious composed-type wrapper or null-branch member class should be generated
+        Assert.Null(codeModel.FindChildByName<CodeClass>("parent_child"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("parent_childMember1"));
+    }
+
+    [Fact]
+    public void SquishesNullableOneOfReferencePropertyNullBranchFirst()
+    {
+        // Branch order independence: the { type: null } branch appears before the target reference.
+        var childSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "id", new OpenApiSchema { Type = JsonSchemaType.String } }
+            },
+        };
+        var parentSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "child", new OpenApiSchema {
+                        OneOf = [
+                            new OpenApiSchema { Type = JsonSchemaType.Null },
+                            new OpenApiSchemaReference("child")
+                        ]
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["thing"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("parent")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("child", childSchema);
+        document.AddComponent("parent", parentSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var parentClass = codeModel.FindChildByName<CodeClass>("parent");
+        Assert.NotNull(parentClass);
+        var childProperty = parentClass.FindChildByName<CodeProperty>("child", false);
+        Assert.NotNull(childProperty);
+        Assert.False(childProperty.Type is CodeComposedTypeBase);
+        Assert.Equal("child", childProperty.Type.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(codeModel.FindChildByName<CodeClass>("parent_childMember1"));
+    }
+
+    [Fact]
+    public void SquishesLonelyNullablesOneOf()
+    {
+        // Response-level oneOf nullable wrapper should collapse to the target type, not a union return type.
+        var uploadSessionSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                { "date", new OpenApiSchema { Type = JsonSchemaType.String, Format = "date-time" } },
+                { "temperature", new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" } }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema
+                                            {
+                                                OneOf = new List<IOpenApiSchema> {
+                                                    new OpenApiSchemaReference("microsoft.graph.uploadSession"),
+                                                    new OpenApiSchema { Type = JsonSchemaType.Null }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("microsoft.graph.uploadSession", uploadSessionSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var sessionClass = codeModel.FindChildByName<CodeClass>("UploadSession");
+        Assert.NotNull(sessionClass);
+        var requestBuilderClass = codeModel.FindChildByName<CodeClass>("createUploadSessionRequestBuilder");
+        Assert.NotNull(requestBuilderClass);
+        var executorMethod = requestBuilderClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executorMethod);
+        Assert.True(executorMethod.ReturnType is CodeType); // not union
+        Assert.Null(codeModel.FindChildByName<CodeClass>("createUploadSessionResponseMember1"));
+    }
+
+    [Fact]
+    public void PreservesMultiMemberOneOfWithNull()
+    {
+        // A genuine multi-branch oneOf that also includes null must remain a union type (no accidental collapse).
+        var oneOfSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            AdditionalPropertiesAllowed = false,
+            Properties = new Dictionary<string, IOpenApiSchema> {
+                {
+                    "date", new OpenApiSchema {
+                        OneOf = [
+                            new OpenApiSchema { Type = JsonSchemaType.String },
+                            new OpenApiSchema { Type = JsonSchemaType.Number, Format = "int64" },
+                            new OpenApiSchema { Type = JsonSchemaType.Null }
+                        ]
+                    }
+                }
+            },
+        };
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["createUploadSession"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("oneOfNullable")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("oneOfNullable", oneOfSchema);
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var oneOfClass = codeModel.FindChildByName<CodeClass>("oneOfNullable");
+        Assert.NotNull(oneOfClass);
+        var dateProperty = oneOfClass.FindChildByName<CodeProperty>("date", false);
+        Assert.NotNull(dateProperty);
+        if (dateProperty.Type is not CodeUnionType unionType)
+            Assert.Fail("Date property type is not a union type");
+        else
+        {
+            // the union must be preserved (not collapsed) and still expose the real branches
+            Assert.Contains(unionType.Types, x => x.Name.Equals("string", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(unionType.Types, x => x.Name.Equals("int64", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    [Fact]
     public void AddsDiscriminatorMappings()
     {
         var entitySchema = new OpenApiSchema
