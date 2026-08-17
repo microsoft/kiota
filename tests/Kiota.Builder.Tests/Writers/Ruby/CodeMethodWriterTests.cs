@@ -1471,4 +1471,159 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("'application/json; profile=\\'CamelCase\\''", result);
     }
+    private void AddUnionTypeWrapper()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex } });
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+    }
+    private void AddIntersectionTypeWrapper()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        var complexType3 = root.AddClass(new CodeClass { Name = "ComplexType3", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex });
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType3", new CodeType { Name = "ComplexType3", TypeDefinition = complexType3 });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType3Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType3", TypeDefinition = complexType3 } });
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+    }
+    [Fact]
+    public void WritesUnionFactoryBody()
+    {
+        AddUnionTypeWrapper();
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result = ParentClass.new", result);
+        Assert.Contains("mapping_value_node", result);
+        Assert.Contains("ComplexType1.new", result);
+        Assert.Contains("return result", result);
+        Assert.DoesNotContain("ComplexType2.new", result);
+    }
+    [Fact]
+    public void WritesUnionFactoryBodySkipsEmptyMappings()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "";
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result = ParentClass.new", result);
+        Assert.DoesNotContain("mapping_value_node", result);
+        Assert.DoesNotContain("unless", result);
+        Assert.Contains("return result", result);
+    }
+    [Fact]
+    public void WritesIntersectionFactoryBody()
+    {
+        AddIntersectionTypeWrapper();
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result = ParentClass.new", result);
+        Assert.DoesNotContain("mapping_value_node", result);
+        Assert.Contains("ComplexType1.new", result);
+        Assert.Contains("ComplexType3.new", result);
+        Assert.Contains("else", result);
+        Assert.Contains("return result", result);
+    }
+    [Fact]
+    public void WritesIntersectionFactoryBodyOnlyComplex()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2 } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("ComplexType1.new", result);
+        Assert.Contains("ComplexType2.new", result);
+        Assert.DoesNotContain("else", result);
+        Assert.DoesNotContain("if !", result);
+    }
+    [Fact]
+    public void WritesUnionSerializerBody()
+    {
+        AddUnionTypeWrapper();
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("complex_type1_value", result);
+        Assert.Contains("write_object_value", result);
+        Assert.Contains("write_string_value", result);
+        Assert.Contains("elsif", result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBody()
+    {
+        AddIntersectionTypeWrapper();
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("write_object_value(nil, @complex_type1_value, @complex_type3_value)", result);
+        Assert.Contains("write_string_value", result);
+        Assert.Contains("else", result);
+    }
+    [Fact]
+    public void WritesUnionDeserializerBody()
+    {
+        AddUnionTypeWrapper();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("@complex_type1_value.get_field_deserializers()", result);
+        Assert.DoesNotContain("complex_type2_value", result);
+        Assert.Contains("return {}", result);
+    }
+    [Fact]
+    public void WritesIntersectionDeserializerBody()
+    {
+        AddIntersectionTypeWrapper();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("merge_deserializers_for_intersection_wrapper(@complex_type1_value, @complex_type3_value)", result);
+        Assert.DoesNotContain("complex_type2_value", result);
+        Assert.Contains("return {}", result);
+    }
+    [Fact]
+    public void ThrowsOnComposedTypeMarker()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ComposedTypeMarker;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
+    }
 }
