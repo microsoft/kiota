@@ -430,12 +430,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     break;
                 case CodeType propType:
                     {
-                        if (TryNormalizePrimitiveDefaultValue(defaultValue, propType, out var normalizedDefaultValue))
-                        {
-                            defaultValue = normalizedDefaultValue ?? NoneKeyword;
-                        }
-                        else
-                            defaultValue = propType.Name.ToLowerInvariant() switch
+                        defaultValue = TryNormalizePrimitiveDefaultValue(defaultValue, propType, out var normalizedDefaultValue)
+                            ? normalizedDefaultValue ?? NoneKeyword
+                            : propType.Name.ToLowerInvariant() switch
                             {
                                 "datetime.datetime" => $"datetime.datetime.fromisoformat({defaultValue})",
                                 "datetime.date" => $"datetime.date.fromisoformat({defaultValue})",
