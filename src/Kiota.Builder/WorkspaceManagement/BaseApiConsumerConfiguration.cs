@@ -95,8 +95,6 @@ public abstract class BaseApiConsumerConfiguration
         config.OpenAPIFilePath = DescriptionLocation;
         config.OutputPath = OutputPath;
         config.ClientClassName = clientName;
-        config.Serializers.Clear();
-        config.Deserializers.Clear();
         if (requests is { Count: > 0 })
         {
             config.PatternsOverride = requests.Where(static x => !x.Exclude && !string.IsNullOrEmpty(x.Method) && !string.IsNullOrEmpty(x.UriTemplate))
