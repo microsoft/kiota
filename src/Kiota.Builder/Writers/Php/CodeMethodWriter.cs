@@ -134,24 +134,42 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             writer.WriteLine("parent::__construct();");
     }
 
-    private static string? GetDefaultValue(string defaultValue, CodeType propertyType, out bool checkParsedValue)
+    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue, out bool checkParsedValue)
     {
+        convertedDefaultValue = null;
         checkParsedValue = false;
         switch (propertyType.Name.ToLowerInvariant())
         {
             case "boolean":
-                return defaultValue.TrimQuotes();
+                if (PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue))
+                    convertedDefaultValue = booleanDefaultValue;
+                return true;
+            case "byte":
+            case "decimal":
+            case "double":
+            case "float":
+            case "int":
+            case "int64":
+            case "integer":
+            case "number":
+            case "sbyte":
+                if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
+                    convertedDefaultValue = numericDefaultValue;
+                return true;
             case "date":
-                return $"new Date({defaultValue})";
+                convertedDefaultValue = $"new Date({defaultValue})";
+                return true;
             case "datetime":
                 //We use "DateTime::createFromFormat" for format RFC3339.
                 //"createFromFormat" can return "false" if parsing failed. PHPStan level 9 requires a check for boolean values.
                 checkParsedValue = true;
-                return $"DateTime::createFromFormat(DateTime::RFC3339, {defaultValue})";
+                convertedDefaultValue = $"DateTime::createFromFormat(DateTime::RFC3339, {defaultValue})";
+                return true;
             case "time":
-                return $"new Time({defaultValue})";
+                convertedDefaultValue = $"new Time({defaultValue})";
+                return true;
             default:
-                return null;
+                return false;
         }
     }
 
@@ -178,8 +196,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             { // avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propWithDefault.Type is CodeType propType && GetDefaultValue(defaultValue, propType, out checkParsedValue) is string convertedDefaultValue)
+            else if (propWithDefault.Type is CodeType propType &&
+                TryGetDefaultValue(defaultValue, propType, out var convertedDefaultValue, out checkParsedValue))
             {
+                if (convertedDefaultValue is null)
+                    continue;
                 defaultValue = convertedDefaultValue;
             }
 

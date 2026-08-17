@@ -1646,6 +1646,35 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{propName} = '{DartConventionService.SanitizeDartSingleQuoteLiteral("line1'\n$line2")}'", result);
     }
     [Fact]
+    public void DoesNotWriteInvalidPrimitiveDefaultValues()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileBoolean",
+            DefaultValue = "\"false; injectedCall()\\\r\n\t$\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "boolean" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileNumber",
+            DefaultValue = "1; injectedCall()",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "integer" }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("hostileBoolean =", result);
+        Assert.DoesNotContain("hostileNumber =", result);
+        Assert.DoesNotContain(") : ;", result);
+        Assert.DoesNotContain(") : \r\n", result);
+    }
+    [Fact]
     public void WritesConstructorWithDefaultValuesThatRequireParsing()
     {
         //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"

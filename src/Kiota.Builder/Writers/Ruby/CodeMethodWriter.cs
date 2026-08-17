@@ -207,17 +207,44 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             else
             {
-                defaultValue = propWithDefault.Type.Name.ToLowerInvariant() switch
+                if (propWithDefault.Type is CodeType propertyType2 &&
+                    TryNormalizePrimitiveDefaultValue(defaultValue, propertyType2, out var normalizedDefaultValue))
                 {
-                    "datetime" => $"DateTime.parse({defaultValue})",
-                    "date" => $"Date.parse({defaultValue})",
-                    "time" => $"Time.parse({defaultValue})",
-                    "guid" => $"UUIDTools::UUID.parse({defaultValue})",
-                    _ => defaultValue
-                };
+                    if (normalizedDefaultValue is null)
+                        continue;
+                    defaultValue = normalizedDefaultValue;
+                }
+                else
+                    defaultValue = propWithDefault.Type.Name.ToLowerInvariant() switch
+                    {
+                        "datetime" => $"DateTime.parse({defaultValue})",
+                        "date" => $"Date.parse({defaultValue})",
+                        "time" => $"Time.parse({defaultValue})",
+                        "guid" => $"UUIDTools::UUID.parse({defaultValue})",
+                        _ => defaultValue
+                    };
             }
             writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {defaultValue}");
         }
+    }
+    private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
+    {
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue) ?
+                booleanDefaultValue :
+                null;
+            return true;
+        }
+        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
+        {
+            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue) ?
+                numericDefaultValue :
+                null;
+            return true;
+        }
+        normalizedDefaultValue = null;
+        return false;
     }
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer)
     {

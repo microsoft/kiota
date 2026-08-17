@@ -774,14 +774,23 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         string defaultValue = codeProperty.DefaultValue;
         defaultValue = defaultValue.SanitizeQuotedStringLiteral();
-        return codeProperty.Type.Name.ToLowerInvariant() switch
+        var typeName = codeProperty.Type.Name;
+        if (typeName.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+            return PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue) ?
+                booleanDefaultValue :
+                string.Empty;
+        if (PrimitiveDefaultValueUtils.IsNumericType(typeName))
+            return PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), typeName, out var numericDefaultValue) ?
+                numericDefaultValue :
+                string.Empty;
+        return typeName.ToLowerInvariant() switch
         {
             "string" => defaultValue, // string primitive should keep quotes
             "dateonly" => $"DateOnly.parse({defaultValue})", //date default is in quotes
             "date" => $"new Date({defaultValue})", //datetime default is in quotes
             "timeonly" => $"TimeOnly.parse({defaultValue})", //time default is in quotes
             "guid" => defaultValue, //uuid default is in quotes
-            _ => defaultValue.TrimQuotes()  // Any other type: remove quotes (though primitive types should not have any).
+            _ => defaultValue
         };
     }
     private void WriteDefensiveStatements(CodeMethod codeElement, LanguageWriter writer)
