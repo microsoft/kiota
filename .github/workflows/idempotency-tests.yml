@@ -134,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: idempotency
     steps:
-      - uses: jimschubert/delete-artifacts-action@a6a85fe6cc7f54a2abb2aff7440825d98b8eb6e4 # v1.0.3
+      - uses: jimschubert/delete-artifacts-action@f5cb1978980f2e189a2b3484d430f8810860ba38 # v1.0.4
         with:
           artifact_name: "generator"
           min_bytes: "0"
