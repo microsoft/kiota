@@ -395,8 +395,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
                     defaultValue = $"{enumDefinition.Name}({defaultValue})";
                     break;
-                case CodeType propType when propType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase):
-                    defaultValue = defaultValue.TrimQuotes().ToFirstCharacterUpperCase();// python booleans start in uppercase
+                case CodeType propType when TryNormalizePrimitiveDefaultValue(defaultValue, propType, out var normalizedDefaultValue):
+                    defaultValue = normalizedDefaultValue ?? NoneKeyword;
                     break;
             }
             conventions.WriteInLineDescription(propWithDefault, writer);
@@ -430,15 +430,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     break;
                 case CodeType propType:
                     {
-                        defaultValue = propType.Name.ToLowerInvariant() switch
-                        {
-                            "boolean" => defaultValue.TrimQuotes().ToFirstCharacterUpperCase(),
-                            "datetime.datetime" => $"datetime.datetime.fromisoformat({defaultValue})",
-                            "datetime.date" => $"datetime.date.fromisoformat({defaultValue})",
-                            "datetime.time" => $"datetime.time.fromisoformat({defaultValue})",
-                            "uuid" => $"UUID({defaultValue})",
-                            _ => defaultValue
-                        };
+                        defaultValue = TryNormalizePrimitiveDefaultValue(defaultValue, propType, out var normalizedDefaultValue)
+                            ? normalizedDefaultValue ?? NoneKeyword
+                            : propType.Name.ToLowerInvariant() switch
+                            {
+                                "datetime.datetime" => $"datetime.datetime.fromisoformat({defaultValue})",
+                                "datetime.date" => $"datetime.date.fromisoformat({defaultValue})",
+                                "datetime.time" => $"datetime.time.fromisoformat({defaultValue})",
+                                "uuid" => $"UUID({defaultValue})",
+                                _ => defaultValue
+                            };
                         break;
                     }
             }
@@ -732,6 +733,25 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 writer.DecreaseIndent();
             }
         }
+    }
+    private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
+    {
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue) ?
+                booleanDefaultValue.ToFirstCharacterUpperCase() :
+                null;
+            return true;
+        }
+        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
+        {
+            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue) ?
+                numericDefaultValue :
+                null;
+            return true;
+        }
+        normalizedDefaultValue = null;
+        return false;
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
     {

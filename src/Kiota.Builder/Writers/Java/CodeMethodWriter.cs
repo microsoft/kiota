@@ -325,20 +325,39 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             foreach (var module in serializationModules)
                 writer.WriteLine($"ApiClientBuilder.{methodName}(() -> new {module}());");
     }
-    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
+    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
     {
-        return propertyType.Name.ToLowerInvariant() switch
+        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
         {
-            "boolean" => defaultValue.TrimQuotes(),
             "localdate" => $"LocalDate.parse({defaultValue})",
             "offsetdatetime" => $"OffsetDateTime.parse({defaultValue})",
             "localtime" => $"LocalTime.parse({defaultValue})",
             "uuid" => $"UUID.fromString({defaultValue})",
-            "double" => $"{defaultValue}d", //Append "d" to the double value (required if it is a plain int and has no decimal separator)
-            "float" => $"{defaultValue}f", //Append "f" to the float value
-            "int64" => $"{defaultValue}L", //Append "L" to the long value
             _ => null,
         };
+        if (convertedDefaultValue is not null)
+            return true;
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            if (PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue))
+                convertedDefaultValue = booleanDefaultValue;
+            return true;
+        }
+        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
+        {
+            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
+            {
+                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+                {
+                    "double" => $"{numericDefaultValue}d",
+                    "float" => $"{numericDefaultValue}f",
+                    "int64" => $"{numericDefaultValue}L",
+                    _ => numericDefaultValue,
+                };
+            }
+            return true;
+        }
+        return false;
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
@@ -382,8 +401,11 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             {// avoid setting null as a string.
                 defaultValue = NullValueString;
             }
-            else if (propWithDefault.Type is CodeType propertyType2 && GetDefaultValue(defaultValue, propertyType2) is string convertedDefaultValue)
+            else if (propWithDefault.Type is CodeType propertyType2 &&
+                TryGetDefaultValue(defaultValue, propertyType2, out var convertedDefaultValue))
             {
+                if (convertedDefaultValue is null)
+                    continue;
                 defaultValue = convertedDefaultValue;
             }
             writer.WriteLine($"this.{setterName}({defaultValue});");

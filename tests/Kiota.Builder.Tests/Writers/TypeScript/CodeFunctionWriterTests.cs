@@ -517,6 +517,39 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains($"?? {defaultValue.SanitizeQuotedStringLiteral()}", result);
     }
     [Fact]
+    public async Task DoesNotWriteInvalidPrimitiveDefaultValuesAsync()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileBoolean",
+            DefaultValue = "\"false; injectedCall()\\\r\n\t$\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "boolean" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileNumber",
+            DefaultValue = "1; injectedCall()",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "number" }
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("?? false;", result);
+        Assert.DoesNotContain("?? 1;", result);
+    }
+    [Fact]
     public async Task WritesDeSerializerBodyWithDefaultValueThatRequireParsingAsync()
     {
         //property values taken from "kiota\tests\Kiota.Builder.IntegrationTests\ModelWithDefaultValues.json"

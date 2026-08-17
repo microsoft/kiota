@@ -2144,6 +2144,57 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("m.SetPropWithDefaultValue(&propWithDefaultValueValue)", result);
     }
     [Fact]
+    public void DoesNotWriteInvalidPrimitiveDefaultValues()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileBoolean",
+            DefaultValue = "\"false; injectedCall()\\\r\n\t$\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "boolean" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileNumber",
+            DefaultValue = "1; injectedCall()",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "integer" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileByte",
+            DefaultValue = "1; injectedCall()",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "byte" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "wrongKindNumber",
+            DefaultValue = "true",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "double" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "overflowingNumber",
+            DefaultValue = "1e400",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "double" }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("hostileBooleanValue", result);
+        Assert.DoesNotContain("hostileNumberValue", result);
+        Assert.DoesNotContain("hostileByteValue", result);
+        Assert.DoesNotContain("wrongKindNumberValue", result);
+        Assert.DoesNotContain("overflowingNumberValue", result);
+    }
+    [Fact]
     public void WritesConstructorWithEnumValue()
     {
         setup();

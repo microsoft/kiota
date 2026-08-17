@@ -561,53 +561,68 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 writer.WriteLine("})");
             }
     }
-    private string? GetDefaultValue(string defaultValue, CodeType propertyType, out bool discardError, out bool isPointer)
+    private bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue, out bool discardError, out bool isPointer)
     {
+        convertedDefaultValue = null;
         switch (propertyType.Name.ToLowerInvariant())
         {
             case "boolean":
                 discardError = false;
                 isPointer = false;
-                return defaultValue.TrimQuotes();
+                if (PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue))
+                    convertedDefaultValue = booleanDefaultValue;
+                return true;
             case "dateonly":
                 discardError = true;
                 isPointer = true; //"ParseDateOnly" returns a pointer var.
                 //Type "DateOnly" is defined in a module "github.com/microsoft/kiota-abstractions-go/serialization" that has this import hash:
-                return $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})";
+                convertedDefaultValue = $"{conventions.SerializationHash}.ParseDateOnly({defaultValue})";
+                return true;
             case "time":
                 //DateTime value with timezone. Parse with format "RFC3339"
                 discardError = true;
                 isPointer = false;
                 //Module "time" has this hash:
-                return $"{GoConventionService.TimeFormatHash}.Parse({GoConventionService.TimeFormatHash}.RFC3339, {defaultValue})";
+                convertedDefaultValue = $"{GoConventionService.TimeFormatHash}.Parse({GoConventionService.TimeFormatHash}.RFC3339, {defaultValue})";
+                return true;
             case "timeonly":
                 discardError = true;
                 isPointer = true; //"ParseTimeOnly" returns a pointer var.
-                return $"{conventions.SerializationHash}.ParseTimeOnly({defaultValue})";
+                convertedDefaultValue = $"{conventions.SerializationHash}.ParseTimeOnly({defaultValue})";
+                return true;
             case "uuid":
                 discardError = true;
                 isPointer = false;
-                return $"{GoConventionService.UuidHash}.Parse({defaultValue})";
+                convertedDefaultValue = $"{GoConventionService.UuidHash}.Parse({defaultValue})";
+                return true;
             case "float":
-                discardError = false;
-                isPointer = false;
-                return $"float32({defaultValue})";  //set type to "float32" (in case the default value has no decimal separator)
             case "double":
-                discardError = false;
-                isPointer = false;
-                return $"float64({defaultValue})";
+            case "decimal":
+            case "byte":
+            case "sbyte":
             case "integer":
-                discardError = false;
-                isPointer = false;
-                return $"int32({defaultValue})";
             case "int64":
+            case "long":
                 discardError = false;
                 isPointer = false;
-                return $"int64({defaultValue})";
+                if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
+                {
+                    convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+                    {
+                        "float" => $"float32({numericDefaultValue})",
+                        "double" or "decimal" => $"float64({numericDefaultValue})",
+                        "byte" => $"byte({numericDefaultValue})",
+                        "sbyte" => $"int8({numericDefaultValue})",
+                        "integer" => $"int32({numericDefaultValue})",
+                        "int64" or "long" => $"int64({numericDefaultValue})",
+                        _ => null,
+                    };
+                }
+                return true;
             default:
                 discardError = false;
                 isPointer = false;
-                return null;
+                return false;
         }
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
@@ -676,8 +691,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                         enumDefinition.Options.FirstOrDefault(x => x.SerializationName.Equals(defaultValue, StringComparison.OrdinalIgnoreCase))?.Name ?? defaultValue;
                     defaultValue = $"{defaultValue.ToUpperInvariant()}_{enumDefinition.Name.ToUpperInvariant()}";
                 }
-                else if (propWithDefault.Type is CodeType propertyType2 && GetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType2, out discardError, out isPointer) is string convertedDefaultValue)
+                else if (propWithDefault.Type is CodeType propertyType2 &&
+                    TryGetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType2, out var convertedDefaultValue, out discardError, out isPointer))
                 {
+                    if (convertedDefaultValue is null)
+                        continue;
                     defaultValue = convertedDefaultValue;
                 }
                 else
