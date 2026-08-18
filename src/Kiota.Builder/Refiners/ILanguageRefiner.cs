@@ -41,6 +41,9 @@ public interface ILanguageRefiner
             case GenerationLanguage.Dart:
                 await new DartRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
+            case GenerationLanguage.Rust:
+                await new RustRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                break;
         }
     }
 }
