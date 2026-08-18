@@ -122,6 +122,13 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
     {
         get; set;
     }
+    /// <summary>
+    /// Indicates if the property is marked as required in the OpenAPI schema.
+    /// </summary>
+    public bool IsRequired
+    {
+        get; init;
+    }
 
     public object Clone()
     {
@@ -143,6 +150,7 @@ public class CodeProperty : CodeTerminalWithKind<CodePropertyKind>, IDocumentedE
             OriginalPropertyFromBaseType = OriginalPropertyFromBaseType?.Clone() as CodeProperty,
             Deprecation = Deprecation,
             IsPrimaryErrorMessage = IsPrimaryErrorMessage,
+            IsRequired = IsRequired,
         };
         return property;
     }
