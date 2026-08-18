@@ -998,6 +998,33 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"@{propName.ToSnakeCase()} = \"line1\\#\\nline2\"", result);
     }
     [Fact]
+    public void DoesNotWriteInvalidPrimitiveDefaultValues()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileBoolean",
+            DefaultValue = "\"false; injected_call()\\\r\n\t$\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "boolean" }
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostileNumber",
+            DefaultValue = "1; injected_call()",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "integer" }
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("injected_call", result);
+        Assert.DoesNotContain("@hostile_boolean =", result);
+        Assert.DoesNotContain("@hostile_number =", result);
+    }
+    [Fact]
     public void EscapesParameterDefaultsInSignature()
     {
         setup();

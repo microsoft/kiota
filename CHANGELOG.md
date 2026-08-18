@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed defaults primitive default-value handling during code generation for all languages
 - Fixed plugin manifest generation to omit unsafe `oauth_card_path` file references that could resolve outside the plugin package.
 - Bumped `Microsoft.OpenApi` and `Microsoft.OpenApi.YamlReader` to 3.10.0.
 - Numeric scalar unions with a format (e.g. `type: ["integer", "string"]` with `format: int32`, as emitted by ASP.NET Core's OpenAPI 3.1 generator under System.Text.Json's default `JsonNumberHandling.AllowReadingFromString`) now map to the numeric type instead of degrading to `UntypedNode`. [#6541](https://github.com/microsoft/kiota/issues/6541)
@@ -28,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed non-deterministic model class descriptions when a component schema is referenced from multiple properties with differing reference-level descriptions. [#7927](https://github.com/microsoft/kiota/issues/7927)
 - Fixed generation of a spurious union type/wrapper for `oneOf` nullable reference types (e.g. `oneOf: [$ref, {type: null}]` as emitted by ASP.NET Core 10's OpenAPI 3.1 generator); these now collapse to the nullable target type, matching the existing `anyOf` behavior. [#6776](https://github.com/microsoft/kiota/issues/6776)
 - TypeScript: fixed generation for primitive binary unions by handling `ArrayBuffer` as a primitive type, and deduplicated redundant serialization/deserialization branches when multiple union members map to the same runtime type (e.g. `binary` and `base64`).
-- Dotnet: Fixed primitive default-value handling during code generation.
 
 ## [1.34.1] - 2026-07-09
 
