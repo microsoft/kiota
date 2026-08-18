@@ -1924,8 +1924,7 @@ public partial class KiotaBuilder
         // meaningful entry plus a { "type": "null" } branch. Both patterns must be squished to the target
         // type so we don't create an unnecessary union type/wrapper for what is just a nullable reference.
         var unionEntries = schema.AnyOf is { Count: > 0 } ? schema.AnyOf : schema.OneOf;
-        if ((typesCount == 1 && (schema.Type & JsonSchemaType.Null) is JsonSchemaType.Null && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf/oneOf
-            typesCount == 2 && (unionEntries?.Any(static x => // nullable on a schema in the anyOf/oneOf
+        if (typesCount == 2 && (unionEntries?.Any(static x => // nullable on a schema in the anyOf/oneOf
                                                         (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null &&
                                                         !x.HasAnyProperty() &&
                                                         !x.IsExclusiveUnion() &&
@@ -1933,7 +1932,7 @@ public partial class KiotaBuilder
                                                         !x.IsInherited() &&
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
-                                                        !x.IsReferencedSchema()) ?? false)) &&
+                                                        !x.IsReferencedSchema()) ?? false) &&
             unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
         {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
