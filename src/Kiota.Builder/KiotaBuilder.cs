@@ -1920,8 +1920,11 @@ public partial class KiotaBuilder
     {
         var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
-        if ((typesCount == 1 && (schema.Type & JsonSchemaType.Null) is JsonSchemaType.Null && schema.IsInclusiveUnion() || // nullable on the root schema outside of anyOf
-            typesCount == 2 && (schema.AnyOf?.Any(static x => // nullable on a schema in the anyOf
+        // ASP.NET Core 10 emits nullable reference types as either an anyOf or a oneOf with a single
+        // meaningful entry plus a { "type": "null" } branch. Both patterns must be squished to the target
+        // type so we don't create an unnecessary union type/wrapper for what is just a nullable reference.
+        var unionEntries = schema.AnyOf is { Count: > 0 } ? schema.AnyOf : schema.OneOf;
+        if (typesCount == 2 && (unionEntries?.Any(static x => // nullable on a schema in the anyOf/oneOf
                                                         (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null &&
                                                         !x.HasAnyProperty() &&
                                                         !x.IsExclusiveUnion() &&
@@ -1929,8 +1932,8 @@ public partial class KiotaBuilder
                                                         !x.IsInherited() &&
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
-                                                        !x.IsReferencedSchema()) ?? false)) &&
-            schema.AnyOf?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+                                                        !x.IsReferencedSchema()) ?? false) &&
+            unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
         {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
