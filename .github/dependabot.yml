@@ -28,6 +28,10 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 10
+    groups:
+      codeql:
+        patterns:
+          - github/codeql-action*
     cooldown:
       default-days: 7
   - package-ecosystem: nuget
