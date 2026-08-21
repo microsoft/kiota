@@ -569,13 +569,30 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteDeserializerBodyForInheritedModel(bool inherits, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         _codeUsingWriter.WriteInternalImports(parentClass, writer);
-        writer.StartBlock($"fields: dict[str, Callable[[Any], {NoneKeyword}]] = {{");
-        foreach (var otherProp in parentClass
-                                        .GetPropertiesOfKind(CodePropertyKind.Custom)
-                                        .Where(static x => !x.ExistsInBaseType)
-                                        .OrderBy(static x => x.Name))
+        var customProperties = parentClass
+                                .GetPropertiesOfKind(CodePropertyKind.Custom)
+                                .Where(static x => !x.ExistsInBaseType)
+                                .OrderBy(static x => x.Name)
+                                .ToArray();
+        if (parentClass.IsErrorDefinition)
         {
-            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": lambda n : setattr(self, '{otherProp.Name}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)}),");
+            foreach (var primaryErrorMessageProperty in customProperties.Where(static x => x.IsPrimaryErrorMessage))
+            {
+                var deserializerName = $"deserialize_{primaryErrorMessageProperty.Name.CleanupSymbolName()}";
+                writer.StartBlock($"def {deserializerName}(n: ParseNode) -> None:");
+                writer.WriteLine($"value = n.{GetDeserializationMethodName(primaryErrorMessageProperty.Type, codeElement, parentClass)}");
+                writer.WriteLine($"setattr(self, '{primaryErrorMessageProperty.Name.SanitizeSingleQuote()}', value)");
+                writer.WriteLine("self.message = '' if value is None else str(value)");
+                writer.CloseBlock(string.Empty);
+            }
+        }
+        writer.StartBlock($"fields: dict[str, Callable[[Any], {NoneKeyword}]] = {{");
+        foreach (var otherProp in customProperties)
+        {
+            var deserializer = parentClass.IsErrorDefinition && otherProp.IsPrimaryErrorMessage ?
+                $"deserialize_{otherProp.Name.CleanupSymbolName()}" :
+                $"lambda n : setattr(self, '{otherProp.Name.SanitizeSingleQuote()}', n.{GetDeserializationMethodName(otherProp.Type, codeElement, parentClass)})";
+            writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": {deserializer},");
         }
         writer.CloseBlock();
         if (inherits)
