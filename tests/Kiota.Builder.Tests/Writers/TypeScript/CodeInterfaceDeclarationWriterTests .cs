@@ -80,4 +80,28 @@ public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
         Assert.Contains("from", result);
         Assert.Contains("'util'", result);
     }
+    [Fact]
+    public void WritesTypeParameters()
+    {
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TSecondType" });
+        writer.Write(parentInterface.StartBlock);
+        var result = tw.ToString();
+        Assert.Contains($"export interface Parent<TItemType, TSecondType> {{{Environment.NewLine}", result);
+    }
+    [Fact]
+    public void WritesTypeParametersWithInheritance()
+    {
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var parentTypeParameter = parentInterface.TypeParameters.First();
+        var baseInterfaceType = new CodeType()
+        {
+            Name = "someGenericInterface",
+        };
+        baseInterfaceType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = parentTypeParameter });
+        parentInterface.StartBlock.AddImplements(baseInterfaceType);
+        writer.Write(parentInterface.StartBlock);
+        var result = tw.ToString();
+        Assert.Contains("export interface Parent<TItemType> extends SomeGenericInterface<TItemType> {", result);
+    }
 }
