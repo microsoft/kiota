@@ -336,7 +336,9 @@ public sealed class GenerateSample : IDisposable
             .Concat(directory.EnumerateFiles("*.java", searchOption))
             .Concat(directory.EnumerateFiles("*.ts", searchOption))
             .Concat(directory.EnumerateFiles("*.go", searchOption))
-            .Concat(directory.EnumerateFiles("*.py", searchOption));
+            .Concat(directory.EnumerateFiles("*.py", searchOption))
+            .Concat(directory.EnumerateFiles("*.php", searchOption))
+            .Concat(directory.EnumerateFiles("*.rb", searchOption));
         return string.Join("\n", modelFiles.Select(f => File.ReadAllText(f.FullName)));
     }
 
@@ -442,6 +444,8 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Go)]
     [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Ruby)]
     [Theory]
     public async Task ResolvesGenericBindingDynamicRefAsync(GenerationLanguage language)
     {
@@ -499,6 +503,16 @@ public sealed class GenerateSample : IDisposable
             case GenerationLanguage.Python:
                 Assert.Contains("n.get_collection_of_object_values(User)", allModelText, StringComparison.Ordinal);
                 Assert.Contains("n.get_collection_of_object_values(Group)", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.PHP:
+                // PHP has no generics: concrete per-binding classes with class-string factories, permanently
+                Assert.Contains("getCollectionOfObjectValues([User::class, 'createFromDiscriminatorValue'])", allModelText, StringComparison.Ordinal);
+                Assert.Contains("getCollectionOfObjectValues([Group::class, 'createFromDiscriminatorValue'])", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Ruby:
+                // Ruby has no generics: concrete per-binding classes with lambda factories, permanently
+                Assert.Contains("get_collection_of_object_values(lambda {|pn| ApiSdk::Models::User.create_from_discriminator_value(pn) })", allModelText, StringComparison.Ordinal);
+                Assert.Contains("get_collection_of_object_values(lambda {|pn| ApiSdk::Models::Group.create_from_discriminator_value(pn) })", allModelText, StringComparison.Ordinal);
                 break;
             default:
                 throw new Exception($"Please implement a test-case for {language}");

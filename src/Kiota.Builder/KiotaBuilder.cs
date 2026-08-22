@@ -581,6 +581,7 @@ public partial class KiotaBuilder
     private CodeNamespace? rootNamespace;
     private CodeNamespace? modelsNamespace;
     private string? modelNamespacePrefixToTrim;
+    private readonly HashSet<string> bareDynamicTemplateReferences = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Convert UriSpace of OpenApiPathItems into conceptual SDK Code model
@@ -595,6 +596,7 @@ public partial class KiotaBuilder
         rootNamespace = CodeNamespace.InitRootNamespace();
         var codeNamespace = rootNamespace.AddNamespace(config.ClientNamespaceName);
         modelsNamespace = rootNamespace.AddNamespace(config.ModelsNamespaceName);
+        InitializeBareDynamicTemplateReferences();
         InitializeInheritanceIndex();
         StopLogAndReset(stopwatch, nameof(InitializeInheritanceIndex));
         if (root != null)
@@ -621,6 +623,41 @@ public partial class KiotaBuilder
         }
 
         return rootNamespace;
+    }
+
+    // A bare reference needs the concrete recursive-anchor behavior. Keep every use concrete when it shares a
+    // template with a $defs binding rather than letting parallel traversal decide which representation wins.
+    private void InitializeBareDynamicTemplateReferences()
+    {
+        bareDynamicTemplateReferences.Clear();
+        if (openApiDocument is null) return;
+        void AddBareReferences(IEnumerable<OpenApiOperation> operations)
+        {
+            foreach (var operation in operations)
+            {
+                var schemas = (operation.Responses?.Values.SelectMany(response => response.Content?.GetValidSchemas(config.StructuredMimeTypes) ?? []) ?? [])
+                    .Concat(operation.GetRequestSchema(config.StructuredMimeTypes) is { } requestSchema ? [requestSchema] : []);
+                foreach (var schema in schemas)
+                    CollectBareTemplateReferences(schema, false, new HashSet<IOpenApiSchema>());
+            }
+        }
+        AddBareReferences(openApiDocument.Paths?.Values.Where(static path => path.Operations is not null).SelectMany(static path => path.Operations!.Values) ?? []);
+        AddBareReferences(openApiDocument.Webhooks?.Values.Where(static path => path.Operations is not null).SelectMany(static path => path.Operations!.Values) ?? []);
+    }
+    private void CollectBareTemplateReferences(IOpenApiSchema schema, bool inBindingScope, HashSet<IOpenApiSchema> visited)
+    {
+        if (!visited.Add(schema)) return;
+        inBindingScope |= schema.Definitions?.Values.Any(static definition => !string.IsNullOrEmpty(definition.DynamicAnchor)) == true;
+        if (!inBindingScope && schema.GetReferenceId() is { Length: > 0 } referenceId)
+            bareDynamicTemplateReferences.Add(referenceId);
+        if (schema is OpenApiSchemaReference) return;
+        foreach (var child in (schema.Properties?.Values ?? [])
+                     .Concat(schema.Items is not null ? [schema.Items] : [])
+                     .Concat(schema.AllOf ?? [])
+                     .Concat(schema.AnyOf ?? [])
+                     .Concat(schema.OneOf ?? [])
+                     .Concat(schema.AdditionalProperties is not null ? [schema.AdditionalProperties] : []))
+            CollectBareTemplateReferences(child, inBindingScope, visited);
     }
 
     private readonly ConcurrentDictionary<CodeElement, bool> webhookModels = new();
@@ -1859,7 +1896,10 @@ public partial class KiotaBuilder
                 ResolveGenericBoundArguments(currentNode, schema, operation, codeNamespace, frame, response, isRequestBody);
             var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
             if (codeDeclaration is CodeClass modelClass)
+            {
                 WaitForGenericModelParameters(modelClass); // IsGeneric is only final once the creating thread's lifecycle completed
+                BindTemplateFrameToClass(modelClass);
+            }
             if (genericMode && codeDeclaration is not CodeClass { IsGeneric: true })
                 return DegradeToUntypedNode(currentNode, codeDeclaration.Name); // materialized concrete by an earlier unbound reference
             if (IsUnboundGenericTemplate(codeDeclaration, bindingSuffix is not null || underGenericTemplate))
@@ -1922,13 +1962,32 @@ public partial class KiotaBuilder
             frame.BoundArgumentsByParameterName.TryAdd(parameter.Name, argument);
         }
     }
+    /// <summary>
+    /// Languages whose writers can render generic model declarations (type parameters + closed usages).
+    /// PHP, Ruby and HTTP have no generics and stay on the per-binding concrete path permanently.
+    /// Each language agent uncomments its entry when its writers land.
+    /// </summary>
+    private static readonly HashSet<GenerationLanguage> GenericTemplateLanguages = [
+        GenerationLanguage.CSharp,
+        // TODO(dart-agent): uncomment when Dart writers render generics
+        // GenerationLanguage.Dart,
+        // TODO(java-agent): uncomment when Java writers render generics
+        // GenerationLanguage.Java,
+        // TODO(python-agent): uncomment when Python writers render generics
+        // GenerationLanguage.Python,
+        // TODO(typescript-agent): uncomment when TypeScript writers render generics
+        // GenerationLanguage.TypeScript,
+        // TODO(go-agent): uncomment when Go writers render generics
+        // GenerationLanguage.Go,
+    ];
     private bool UseGenericDynamicBindingTemplates(IOpenApiSchema schema)
     {
-        if (config.Language != GenerationLanguage.CSharp || schema.Definitions is null) return false;
+        if (!GenericTemplateLanguages.Contains(config.Language) || schema.Definitions is null) return false;
         var anchors = schema.Definitions.Values.Where(static x => !string.IsNullOrEmpty(x.DynamicAnchor)).ToArray();
         // ponytail: generics only for $ref bindings; inline bindings and additionalProperties dynamic refs stay on the concrete path
         return anchors.Length > 0 &&
                anchors.All(static x => !string.IsNullOrEmpty(x.GetReferenceId())) &&
+               !bareDynamicTemplateReferences.Contains(schema.GetReferenceId() ?? string.Empty) &&
                !ContainsDynamicReferenceViaAdditionalProperties(schema);
     }
     private static Dictionary<string, CodeTypeParameter> CreateDynamicBindingTypeParameters(IOpenApiSchema schema)
@@ -1962,7 +2021,10 @@ public partial class KiotaBuilder
                 ResolveGenericBoundArguments(currentNode, schema, operation, codeNamespace, frame, response, isRequestBody);
             var codeDeclaration = CreateInheritedModelDeclarationCore(currentNode, schema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isViaDiscriminator, response, dynamicBindingSuffixContext, genericMode ? null : bindingSuffix);
             if (codeDeclaration is CodeClass declarationClass)
+            {
                 WaitForGenericModelParameters(declarationClass); // IsGeneric is only final once the creating thread's lifecycle completed
+                BindTemplateFrameToClass(declarationClass);
+            }
             if (genericMode && codeDeclaration is not CodeClass { IsGeneric: true })
                 return DegradeToUntypedNode(currentNode, codeDeclaration.Name); // materialized concrete by an earlier unbound reference
             if (IsUnboundGenericTemplate(codeDeclaration, genericMode))
@@ -2599,22 +2661,31 @@ public partial class KiotaBuilder
     /// </summary>
     private void PromoteGenericModelDeclaration(CodeClass modelClass)
     {
-        var declaredParameters = modelClass.TypeParameters.Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var parameter in modelClass.Properties
-                    .Select(static x => x.Type)
-                    .OfType<CodeType>()
-                    .SelectMany(static x => CollectTypeParameters(x))
-                    .Where(x => declaredParameters.Add(x.Name)))
-            // add the collected instance itself: the class's property types reference it, and AddTypeParameter
-            // parents it so later refiner walks can resolve its namespace
-            modelClass.StartBlock.AddTypeParameter(parameter);
+        var ownedParameters = modelClass.TypeParameters.ToDictionary(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+        var replacements = new Dictionary<CodeTypeParameter, CodeTypeParameter>();
+        foreach (var parameter in modelClass.Properties.Select(static x => x.Type).OfType<CodeType>().SelectMany(static x => CollectTypeParameters(x)).Distinct())
+        {
+            if (!ownedParameters.TryGetValue(parameter.Name, out var ownedParameter))
+            {
+                ownedParameter = new CodeTypeParameter { Name = parameter.Name };
+                modelClass.StartBlock.AddTypeParameter(ownedParameter);
+                ownedParameters.Add(ownedParameter.Name, ownedParameter);
+            }
+            if (!ReferenceEquals(parameter, ownedParameter))
+                replacements.Add(parameter, ownedParameter);
+        }
+        foreach (var propertyType in modelClass.Properties.Select(static x => x.Type).OfType<CodeType>())
+            RebindTypeParameters(propertyType, replacements);
         // a template whose dynamic refs live only in nested inline models collects no parameter from its own
         // properties: promote from the enclosing template frame (name-matched so nested and discriminator-generated
         // classes under the frame are left alone); fresh instances avoid stealing another declaration's parameter
         if (_dynamicScope.Value?.FirstOrDefault(static f => f.TemplateClassName is not null) is { } templateFrame &&
             string.Equals(templateFrame.TemplateClassName, modelClass.Name, StringComparison.Ordinal))
-            foreach (var parameter in templateFrame.TypeParametersByAnchor.Values.Where(x => declaredParameters.Add(x.Name)))
+            foreach (var parameter in templateFrame.TypeParametersByAnchor.Values.Where(x => !ownedParameters.ContainsKey(x.Name)))
+            {
                 modelClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = parameter.Name });
+                ownedParameters.Add(parameter.Name, modelClass.TypeParameters.Single(x => x.Name.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase)));
+            }
         if (modelClass.StartBlock.Inherits is { TypeDefinition: CodeClass { IsGeneric: true } baseClass } inherits &&
             !inherits.GenericTypeParameterValues.Any())
             foreach (var baseParameter in baseClass.TypeParameters)
@@ -2633,6 +2704,22 @@ public partial class KiotaBuilder
         foreach (var argument in type.GenericTypeParameterValues)
             foreach (var nested in CollectTypeParameters(argument))
                 yield return nested;
+    }
+    private static void RebindTypeParameters(CodeType type, IReadOnlyDictionary<CodeTypeParameter, CodeTypeParameter> replacements)
+    {
+        if (type.TypeDefinition is CodeTypeParameter parameter && replacements.TryGetValue(parameter, out var replacement))
+            type.TypeDefinition = replacement;
+        foreach (var argument in type.GenericTypeParameterValues)
+            RebindTypeParameters(argument, replacements);
+    }
+    private void BindTemplateFrameToClass(CodeClass modelClass)
+    {
+        if (_dynamicScope.Value?.FirstOrDefault(static frame => frame.TemplateClassName is not null) is not { } templateFrame ||
+            !string.Equals(templateFrame.TemplateClassName, modelClass.Name, StringComparison.Ordinal))
+            return;
+        foreach (var (anchor, parameter) in templateFrame.TypeParametersByAnchor.ToArray())
+            if (modelClass.TypeParameters.FirstOrDefault(x => x.Name.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase)) is { } classParameter)
+                templateFrame.TypeParametersByAnchor[anchor] = classParameter;
     }
     /// <summary>
     /// True when the declaration resolved to a generic template the current call has no binding context for
@@ -2699,6 +2786,15 @@ public partial class KiotaBuilder
                 lifecycle.StartBuildingProperties();
                 if (!lifecycle.IsPropertiesBuilt())
                 {
+                    // Bind before property construction so this declaration owns the parameters its direct
+                    // dynamic references use and nested declarations can close over them.
+                    if (_dynamicScope.Value?.FirstOrDefault(static frame => frame.TemplateClassName is not null) is { } templateFrame &&
+                        string.Equals(templateFrame.TemplateClassName, newClass.Name, StringComparison.Ordinal))
+                    {
+                        foreach (var parameter in templateFrame.TypeParametersByAnchor.Values)
+                            newClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = parameter.Name });
+                        BindTemplateFrameToClass(newClass);
+                    }
                     if (inheritsFrom != null)
                     {
                         classLifecycles.TryGetValue(inheritsFrom.Parent!.Name + "." + inheritsFrom.Name, out var superClassLifecycle);

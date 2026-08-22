@@ -793,7 +793,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
 
             var usingsToAdd = typesCollection
-                            .SelectMany(static x => x.AllTypes.Select(static y => (type: y, ns: y.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
+                            .SelectMany(static x => x.AllTypes.Where(static y => y.TypeDefinition is not CodeTypeParameter).Select(static y => (type: y, ns: y.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                             .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
                             .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns!))
                             .Select(static x => new CodeUsing { Name = x.ns!.Name, Declaration = x.type })
@@ -1235,17 +1235,27 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var inter = parentClass != null ?
                         parentClass.AddInnerInterface(insertValue).First() :
                         targetNS.AddInterface(insertValue).First();
+        // generic model classes carry their type parameters onto the interface (fresh instances, the class keeps owning its own)
+        foreach (var parameter in modelClass.TypeParameters)
+            inter.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = parameter.Name });
         var targetUsingBlock = parentClass != null ? (ProprietableBlockDeclaration)parentClass.StartBlock : inter.StartBlock;
         var usingsToRemove = new List<string>();
         var usingsToAdd = new List<CodeUsing>();
         if (modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
             var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
-            inter.StartBlock.AddImplements(new CodeType
+            var parentInterfaceType = new CodeType
             {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
-            });
+            };
+            // close the interface implements over the interface's own parameters (Derived<T> : Base<T> -> Derivedable<T> : Baseable<T>)
+            var interfaceParametersByName = inter.TypeParameters.ToDictionary(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+            foreach (var argument in modelClass.StartBlock.Inherits.GenericTypeParameterValues)
+                if (argument.TypeDefinition is CodeTypeParameter argumentParameter &&
+                    interfaceParametersByName.TryGetValue(argumentParameter.Name, out var interfaceParameter))
+                    parentInterfaceType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = interfaceParameter });
+            inter.StartBlock.AddImplements(parentInterfaceType);
             var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
             if (parentInterfaceNS != targetNS)
                 usingsToAdd.Add(new CodeUsing

@@ -640,16 +640,28 @@ paths:
                     $dynamicAnchor: itemType
                     $ref: '#/components/schemas/User'
                 $ref: '#/components/schemas/PaginatedTemplate'
-  /bare:
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTemplate'
+  /wrapped:
     get:
-      operationId: getBare
+      operationId: getWrapped
       responses:
         '200':
           description: ok
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedTemplate'
+                $defs:
+                  helper:
+                    type: string
+                type: object
+                properties:
+                  page:
+                    $ref: '#/components/schemas/PaginatedTemplate'
 components:
   schemas:
     User:
@@ -669,16 +681,19 @@ components:
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
 
-        // whichever endpoint materializes the shared template first wins its identity; the loser degrades to
-        // UntypedNode, so regardless of ordering no usage may close generic arguments over a non-generic class
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // A bare reference makes both usages use the existing concrete-specialization path, independent of
+        // traversal order. Neither response may degrade to UntypedNode.
         var executorReturnTypes = codeModel.FindNamespaceByName("ApiSdk.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
-            .Union(codeModel.FindNamespaceByName("ApiSdk.bare")!.FindChildByName<CodeClass>("BareRequestBuilder", true)!.Methods)
             .Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get)
             .Select(static x => x.ReturnType)
             .OfType<CodeType>();
         foreach (var returnType in executorReturnTypes)
-            Assert.True(returnType.TypeDefinition is not CodeClass codeClass || codeClass.IsGeneric || !returnType.GenericTypeParameterValues.Any(),
-                $"open generic reference to {returnType.Name} must never be emitted");
+            Assert.IsType<CodeClass>(returnType.TypeDefinition);
+        Assert.DoesNotContain(executorReturnTypes, static x => x.Name == "UntypedNode");
+        Assert.False(modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplate", true)!.IsGeneric);
+        Assert.False(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplateUser", true)!.IsGeneric);
     }
 
     [Fact]
@@ -761,7 +776,7 @@ components:
         Assert.NotNull(inlineModel);
         Assert.True(inlineModel!.IsGeneric);
         var firstType = Assert.IsType<CodeType>(inlineModel.Properties.First(static x => x.Name == "first").Type);
-        Assert.IsType<CodeTypeParameter>(firstType.TypeDefinition);
+        var inlineParameter = Assert.IsType<CodeTypeParameter>(firstType.TypeDefinition);
         Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PageTemplate_metadataUser", true));
         Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PageTemplate_metadataGroup", true));
         // the template's metadata property stays open over the type parameter, closing only at the usage sites
@@ -770,7 +785,12 @@ components:
         Assert.True(template!.IsGeneric);
         var metadataType = Assert.IsType<CodeType>(template.Properties.First(static x => x.Name == "metadata").Type);
         Assert.Same(inlineModel, metadataType.TypeDefinition);
-        Assert.IsType<CodeTypeParameter>(Assert.Single(metadataType.GenericTypeParameterValues).TypeDefinition);
+        var templateParameter = Assert.IsType<CodeTypeParameter>(Assert.Single(metadataType.GenericTypeParameterValues).TypeDefinition);
+        Assert.NotSame(templateParameter, inlineParameter);
+        Assert.Same(template.StartBlock, templateParameter.Parent);
+        Assert.Same(inlineModel.StartBlock, inlineParameter.Parent);
+        var itemType = Assert.IsType<CodeType>(template.Properties.First(static x => x.Name == "items").Type);
+        Assert.Same(templateParameter, itemType.TypeDefinition);
         // executor return types still close over the bound types
         Assert.Equal(["Group", "User"], codeModel.FindNamespaceByName("ApiSdk.pages.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
             .Union(codeModel.FindNamespaceByName("ApiSdk.pages.groups")!.FindChildByName<CodeClass>("GroupsRequestBuilder", true)!.Methods)
@@ -779,8 +799,10 @@ components:
             .OrderBy(static x => x, StringComparer.Ordinal));
     }
 
-    [Fact]
-    public async Task KeepsConcreteSpecializationsForNonCSharpLanguagesAsync()
+    [Theory]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Ruby)]
+    public async Task KeepsConcreteSpecializationsForNonGenericLanguagesAsync(GenerationLanguage language)
     {
         var tempFilePath = Path.GetTempFileName();
         _tempFiles.Add(tempFilePath);
@@ -820,15 +842,17 @@ components:
             $dynamicRef: '#itemType'
 """, cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
-        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { Language = GenerationLanguage.Go, ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { Language = language, ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
         var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
 
+        // PHP and Ruby have no generics: bindings keep producing concrete per-binding specializations permanently
         var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
         Assert.NotNull(modelsNamespace);
         var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateUser", true);
         Assert.NotNull(concrete);
         Assert.False(concrete!.IsGeneric);
+        Assert.Null(modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplate", true));
     }
 }
