@@ -237,6 +237,8 @@ public class DartConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return typeParameter.Name;
         return type.Name.ToLowerInvariant() switch
         {
             "integer" or "sbyte" or "byte" or "int64" => "int",
@@ -251,6 +253,9 @@ public class DartConventionService : CommonLanguageConventionService
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
+
+    internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal static string GetFactoryFieldName(CodeTypeParameter typeParameter) => $"_{GetFactoryParameterName(typeParameter)}";
 
     public bool IsPrimitiveType(string typeName)
     {
