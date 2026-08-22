@@ -18,7 +18,7 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
         conventions.WriteShortDescription(currentClass, writer, $"{className} ");
         conventions.WriteDeprecation(currentClass, writer);
         conventions.WriteLinkDescription(currentClass.Documentation, writer);
-        writer.StartBlock($"type {className} struct {{");
+        writer.StartBlock($"type {className}{conventions.GetTypeParametersDeclaration(currentClass.TypeParameters)} struct {{");
         // the whole struct body is buffered so the fields can be column-aligned like gofmt, which
         // pads sibling fields against each other and therefore needs to see all of them at once
         var body = writer.CaptureLines(() =>
@@ -27,6 +27,12 @@ public class CodeClassDeclarationWriter : CodeProprietableBlockDeclarationWriter
             {
                 var parentTypeName = conventions.GetTypeString(codeElement.Inherits.AllTypes.First(), currentClass, true, false);
                 writer.WriteLine(parentTypeName);
+            }
+            if (currentClass.IsGeneric)
+            {
+                // generic models need the per-parameter factory at runtime to deserialize parameter typed values
+                foreach (var typeParameter in currentClass.TypeParameters)
+                    writer.WriteLine($"{GoConventionService.GetTypeParameterFactoryName(typeParameter)} {conventions.SerializationHash}.ParsableFactory");
             }
             foreach (var property in currentClass.Properties
                                                 .Where(static x => !x.ExistsInBaseType)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
@@ -143,5 +144,27 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains($"\t// The displayName property{GoTestConstants.LineFeed}\tdisplayName *string", result);
         Assert.Contains($"\t// The id property{GoTestConstants.LineFeed}\tid *string", result);
+    }
+    [Fact]
+    public void WritesGenericDeclarationWithFactoryField()
+    {
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Access = AccessModifier.Private,
+            Type = new CodeType
+            {
+                Name = "TItemType",
+                TypeDefinition = parentClass.TypeParameters.First(),
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains($"type ParentClass[TItemType {GoTestConstants.SerializationHashPrefix}Parsable] struct {{", result);
+        Assert.Contains($"itemTypeFactory {GoTestConstants.SerializationHashPrefix}ParsableFactory", result);
+        Assert.Contains("[]TItemType", result);
     }
 }
