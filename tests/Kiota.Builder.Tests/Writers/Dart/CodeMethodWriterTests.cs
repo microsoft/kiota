@@ -1322,6 +1322,87 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesDeSerializerBodyForTypeParameterCollections()
+    {
+        setup();
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = itemTypeParameter, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex },
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("getCollectionOfObjectValues<TItemType>(_itemTypeFactory)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesDeSerializerBodyForGenericSelfReferences()
+    {
+        setup();
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.Name = "TreeTemplate";
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var parentPropertyType = new CodeType { TypeDefinition = parentClass };
+        parentPropertyType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = itemTypeParameter });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "parent",
+            Kind = CodePropertyKind.Custom,
+            Type = parentPropertyType,
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("getObjectValue<TreeTemplate<TItemType>>((n) => TreeTemplate<TItemType>(_itemTypeFactory))", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesExecutorFactoryClosureForGenericReturnType()
+    {
+        setup();
+        var userClass = root.AddClass(new CodeClass
+        {
+            Name = "User",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var templateClass = root.AddClass(new CodeClass
+        {
+            Name = "PaginatedTemplate",
+            Kind = CodeClassKind.Model,
+        }).First();
+        templateClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var returnType = new CodeType { TypeDefinition = templateClass };
+        returnType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = userClass });
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = returnType;
+        method.AddParameter(new CodeParameter()
+        {
+            Type = new CodeType(),
+            Kind = CodeParameterKind.RequestConfiguration
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("send<PaginatedTemplate<User>>(requestInfo, (n) => PaginatedTemplate<User>(User.createFromDiscriminatorValue)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void SkipsConstructorAndFactoryForGenericClasses()
+    {
+        setup();
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        method.Kind = CodeMethodKind.Factory;
+        method.IsAsync = false;
+        writer.Write(method);
+        Assert.Empty(tw.ToString());
+    }
+    [Fact]
     public void WritesInheritedSerializerBody()
     {
         setup(true);
