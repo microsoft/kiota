@@ -204,6 +204,9 @@ public class GoRefiner : CommonLanguageRefiner
                 generatedCode,
                 x => $"{x.Name}able"
             );
+            ReplaceGenericTypeArgumentsByInterfaces(
+                generatedCode
+            );
             AddContextParameterToGeneratorMethods(generatedCode);
             CorrectTypes(generatedCode);
             CorrectCoreTypesForBackingStore(generatedCode, $"{conventions.StoreHash}.BackingStoreFactoryInstance()", false);
@@ -436,6 +439,50 @@ public class GoRefiner : CommonLanguageRefiner
         }
 
         CrawlTree(currentElement, x => CorrectReferencesToMigratedModels(x, migratedNamespaces));
+    }
+    /// <summary>
+    /// Go instantiates generic templates with the able-interfaces (reference types implementing Parsable),
+    /// not the concrete classes (pointer receivers do not satisfy the constraint). Swaps class arguments
+    /// in closed generic usages for their interface and adds the required usings.
+    /// </summary>
+    private static void ReplaceGenericTypeArgumentsByInterfaces(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod && currentMethod.Parent is CodeClass parentClass)
+        {
+            ReplaceGenericTypeArguments(currentMethod.ReturnType, parentClass);
+            foreach (var parameter in currentMethod.Parameters)
+                ReplaceGenericTypeArguments(parameter.Type, parentClass);
+        }
+        else if (currentElement is CodeProperty currentProperty && currentProperty.Parent is CodeClass propertyParentClass)
+            ReplaceGenericTypeArguments(currentProperty.Type, propertyParentClass);
+        CrawlTree(currentElement, ReplaceGenericTypeArgumentsByInterfaces);
+
+        static void ReplaceGenericTypeArguments(CodeTypeBase typeBase, CodeClass owner)
+        {
+            if (typeBase is not CodeType { } type || !type.GenericTypeParameterValues.Any())
+                return;
+            foreach (var argument in type.GenericTypeParameterValues)
+            {
+                if (argument.TypeDefinition is CodeClass { AssociatedInterface: { } argumentInterface })
+                {
+                    argument.TypeDefinition = argumentInterface;
+                    argument.Name = argumentInterface.Name;
+                    var interfaceNamespace = argumentInterface.GetImmediateParentOfType<CodeNamespace>();
+                    var targetClass = owner.Parent is CodeClass ownerParentClass ? ownerParentClass : owner;
+                    if (interfaceNamespace != targetClass.GetImmediateParentOfType<CodeNamespace>())
+                        targetClass.AddUsing(new CodeUsing
+                        {
+                            Name = interfaceNamespace.Name,
+                            Declaration = new CodeType
+                            {
+                                Name = argumentInterface.Name,
+                                TypeDefinition = argumentInterface,
+                            },
+                        });
+                }
+                ReplaceGenericTypeArguments(argument, owner); // nested generic arguments
+            }
+        }
     }
     private void GenerateCodeFiles(CodeElement currentElement)
     {
@@ -806,6 +853,9 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeUnionType unionType && unionType.Types.Any(static y => !y.IsExternal) && unionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             "strings", "EqualFold"),
         new (static x => x is CodeMethod method && (method.IsOfKind(CodeMethodKind.RequestExecutor) || method.IsOfKind(CodeMethodKind.RequestGenerator)), "context","*context"),
+        new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor) &&
+                         method.ReturnType is CodeType { } genericReturnType && genericReturnType.GenericTypeParameterValues.Any(),
+            SerializationNamespaceName, "Parsable", "ParseNode"),
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal) && intersectionType.DiscriminatorInformation.HasBasicDiscriminatorInformation,
             SerializationNamespaceName, "MergeDeserializersForIntersectionWrapper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),

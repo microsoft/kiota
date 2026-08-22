@@ -63,6 +63,7 @@ public class GoConventionService : CommonLanguageConventionService
             var nullableSymbol = addPointerSymbol &&
                                  currentType.IsNullable &&
                                  currentType.TypeDefinition is not CodeInterface &&
+                                 currentType.TypeDefinition is not CodeTypeParameter &&
                                  currentType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None &&
                                  !currentType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase) &&
                                  !IsScalarType(currentType.Name) ? "*"
@@ -73,7 +74,7 @@ public class GoConventionService : CommonLanguageConventionService
                 _ => string.Empty,
             };
             var genericTypeParameters = currentType.GenericTypeParameterValues.Any() ?
-                            $"[{string.Join(",", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, true, false, true)))}]" :
+                            $"[{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, true, false, true)))}]" :
                             string.Empty;
             if (currentType.ActionOf)
                 return $"func (value {nullableSymbol}{collectionPrefix}{importSymbol}{typeName}{genericTypeParameters}) (err error)";
@@ -84,6 +85,11 @@ public class GoConventionService : CommonLanguageConventionService
     }
 
     public override string TranslateType(CodeType type) => throw new InvalidOperationException("use the overload instead.");
+    internal static string GetTypeParameterFactoryName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal string GetTypeParametersDeclaration(IEnumerable<CodeTypeParameter> typeParameters) =>
+        typeParameters.Any() ?
+            $"[{string.Join(", ", typeParameters.Select(x => $"{x.Name} {SerializationHash}.Parsable"))}]" :
+            string.Empty;
 #pragma warning disable CA1822 // Method should be static
     public string TranslateType(CodeTypeBase type, bool includeImportSymbol)
     {
