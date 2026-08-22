@@ -251,4 +251,52 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("2024-01-01", result);
         Assert.Contains("v2.0", result);
     }
+    [Fact]
+    public void WritesGenericTypeDeclaration()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("TItemType = TypeVar(\"TItemType\")", result);
+        Assert.Contains("class ParentClass(Generic[TItemType]):", result);
+        Assert.Contains("_specializations = {}", result);
+        Assert.Contains("_item_type = None", result);
+        Assert.Contains("def __class_getitem__(cls, item):", result);
+        Assert.Contains("(cls,), {\"_item_type\": item}", result);
+        Assert.Contains("return cls._specializations[item]", result);
+    }
+    [Fact]
+    public void WritesMultiGenericTypeDeclaration()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TDataType" });
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TErrorType" });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("TDataType = TypeVar(\"TDataType\")", result);
+        Assert.Contains("TErrorType = TypeVar(\"TErrorType\")", result);
+        Assert.Contains("class ParentClass(Generic[TDataType, TErrorType]):", result);
+        Assert.Contains("_data_type = None", result);
+        Assert.Contains("_error_type = None", result);
+        Assert.Contains("\"_data_type\": item[0], \"_error_type\": item[1]", result);
+    }
+    [Fact]
+    public void WritesGenericInheritedDeclaration()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var baseClass = new CodeClass { Name = "BasePage" };
+        baseClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var inherits = new CodeType
+        {
+            Name = "BasePage",
+            TypeDefinition = baseClass,
+        };
+        inherits.AddGenericTypeParameterValue(new CodeType { TypeDefinition = parentClass.TypeParameters[0] });
+        parentClass.StartBlock.Inherits = inherits;
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("class ParentClass(BasePage[TItemType], Generic[TItemType]):", result);
+    }
 }

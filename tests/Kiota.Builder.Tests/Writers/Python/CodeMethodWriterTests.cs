@@ -1197,6 +1197,86 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("self", result);
     }
     [Fact]
+    public void WritesGenericClassFactoryMethodAsClassmethod()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Factory;
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parse_node",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("@classmethod", result);
+        Assert.DoesNotContain("@staticmethod", result);
+        Assert.Contains("def method_name(cls,parse_node: ParseNode)", result);
+        Assert.Contains("return cls()", result);
+        Assert.DoesNotContain("return ParentClass()", result);
+    }
+    [Fact]
+    public void WritesDeSerializerBodyForTypeParameterProperties()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                TypeDefinition = itemTypeParameter,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("get_collection_of_object_values(type(self)._item_type)", result);
+        Assert.DoesNotContain("get_collection_of_object_values(TItemType)", result);
+    }
+    [Fact]
+    public void WritesDeSerializerBodyForRecursiveGenericClassReference()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var parentReference = new CodeType
+        {
+            Name = "ParentClass",
+            TypeDefinition = parentClass,
+        };
+        parentReference.AddGenericTypeParameterValue(new CodeType { TypeDefinition = itemTypeParameter });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "parent",
+            Kind = CodePropertyKind.Custom,
+            Type = parentReference,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("get_object_value(ParentClass[type(self)._item_type])", result);
+        Assert.DoesNotContain("get_object_value(ParentClass)", result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForInheritedModels()
     {
         setup();
