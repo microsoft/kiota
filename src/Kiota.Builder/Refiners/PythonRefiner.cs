@@ -165,6 +165,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static readonly AdditionalUsingEvaluator[] defaultUsingEvaluators = {
         new (static x => x is CodeClass, "__future__", "annotations"),
         new (static x => x is CodeClass, "typing", "Any, Optional, TYPE_CHECKING, Union"),
+        new (static x => x is CodeClass @class && @class.IsGeneric, "typing", "Generic, TypeVar"),
         new (static x => x is CodeClass, "collections.abc", "Callable"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.RequestAdapter),
             $"{AbstractionsPackageName}.request_adapter", "RequestAdapter"),
@@ -343,13 +344,18 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
 
     // Caters for QueryParameters and RequestConfiguration which are implemented as nested classes.
     // No imports required for nested classes in Python.
+    // Also expands generic type arguments (e.g. User in PaginatedTemplate[User]) so bound types get imported.
     public static IEnumerable<CodeTypeBase> codeTypeFilter(IEnumerable<CodeTypeBase> usingsToAdd)
     {
         var nestedTypes = usingsToAdd.OfType<CodeType>().Where(
             static codeType => codeType.TypeDefinition is CodeClass codeClass
             && codeClass.IsOfKind(CodeClassKind.RequestConfiguration, CodeClassKind.QueryParameters));
 
-        return usingsToAdd.Except(nestedTypes);
+        var genericArguments = usingsToAdd.OfType<CodeType>()
+            .Where(static x => x.GenericTypeParameterValues.Any())
+            .SelectMany(static x => x.GenericTypeParameterValues);
+
+        return usingsToAdd.Except(nestedTypes).Union(genericArguments);
     }
 
     private const string DateTimePackageName = "datetime";

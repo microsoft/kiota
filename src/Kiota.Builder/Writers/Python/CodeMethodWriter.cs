@@ -134,7 +134,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.WriteLine($"return {mappedTypeName}()");
             writer.DecreaseIndent();
         }
-        writer.WriteLine($"return {parentClass.Name}()");
+        writer.WriteLine(parentClass.IsGeneric ? "return cls()" : $"return {parentClass.Name}()");
     }
     private const string ResultVarName = "result";
     private void WriteFactoryMethodBodyForUnionModel(CodeMethod codeElement, CodeClass parentClass, CodeParameter parseNodeParameter, LanguageWriter writer)
@@ -231,7 +231,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
             WriteFactoryMethodBodyForIntersectionModel(codeElement, parentClass, parseNodeParameter, writer);
         else
-            writer.WriteLine($"return {parentClass.Name}()");
+            writer.WriteLine(parentClass.IsGeneric ? "return cls()" : $"return {parentClass.Name}()");
     }
     private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
@@ -626,6 +626,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         writer.WriteLine("raise Exception(\"Http core is null\") ");
         writer.DecreaseIndent();
         _codeUsingWriter.WriteDeferredImport(parentClass, codeElement.ReturnType.Name, writer);
+        if (codeElement.ReturnType is CodeType { TypeDefinition: CodeClass } genericReturnType && genericReturnType.GenericTypeParameterValues.Any())
+            foreach (var genericArgument in genericReturnType.GenericTypeParameterValues)
+                _codeUsingWriter.WriteDeferredImport(parentClass, genericArgument.Name, writer);
         writer.WriteLine($"return await self.request_adapter.{genericTypeForSendMethod}(request_info,{newFactoryParameter} {errorMappingVarName})");
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
@@ -770,8 +773,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private static readonly PythonCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer, string returnType, bool isVoid)
     {
+        var isGenericFactory = code.IsOfKind(CodeMethodKind.Factory) && code.Parent is CodeClass { IsGeneric: true };
         if (code.IsOfKind(CodeMethodKind.Factory))
-            writer.WriteLine("@staticmethod");
+            writer.WriteLine(isGenericFactory ? "@classmethod" : "@staticmethod");
         var accessModifier = conventions.GetAccessModifier(code.Access);
         var isConstructor = code.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor);
         var methodName = code.Kind switch
@@ -781,7 +785,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             _ => code.Name,
         };
         var asyncPrefix = code.IsAsync && code.Kind is CodeMethodKind.RequestExecutor ? "async " : string.Empty;
-        var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ? string.Empty : "self,";
+        var instanceReference = code.IsOfKind(CodeMethodKind.Factory) ?
+            (isGenericFactory ? "cls," : string.Empty) :
+            "self,";
         var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, parameterOrderComparer)
                                                         .Select(p => new PythonConventionService() // requires a writer instance because method parameters use inline type definitions
                                                         .GetParameterSignature(p, code, writer))
@@ -811,6 +817,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         {
             if (currentType.TypeDefinition is CodeEnum currentEnum)
                 return $"get_{(currentEnum.Flags || isCollection ? "collection_of_enum_values" : "enum_value")}({propertyType.ToPascalCase()})";
+            if (currentType.TypeDefinition is CodeTypeParameter typeParameter)
+                return isCollection ?
+                    $"get_collection_of_object_values(type(self).{CodeClassDeclarationWriter.GetTypeParameterSlotName(typeParameter)})" :
+                    $"get_object_value(type(self).{CodeClassDeclarationWriter.GetTypeParameterSlotName(typeParameter)})";
+            if (currentType.TypeDefinition is CodeClass { IsGeneric: true } genericClass && TryGetGenericClassSubscription(genericClass, currentType, parentClass, out var subscription))
+                return isCollection ?
+                    $"get_collection_of_object_values({subscription})" :
+                    $"get_object_value({subscription})";
             if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return $"get_collection_of_primitive_values({propertyType})";
@@ -826,6 +840,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             "datetime.timedelta" => "get_timedelta_value()",
             _ => $"get_object_value({propertyType.ToPascalCase()})",
         };
+    }
+    private static bool TryGetGenericClassSubscription(CodeClass genericClass, CodeType referenceType, CodeClass currentClass, out string subscription)
+    {
+        subscription = string.Empty;
+        var parameters = genericClass.TypeParameters.ToArray();
+        var arguments = referenceType.GenericTypeParameterValues.ToArray();
+        if (parameters.Length != arguments.Length || parameters.Length == 0)
+            return false;
+        var argumentNames = new string[arguments.Length];
+        for (var i = 0; i < arguments.Length; i++)
+        {
+            if (arguments[i].TypeDefinition is not CodeTypeParameter argumentParameter ||
+                currentClass.TypeParameters.All(x => !x.Name.Equals(argumentParameter.Name, StringComparison.OrdinalIgnoreCase)))
+                return false;
+            argumentNames[i] = $"type(self).{CodeClassDeclarationWriter.GetTypeParameterSlotName(argumentParameter)}";
+        }
+        subscription = $"{genericClass.Name}[{string.Join(", ", argumentNames)}]";
+        return true;
     }
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
