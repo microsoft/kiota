@@ -252,6 +252,10 @@ public sealed class GenerateSample : IDisposable
     [InlineData("FlagsEnumHandling.yaml")]
     [InlineData("GeneratesUritemplateHints.yaml")]
     [InlineData("SwaggerPetStore.json")]
+    [InlineData("generic-binding.yaml")]
+    [InlineData("recursive-generic-binding.yaml")]
+    [InlineData("request-body-generic-binding.yaml")]
+    [InlineData("multi-anchor-generic-binding.yaml")]
     [Theory]
     public async Task GeneratedGoCodeIsFormattedAsync(string descriptionFile)
     {
@@ -338,7 +342,8 @@ public sealed class GenerateSample : IDisposable
             .Concat(directory.EnumerateFiles("*.go", searchOption))
             .Concat(directory.EnumerateFiles("*.py", searchOption))
             .Concat(directory.EnumerateFiles("*.php", searchOption))
-            .Concat(directory.EnumerateFiles("*.rb", searchOption));
+            .Concat(directory.EnumerateFiles("*.rb", searchOption))
+            .Concat(directory.EnumerateFiles("*.dart", searchOption));
         return string.Join("\n", modelFiles.Select(f => File.ReadAllText(f.FullName)));
     }
 
@@ -440,6 +445,7 @@ public sealed class GenerateSample : IDisposable
     }
 
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Go)]
@@ -470,6 +476,56 @@ public sealed class GenerateSample : IDisposable
             Assert.DoesNotContain("class PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
             Assert.DoesNotContain("class PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
         }
+        else if (language is GenerationLanguage.Go)
+        { // Go emits one reusable generic template closed over the able-interfaces at the usage sites
+            Assert.Contains("type PaginatedTemplate[TItemType ", allModelText, StringComparison.Ordinal);
+            Assert.Contains("func NewPaginatedTemplate[TItemType ", allModelText, StringComparison.Ordinal);
+            Assert.Contains("GetCollectionOfObjectValues(m.itemTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Userable](", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Groupable](", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".UserProfileable](", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Python)
+        { // Python emits one generic template bound through __class_getitem__ subscription at the usage sites
+            Assert.Contains("TItemType = TypeVar(\"TItemType\")", allModelText, StringComparison.Ordinal);
+            Assert.Contains("class PaginatedTemplate(AdditionalDataHolder, Parsable, Generic[TItemType]):", allModelText, StringComparison.Ordinal);
+            Assert.Contains("send_async(request_info, PaginatedTemplate[User], None)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("send_async(request_info, PaginatedTemplate[Group], None)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("send_async(request_info, PaginatedTemplate[UserProfile], None)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Java)
+        { // Java emits one reusable generic template closed over at the usage sites
+            Assert.Contains("class PaginatedTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("PaginatedTemplate<User>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("PaginatedTemplate<Group>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("PaginatedTemplate<UserProfile>", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Dart)
+        { // Dart emits one reusable generic template closed over at the usage sites
+            Assert.Contains("class PaginatedTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("(n) => PaginatedTemplate<User>(User.createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("(n) => PaginatedTemplate<Group>(Group.createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.TypeScript)
+        { // TypeScript emits one generic interface with factory-threaded functions, closed over at the usage sites
+            Assert.Contains("export interface PaginatedTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("export function createPaginatedTemplateFromDiscriminatorValue<TItemType extends Parsable>(itemTypeFactory: ParsableFactory<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getCollectionOfObjectValues<TItemType>(itemTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("responseBodyFactory:  createPaginatedTemplateFromDiscriminatorValue(createUserFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("responseBodyFactory:  createPaginatedTemplateFromDiscriminatorValue(createGroupFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("responseBodyFactory:  createPaginatedTemplateFromDiscriminatorValue(createUserProfileFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("PaginatedTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
         else
         {
             Assert.Contains("PaginatedTemplateUser", allModelText, StringComparison.Ordinal);
@@ -488,21 +544,26 @@ public sealed class GenerateSample : IDisposable
                 Assert.Contains("GetCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
                 Assert.Contains("n => new global::ApiSdk.Models.PaginatedTemplate<global::ApiSdk.Models.User>(global::ApiSdk.Models.User.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
                 break;
+            case GenerationLanguage.Dart:
+                Assert.Contains("send<PaginatedTemplate<User>>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("send<PaginatedTemplate<Group>>", allModelText, StringComparison.Ordinal);
+                break;
             case GenerationLanguage.Java:
-                Assert.Contains("getCollectionOfObjectValues(User::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
-                Assert.Contains("getCollectionOfObjectValues(Group::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("getCollectionOfObjectValues(this._itemTypeFactory)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("new PaginatedTemplate<>(User::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("new PaginatedTemplate<>(Group::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
                 break;
             case GenerationLanguage.TypeScript:
-                Assert.Contains("getCollectionOfObjectValues<User>(createUserFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
-                Assert.Contains("getCollectionOfObjectValues<Group>(createGroupFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("serializePaginatedTemplate<TItemType extends Parsable>(itemTypeSerializer: ModelSerializerFunction<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("writeCollectionOfObjectValues<TItemType>(\"items\", paginatedTemplate.items, itemTypeSerializer)", allModelText, StringComparison.Ordinal);
                 break;
             case GenerationLanguage.Go:
-                Assert.Contains("GetCollectionOfObjectValues(CreateUserFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
-                Assert.Contains("GetCollectionOfObjectValues(CreateGroupFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                Assert.Contains(".CreateUserFromDiscriminatorValue), nil", allModelText, StringComparison.Ordinal);
+                Assert.Contains(".CreateGroupFromDiscriminatorValue), nil", allModelText, StringComparison.Ordinal);
                 break;
             case GenerationLanguage.Python:
-                Assert.Contains("n.get_collection_of_object_values(User)", allModelText, StringComparison.Ordinal);
-                Assert.Contains("n.get_collection_of_object_values(Group)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("n.get_collection_of_object_values(type(self)._item_type)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("def create_from_discriminator_value(cls,parse_node: ParseNode) -> PaginatedTemplate:", allModelText, StringComparison.Ordinal);
                 break;
             case GenerationLanguage.PHP:
                 // PHP has no generics: concrete per-binding classes with class-string factories, permanently
@@ -549,6 +610,7 @@ public sealed class GenerateSample : IDisposable
     }
 
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Go)]
@@ -575,6 +637,46 @@ public sealed class GenerateSample : IDisposable
             Assert.DoesNotContain("class TreeTemplateBranch", allModelText, StringComparison.Ordinal);
             Assert.DoesNotContain("class TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
         }
+        else if (language is GenerationLanguage.Python)
+        { // one generic template; the recursive reference re-subscribes through the bound item type
+            Assert.Contains("class TreeTemplate(AdditionalDataHolder, Parsable, Generic[TItemType]):", allModelText, StringComparison.Ordinal);
+            Assert.Contains("parent: Optional[TreeTemplate[TItemType]] = None", allModelText, StringComparison.Ordinal);
+            Assert.Contains("n.get_object_value(TreeTemplate[type(self)._item_type])", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Java)
+        { // one generic template; the recursive '#self' reference closes over the type parameter
+            Assert.Contains("class TreeTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("TreeTemplate<TItemType> parent", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Dart)
+        { // one generic template; the recursive '#self' reference closes over the type parameter
+            Assert.Contains("class TreeTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("TreeTemplate<TItemType>? parent", allModelText, StringComparison.Ordinal);
+            Assert.Contains("(n) => TreeTemplate<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.TypeScript)
+        { // one generic interface; the recursive '#self' reference closes over the type parameter
+            Assert.Contains("export interface TreeTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("parent?: TreeTemplate<TItemType> | null", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getObjectValue<TreeTemplate<TItemType>>(createTreeTemplateFromDiscriminatorValue(itemTypeFactory))", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Go)
+        { // one generic template; the recursive '#self' reference closes over the type parameter
+            Assert.Contains("type TreeTemplate[TItemType ", allModelText, StringComparison.Ordinal);
+            Assert.Contains("parent TreeTemplateable[TItemType]", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Branchable](", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Leafable](", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("TreeTemplateBranch", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("TreeTemplateLeaf", allModelText, StringComparison.Ordinal);
+        }
         else
         {
             // Generic binding: distinct classes per bound type.
@@ -589,6 +691,7 @@ public sealed class GenerateSample : IDisposable
     }
 
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Go)]
@@ -615,6 +718,48 @@ public sealed class GenerateSample : IDisposable
             Assert.Contains("global::ApiSdk.Models.SearchTemplate<global::ApiSdk.Models.Group>", allModelText, StringComparison.Ordinal);
             Assert.DoesNotContain("class SearchTemplateUser", allModelText, StringComparison.Ordinal);
             Assert.DoesNotContain("class SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Python)
+        { // one generic template; the request body parameter closes over the bound type at the usage site
+            Assert.Contains("class SearchTemplate(AdditionalDataHolder, Parsable, Generic[TItemType]):", allModelText, StringComparison.Ordinal);
+            Assert.Contains("body: SearchTemplate[User]", allModelText, StringComparison.Ordinal);
+            Assert.Contains("body: SearchTemplate[Group]", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Java)
+        { // one generic template; the request body parameter closes over the bound type at the usage site
+            Assert.Contains("class SearchTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SearchTemplate<User> body", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SearchTemplate<Group> body", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Dart)
+        { // one generic template; the request body parameter closes over the bound type at the usage site
+            Assert.Contains("class SearchTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SearchTemplate<User>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SearchTemplate<Group>", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.TypeScript)
+        { // one generic interface; the request body closes over the bound type at the usage site
+            Assert.Contains("export interface SearchTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("post(body: SearchTemplate<User>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("post(body: SearchTemplate<Group>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("requestBodySerializer: (writer, value) => serializeSearchTemplate(serializeUser, writer, value)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("SearchTemplateGroup", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Go)
+        { // one generic template; the request body parameter closes over the able-interface at the usage site
+            Assert.Contains("type SearchTemplate[TItemType ", allModelText, StringComparison.Ordinal);
+            Assert.Contains("SearchTemplateable[", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Userable]", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Groupable]", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("SearchTemplateUser", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("SearchTemplateGroup", allModelText, StringComparison.Ordinal);
         }
         else
         {
@@ -694,6 +839,7 @@ public sealed class GenerateSample : IDisposable
     }
 
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Dart)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Go)]
@@ -720,6 +866,56 @@ public sealed class GenerateSample : IDisposable
             Assert.Contains("EnvelopeTemplate<global::ApiSdk.Models.User, global::ApiSdk.Models.ProblemDetails>", allModelText, StringComparison.Ordinal);
             Assert.Contains("EnvelopeTemplate<global::ApiSdk.Models.Group, global::ApiSdk.Models.ProblemDetails>", allModelText, StringComparison.Ordinal);
             Assert.DoesNotContain("class EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Python)
+        { // one generic template with two type parameters; usages close over both bound types
+            Assert.Contains("TDataType = TypeVar(\"TDataType\")", allModelText, StringComparison.Ordinal);
+            Assert.Contains("TErrorType = TypeVar(\"TErrorType\")", allModelText, StringComparison.Ordinal);
+            Assert.Contains("class EnvelopeTemplate(AdditionalDataHolder, Parsable, Generic[TDataType, TErrorType]):", allModelText, StringComparison.Ordinal);
+            Assert.Contains("n.get_object_value(type(self)._data_type)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("n.get_collection_of_object_values(type(self)._error_type)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("send_async(request_info, EnvelopeTemplate[User, ProblemDetails], None)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("send_async(request_info, EnvelopeTemplate[Group, ProblemDetails], None)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("EnvelopeTemplateGroupProblemDetails", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Java)
+        { // one generic template with two type parameters; usages close over both bound types
+            Assert.Contains("class EnvelopeTemplate<TDataType extends Parsable, TErrorType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("new EnvelopeTemplate<>(User::createFromDiscriminatorValue, ProblemDetails::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("new EnvelopeTemplate<>(Group::createFromDiscriminatorValue, ProblemDetails::createFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplateGroupProblemDetails", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Dart)
+        { // one generic template with two type parameters; usages close over both bound types
+            Assert.Contains("class EnvelopeTemplate<TDataType extends Parsable, TErrorType extends Parsable>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getObjectValue<TDataType>(_dataTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getCollectionOfObjectValues<TErrorType>(_errorTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("EnvelopeTemplate<User, ProblemDetails>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("EnvelopeTemplate<Group, ProblemDetails>", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("class EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.TypeScript)
+        { // one generic interface with two type parameters; usages close over both bound types
+            Assert.Contains("export interface EnvelopeTemplate<TDataType, TErrorType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("createEnvelopeTemplateFromDiscriminatorValue<TDataType extends Parsable, TErrorType extends Parsable>(dataTypeFactory: ParsableFactory<TDataType>, errorTypeFactory: ParsableFactory<TErrorType>", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getObjectValue<TDataType>(dataTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("getCollectionOfObjectValues<TErrorType>(errorTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("responseBodyFactory:  createEnvelopeTemplateFromDiscriminatorValue(createUserFromDiscriminatorValue, createProblemDetailsFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("EnvelopeTemplateGroupProblemDetails", allModelText, StringComparison.Ordinal);
+        }
+        else if (language is GenerationLanguage.Go)
+        { // one generic template with two type parameters; usages close over both bound able-interfaces
+            Assert.Contains("type EnvelopeTemplate[TDataType ", allModelText, StringComparison.Ordinal);
+            Assert.Contains(", TErrorType ", allModelText, StringComparison.Ordinal);
+            Assert.Contains("GetObjectValue(m.dataTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains("GetCollectionOfObjectValues(m.errorTypeFactory)", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Userable, ", allModelText, StringComparison.Ordinal);
+            Assert.Contains(".Groupable, ", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("EnvelopeTemplateUserProblemDetails", allModelText, StringComparison.Ordinal);
+            Assert.DoesNotContain("EnvelopeTemplateGroupProblemDetails", allModelText, StringComparison.Ordinal);
         }
         else
         {

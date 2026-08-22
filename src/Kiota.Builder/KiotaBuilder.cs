@@ -1969,16 +1969,12 @@ public partial class KiotaBuilder
     /// </summary>
     private static readonly HashSet<GenerationLanguage> GenericTemplateLanguages = [
         GenerationLanguage.CSharp,
-        // TODO(dart-agent): uncomment when Dart writers render generics
-        // GenerationLanguage.Dart,
+        GenerationLanguage.Dart,
         // TODO(java-agent): uncomment when Java writers render generics
-        // GenerationLanguage.Java,
-        // TODO(python-agent): uncomment when Python writers render generics
-        // GenerationLanguage.Python,
-        // TODO(typescript-agent): uncomment when TypeScript writers render generics
-        // GenerationLanguage.TypeScript,
-        // TODO(go-agent): uncomment when Go writers render generics
-        // GenerationLanguage.Go,
+        GenerationLanguage.Java,
+        GenerationLanguage.Python,
+        GenerationLanguage.TypeScript,
+        GenerationLanguage.Go,
     ];
     private bool UseGenericDynamicBindingTemplates(IOpenApiSchema schema)
     {
