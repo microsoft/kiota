@@ -116,7 +116,7 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
                 writer.StartBlock("errorMappings: {");
                 foreach (var errorMapping in executorMethod.ErrorMappings)
                 {
-                    writer.WriteLine($"{GetErrorMappingKey(errorMapping.Key)}: {GetFactoryMethodName(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
+                    writer.WriteLine($"{GetErrorMappingKey(errorMapping.Key)}: {GetFactoryExpression(errorMapping.Value, codeElement, writer)} as ParsableFactory<Parsable>,");
                 }
                 writer.CloseBlock("},");
             }
@@ -162,6 +162,13 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         if (requestBody.Type is CodeType currentType && (currentType.TypeDefinition is CodeInterface || currentType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)))
         {
+            if (currentType.TypeDefinition is CodeInterface { IsGeneric: true } or CodeClass { IsGeneric: true } && currentType.GenericTypeParameterValues.Any())
+            {// generic bodies close over the serializer of their type arguments at the usage site
+                var serializerArguments = string.Join(", ", currentType.GenericTypeParameterValues
+                    .OfType<CodeType>()
+                    .Select(static x => $"serialize{x.Name.ToFirstCharacterUpperCase()}"));
+                return $"(writer, value) => serialize{currentType.Name.ToFirstCharacterUpperCase()}({serializerArguments}, writer, value)";
+            }
             return $"serialize{currentType.Name.ToFirstCharacterUpperCase()}";
         }
         return default;
@@ -173,7 +180,21 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         if (isStream || IsPrimitiveType(typeName) || IsKiotaPrimitive(typeName)) return $" \"{typeName}\"";
         if (GetPrimitiveAlias(typeName) is { } alias && !string.IsNullOrEmpty(alias))
             return $" \"{alias}\"";
-        return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
+        return $" {GetFactoryExpression(codeElement.ReturnType, codeElement, writer)}";
+    }
+    private static string GetFactoryExpression(CodeTypeBase type, CodeElement targetElement, LanguageWriter writer)
+    {
+        var factoryName = GetFactoryMethodName(type, targetElement, writer);
+        if (type is CodeType codeType &&
+            codeType.TypeDefinition is CodeClass { IsGeneric: true } or CodeInterface { IsGeneric: true } &&
+            codeType.GenericTypeParameterValues.Any())
+        {// generic factories are partially applied with the factories of their closed type arguments
+            var factoryArguments = string.Join(", ", codeType.GenericTypeParameterValues
+                .OfType<CodeType>()
+                .Select(x => GetFactoryMethodName(x, targetElement, writer)));
+            return $"{factoryName}({factoryArguments})";
+        }
+        return factoryName;
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
     {

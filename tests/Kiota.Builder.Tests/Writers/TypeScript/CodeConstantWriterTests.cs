@@ -648,6 +648,101 @@ public sealed class CodeConstantWriterTests : IDisposable
             },
         });
     }
+    [Fact]
+    public void WritesRequestExecutorBodyForGenericModelReturn()
+    {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var genericClass = root.AddClass(new CodeClass
+        {
+            Name = "paginatedTemplate",
+            Kind = CodeClassKind.Model,
+        }).First();
+        genericClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var userClass = root.AddClass(new CodeClass
+        {
+            Name = "user",
+            Kind = CodeClassKind.Model,
+        }).First();
+        AddModelFactoryFunction(genericClass);
+        AddModelFactoryFunction(userClass);
+        var returnType = new CodeType
+        {
+            Name = "PaginatedTemplate",
+            TypeDefinition = genericClass,
+        };
+        returnType.AddGenericTypeParameterValue(new CodeType { Name = "User", TypeDefinition = userClass });
+        method.ReturnType = returnType;
+        AddRequestBodyParameters();
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("responseBodyFactory:  createPaginatedTemplateFromDiscriminatorValue(createUserFromDiscriminatorValue)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestBodySerializerForGenericModel()
+    {
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Post;
+        var genericClass = root.AddClass(new CodeClass
+        {
+            Name = "searchTemplate",
+            Kind = CodeClassKind.Model,
+        }).First();
+        genericClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var modelsNS = root.AddNamespace("models");
+        var modelInterface = modelsNS.AddInterface(new CodeInterface
+        {
+            Name = "SearchTemplate",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = genericClass,
+        }).First();
+        modelInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        AddRequestBodyParameters();
+        var bodyType = new CodeType
+        {
+            Name = "SearchTemplate",
+            TypeDefinition = modelInterface,
+        };
+        bodyType.AddGenericTypeParameterValue(new CodeType { Name = "User" });
+        method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type = bodyType;
+        var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
+        var codeFile = parentClass.GetImmediateParentOfType<CodeNamespace>().TryAddCodeFile("foo", constant);
+        codeFile.AddElements(new CodeConstant
+        {
+            Name = "UriTemplate",
+            Kind = CodeConstantKind.UriTemplate,
+            UriTemplate = "{baseurl+}/foo/bar"
+        });
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("requestBodySerializer: (writer, value) => serializeSearchTemplate(serializeUser, writer, value)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    private void AddModelFactoryFunction(CodeClass modelClass)
+    {
+        var factoryMethod = new CodeMethod
+        {
+            Name = $"create{modelClass.Name.ToFirstCharacterUpperCase()}FromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = modelClass.Name,
+                TypeDefinition = modelClass,
+            },
+            IsStatic = true,
+        };
+        modelClass.AddMethod(factoryMethod);
+        modelClass.GetImmediateParentOfType<CodeNamespace>().AddFunction(new CodeFunction(factoryMethod));
+    }
     private void AddRequestBodyParameters(bool useComplexTypeForBody = false)
     {
         var stringType = new CodeType

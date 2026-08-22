@@ -167,6 +167,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 ],
                 static s => s.ToCamelCase(UnderscoreArray));
             IntroducesInterfacesAndFunctions(generatedCode, factoryNameCallbackFromType);
+            AddGenericTypeArgumentsUsingsToRequestBuilders(generatedCode);
             GenerateEnumObjects(generatedCode);
             AliasUsingsWithSameSymbol(generatedCode);
             var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
@@ -922,11 +923,103 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     /// <param name="generatedCode"></param>
     private static void IntroducesInterfacesAndFunctions(CodeElement generatedCode, Func<CodeType, string> functionNameCallback)
     {
+        AddGenericParametersToFactoryFunctions(generatedCode);
         CreateSeparateSerializers(generatedCode);
         CreateInterfaceModels(generatedCode);
         AddDeserializerUsingToDiscriminatorFactory(generatedCode);
         ReplaceRequestQueryParamsWithInterfaces(generatedCode);
         AddStaticMethodsUsingsToDeserializerFunctions(generatedCode, functionNameCallback);
+    }
+
+    private static void AddGenericParametersToFactoryFunctions(CodeElement currentElement)
+    {
+        if (currentElement is CodeFunction { OriginalLocalMethod.Kind: CodeMethodKind.Factory } factoryFunction &&
+            factoryFunction.OriginalMethodParentClass.IsGeneric)
+        {
+            AddGenericFunctionParameters(factoryFunction, factoryFunction.OriginalMethodParentClass.TypeParameters, addFactoryParameters: true, addSerializerParameters: false);
+            // usage sites partially apply the factory with the item factories, so the parse node parameter must be optional
+            if (factoryFunction.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode) is { } parseNodeParameter)
+                parseNodeParameter.Optional = true;
+        }
+        CrawlTree(currentElement, AddGenericParametersToFactoryFunctions);
+    }
+
+    private static void AddGenericFunctionParameters(CodeFunction codeFunction, IEnumerable<CodeTypeParameter> typeParameters, bool addFactoryParameters, bool addSerializerParameters)
+    {
+        var parameters = typeParameters.ToArray();
+        foreach (var typeParameter in parameters)
+            codeFunction.AddTypeParameter(new CodeTypeParameter { Name = typeParameter.Name });
+        var functionTypeParametersByName = codeFunction.TypeParameters.ToDictionary(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+        foreach (var typeParameter in parameters)
+        {
+            var functionTypeParameter = functionTypeParametersByName[typeParameter.Name];
+            if (addFactoryParameters)
+            {
+                var factoryParameterName = GetFactoryParameterName(typeParameter);
+                if (!codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Name.EqualsIgnoreCase(factoryParameterName)))
+                    codeFunction.OriginalLocalMethod.AddParameter(new CodeParameter
+                    {
+                        Name = factoryParameterName,
+                        Kind = CodeParameterKind.Custom,
+                        Optional = false,
+                        Type = CreateTypeFactoryOrSerializerType("ParsableFactory", functionTypeParameter),
+                        Documentation = new CodeDocumentation
+                        {
+                            DescriptionTemplate = $"The parsable factory for the {typeParameter.Name} type.",
+                        },
+                    });
+            }
+            if (addSerializerParameters)
+            {
+                var serializerParameterName = GetSerializerParameterName(typeParameter);
+                if (!codeFunction.OriginalLocalMethod.Parameters.Any(x => x.Name.EqualsIgnoreCase(serializerParameterName)))
+                    codeFunction.OriginalLocalMethod.AddParameter(new CodeParameter
+                    {
+                        Name = serializerParameterName,
+                        Kind = CodeParameterKind.Custom,
+                        Optional = false,
+                        Type = CreateTypeFactoryOrSerializerType("ModelSerializerFunction", functionTypeParameter),
+                        Documentation = new CodeDocumentation
+                        {
+                            DescriptionTemplate = $"The serializer for the {typeParameter.Name} type.",
+                        },
+                    });
+            }
+        }
+        if (addFactoryParameters)
+            codeFunction.AddUsing(new CodeUsing
+            {
+                Name = "ParsableFactory",
+                IsErasable = true,
+                Declaration = new CodeType
+                {
+                    Name = AbstractionsPackageName,
+                    IsExternal = true,
+                },
+            });
+        if (addSerializerParameters)
+            codeFunction.AddUsing(new CodeUsing
+            {
+                Name = "ModelSerializerFunction",
+                IsErasable = true,
+                Declaration = new CodeType
+                {
+                    Name = AbstractionsPackageName,
+                    IsExternal = true,
+                },
+            });
+    }
+
+    private static CodeType CreateTypeFactoryOrSerializerType(string abstractionTypeName, CodeTypeParameter functionTypeParameter)
+    {
+        var result = new CodeType
+        {
+            Name = abstractionTypeName,
+            IsExternal = true,
+            IsNullable = false,
+        };
+        result.AddGenericTypeParameterValue(new CodeType { TypeDefinition = functionTypeParameter });
+        return result;
     }
 
     private static void CreateSeparateSerializers(CodeElement codeElement)
@@ -970,6 +1063,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             Name = $"{ModelDeserializerPrefix}{modelClass.Name.ToFirstCharacterUpperCase()}",
         };
 
+        if (modelClass.IsGeneric)
+        {// generic models receive their type parameters and per type parameter factory/serializer parameters on their serialization functions
+            AddGenericFunctionParameters(serializerFunction, modelClass.TypeParameters, addFactoryParameters: false, addSerializerParameters: true);
+            AddGenericFunctionParameters(deserializerFunction, modelClass.TypeParameters, addFactoryParameters: true, addSerializerParameters: false);
+        }
+
         foreach (var codeUsing in modelClass.Usings.Where(static x => x.Declaration is not null && x.Declaration.IsExternal))
         {
             deserializerFunction.AddUsing(codeUsing);
@@ -984,11 +1083,19 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         var method = codeFunction.OriginalLocalMethod;
 
+        var parameterType = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface };
+        if (modelInterface.TypeParameters.Count != 0 && codeFunction.TypeParameters.Count != 0)
+        {// the serialized type is the model interface closed over the function's own type parameters
+            var functionTypeParametersByName = codeFunction.TypeParameters.ToDictionary(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+            foreach (var interfaceParameter in modelInterface.TypeParameters)
+                if (functionTypeParametersByName.TryGetValue(interfaceParameter.Name, out var functionTypeParameter))
+                    parameterType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = functionTypeParameter });
+        }
         method.AddParameter(new CodeParameter
         {
             Name = GetFinalInterfaceName(modelInterface),
             DefaultValue = "{}",
-            Type = new CodeType { Name = GetFinalInterfaceName(modelInterface), TypeDefinition = modelInterface },
+            Type = parameterType,
             Kind = CodeParameterKind.DeserializationTarget,
             Documentation = new CodeDocumentation
             {
@@ -1230,6 +1337,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var modelInterface = modelClass.Parent is CodeClass modelParentClass ?
                        modelParentClass.AddInnerInterface(insertValue).First() :
                        namespaceOfModel.AddInterface(insertValue).First();
+        // generic model classes carry their type parameters onto the interface (fresh instances, the class keeps owning its own)
+        foreach (var parameter in modelClass.TypeParameters)
+            modelInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = parameter.Name });
         var classModelChildItems = modelClass.GetChildElements(true);
 
         var props = classModelChildItems.OfType<CodeProperty>();
@@ -1252,6 +1362,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = GetFinalInterfaceName(parentInterface),
                 TypeDefinition = parentInterface,
             };
+            // close the parent interface over this interface's own type parameters (Derived<T> -> Derivedable<T> extends Baseable<T>)
+            var interfaceParametersByName = modelInterface.TypeParameters.ToDictionary(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+            foreach (var argument in modelClass.StartBlock.Inherits.GenericTypeParameterValues.OfType<CodeType>())
+                if (argument.TypeDefinition is CodeTypeParameter argumentParameter &&
+                    interfaceParametersByName.TryGetValue(argumentParameter.Name, out var interfaceParameter))
+                    codeType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = interfaceParameter });
             modelInterface.StartBlock.AddImplements(codeType);
             var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
 
@@ -1473,6 +1589,69 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 Name = propertyInterfaceType.Name,
                 TypeDefinition = propertyInterfaceType,
             }
+        });
+    }
+
+    private static void AddGenericTypeArgumentsUsingsToRequestBuilders(CodeElement currentElement)
+    {
+        if (currentElement is CodeMethod currentMethod &&
+            currentMethod.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) &&
+            currentMethod.Parent is CodeClass parentClass &&
+            parentClass.IsOfKind(CodeClassKind.RequestBuilder))
+        {
+            AddGenericTypeArgumentUsings(currentMethod.ReturnType, parentClass, addFactoryUsing: true, addSerializerUsing: false);
+            if (currentMethod.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.RequestBody)) is { } requestBody)
+                AddGenericTypeArgumentUsings(requestBody.Type, parentClass, addFactoryUsing: false, addSerializerUsing: true);
+            foreach (var errorMapping in currentMethod.ErrorMappings)
+                AddGenericTypeArgumentUsings(errorMapping.Value, parentClass, addFactoryUsing: true, addSerializerUsing: false);
+        }
+        CrawlTree(currentElement, AddGenericTypeArgumentsUsingsToRequestBuilders);
+    }
+
+    private static void AddGenericTypeArgumentUsings(CodeTypeBase? type, CodeClass parentClass, bool addFactoryUsing, bool addSerializerUsing)
+    {
+        if (type is not CodeType { TypeDefinition: CodeClass { IsGeneric: true } or CodeInterface { IsGeneric: true } } codeType)
+            return;
+        foreach (var argument in codeType.GenericTypeParameterValues.OfType<CodeType>())
+        {
+            if (argument.TypeDefinition is not CodeElement argumentDefinition)
+                continue;
+            AddDefinitionUsingToClass(parentClass, argumentDefinition);
+            if (addFactoryUsing)
+                AddFunctionUsingToClass(parentClass, argumentDefinition, GetFactoryFunctionNameFromTypeName(argumentDefinition.Name));
+            if (addSerializerUsing)
+                AddFunctionUsingToClass(parentClass, argumentDefinition, $"serialize{argumentDefinition.Name.ToFirstCharacterUpperCase()}");
+        }
+    }
+
+    private static void AddDefinitionUsingToClass(CodeClass parentClass, CodeElement definition)
+    {
+        if (parentClass.Usings.Any(x => x.Declaration?.TypeDefinition == definition))
+            return;
+        parentClass.AddUsing(new CodeUsing
+        {
+            Name = definition.Name,
+            Declaration = new CodeType
+            {
+                Name = definition.Name,
+                TypeDefinition = definition,
+            },
+        });
+    }
+
+    private static void AddFunctionUsingToClass(CodeClass parentClass, CodeElement definition, string functionName)
+    {
+        if (definition.GetImmediateParentOfType<CodeNamespace>().FindChildByName<CodeFunction>(functionName, false) is not { } function ||
+            parentClass.Usings.Any(x => x.Declaration?.TypeDefinition == function))
+            return;
+        parentClass.AddUsing(new CodeUsing
+        {
+            Name = functionName,
+            Declaration = new CodeType
+            {
+                Name = functionName,
+                TypeDefinition = function,
+            },
         });
     }
 

@@ -354,6 +354,13 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             var methodName = GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = factoryMethod }, currentElement, false);
             return methodName;// static function may be aliased
         }
+        // generic template types referenced from usage sites can still point at the template class instead of its interface, fall back to a namespace lookup
+        if (targetClassType is CodeType { TypeDefinition: not null } genericType &&
+            genericType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>() is { } templateNamespace &&
+            templateNamespace.FindChildByName<CodeFunction>(resultName) is { } templateFactoryMethod)
+        {
+            return GetTypescriptTypeString(new CodeType { Name = resultName, TypeDefinition = templateFactoryMethod }, currentElement, false);
+        }
         throw new InvalidOperationException($"Unable to find factory method for {targetClassType}");
     }
 
@@ -362,7 +369,7 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return definitionClass.GetImmediateParentOfType<CodeFile>(definitionClass)?.FindChildByName<CodeFunction>(factoryMethodName);
     }
 
-    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeElement targetElement, bool? IsCollection = null)
+    public string GetDeserializationMethodName(CodeTypeBase codeType, CodeElement targetElement, bool? IsCollection = null, string? factoryArgument = null)
     {
         ArgumentNullException.ThrowIfNull(codeType);
         ArgumentNullException.ThrowIfNull(targetElement);
@@ -378,11 +385,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
                 (CodeEnum currentEnum, _, _) when currentEnum.CodeEnumObject is not null => $"{(currentEnum.Flags || isCollection ? "getCollectionOfEnumValues" : "getEnumValue")}<{currentEnum.Name.ToFirstCharacterUpperCase()}>({currentEnum.CodeEnumObject.Name.ToFirstCharacterUpperCase()})",
                 (_, _, _) when StreamTypeName.Equals(propertyType, StringComparison.OrdinalIgnoreCase) => "getByteArrayValue()",
                 (_, true, _) when currentType.TypeDefinition is null && GetPrimitiveCollectionDeserializationType(propertyType) is string primitiveType => $"getCollectionOfPrimitiveValues<{propertyType}>(\"{primitiveType}\")",
-                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(_codeType, targetElement)})",
-                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement)
+                (_, true, _) => $"getCollectionOfObjectValues<{propertyType.ToFirstCharacterUpperCase()}>({factoryArgument ?? GetFactoryMethodName(_codeType, targetElement)})",
+                _ => GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement, factoryArgument)
             };
         }
-        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement);
+        return GetDeserializationMethodNameForPrimitiveOrObject(_codeType, propertyType, targetElement, factoryArgument);
     }
 
     private static string? GetPrimitiveCollectionDeserializationType(string propertyTypeName)
@@ -400,12 +407,15 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
-    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeElement targetElement)
+    private static string GetDeserializationMethodNameForPrimitiveOrObject(CodeTypeBase propType, string propertyTypeName, CodeElement targetElement, string? factoryArgument = null)
     {
         return propertyTypeName switch
         {
             TYPE_LOWERCASE_STRING or TYPE_STRING or TYPE_LOWERCASE_BOOLEAN or TYPE_BOOLEAN or TYPE_NUMBER or TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION => $"get{propertyTypeName.ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({GetFactoryMethodName(propType, targetElement)})"
+            _ => $"getObjectValue<{propertyTypeName.ToFirstCharacterUpperCase()}>({factoryArgument ?? GetFactoryMethodName(propType, targetElement)})"
         };
     }
+
+    internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal static string GetSerializerParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Serializer";
 }

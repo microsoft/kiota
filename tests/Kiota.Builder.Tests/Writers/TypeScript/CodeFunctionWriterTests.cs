@@ -2325,4 +2325,100 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(deviceIndex > 0, "Should contain Device deserialization");
         Assert.True(managedDeviceIndex < deviceIndex, "ManagedPrivilegedDevice should appear before Device in the deserialization chain");
     }
+
+    private static CodeClass CreateGenericModelClass(CodeNamespace root, string className)
+    {
+        var modelClass = TestHelper.CreateModelClass(root, className);
+        modelClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var itemTypeParameter = modelClass.TypeParameters.First();
+        modelClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = itemTypeParameter.Name,
+                TypeDefinition = itemTypeParameter,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        modelClass.Methods.First(static x => x.IsOfKind(CodeMethodKind.Serializer)).AddParameter(new CodeParameter
+        {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType { Name = "SerializationWriter", IsExternal = true, IsNullable = false },
+            Optional = false,
+        });
+        var factoryMethod = modelClass.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = modelClass.Name,
+                TypeDefinition = modelClass,
+            },
+            IsStatic = true,
+            IsAsync = false,
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "IParseNode", IsExternal = true, IsNullable = true },
+            Optional = false,
+        });
+        return modelClass;
+    }
+
+    [Fact]
+    public async Task WritesGenericModelFactoryBodyAsync()
+    {
+        var modelClass = CreateGenericModelClass(root, "paginatedTemplate");
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var factoryFunction = root.FindChildByName<CodeFunction>("createPaginatedTemplateFromDiscriminatorValue");
+        Assert.NotNull(factoryFunction);
+        var parentNS = factoryFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", factoryFunction);
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+        Assert.Contains("export function createPaginatedTemplateFromDiscriminatorValue<TItemType extends Parsable>(itemTypeFactory: ParsableFactory<TItemType>, parseNode?: ParseNode | undefined)", result);
+        Assert.Contains("return (parseNode) => (instance) => deserializeIntoPaginatedTemplate(itemTypeFactory, instance);", result);
+        Assert.Contains("ParsableFactory", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task WritesGenericModelDeserializerBodyAsync()
+    {
+        var modelClass = CreateGenericModelClass(root, "paginatedTemplate");
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>("deserializeIntoPaginatedTemplate");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+        Assert.Contains("export function deserializeIntoPaginatedTemplate<TItemType extends Parsable>(itemTypeFactory: ParsableFactory<TItemType>, paginatedTemplate: Partial<PaginatedTemplate<TItemType>> | undefined = {})", result);
+        Assert.Contains("getCollectionOfObjectValues<TItemType>(itemTypeFactory)", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task WritesGenericModelSerializerBodyAsync()
+    {
+        var modelClass = CreateGenericModelClass(root, "paginatedTemplate");
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializerFunction = root.FindChildByName<CodeFunction>("serializePaginatedTemplate");
+        Assert.NotNull(serializerFunction);
+        var parentNS = serializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializerFunction);
+        writer.Write(serializerFunction);
+        var result = tw.ToString();
+        Assert.Contains("export function serializePaginatedTemplate<TItemType extends Parsable>(itemTypeSerializer: ModelSerializerFunction<TItemType>, writer: SerializationWriter, paginatedTemplate: Partial<PaginatedTemplate<TItemType>> | undefined | null = {}, isSerializingDerivedType: boolean = false)", result); Assert.Contains("writer.writeCollectionOfObjectValues<TItemType>(\"items\", paginatedTemplate.items, itemTypeSerializer)", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
 }
