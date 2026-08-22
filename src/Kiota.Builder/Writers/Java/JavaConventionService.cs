@@ -60,9 +60,12 @@ public partial class JavaConventionService : CommonLanguageConventionService
                 CodeTypeBase.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
+                $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
+                string.Empty;
             if (currentType.ActionOf)
-                return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
-            return $"{collectionPrefix}{typeName}{collectionSuffix}";
+                return $"java.util.function.Consumer<{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}>";
+            return $"{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}";
         }
 
         throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
@@ -82,6 +85,8 @@ public partial class JavaConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return typeParameter.Name;
         return type.Name switch
         {
             "Int64" => "Long",
@@ -94,6 +99,8 @@ public partial class JavaConventionService : CommonLanguageConventionService
             _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
     }
+    internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal static string GetFactoryFieldName(CodeTypeParameter typeParameter) => $"_{GetFactoryParameterName(typeParameter)}";
     internal string GetReturnDocComment(string returnType)
     {
         return $"@return a {ReferenceTypePrefix}{returnType}{ReferenceTypeSuffix}";
