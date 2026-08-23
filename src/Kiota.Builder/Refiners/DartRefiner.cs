@@ -114,7 +114,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter, updateUsings: AddGenericTypeArgumentsImports);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             AddConstructorForErrorClass(generatedCode);
@@ -337,6 +337,24 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             && parameter.IsOfKind(CodeParameterKind.RequestConfiguration)).Select(x => x.GenericTypeParameterValues.First());
 
         return result.Union(genericParameterTypes);
+    }
+    private static void AddGenericTypeArgumentsImports(CodeClass currentClass)
+    { // generic type arguments (e.g. User in PaginatedTemplate<User>) are not covered by AllTypes and need their own usings
+        // unlike Java, same-namespace arguments are kept: Dart puts every model in its own file, so siblings are imported too
+        var usingsToAdd = currentClass.Properties.Select(static x => x.Type)
+                                .Union(currentClass.Methods.Select(static x => x.ReturnType))
+                                .Union(currentClass.Methods.SelectMany(static x => x.Parameters.Select(static y => y.Type)))
+                                .Union(currentClass.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor)).SelectMany(static x => x.ErrorMappings.Select(static y => y.Value)))
+                                .Union(currentClass.StartBlock.Inherits is not null ? new[] { currentClass.StartBlock.Inherits } : Enumerable.Empty<CodeTypeBase>())
+                                .OfType<CodeType>()
+                                .SelectMany(static x => x.GenericTypeParameterValues)
+                                .Where(static x => x.TypeDefinition is not null and not CodeTypeParameter)
+                                .Select(static x => new CodeUsing { Name = x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name, Declaration = x })
+                                .GroupBy(static x => $"{x.Name}.{x.Declaration!.Name}", StringComparer.Ordinal)
+                                .Select(static x => x.First())
+                                .ToArray();
+        if (usingsToAdd.Length != 0)
+            (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //nested classes do not support imports
     }
     protected static void AddAsyncSuffix(CodeElement currentElement)
     {
