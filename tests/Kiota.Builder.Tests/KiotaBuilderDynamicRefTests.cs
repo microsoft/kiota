@@ -776,6 +776,224 @@ components:
     }
 
     [Fact]
+    public async Task IndirectBareReferenceBehindRefHopKeepsTemplateConcreteAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PaginatedTemplate'
+  /wrapped:
+    get:
+      operationId: getWrapped
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wrapper'
+components:
+  schemas:
+    User:
+      type: object
+    Wrapper:
+      type: object
+      properties:
+        page:
+          $ref: '#/components/schemas/PaginatedTemplate'
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the bare reference hiding behind the Wrapper $ref hop is recorded by the pre-scan, so the template
+        // deterministically stays concrete regardless of which endpoint materializes it first
+        var template = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateUser", true);
+        Assert.NotNull(template);
+        Assert.False(template!.IsGeneric);
+        var bare = modelsNamespace.FindChildByName<CodeClass>("PaginatedTemplate", true);
+        Assert.NotNull(bare);
+        Assert.False(bare!.IsGeneric);
+        // the wrapper's property resolves to a concrete class, never UntypedNode or an open generic
+        var wrapper = modelsNamespace.FindChildByName<CodeClass>("Wrapper", true);
+        Assert.NotNull(wrapper);
+        var pageType = Assert.IsType<CodeType>(wrapper!.Properties.First(static x => x.Name == "page").Type);
+        Assert.IsType<CodeClass>(pageType.TypeDefinition);
+        Assert.False(((CodeClass)pageType.TypeDefinition).IsGeneric);
+        Assert.NotEqual("UntypedNode", pageType.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task DiscriminatorOnTemplateKeepsConcretePathAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/PagedUnion'
+components:
+  schemas:
+    User:
+      type: object
+    SmallPage:
+      type: object
+      properties:
+        kind:
+          type: string
+    BigPage:
+      type: object
+      properties:
+        kind:
+          type: string
+    PagedUnion:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+      discriminator:
+        propertyName: kind
+        mapping:
+          small: '#/components/schemas/SmallPage'
+          big: '#/components/schemas/BigPage'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // discriminator polymorphism relies on factory methods generic classes skip: stays concrete
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PagedUnionUser", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+    }
+
+    [Fact]
+    public async Task RecursiveBoundAnchorKeepsConcretePathAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Branch'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    Branch:
+      type: object
+      properties:
+        name:
+          type: string
+        children:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // a bound type that itself references the binding anchor would promote the bound class to generic:
+        // stay concrete so the suffixed classes remain valid (the bound class materializes as BranchBranch)
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateBranch", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+        var branchBranch = modelsNamespace.FindChildByName<CodeClass>("BranchBranch", true);
+        Assert.NotNull(branchBranch);
+        Assert.False(branchBranch!.IsGeneric);
+        // the bound class's recursive children and the template's items resolve to the same concrete type
+        Assert.IsType<CodeClass>(Assert.IsType<CodeType>(concrete.Properties.First(static x => x.Name == "items").Type).TypeDefinition);
+        var childrenType = Assert.IsType<CodeType>(branchBranch.Properties.First(static x => x.Name == "children").Type);
+        Assert.Same(branchBranch, childrenType.TypeDefinition);
+    }
+
+    [Fact]
     public async Task PromotesNestedInlineModelsInsideGenericTemplatesAsync()
     {
         var tempFilePath = Path.GetTempFileName();

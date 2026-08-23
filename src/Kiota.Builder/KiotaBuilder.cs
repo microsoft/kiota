@@ -650,7 +650,11 @@ public partial class KiotaBuilder
         inBindingScope |= schema.Definitions?.Values.Any(static definition => !string.IsNullOrEmpty(definition.DynamicAnchor)) == true;
         if (!inBindingScope && schema.GetReferenceId() is { Length: > 0 } referenceId)
             bareDynamicTemplateReferences.Add(referenceId);
-        if (schema is OpenApiSchemaReference) return;
+        if (schema is OpenApiSchemaReference { Target: { } referenceTarget })
+        { // bare references hide behind $ref hops (wrapper components): traverse into the target so they are recorded
+            CollectBareTemplateReferences(referenceTarget, inBindingScope, visited);
+            return;
+        }
         foreach (var child in (schema.Properties?.Values ?? [])
                      .Concat(schema.Items is not null ? [schema.Items] : [])
                      .Concat(schema.AllOf ?? [])
@@ -1968,12 +1972,10 @@ public partial class KiotaBuilder
     /// <summary>
     /// Languages whose writers can render generic model declarations (type parameters + closed usages).
     /// PHP, Ruby and HTTP have no generics and stay on the per-binding concrete path permanently.
-    /// Each language agent uncomments its entry when its writers land.
     /// </summary>
     private static readonly HashSet<GenerationLanguage> GenericTemplateLanguages = [
         GenerationLanguage.CSharp,
         GenerationLanguage.Dart,
-        // TODO(java-agent): uncomment when Java writers render generics
         GenerationLanguage.Java,
         GenerationLanguage.Python,
         GenerationLanguage.TypeScript,
@@ -1986,8 +1988,20 @@ public partial class KiotaBuilder
         // ponytail: generics only for $ref bindings; inline bindings and additionalProperties dynamic refs stay on the concrete path
         return anchors.Length > 0 &&
                anchors.All(static x => !string.IsNullOrEmpty(x.GetReferenceId())) &&
+               anchors.All(static x => !ContainsDynamicReference(x)) && // recursive bound args (bound type referencing the binding anchor) would promote the bound class itself to generic
+               !ContainsDiscriminator(schema) && // discriminator polymorphism relies on factory methods generic classes skip
                !bareDynamicTemplateReferences.Contains(schema.GetReferenceId() ?? string.Empty) &&
                !ContainsDynamicReferenceViaAdditionalProperties(schema);
+    }
+    private static bool ContainsDiscriminator(IOpenApiSchema schema, HashSet<IOpenApiSchema>? visited = null)
+    {
+        visited ??= new(ReferenceEqualityComparer.Instance);
+        if (!visited.Add(schema)) return false;
+        return schema.Discriminator is not null ||
+               schema is OpenApiSchemaReference { Target: { } target } && ContainsDiscriminator(target, visited) ||
+               schema.AllOf?.Any(x => ContainsDiscriminator(x, visited)) == true ||
+               schema.AnyOf?.Any(x => ContainsDiscriminator(x, visited)) == true ||
+               schema.OneOf?.Any(x => ContainsDiscriminator(x, visited)) == true;
     }
     private static Dictionary<string, CodeTypeParameter> CreateDynamicBindingTypeParameters(IOpenApiSchema schema)
     {
