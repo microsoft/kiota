@@ -697,6 +697,85 @@ components:
     }
 
     [Fact]
+    public async Task InlineTemplateWithNestedInlinePropertiesIsNotHijackedAsSelfReferenceAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/User'
+                type: object
+                required: [items, metadata]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $dynamicRef: '#itemType'
+                  metadata:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var usersNamespace = codeModel.FindNamespaceByName("ApiSdk.users");
+        Assert.NotNull(usersNamespace);
+        // the inline template (no $ref, no reference id) goes generic
+        var template = usersNamespace!.FindChildByName<CodeClass>("UsersGetResponse", true);
+        Assert.NotNull(template);
+        Assert.True(template!.IsGeneric);
+        // the nested inline metadata property must materialize its own model, not forward to the template:
+        // null reference ids must not compare equal as a self-reference
+        var metadataType = Assert.IsType<CodeType>(template.Properties.First(static x => x.Name == "metadata").Type);
+        var metadataClass = Assert.IsType<CodeClass>(metadataType.TypeDefinition);
+        Assert.NotEqual(template, metadataClass);
+        Assert.NotNull(metadataClass.Properties.FirstOrDefault(static x => x.Name == "count"));
+        Assert.False(metadataClass.IsGeneric);
+        // executor return closes over User through the back-compat shim inheriting the closed template
+        var usersRequestBuilder = usersNamespace.FindChildByName<CodeClass>("UsersRequestBuilder", true);
+        Assert.NotNull(usersRequestBuilder);
+        var executor = usersRequestBuilder!.Methods.First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.Equal("UsersResponse", returnType.Name, StringComparer.OrdinalIgnoreCase);
+        var shimBase = Assert.IsType<CodeType>(Assert.IsType<CodeClass>(returnType.TypeDefinition).StartBlock.Inherits);
+        Assert.Equal("UsersGetResponse", shimBase.Name, StringComparer.OrdinalIgnoreCase);
+        var boundArgument = Assert.Single(shimBase.GenericTypeParameterValues);
+        Assert.Equal("User", boundArgument.Name);
+    }
+
+    [Fact]
     public async Task PromotesNestedInlineModelsInsideGenericTemplatesAsync()
     {
         var tempFilePath = Path.GetTempFileName();

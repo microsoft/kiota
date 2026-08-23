@@ -1940,7 +1940,10 @@ public partial class KiotaBuilder
     }
     private static bool IsSelfReferenceToEnclosingTemplate(IOpenApiSchema schema, DynamicScopeFrame templateFrame)
     {
-        if (string.Equals(schema.GetReferenceId(), templateFrame.Schema.GetReferenceId(), StringComparison.Ordinal))
+        // inline schemas have no reference id: null must not equal null, or every nested inline property
+        // inside an inline template would be hijacked as a self-reference
+        if (schema.GetReferenceId() is { Length: > 0 } schemaReferenceId &&
+            string.Equals(schemaReferenceId, templateFrame.Schema.GetReferenceId(), StringComparison.Ordinal))
             return true;
         // $dynamicRef pointing at an anchor the template target declares on itself (e.g. '#self'); bound anchors resolve to type parameters instead
         if (!string.IsNullOrEmpty(schema.DynamicRef) &&
