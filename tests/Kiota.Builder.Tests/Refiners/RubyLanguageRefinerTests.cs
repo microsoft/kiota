@@ -123,6 +123,20 @@ public class RubyLanguageRefinerTests
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
+    public async Task EscapesInitializeAsync()
+    {
+        // an API member named `initialize` would redefine the Ruby constructor,
+        // yielding a duplicate `def initialize` that returns a value and skips super
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "initialize",
+            Kind = CodeClassKind.Model
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotEqual("initialize", model.Name);
+        Assert.Contains("escaped", model.Name);
+    }
+    [Fact]
     public async Task ConvertEnumsToPascalCaseAsync()
     {
         var model = root.AddEnum(new CodeEnum

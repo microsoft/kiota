@@ -46,6 +46,17 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("class", result);
     }
     [Fact]
+    public void DoesNotWriteBlankLineWhenThereAreNoMixins()
+    {
+        // an empty mixin line leaves an indent-only first line in the class body
+        // (RuboCop Layout/EmptyLinesAroundClassBody)
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        // the bug emitted GetIndent() + "" -> a line of pure whitespace
+        Assert.DoesNotContain(result.Split(Environment.NewLine),
+            static l => l.Length > 0 && l.Trim().Length == 0);
+    }
+    [Fact]
     public void WritesImplementation()
     {
         var declaration = parentClass.StartBlock;
