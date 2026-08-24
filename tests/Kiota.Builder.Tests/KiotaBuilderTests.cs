@@ -1904,6 +1904,7 @@ paths:
         Assert.NotNull(unknownProp);
         Assert.Equal(KiotaBuilder.UntypedNodeName, unknownProp.Type.Name);// left out property is an UntypedNode
     }
+#nullable enable
     [Theory]
     [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, "int32", "integer")]
     [InlineData(JsonSchemaType.Integer | JsonSchemaType.String, "int64", "int64")]
@@ -1968,12 +1969,16 @@ paths:
         var builder = new KiotaBuilder(mockLogger, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
-        var responseClass = codeModel.FindNamespaceByName("ApiSdk.forecast").FindChildByName<CodeClass>("ForecastGetResponse", false);
+        Assert.NotNull(codeModel);
+        var responseNamespace = codeModel.FindNamespaceByName("ApiSdk.forecast");
+        Assert.NotNull(responseNamespace);
+        var responseClass = responseNamespace.FindChildByName<CodeClass>("ForecastGetResponse", false);
         Assert.NotNull(responseClass);
         var temperatureProp = responseClass.FindChildByName<CodeProperty>("temperature", false);
         Assert.NotNull(temperatureProp);
         Assert.Equal(expectedTypeName, temperatureProp.Type.Name);
     }
+#nullable restore
     [Fact]
     public void TextPlainEndpointsAreSupported()
     {
