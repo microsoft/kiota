@@ -64,7 +64,10 @@ public class RetryTestCase : XunitTestCase, ISelfExecutingXunitTestCase
         IMessageBus messageBus,
         object[] constructorArguments,
         ExceptionAggregator aggregator,
-        CancellationTokenSource cancellationTokenSource)
+        CancellationTokenSource cancellationTokenSource,
+        ParallelMode parallelMode,
+        ExecutionScheduler scheduler,
+        FixtureMappingManager methodFixtureMappings)
     {
         var delay = delayMilliseconds;
         RunSummary lastSummary = default;
@@ -79,9 +82,12 @@ public class RetryTestCase : XunitTestCase, ISelfExecutingXunitTestCase
                 this,
                 replayBus,
                 cancellationTokenSource,
+                parallelMode,
+                scheduler,
                 attemptAggregator,
                 explicitOption,
-                constructorArguments).ConfigureAwait(false);
+                constructorArguments,
+                methodFixtureMappings).ConfigureAwait(false);
 
             var hasFailures = summary.Failed > 0 || attemptAggregator.HasExceptions;
             if (!hasFailures || attempt == maxRetries)
