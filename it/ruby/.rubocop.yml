@@ -134,3 +134,34 @@ Metrics/CyclomaticComplexity:
 # Generated factory methods may just delegate to super
 Lint/UselessMethodDefinition:
   Enabled: false
+
+# Generated class declarations may have an empty line after the class keyword
+Layout/EmptyLinesAroundClassBody:
+  Enabled: false
+
+# Generated composed type methods can have high perceived complexity
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+
+# Generated code may duplicate method definitions in certain request builder patterns
+Lint/DuplicateMethods:
+  Enabled: false
+
+
+
+# Generated constructors may return values or skip super calls
+Lint/ReturnInVoidContext:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false
+
+
+
+# Generated composed types use if !x.nil? for elsif compatibility
+Style/NegatedIf:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false

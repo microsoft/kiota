@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -1497,5 +1498,255 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("'application/json; profile=\\'CamelCase\\''", result);
+    }
+    private void AddUnionTypeWrapper()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex } });
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+    }
+    private void AddIntersectionTypeWrapper()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        var complexType3 = root.AddClass(new CodeClass { Name = "ComplexType3", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType2", new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex });
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType3", new CodeType { Name = "ComplexType3", TypeDefinition = complexType3 });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType3Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType3", TypeDefinition = complexType3 } });
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+    }
+    [Fact]
+    public void WritesIntersectionFactoryBodyGivesEachPropertyItsOwnVariable()
+    {
+        // regression: a shared `val` is reassigned inside the previous branch of the
+        // if/elsif chain, so every property after the first is silently never deserialized
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+        parentClass.AddProperty(new CodeProperty { Name = "numberValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "integer" } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+
+        // every parse happens up-front, so no assignment can be swallowed by a branch
+        Assert.Contains("val_string_value = parse_node.", result);
+        Assert.Contains("val_number_value = parse_node.", result);
+        // and each branch tests its own variable rather than repeating one condition
+        Assert.Contains("val_string_value.nil?", result);
+        Assert.Contains("val_number_value.nil?", result);
+        Assert.Contains("elsif !val_", result);
+        Assert.DoesNotContain("if !val.nil?", result);
+
+        // the parses must precede the chain, never sit inside it
+        var firstBranch = result.IndexOf("if !val_", StringComparison.Ordinal);
+        Assert.True(result.IndexOf("val_string_value = parse_node.", StringComparison.Ordinal) < firstBranch);
+        Assert.True(result.IndexOf("val_number_value = parse_node.", StringComparison.Ordinal) < firstBranch);
+
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesUnionFactoryBody()
+    {
+        AddUnionTypeWrapper();
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result = ParentClass.new", result);
+        Assert.Contains("mapping_value_node", result);
+        Assert.Contains("ComplexType1.new", result);
+        Assert.Contains("return result", result);
+        Assert.DoesNotContain("ComplexType2.new", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesUnionFactoryBodySkipsEmptyMappings()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "";
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result = ParentClass.new", result);
+        Assert.DoesNotContain("mapping_value_node", result);
+        Assert.DoesNotContain("unless", result);
+        Assert.Contains("return result", result);
+    }
+    [Fact]
+    public void WritesIntersectionFactoryBody()
+    {
+        AddIntersectionTypeWrapper();
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result = ParentClass.new", result);
+        Assert.DoesNotContain("mapping_value_node", result);
+        Assert.Contains("ComplexType1.new", result);
+        Assert.Contains("ComplexType3.new", result);
+        Assert.Contains("else", result);
+        Assert.Contains("return result", result);
+    }
+    [Fact]
+    public void WritesIntersectionFactoryBodyOnlyComplex()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2 } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("ComplexType1.new", result);
+        Assert.Contains("ComplexType2.new", result);
+        Assert.DoesNotContain("else", result);
+        Assert.DoesNotContain("if !", result);
+    }
+    [Fact]
+    public void WritesUnionSerializerBody()
+    {
+        AddUnionTypeWrapper();
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("complex_type1_value", result);
+        Assert.Contains("write_object_value", result);
+        Assert.Contains("write_string_value", result);
+        Assert.Contains("elsif", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBody()
+    {
+        AddIntersectionTypeWrapper();
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("write_object_value(nil, @complex_type1_value, @complex_type3_value)", result);
+        Assert.Contains("write_string_value", result);
+        Assert.Contains("else", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesIntersectionSerializerBodyOnlyComplex()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType2 = root.AddClass(new CodeClass { Name = "ComplexType2", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType2Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType2", TypeDefinition = complexType2 } });
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("write_object_value(nil, @complex_type1_value, @complex_type2_value)", result);
+        Assert.DoesNotContain("if !", result);
+        Assert.DoesNotContain("else", result);
+        AssertBalancedBlocks(result);
+    }
+    /// <summary>
+    /// Asserts every block opener has a matching `end` AND that the `end` is written at the
+    /// same column as its opener. Counting alone is not enough: a stray DecreaseIndent()
+    /// before CloseBlock("end") still balances the count while shifting the `end` (and every
+    /// later one in the file) a level to the left.
+    /// </summary>
+    private static void AssertBalancedBlocks(string generatedRubyBody)
+    {
+        static int IndentOf(string raw) => raw.Length - raw.TrimStart().Length;
+        var openBlocks = new Stack<(string Line, int Indent)>();
+        foreach (var rawLine in generatedRubyBody.Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0 || line.StartsWith("#", StringComparison.Ordinal)) continue;
+            if (line.Equals("end", StringComparison.Ordinal))
+            {
+                Assert.True(openBlocks.Count > 0, $"unmatched `end` in:\n{generatedRubyBody}");
+                var opener = openBlocks.Pop();
+                Assert.True(opener.Indent == IndentOf(rawLine),
+                    $"`end` at column {IndentOf(rawLine)} does not align with `{opener.Line}` at column {opener.Indent} in:\n{generatedRubyBody}");
+                continue;
+            }
+            // elsif/else continue the current block rather than opening a new one
+            if (line.StartsWith("elsif ", StringComparison.Ordinal) || line.Equals("else", StringComparison.Ordinal))
+            {
+                Assert.True(openBlocks.Count > 0, $"`{line}` outside any block in:\n{generatedRubyBody}");
+                Assert.True(openBlocks.Peek().Indent == IndentOf(rawLine),
+                    $"`{line}` at column {IndentOf(rawLine)} does not align with its opener at column {openBlocks.Peek().Indent} in:\n{generatedRubyBody}");
+                continue;
+            }
+            if (line.StartsWith("def ", StringComparison.Ordinal) ||
+                line.StartsWith("if ", StringComparison.Ordinal) ||
+                line.StartsWith("unless ", StringComparison.Ordinal) ||
+                line.StartsWith("case ", StringComparison.Ordinal))
+                openBlocks.Push((line, IndentOf(rawLine)));
+        }
+        Assert.True(openBlocks.Count == 0,
+            $"unclosed block `{(openBlocks.Count > 0 ? openBlocks.Peek().Line : string.Empty)}` in:\n{generatedRubyBody}");
+    }
+    [Fact]
+    public void WritesUnionDeserializerBody()
+    {
+        AddUnionTypeWrapper();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("@complex_type1_value.get_field_deserializers()", result);
+        Assert.DoesNotContain("complex_type2_value", result);
+        Assert.Contains("return {}", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesIntersectionDeserializerBody()
+    {
+        AddIntersectionTypeWrapper();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("super", result);
+        Assert.Contains("merge_deserializers_for_intersection_wrapper(@complex_type1_value, @complex_type3_value)", result);
+        Assert.DoesNotContain("complex_type2_value", result);
+        Assert.Contains("return {}", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void ThrowsOnComposedTypeMarker()
+    {
+        setup();
+        method.Kind = CodeMethodKind.ComposedTypeMarker;
+        Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
 }

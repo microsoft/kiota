@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed defaults primitive default-value handling during code generation for all languages
+- Ruby: added composed type (union/intersection) support for factory methods, serializers, and deserializers. Disabled inner classes for composed type wrappers. Un-suppresses the Twitter integration test. Requires `microsoft_kiota_abstractions` 0.16.0 and `microsoft_kiota_serialization_json` 0.11.0. [kiota-abstractions-ruby#73](https://github.com/microsoft/kiota-abstractions-ruby/issues/73) [#1816](https://github.com/microsoft/kiota/issues/1816)
 - Fixed plugin manifest generation to omit unsafe `oauth_card_path` file references that could resolve outside the plugin package.
 - Bumped `Microsoft.OpenApi` and `Microsoft.OpenApi.YamlReader` to 3.10.0.
 - Numeric scalar unions with a format (e.g. `type: ["integer", "string"]` with `format: int32`, as emitted by ASP.NET Core's OpenAPI 3.1 generator under System.Text.Json's default `JsonNumberHandling.AllowReadingFromString`) now map to the numeric type instead of degrading to `UntypedNode`. [#6541](https://github.com/microsoft/kiota/issues/6541)

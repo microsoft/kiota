@@ -72,6 +72,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 break;
             case CodeMethodKind.RequestBuilderBackwardCompatibility:
                 throw new InvalidOperationException("RequestBuilderBackwardCompatibility is not supported as the request builders are implemented by properties.");
+            case CodeMethodKind.ComposedTypeMarker:
+                throw new InvalidOperationException("ComposedTypeMarker is not required as the wrapper is implemented directly.");
             default:
                 writer.WriteLine("return nil;");
                 break;
@@ -86,9 +88,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
     private const string NodeVarName = "mapping_value_node";
-    private static void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
+    private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteFactoryMethodBodyForUnionModel(parseNodeParameter, parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteFactoryMethodBodyForIntersectionModel(parseNodeParameter, parentClass, writer);
+        else
+            WriteFactoryMethodBodyForInheritedModel(parseNodeParameter, parentClass, writer);
+    }
+    private static void WriteFactoryMethodBodyForInheritedModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
+    {
         var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         var discriminatorMappings = parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key).ToArray();
         if (writeDiscriminatorValueRead && discriminatorMappings.Length > 0)
@@ -107,6 +118,93 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.CloseBlock("end");
         }
         writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new");
+    }
+    private void WriteFactoryMethodBodyForUnionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
+    {
+        writer.WriteLine($"result = {parentClass.Name.ToFirstCharacterUpperCase()}.new");
+        var parseNodeParameterName = parseNodeParameter.Name.ToSnakeCase();
+        var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                          .OrderBy(static x => x, new CodePropertyTypeComparer())
+                                          .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                          .ToArray();
+        var complexPropertiesWithMappings = customProperties
+            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
+            .Select(p => (property: p, mappedKey: parentClass.DiscriminatorInformation.DiscriminatorMappings
+                .FirstOrDefault(x => x.Value.Name.Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase)).Key))
+            .Where(static x => !string.IsNullOrEmpty(x.mappedKey))
+            .ToArray();
+        if (complexPropertiesWithMappings.Length > 0)
+        {
+            writer.WriteLine($"{NodeVarName} = {parseNodeParameterName}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
+            writer.StartBlock($"unless {NodeVarName}.nil?");
+            writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
+            var elseIfPrefix = string.Empty;
+            foreach (var (property, mappedKey) in complexPropertiesWithMappings)
+            {
+                writer.StartBlock($"{elseIfPrefix}if {DiscriminatorMappingVarName}.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedKey)}\".downcase");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
+                writer.DecreaseIndent();
+                elseIfPrefix = "els";
+            }
+            // the loop already restored the indent, so the chain's `end` must not decrease it again
+            writer.CloseBlock("end", false);
+            writer.CloseBlock("end");
+        }
+        foreach (var property in customProperties.Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass || propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None))
+        {
+            var methodName = GetDeserializationMethodName(property.Type);
+            writer.WriteLine($"val = {parseNodeParameterName}.{methodName}");
+            writer.StartBlock("unless val.nil?");
+            writer.WriteLine($"result.{property.Name.ToSnakeCase()} = val");
+            writer.CloseBlock("end");
+        }
+        writer.WriteLine("return result");
+    }
+    private static string GetIntersectionValueVarName(CodeProperty property) => $"val_{property.Name.ToSnakeCase()}";
+    private void WriteFactoryMethodBodyForIntersectionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
+    {
+        writer.WriteLine($"result = {parentClass.Name.ToFirstCharacterUpperCase()}.new");
+        var parseNodeParameterName = parseNodeParameter.Name.ToSnakeCase();
+        var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                          .OrderBy(static x => x, new CodePropertyTypeComparer(orderByDesc: true))
+                                          .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                          .ToArray();
+        var nonComplexProperties = customProperties.Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass || propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
+        var complexProperties = customProperties.Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
+        // each property needs its own variable: a shared one would be reassigned inside the
+        // previous branch of the if/elsif chain, so only the first property would ever be read
+        foreach (var property in nonComplexProperties)
+        {
+            var methodName = GetDeserializationMethodName(property.Type);
+            writer.WriteLine($"{GetIntersectionValueVarName(property)} = {parseNodeParameterName}.{methodName}");
+        }
+        var elseIfPrefix = string.Empty;
+        foreach (var property in nonComplexProperties)
+        {
+            writer.StartBlock($"{elseIfPrefix}if !{GetIntersectionValueVarName(property)}.nil?");
+            writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetIntersectionValueVarName(property)}");
+            writer.DecreaseIndent();
+            elseIfPrefix = "els";
+        }
+        if (complexProperties.Length > 0 && nonComplexProperties.Length > 0)
+        {
+            writer.StartBlock("else");
+            foreach (var property in complexProperties)
+            {
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
+            }
+            writer.DecreaseIndent();
+        }
+        else if (complexProperties.Length > 0)
+        {
+            foreach (var property in complexProperties)
+            {
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
+            }
+        }
+        if (nonComplexProperties.Length > 0)
+            writer.CloseBlock("end", false);
+        writer.WriteLine("return result");
     }
     private static void AddNullChecks(CodeMethod codeElement, LanguageWriter writer)
     {
@@ -272,6 +370,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer)
     {
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteDeserializerBodyForUnionModel(parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteDeserializerBodyForIntersectionModel(parentClass, writer);
+        else
+            WriteDeserializerBodyForInheritedModel(parentClass, writer);
+    }
+    private void WriteDeserializerBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
+    {
         if (parentClass.StartBlock.Inherits != null)
             writer.WriteLine("return super.merge({");
         else
@@ -288,6 +395,36 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.WriteLine("})");
         else
             writer.WriteLine("}");
+    }
+    private static void WriteDeserializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
+    {
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                           .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
+                                           .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                           .ToArray();
+        foreach (var property in complexProperties)
+        {
+            writer.StartBlock($"unless @{property.Name.ToSnakeCase()}.nil?");
+            writer.WriteLine($"return @{property.Name.ToSnakeCase()}.get_field_deserializers()");
+            writer.CloseBlock("end");
+        }
+        writer.WriteLine("return {}");
+    }
+    private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
+    {
+        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                           .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
+                                           .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                           .ToArray();
+        if (complexProperties.Length > 0)
+        {
+            var condition = string.Join(" || ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            writer.StartBlock($"if {condition}");
+            var propNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            writer.WriteLine($"return MicrosoftKiotaAbstractions::ParseNodeHelper.merge_deserializers_for_intersection_wrapper({propNames})");
+            writer.CloseBlock("end");
+        }
+        writer.WriteLine("return {}");
     }
     private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
@@ -381,6 +518,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";
     private void WriteSerializerBody(CodeClass parentClass, LanguageWriter writer)
     {
+        if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
+            WriteSerializerBodyForUnionModel(parentClass, writer);
+        else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+            WriteSerializerBodyForIntersectionModel(parentClass, writer);
+        else
+            WriteSerializerBodyForInheritedModel(parentClass, writer);
+    }
+    private void WriteSerializerBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
+    {
         var additionalDataProperty = parentClass.GetPropertyOfKind(CodePropertyKind.AdditionalData);
         if (parentClass.StartBlock.Inherits != null)
             writer.WriteLine("super");
@@ -392,6 +538,53 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
         if (additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");
+    }
+    private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
+    {
+        var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                          .OrderBy(static x => x, new CodePropertyTypeComparer())
+                                          .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                          .ToArray();
+        var elseIfPrefix = string.Empty;
+        foreach (var property in customProperties)
+        {
+            writer.StartBlock($"{elseIfPrefix}if !@{property.Name.ToSnakeCase()}.nil?");
+            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{property.Name.ToSnakeCase()})");
+            writer.DecreaseIndent();
+            elseIfPrefix = "els";
+        }
+        // the loop already restored the indent, so the chain's `end` must not decrease it again
+        if (customProperties.Length > 0)
+            writer.CloseBlock("end", false);
+    }
+    private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
+    {
+        var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                          .OrderBy(static x => x, new CodePropertyTypeComparer(orderByDesc: true))
+                                          .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                          .ToArray();
+        var nonComplexProperties = customProperties.Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass || propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
+        var complexProperties = customProperties.Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
+        var elseIfPrefix = string.Empty;
+        foreach (var property in nonComplexProperties)
+        {
+            writer.StartBlock($"{elseIfPrefix}if !@{property.Name.ToSnakeCase()}.nil?");
+            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{property.Name.ToSnakeCase()})");
+            writer.DecreaseIndent();
+            elseIfPrefix = "els";
+        }
+        if (complexProperties.Length > 0)
+        {
+            if (nonComplexProperties.Length > 0)
+                writer.StartBlock("else");
+            var complexPropNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            writer.WriteLine($"writer.write_object_value(nil, {complexPropNames})");
+            if (nonComplexProperties.Length > 0)
+                writer.DecreaseIndent();
+        }
+        // the branches above already restored the indent, so the chain's `end` must not decrease it again
+        if (nonComplexProperties.Length > 0)
+            writer.CloseBlock("end", false);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer)
