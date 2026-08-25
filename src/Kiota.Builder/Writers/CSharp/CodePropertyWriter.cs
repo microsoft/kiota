@@ -17,16 +17,20 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                       && codeElement.IsOfKind(
                                             CodePropertyKind.Custom,
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
-        conventions.WriteShortDescription(codeElement, writer);
+        bool hasDescription = conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (isNullableReferenceType)
         {
             CSharpConventionService.WriteNullableOpening(writer);
+            if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
+            if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
             CSharpConventionService.WriteNullableMiddle(writer);
         }
 
+        if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
         WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
+        if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
 
         if (isNullableReferenceType)
             CSharpConventionService.WriteNullableClosing(writer);

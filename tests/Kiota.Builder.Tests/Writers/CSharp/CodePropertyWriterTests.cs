@@ -305,12 +305,15 @@ public sealed class CodePropertyWriterTests : IDisposable
 
         // Assert: description tag is written
         Assert.Contains("/// <summary>Description</summary>", result);
+        // No "#pragma" is written.
+        Assert.DoesNotContain("#pragma", result);
 
         writer.Write(prop2);
         result = tw.ToString();
 
-        // Assert: empty description tag is written
-        Assert.Contains("/// <summary></summary>", result);
+        // Assert: the warning is suppressed
+        Assert.Contains("#pragma warning disable CS1591", result);
+        Assert.Contains("#pragma warning restore CS1591", result);
     }
 }
 
