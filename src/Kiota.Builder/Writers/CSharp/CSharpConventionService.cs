@@ -61,7 +61,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
         if (element is not CodeElement codeElement) return false;
-        if (!element.Documentation.DescriptionAvailable) return false;
+        // Write documentation tag also for empty descriptions (#8095)
         var description = element.Documentation.GetDescription(type => GetTypeStringForDocumentation(type, codeElement), normalizationFunc: static x => RemoveInvalidDescriptionCharacters(x.CleanupXMLString()));
         writer.WriteLine($"{DocCommentPrefix}{prefix}{description}{suffix}");
         return true;
