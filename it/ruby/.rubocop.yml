@@ -135,18 +135,9 @@ Metrics/CyclomaticComplexity:
 Lint/UselessMethodDefinition:
   Enabled: false
 
-
 # Generated composed type methods can have high perceived complexity
 Metrics/PerceivedComplexity:
   Enabled: false
-
-
-
-
-
-
-
-
 
 # Generated composed types use if !x.nil? for elsif compatibility
 Style/NegatedIf:
