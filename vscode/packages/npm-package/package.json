@@ -43,7 +43,7 @@
   "dependencies": {
     "adm-zip": "^0.6.0",
     "original-fs": "^1.2.0",
-    "uuid": "^14.0.1",
+    "uuid": "^14.0.2",
     "vscode-jsonrpc": "^9.0.1"
   },
   "devDependencies": {
