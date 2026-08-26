@@ -141,7 +141,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             var elseIfPrefix = string.Empty;
             foreach (var (property, mappedKey) in complexPropertiesWithMappings)
             {
-                writer.StartBlock($"{elseIfPrefix}if {DiscriminatorMappingVarName}.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedKey)}\".downcase");
+                // safe navigation: a ParseNode may yield a nil discriminator value, and the
+                // inherited factory's `case` path tolerates that, so this one must too
+                writer.StartBlock($"{elseIfPrefix}if {DiscriminatorMappingVarName}&.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedKey)}\".downcase");
                 writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
                 writer.DecreaseIndent();
                 elseIfPrefix = "els";
@@ -577,8 +579,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         {
             if (nonComplexProperties.Length > 0)
                 writer.StartBlock("else");
+            // write_object_value returns early when its first argument is nil, which would drop
+            // every remaining member, so compact the list and skip the call when nothing is set
             var complexPropNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
-            writer.WriteLine($"writer.write_object_value(nil, {complexPropNames})");
+            writer.WriteLine($"composed_values = [{complexPropNames}].compact");
+            writer.WriteLine("writer.write_object_value(nil, *composed_values) unless composed_values.empty?");
             if (nonComplexProperties.Length > 0)
                 writer.DecreaseIndent();
         }

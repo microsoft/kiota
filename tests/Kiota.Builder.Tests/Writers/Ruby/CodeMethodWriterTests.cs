@@ -1562,6 +1562,30 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertBalancedBlocks(result);
     }
     [Fact]
+    public void EscapesUnionFactoryDiscriminatorLiterals()
+    {
+        // the union discriminator path interpolates schema-controlled strings into Ruby
+        // literals; regression guard against reintroducing raw injection
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel#x",
+            new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        // quotes, newlines and Ruby interpolation markers must all arrive escaped
+        Assert.Contains("\\\"", result);
+        Assert.Contains("\\n", result);
+        Assert.Contains("\\#", result);
+        Assert.DoesNotContain("ns.chi\"ld", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
     public void WritesUnionFactoryBody()
     {
         AddUnionTypeWrapper();
@@ -1654,7 +1678,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super", result);
-        Assert.Contains("write_object_value(nil, @complex_type1_value, @complex_type3_value)", result);
+        Assert.Contains("composed_values = [@complex_type1_value, @complex_type3_value].compact", result);
+        Assert.Contains("writer.write_object_value(nil, *composed_values) unless composed_values.empty?", result);
         Assert.Contains("write_string_value", result);
         Assert.Contains("else", result);
         AssertBalancedBlocks(result);
@@ -1672,7 +1697,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("write_object_value(nil, @complex_type1_value, @complex_type2_value)", result);
+        Assert.Contains("composed_values = [@complex_type1_value, @complex_type2_value].compact", result);
+        Assert.Contains("writer.write_object_value(nil, *composed_values) unless composed_values.empty?", result);
         Assert.DoesNotContain("if !", result);
         Assert.DoesNotContain("else", result);
         AssertBalancedBlocks(result);

@@ -125,14 +125,28 @@ public class RubyLanguageRefinerTests
     [Fact]
     public async Task EscapesInitializeAsync()
     {
-        // an API member named `initialize` would redefine the Ruby constructor,
-        // yielding a duplicate `def initialize` that returns a value and skips super
+        // the real-world case is an API path segment (e.g. /media/upload/initialize) becoming a
+        // request-builder property, which emitted a second `def initialize` in a class that
+        // already had one -- returning a value and skipping super
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "uploadRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var navProperty = requestBuilder.AddProperty(new CodeProperty
+        {
+            Name = "initialize",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { Name = "initializeRequestBuilder" },
+        }).First();
         var model = root.AddClass(new CodeClass
         {
             Name = "initialize",
             Kind = CodeClassKind.Model
         }).First();
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotEqual("initialize", navProperty.Name);
+        Assert.Contains("escaped", navProperty.Name);
         Assert.NotEqual("initialize", model.Name);
         Assert.Contains("escaped", model.Name);
     }
