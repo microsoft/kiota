@@ -190,6 +190,13 @@ public class CSharpConventionService : CommonLanguageConventionService
         var typeString = GetTypeString(code, targetElement, true, false);// dont include nullable markers
         if (typeString.EndsWith('>'))
             return typeString.CleanupXMLString(); // don't generate cref links for generic types as concrete types generate invalid links
+        if (typeString.EndsWith("[]", StringComparison.Ordinal))
+        {
+            // Array type: "<see cref="byte[]"/>" is invalid.
+            // Convert it to "<see cref="byte"/> array", which is hopefully human readable.
+            var rawTypeString = typeString.Substring(0, typeString.Length - "[]".Length);
+            return $"{ReferenceTypePrefix}{rawTypeString.CleanupXMLString()}{ReferenceTypeSuffix} array";
+        }
 
         return $"{ReferenceTypePrefix}{typeString.CleanupXMLString()}{ReferenceTypeSuffix}";
     }
