@@ -11,12 +11,11 @@ namespace Kiota.Builder.Tests.Writers.CSharp
     {
         private readonly CSharpConventionService instance = new();
 
-
         [Fact]
         public void WritesSeeDoc()
         {
             // Tests that "<see cref=" documentation tags are written properly
-            
+
             CodeElement targetElement = new CodeClass();
 
             // Reference to any class:
