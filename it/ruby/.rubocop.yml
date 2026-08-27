@@ -131,17 +131,11 @@ Naming/VariableNumber:
 Metrics/CyclomaticComplexity:
   Enabled: false
 
-# Generated factory methods may just delegate to super
-Lint/UselessMethodDefinition:
-  Enabled: false
-
-# Generated composed type methods can have high perceived complexity
+# Composed type factories, serializers and deserializers branch once per union member,
+# so their complexity tracks the arity of the union rather than any avoidable nesting
 Metrics/PerceivedComplexity:
   Enabled: false
 
-# Generated composed types use if !x.nil? for elsif compatibility
-Style/NegatedIf:
-  Enabled: false
-
-Style/GuardClause:
+# Generated factory methods may just delegate to super
+Lint/UselessMethodDefinition:
   Enabled: false

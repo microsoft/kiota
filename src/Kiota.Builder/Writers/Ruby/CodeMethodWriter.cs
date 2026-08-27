@@ -163,6 +163,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         writer.WriteLine("return result");
     }
     private static string GetIntersectionValueVarName(CodeProperty property) => $"val_{property.Name.ToSnakeCase()}";
+    private void WriteComposedTypeGuardedSerialization(CodeProperty property, LanguageWriter writer)
+    {
+        var propertyName = property.Name.ToSnakeCase();
+        writer.WriteLine($"return if @{propertyName}.nil?");
+        writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{propertyName})");
+    }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
     {
         writer.WriteLine($"result = {parentClass.Name.ToFirstCharacterUpperCase()}.new");
@@ -180,10 +186,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             var methodName = GetDeserializationMethodName(property.Type);
             writer.WriteLine($"{GetIntersectionValueVarName(property)} = {parseNodeParameterName}.{methodName}");
         }
+        // Ruby has no `elsunless`, so a chain has to open with `if !x.nil?`; a lone branch with no
+        // else reads as `unless x.nil?` instead, which is also what RuboCop's Style/NegatedIf wants
+        var factoryBranchesChain = nonComplexProperties.Length > 1 || complexProperties.Length > 0;
         var elseIfPrefix = string.Empty;
         foreach (var property in nonComplexProperties)
         {
-            writer.StartBlock($"{elseIfPrefix}if !{GetIntersectionValueVarName(property)}.nil?");
+            writer.StartBlock(factoryBranchesChain
+                ? $"{elseIfPrefix}if !{GetIntersectionValueVarName(property)}.nil?"
+                : $"unless {GetIntersectionValueVarName(property)}.nil?");
             writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetIntersectionValueVarName(property)}");
             writer.DecreaseIndent();
             elseIfPrefix = "els";
@@ -547,6 +558,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                           .OrderBy(static x => x, new CodePropertyTypeComparer())
                                           .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                           .ToArray();
+        // a lone member is a guard clause rather than a conditional wrapping the whole body, which
+        // is what RuboCop's Style/GuardClause and Style/NegatedIf both ask for
+        if (customProperties.Length == 1)
+        {
+            WriteComposedTypeGuardedSerialization(customProperties[0], writer);
+            return;
+        }
         var elseIfPrefix = string.Empty;
         foreach (var property in customProperties)
         {
@@ -567,6 +585,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                           .ToArray();
         var nonComplexProperties = customProperties.Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass || propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
         var complexProperties = customProperties.Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
+        if (nonComplexProperties.Length == 1 && complexProperties.Length == 0)
+        {
+            WriteComposedTypeGuardedSerialization(nonComplexProperties[0], writer);
+            return;
+        }
         var elseIfPrefix = string.Empty;
         foreach (var property in nonComplexProperties)
         {

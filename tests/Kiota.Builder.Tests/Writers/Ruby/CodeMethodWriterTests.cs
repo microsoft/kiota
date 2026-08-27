@@ -1670,6 +1670,42 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertBalancedBlocks(result);
     }
     [Fact]
+    public void WritesUnionSerializerBodyForSingleMemberAsGuardClause()
+    {
+        // a single member has no elsif to chain to, so `if !x.nil?` wrapping the whole body trips
+        // both Style/NegatedIf and Style/GuardClause -- this reached CI via NoUnderscoresInModel
+        setup();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("return if @string_value.nil?", result);
+        Assert.Contains("writer.write_string_value(nil, @string_value)", result);
+        Assert.DoesNotContain("if !", result);
+        Assert.DoesNotContain("elsif", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesIntersectionFactoryBodyForSingleMemberWithUnless()
+    {
+        // Ruby has no `elsunless`, so a chain has to open with `if !x.nil?`, but a lone branch
+        // with no else must not: RuboCop's Style/NegatedIf wants `unless` there
+        setup();
+        parentClass.OriginalComposedType = new CodeIntersectionType { Name = "IntersectionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("unless val_string_value.nil?", result);
+        Assert.DoesNotContain("if !", result);
+        Assert.DoesNotContain("elsif", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
     public void WritesIntersectionSerializerBody()
     {
         AddIntersectionTypeWrapper();
