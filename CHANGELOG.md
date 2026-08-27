@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed generation of a spurious union type/wrapper for `oneOf` nullable reference types (e.g. `oneOf: [$ref, {type: null}]` as emitted by ASP.NET Core 10's OpenAPI 3.1 generator); these now collapse to the nullable target type, matching the existing `anyOf` behavior. [#6776](https://github.com/microsoft/kiota/issues/6776)
 - TypeScript: fixed generation for primitive binary unions by handling `ArrayBuffer` as a primitive type, and deduplicated redundant serialization/deserialization branches when multiple union members map to the same runtime type (e.g. `binary` and `base64`).
 - C#: write "#pragma" to disable CS1591 for properties without description. [#8095](https://github.com/microsoft/kiota/issues/8095)
+- Required array query parameters with `explode: true` (the OpenAPI default for query parameters) now use the exploded form expansion (`{?param*}`) in URL templates so each value repeats the key, instead of the required syntax `param={param}` which comma joins the values. Required scalar query parameters keep the required syntax since scalar expansion is identical either way. Note the tradeoff RFC 6570 forces here: a required exploded array left unset now disappears from the query string entirely instead of emitting a bare `param=` pair. [#8031](https://github.com/microsoft/kiota/issues/8031) [#4487](https://github.com/microsoft/kiota/issues/4487)
 
 ## [1.34.1] - 2026-07-09
 

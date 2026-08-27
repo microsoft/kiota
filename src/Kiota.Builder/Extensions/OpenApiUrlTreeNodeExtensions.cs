@@ -217,6 +217,14 @@ public static partial class OpenApiUrlTreeNodeExtensions
                         .ToArray() ?? [];
     }
 
+    /// <summary>
+    /// Determines whether a query parameter must use the exploded form style expansion ({?name*}) to be serialized correctly.
+    /// RFC 6570 has no syntax that both sits outside an expression (the required form, name={name}) and repeats the key for
+    /// each value: name={name} comma joins array values. Only array typed parameters are affected, a scalar expands to the
+    /// same key=value pair with or without the explode modifier, so scalars keep the required form.
+    /// </summary>
+    private static bool NeedsExplodedExpansion(IOpenApiParameter parameter) =>
+        parameter.Explode && parameter.Schema?.Type is { } schemaType && schemaType.HasFlag(JsonSchemaType.Array);
     public static string GetUrlTemplate(this OpenApiUrlTreeNode currentNode, HttpMethod? operationType = null, bool includeQueryParameters = true, bool includeBaseUrl = true, bool excludeOperationSpecificRequiredQueryParameters = false)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
@@ -237,9 +245,11 @@ public static partial class OpenApiUrlTreeNodeExtensions
                         requiredParams = requiredParams.Where(x => !operationSpecificNames.Contains(x.Name!));
                 }
                 var requiredParameters = string.Join("&", requiredParams
+                                                .Where(static x => !NeedsExplodedExpansion(x))
                                                 .Select(static x =>
                                                             $"{x.Name}={{{x.Name?.SanitizeParameterNameForUrlTemplate()}}}"));
                 var optionalParameters = string.Join(",", parameters.Where(static x => !x.Required)
+                                                .Concat(requiredParams.Where(NeedsExplodedExpansion))
                                                 .Select(static x =>
                                                             x.Name?.SanitizeParameterNameForUrlTemplate() +
                                                             (x.Explode ?
