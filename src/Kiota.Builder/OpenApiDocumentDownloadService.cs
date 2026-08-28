@@ -15,6 +15,7 @@ using Kiota.Builder.WorkspaceManagement;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Reader;
+using Microsoft.OpenApi.YamlReader;
 
 namespace Kiota.Builder;
 
@@ -34,6 +35,11 @@ internal partial class OpenApiDocumentDownloadService
         o.PoolSize = 20;
         o.PoolInitialFill = 1;
     });
+    private static readonly OpenApiYamlReaderSettings YamlReaderSettings = new()
+    {
+        // descriptions can contain very large scalars (e.g. long markdown descriptions) and the default limit is too low
+        MaxScalarLength = int.MaxValue,
+    };
     internal async Task<(Stream, bool)> LoadStreamAsync(string inputPath, GenerationConfiguration config, WorkspaceManagementService? workspaceManagementService = default, bool useKiotaConfig = false, CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
@@ -118,7 +124,7 @@ internal partial class OpenApiDocumentDownloadService
 
         // Add all extensions for generation
         settings.AddGenerationExtensions();
-        settings.AddYamlReader();
+        settings.AddYamlReader(YamlReaderSettings);
         // Add plugins extensions to parse from the OpenAPI file
         bool addPluginsExtensions = config.IsPluginConfiguration || config.IncludePluginExtensions == true;
         if (addPluginsExtensions)

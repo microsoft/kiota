@@ -282,6 +282,28 @@ components:
         }
     }
 
+    [Fact]
+    public async Task GetDocumentFromStreamAsyncSupportsLargeYamlScalars()
+    {
+        var largeDescription = new string('a', 100000);
+        var generationConfig = new GenerationConfiguration();
+        var fakeLogger = new FakeLogger<OpenApiDocumentDownloadService>();
+
+        using var inputDocumentStream = CreateMemoryStreamFromString($$"""
+openapi: 3.0.0
+info:
+  title: Large scalars
+  version: 0.0.0
+  description: {{largeDescription}}
+paths: {}
+""");
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger);
+        var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(document);
+        Assert.Equal(largeDescription, document.Info?.Description);
+    }
+
     private static Stream CreateMemoryStreamFromString(string s)
     {
         var stream = new MemoryStream();
