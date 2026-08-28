@@ -2056,6 +2056,73 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public void Writes_CodeUnionBetweenDateOnlyAndPrimitive_Deserializer()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Name = MethodName,
+            Kind = CodeMethodKind.Deserializer,
+            IsStatic = true,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var composedType = new CodeUnionType { Name = "expires_at" };
+        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "Guid" }, new CodeType { Name = "integer" });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "expiresAt",
+            Kind = CodeParameterKind.DeserializationTarget,
+            Type = composedType,
+        });
+        var deserializerFunction = new CodeFunction(method);
+        root.TryAddCodeFile("foo", deserializerFunction);
+
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("\"\" : n => { expiresAt = n.getDateOnlyValue() ?? n.getGuidValue() ?? n.getNumberValue()}", result);
+        Assert.DoesNotContain("deserializeIntoDateOnly", result);
+        Assert.DoesNotContain("deserializeIntoGuid", result);
+    }
+
+    [Fact]
+    public void Writes_CodeUnionBetweenDateOnlyAndPrimitive_Serializer()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Name = MethodName,
+            Kind = CodeMethodKind.Serializer,
+            IsStatic = true,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var composedType = new CodeUnionType { Name = "expires_at" };
+        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "Guid" }, new CodeType { Name = "integer" });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "expiresAt",
+            Kind = CodeParameterKind.Custom,
+            Type = composedType,
+        });
+        var serializerFunction = new CodeFunction(method);
+        root.TryAddCodeFile("foo", serializerFunction);
+
+        writer.Write(serializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("if (expiresAt instanceof DateOnly) {", result);
+        Assert.Contains("writer.writeDateOnlyValue(undefined, expiresAt as DateOnly);", result);
+        Assert.Contains("else if (expiresAt instanceof Guid) {", result);
+        Assert.Contains("writer.writeGuidValue(undefined, expiresAt as Guid);", result);
+        Assert.Contains("else if (typeof expiresAt === \"number\" ) {", result);
+        Assert.Contains("writer.writeNumberValue(undefined, expiresAt as number);", result);
+        Assert.DoesNotContain("serializeDateOnly", result);
+        Assert.DoesNotContain("serializeGuid", result);
+    }
+
+    [Fact]
     public void WritesByteArrayPropertyDeserialization()
     {
         var intfc = new CodeInterface
