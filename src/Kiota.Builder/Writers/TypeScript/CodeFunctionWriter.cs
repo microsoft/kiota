@@ -591,12 +591,18 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (type.IsCollection)
             return TYPE_ARRAYBUFFER.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
                 ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof ArrayBuffer)) {{"
-                : $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => typeof item === '{nodeType}')) {{";
+                : IsInstanceOfPrimitiveType(nodeType)
+                ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof {nodeType})) {{"
+                : $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => typeof item === \"{nodeType}\")) {{";
 
         return TYPE_ARRAYBUFFER.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
             ? $"{prefix}if ({valueReference} instanceof ArrayBuffer) {{"
+            : IsInstanceOfPrimitiveType(nodeType)
+            ? $"{prefix}if ({valueReference} instanceof {nodeType}) {{"
             : $"{prefix}if (typeof {valueReference} === \"{nodeType}\" ) {{";
     }
+    private static bool IsInstanceOfPrimitiveType(string nodeType) =>
+        nodeType is TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION;
 
     private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
     {

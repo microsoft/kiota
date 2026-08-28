@@ -33,7 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed non-deterministic model class descriptions when a component schema is referenced from multiple properties with differing reference-level descriptions. [#7927](https://github.com/microsoft/kiota/issues/7927)
 - Fixed generation of a spurious union type/wrapper for `oneOf` nullable reference types (e.g. `oneOf: [$ref, {type: null}]` as emitted by ASP.NET Core 10's OpenAPI 3.1 generator); these now collapse to the nullable target type, matching the existing `anyOf` behavior. [#6776](https://github.com/microsoft/kiota/issues/6776)
 - TypeScript: fixed generation for primitive binary unions by handling `ArrayBuffer` as a primitive type, and deduplicated redundant serialization/deserialization branches when multiple union members map to the same runtime type (e.g. `binary` and `base64`).
-- C#: write "#pragma" to disable CS1591 for properties without description. [#8095](https://github.com/microsoft/kiota/issues/8095)
+- TypeScript: fixed composed type deserialization for unions that include Kiota primitive types such as `DateOnly`.
+- C#: write `#pragma` to disable CS1591 for properties without description. [#8095](https://github.com/microsoft/kiota/issues/8095)
+- C#: don't create `<see cref="byte[]"/>` xml doc comments [#8099](https://github.com/microsoft/kiota/issues/8099)
 
 ## [1.34.1] - 2026-07-09
 
