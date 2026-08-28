@@ -2086,6 +2086,38 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public void Writes_CodeUnionBetweenDateOnlyAndPrimitive_Serializer()
+    {
+        var parentClass = TestHelper.CreateModelClass(root, "parentClass");
+        var method = parentClass.AddMethod(new CodeMethod
+        {
+            Name = MethodName,
+            Kind = CodeMethodKind.Serializer,
+            IsStatic = true,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var composedType = new CodeUnionType { Name = "expires_at" };
+        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "integer" });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "expiresAt",
+            Kind = CodeParameterKind.Custom,
+            Type = composedType,
+        });
+        var serializerFunction = new CodeFunction(method);
+        root.TryAddCodeFile("foo", serializerFunction);
+
+        writer.Write(serializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("if (expiresAt instanceof DateOnly) {", result);
+        Assert.Contains("writer.writeDateOnlyValue(undefined, expiresAt as DateOnly);", result);
+        Assert.Contains("else if (typeof expiresAt === \"number\" ) {", result);
+        Assert.DoesNotContain("serializeDateOnly", result);
+    }
+
+    [Fact]
     public void WritesByteArrayPropertyDeserialization()
     {
         var intfc = new CodeInterface
