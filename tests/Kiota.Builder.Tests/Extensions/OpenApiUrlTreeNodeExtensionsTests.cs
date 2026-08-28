@@ -593,6 +593,188 @@ public sealed class OpenApiUrlTreeNodeExtensionsTests : IDisposable
         var node = OpenApiUrlTreeNode.Create(doc, Label);
         Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}&filter={filter}", node.Children.First().Value.GetUrlTemplate());
     }
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)] // Explode defaults to true for form style query parameters
+    public void GeneratesExplodedSyntaxForRequiredExplodedArrayQueryParameter(bool explicitExplode)
+    {
+        var selectParameter = new OpenApiParameter
+        {
+            Name = "select",
+            In = ParameterLocation.Query,
+            Required = true,
+            Schema = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Array,
+                Items = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.String
+                }
+            }
+        };
+        if (explicitExplode)
+        {
+            selectParameter.Style = ParameterStyle.Form;
+            selectParameter.Explode = true;
+        }
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
+        {
+            Parameters = [
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        },
+                        selectParameter
+            ],
+            Operations = new Dictionary<HttpMethod, OpenApiOperation> {
+                { HttpMethod.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager{?select*}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void KeepsRequiredSyntaxForRequiredScalarQueryParameterWithExplode()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
+        {
+            Parameters = [
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "apikey",
+                            In = ParameterLocation.Query,
+                            Required = true,
+                            Style = ParameterStyle.Form,
+                            Explode = true, // exploding a scalar is a no-op, the required syntax must be preserved
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+            ],
+            Operations = new Dictionary<HttpMethod, OpenApiOperation> {
+                { HttpMethod.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void KeepsExplodedSyntaxForOptionalExplodedArrayQueryParameter()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
+        {
+            Parameters = [
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "filter",
+                            In = ParameterLocation.Query,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.Array,
+                                Items = new OpenApiSchema {
+                                    Type = JsonSchemaType.String
+                                }
+                            }
+                        }
+            ],
+            Operations = new Dictionary<HttpMethod, OpenApiOperation> {
+                { HttpMethod.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager{?filter*}", node.Children.First().Value.GetUrlTemplate());
+    }
+    [Fact]
+    public void GeneratesRequiredScalarAndRequiredExplodedArrayAndOptionalMix()
+    {
+        var doc = new OpenApiDocument
+        {
+            Paths = [],
+        };
+        doc.Paths.Add("users\\{id}\\manager", new OpenApiPathItem()
+        {
+            Parameters = [
+                        new OpenApiParameter {
+                            Name = "id",
+                            In = ParameterLocation.Path,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "apikey",
+                            In = ParameterLocation.Query,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "select",
+                            In = ParameterLocation.Query,
+                            Required = true,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.Array,
+                                Items = new OpenApiSchema {
+                                    Type = JsonSchemaType.String
+                                }
+                            }
+                        },
+                        new OpenApiParameter {
+                            Name = "filter",
+                            In = ParameterLocation.Query,
+                            Required = false,
+                            Schema = new OpenApiSchema {
+                                Type = JsonSchemaType.String
+                            }
+                        }
+            ],
+            Operations = new Dictionary<HttpMethod, OpenApiOperation> {
+                { HttpMethod.Get, new() {
+                    }
+                },
+            }
+        });
+        var node = OpenApiUrlTreeNode.Create(doc, Label);
+        Assert.Equal("{+baseurl}/users/{id}/manager?apikey={apikey}{&filter*,select*}", node.Children.First().Value.GetUrlTemplate());
+    }
 
     [Fact]
     public void GetUrlTemplateCleansInvalidParameters()

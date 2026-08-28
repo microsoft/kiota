@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript: fixed composed type deserialization for unions that include Kiota primitive types such as `DateOnly`.
 - C#: write `#pragma` to disable CS1591 for properties without description. [#8095](https://github.com/microsoft/kiota/issues/8095)
 - C#: don't create `<see cref="byte[]"/>` xml doc comments [#8099](https://github.com/microsoft/kiota/issues/8099)
+- Required array query parameters with `explode: true` (the OpenAPI default for query parameters) now use the exploded form expansion (`{?param*}`) in URL templates so each value repeats the key, instead of the required syntax `param={param}` which comma joins the values. Required scalar query parameters keep the required syntax since scalar expansion is identical either way. Note the tradeoff RFC 6570 forces here: a required exploded array left unset now disappears from the query string entirely instead of emitting a bare `param=` pair. [#8031](https://github.com/microsoft/kiota/issues/8031) [#4487](https://github.com/microsoft/kiota/issues/4487)
 
 ## [1.34.1] - 2026-07-09
 
