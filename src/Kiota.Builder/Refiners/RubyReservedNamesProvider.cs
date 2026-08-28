@@ -45,6 +45,8 @@ public class RubyReservedNamesProvider : IReservedNamesProvider
         "BaseRequestBuilder",
         "ObjectId",
         "object_id",
+        // Object protocol: a generated member of this name would redefine the constructor
+        "initialize",
     });
     public HashSet<string> ReservedNames => _reservedNames.Value;
 }

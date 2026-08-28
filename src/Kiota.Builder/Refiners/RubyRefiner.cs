@@ -43,7 +43,8 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             UpdateReferencesToDisambiguatedClasses(generatedCode, classesToDisambiguate, suffix);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
-                static s => s
+                static s => s,
+                false
             );
             var reservedNamesProvider = new RubyReservedNamesProvider();
             CorrectNames(generatedCode, s =>

@@ -147,10 +147,6 @@
   "https://api.twitter.com/2/openapi.json": {
     "Suppressions": [
       {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
-      },
-      {
         "Language": "dart",
         "Rationale": "dart analyze fails on unnecessary_null_comparison for primitive binary union media models - https://github.com/microsoft/kiota/issues/7997"
       },

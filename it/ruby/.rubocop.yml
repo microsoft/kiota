@@ -131,6 +131,11 @@ Naming/VariableNumber:
 Metrics/CyclomaticComplexity:
   Enabled: false
 
+# Composed type factories, serializers and deserializers branch once per union member,
+# so their complexity tracks the arity of the union rather than any avoidable nesting
+Metrics/PerceivedComplexity:
+  Enabled: false
+
 # Generated factory methods may just delegate to super
 Lint/UselessMethodDefinition:
   Enabled: false

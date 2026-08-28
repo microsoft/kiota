@@ -57,7 +57,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         if (codeElement.Parent is CodeClass parentClass)
             conventions.WriteShortDescription(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
-        var mixins = !codeElement.Implements.Any() ? string.Empty : $"include {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}";
-        writer.WriteLine($"{mixins}");
+        // writing an empty mixin line would leave a blank (indent-only) first line in the class body
+        if (codeElement.Implements.Any())
+            writer.WriteLine($"include {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}");
     }
 }
