@@ -593,7 +593,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof ArrayBuffer)) {{"
                 : IsInstanceOfPrimitiveType(nodeType)
                 ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof {nodeType})) {{"
-                : $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => typeof item === '{nodeType}')) {{";
+                : $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => typeof item === \"{nodeType}\")) {{";
 
         return TYPE_ARRAYBUFFER.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
             ? $"{prefix}if ({valueReference} instanceof ArrayBuffer) {{"
