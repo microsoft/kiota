@@ -2068,7 +2068,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             ReturnType = new CodeType { Name = "void" },
         }).First();
         var composedType = new CodeUnionType { Name = "expires_at" };
-        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "integer" });
+        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "Guid" }, new CodeType { Name = "integer" });
         method.AddParameter(new CodeParameter
         {
             Name = "expiresAt",
@@ -2081,8 +2081,9 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(deserializerFunction);
         var result = tw.ToString();
 
-        Assert.Contains("\"\" : n => { expiresAt = n.getDateOnlyValue() ?? n.getNumberValue()}", result);
+        Assert.Contains("\"\" : n => { expiresAt = n.getDateOnlyValue() ?? n.getGuidValue() ?? n.getNumberValue()}", result);
         Assert.DoesNotContain("deserializeIntoDateOnly", result);
+        Assert.DoesNotContain("deserializeIntoGuid", result);
     }
 
     [Fact]
@@ -2098,7 +2099,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             ReturnType = new CodeType { Name = "void" },
         }).First();
         var composedType = new CodeUnionType { Name = "expires_at" };
-        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "integer" });
+        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "Guid" }, new CodeType { Name = "integer" });
         method.AddParameter(new CodeParameter
         {
             Name = "expiresAt",
@@ -2113,8 +2114,11 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         Assert.Contains("if (expiresAt instanceof DateOnly) {", result);
         Assert.Contains("writer.writeDateOnlyValue(undefined, expiresAt as DateOnly);", result);
+        Assert.Contains("else if (expiresAt instanceof Guid) {", result);
+        Assert.Contains("writer.writeGuidValue(undefined, expiresAt as Guid);", result);
         Assert.Contains("else if (typeof expiresAt === \"number\" ) {", result);
         Assert.DoesNotContain("serializeDateOnly", result);
+        Assert.DoesNotContain("serializeGuid", result);
     }
 
     [Fact]
