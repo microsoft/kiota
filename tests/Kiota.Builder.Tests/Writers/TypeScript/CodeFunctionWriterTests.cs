@@ -2117,6 +2117,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("else if (expiresAt instanceof Guid) {", result);
         Assert.Contains("writer.writeGuidValue(undefined, expiresAt as Guid);", result);
         Assert.Contains("else if (typeof expiresAt === \"number\" ) {", result);
+        Assert.Contains("writer.writeNumberValue(undefined, expiresAt as number);", result);
         Assert.DoesNotContain("serializeDateOnly", result);
         Assert.DoesNotContain("serializeGuid", result);
     }
