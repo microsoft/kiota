@@ -235,6 +235,11 @@ public class TypeScriptConventionService : CommonLanguageConventionService
             TYPE_LOWERCASE_STRING or
             TYPE_BYTE_ARRAY or
             TYPE_ARRAYBUFFER or
+            TYPE_GUID or
+            TYPE_DATE or
+            TYPE_DATE_ONLY or
+            TYPE_TIME_ONLY or
+            TYPE_DURATION or
             TYPE_LOWERCASE_BOOLEAN or
             TYPE_LOWERCASE_VOID => true,
             _ => false,
