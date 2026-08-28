@@ -27,6 +27,12 @@
         "Rationale": "Multiple compilation errors with api from 2026-06-25 - https://github.com/microsoft/kiota/issues/7862"
       }
     ],
+    "IdempotencySuppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "Client generation fails for typescript with the current api - https://github.com/microsoft/kiota/issues/7803"
+      }
+    ],
     "ExcludePatterns": [
       {
         "Language": "typescript",
