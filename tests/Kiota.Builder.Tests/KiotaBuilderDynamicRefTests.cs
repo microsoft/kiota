@@ -994,6 +994,149 @@ components:
     }
 
     [Fact]
+    public async Task MutuallyReferencingModelsAcrossParallelEndpointsGenerateFullyAsync()
+    { // regression guard for the lifecycle-wait deadlock: two threads holding each other's class monitors
+        // on A.b -> B / B.a -> A must not block forever in WaitForGenericModelParameters
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /a:
+    get:
+      operationId: getA
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelA'
+  /b:
+    get:
+      operationId: getB
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelB'
+components:
+  schemas:
+    ModelA:
+      type: object
+      properties:
+        name:
+          type: string
+        b:
+          $ref: '#/components/schemas/ModelB'
+    ModelB:
+      type: object
+      properties:
+        id:
+          type: string
+        a:
+          $ref: '#/components/schemas/ModelA'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var modelA = modelsNamespace!.FindChildByName<CodeClass>("ModelA", true);
+        var modelB = modelsNamespace.FindChildByName<CodeClass>("ModelB", true);
+        Assert.NotNull(modelA);
+        Assert.NotNull(modelB);
+        // both sides of the cycle complete their cross-references
+        Assert.NotNull(modelA!.Properties.FirstOrDefault(static x => x.Name == "b"));
+        Assert.NotNull(modelB!.Properties.FirstOrDefault(static x => x.Name == "a"));
+    }
+
+    [Fact]
+    public async Task UnionBoundAnchorFallsBackToConcreteSpecializationAsync()
+    { // an anchor bound via $ref to a oneOf component resolves to a union type: the generic closing would
+      // emit a wrong-arity reference (PaginatedTemplate where <TItemType> is declared), so it stays concrete
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/ShapeUnion'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    Circle:
+      type: object
+      properties:
+        radius:
+          type: number
+    Square:
+      type: object
+      properties:
+        side:
+          type: number
+    ShapeUnion:
+      oneOf:
+        - $ref: '#/components/schemas/Circle'
+        - $ref: '#/components/schemas/Square'
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the concrete specialization carries the full union typing, no partial generic is emitted
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateShapeUnion", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+        // executor return closes over the concrete class, never an open generic or UntypedNode
+        var executor = codeModel.FindNamespaceByName("ApiSdk.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.NotEqual("UntypedNode", returnType.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.IsType<CodeClass>(returnType.TypeDefinition);
+        Assert.False(((CodeClass)returnType.TypeDefinition).IsGeneric);
+        Assert.Empty(Assert.IsType<CodeType>(returnType).GenericTypeParameterValues);
+    }
+
+    [Fact]
     public async Task PromotesNestedInlineModelsInsideGenericTemplatesAsync()
     {
         var tempFilePath = Path.GetTempFileName();
