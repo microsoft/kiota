@@ -2756,6 +2756,10 @@ public partial class KiotaBuilder
     /// </summary>
     private void WaitForGenericModelParameters(CodeClass modelClass)
     {
+        // never block while holding another class's lifecycle monitor (mutually-referencing models built by
+        // parallel threads would deadlock): returning the mid-build class is the pre-existing tolerated behavior
+        // for circular references, and non-generic languages never promote so genericity is always final
+        if (classBuildDepth.Value > 0 || !GenericTemplateLanguages.Contains(config.Language)) return;
         if (modelClass.Parent is CodeNamespace parentNamespace &&
             classLifecycles.TryGetValue($"{parentNamespace.Name}.{modelClass.Name}", out var lifecycle))
             lifecycle.WaitForPropertiesBuilt();
@@ -2813,8 +2817,13 @@ public partial class KiotaBuilder
                         classLifecycles.TryGetValue(inheritsFrom.Parent!.Name + "." + inheritsFrom.Name, out var superClassLifecycle);
                         superClassLifecycle!.WaitForPropertiesBuilt();
                     }
-                    CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
-                    PromoteGenericModelDeclaration(newClass);
+                    classBuildDepth.Value++; // the current thread now holds this class's lifecycle monitor
+                    try
+                    {
+                        CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
+                        PromoteGenericModelDeclaration(newClass);
+                    }
+                    finally { classBuildDepth.Value--; }
                 }
             }
             finally
@@ -3077,6 +3086,12 @@ public partial class KiotaBuilder
         return result;
     }
     private static readonly ThreadLocal<int> modelCreationDepth = new(() => 0);
+    /// <summary>
+    /// Depth of class property builds on the current thread. While positive, the thread holds at least one
+    /// class lifecycle monitor, so <see cref="WaitForGenericModelParameters"/> must not block on another class:
+    /// two threads holding each other's monitors on mutually-referencing models would deadlock.
+    /// </summary>
+    private static readonly ThreadLocal<int> classBuildDepth = new(() => 0);
     // Parallel.ForEach may inline tasks on the calling thread, so this depth counter can be
     // inflated across unrelated URL tree nodes sharing a thread. 50 is conservative enough
     // to avoid false positives — legitimate model nesting rarely exceeds 5-10 levels.
