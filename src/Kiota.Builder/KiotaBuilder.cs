@@ -2778,7 +2778,10 @@ public partial class KiotaBuilder
     // ponytail: a bare reference to a template that a $defs-bound usage made generic (or vice versa, a bound usage
     // finding a class an earlier bare reference materialized concrete) degrades to UntypedNode — a bare template ref
     // is schema-locally indistinguishable from Phase 1 recursive anchor types, so full determinism would need a
-    // document-wide pre-scan collecting bound template targets before any materialization
+    // document-wide pre-scan collecting bound template targets before any materialization (the bare-reference
+    // pre-scan also misses components first visited in binding scope and only reached bare later in the same walk).
+    // Generic models additionally skip constructor emission in C#/Java/Dart, so property default values from
+    // AddConstructorsForDefaultValues are silently dropped — templates rarely carry defaults; revisit if they must.
     private CodeType DegradeToUntypedNode(OpenApiUrlTreeNode currentNode, string templateName)
     {
         logger.LogWarning("Schema at {Location} references generic template {TemplateName} without a binding context. Generating UntypedNode.", currentNode.Path, templateName);

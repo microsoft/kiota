@@ -812,6 +812,31 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter, updateUsings));
     }
+    /// <summary>
+    /// Adds usings for generic type arguments (e.g. <c>User</c> in <c>PaginatedTemplate&lt;User&gt;</c>) which
+    /// <see cref="CodeType.AllTypes"/> does not expand. <paramref name="keepSameNamespaceArguments"/> stays true for
+    /// languages importing sibling model files (Dart); false drops same-namespace arguments (Java).
+    /// </summary>
+    protected static void AddGenericTypeArgumentsImports(CodeClass currentClass, bool keepSameNamespaceArguments)
+    {
+        ArgumentNullException.ThrowIfNull(currentClass);
+        var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+        var usingsToAdd = currentClass.Properties.Select(static x => x.Type)
+                                .Union(currentClass.Methods.Select(static x => x.ReturnType))
+                                .Union(currentClass.Methods.SelectMany(static x => x.Parameters.Select(static y => y.Type)))
+                                .Union(currentClass.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor)).SelectMany(static x => x.ErrorMappings.Select(static y => y.Value)))
+                                .Union(currentClass.StartBlock.Inherits is not null ? new[] { currentClass.StartBlock.Inherits } : Enumerable.Empty<CodeTypeBase>())
+                                .OfType<CodeType>()
+                                .SelectMany(static x => x.GenericTypeParameterValues)
+                                .Where(static x => x.TypeDefinition is not null and not CodeTypeParameter)
+                                .Where(x => keepSameNamespaceArguments || !x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name.Equals(currentClassNamespace.Name, StringComparison.Ordinal))
+                                .Select(static x => new CodeUsing { Name = x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name, Declaration = x })
+                                .GroupBy(static x => $"{x.Name}.{x.Declaration!.Name}", StringComparer.Ordinal)
+                                .Select(static x => x.First())
+                                .ToArray();
+        if (usingsToAdd.Length != 0)
+            (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //nested classes do not support imports
+    }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = true)
     {
         ArgumentNullException.ThrowIfNull(currentElement);
