@@ -631,6 +631,9 @@ public partial class KiotaBuilder
     {
         bareDynamicTemplateReferences.Clear();
         if (openApiDocument is null) return;
+        // shared across operations so common component graphs are not re-walked per operation; a schema first
+        // seen in binding scope is re-walked when later reached bare (bare marks are the ones that matter)
+        var visitedScope = new Dictionary<IOpenApiSchema, bool>(ReferenceEqualityComparer.Instance);
         void AddBareReferences(IEnumerable<OpenApiOperation> operations)
         {
             foreach (var operation in operations)
@@ -638,21 +641,24 @@ public partial class KiotaBuilder
                 var schemas = (operation.Responses?.Values.SelectMany(response => response.Content?.GetValidSchemas(config.StructuredMimeTypes) ?? []) ?? [])
                     .Concat(operation.GetRequestSchema(config.StructuredMimeTypes) is { } requestSchema ? [requestSchema] : []);
                 foreach (var schema in schemas)
-                    CollectBareTemplateReferences(schema, false, new HashSet<IOpenApiSchema>());
+                    CollectBareTemplateReferences(schema, false, visitedScope);
             }
         }
         AddBareReferences(openApiDocument.Paths?.Values.Where(static path => path.Operations is not null).SelectMany(static path => path.Operations!.Values) ?? []);
         AddBareReferences(openApiDocument.Webhooks?.Values.Where(static path => path.Operations is not null).SelectMany(static path => path.Operations!.Values) ?? []);
     }
-    private void CollectBareTemplateReferences(IOpenApiSchema schema, bool inBindingScope, HashSet<IOpenApiSchema> visited)
+    private void CollectBareTemplateReferences(IOpenApiSchema schema, bool inBindingScope, Dictionary<IOpenApiSchema, bool> visitedScope)
     {
-        if (!visited.Add(schema)) return;
+        // skip unless the schema was first walked in binding scope and is now reached bare: only then are new
+        // bare marks possible (a bare walk already covered everything an in-scope walk would traverse)
+        if (visitedScope.TryGetValue(schema, out var walkedInScope) && !(walkedInScope && !inBindingScope)) return;
+        visitedScope[schema] = inBindingScope;
         inBindingScope |= schema.Definitions?.Values.Any(static definition => !string.IsNullOrEmpty(definition.DynamicAnchor)) == true;
         if (!inBindingScope && schema.GetReferenceId() is { Length: > 0 } referenceId)
             bareDynamicTemplateReferences.Add(referenceId);
         if (schema is OpenApiSchemaReference { Target: { } referenceTarget })
         { // bare references hide behind $ref hops (wrapper components): traverse into the target so they are recorded
-            CollectBareTemplateReferences(referenceTarget, inBindingScope, visited);
+            CollectBareTemplateReferences(referenceTarget, inBindingScope, visitedScope);
             return;
         }
         foreach (var child in (schema.Properties?.Values ?? [])
@@ -661,7 +667,7 @@ public partial class KiotaBuilder
                      .Concat(schema.AnyOf ?? [])
                      .Concat(schema.OneOf ?? [])
                      .Concat(schema.AdditionalProperties is not null ? [schema.AdditionalProperties] : []))
-            CollectBareTemplateReferences(child, inBindingScope, visited);
+            CollectBareTemplateReferences(child, inBindingScope, visitedScope);
     }
 
     private readonly ConcurrentDictionary<CodeElement, bool> webhookModels = new();
@@ -3048,7 +3054,7 @@ public partial class KiotaBuilder
                                 .OfType<CodeClass>()
                                 .Select(static x => x.Properties.FirstOrDefault(static y => y.Kind is CodePropertyKind.QueryParameters)?.Type)
                                 .OfType<CodeType>())
-                        .Union(requestExecutors.SelectMany(static x => x.ErrorMappings.SelectMany(static y => y.Value.AllTypes)))
+                        .Union(requestExecutors.SelectMany(static x => x.ErrorMappings.SelectMany(static y => y.Value.AllTypes)).SelectMany(ExpandGenericArguments))
                         .Where(static x => x.TypeDefinition != null)
                         .Select(static x => x.TypeDefinition!)
                         .Where(static x => x is CodeClass || x is CodeEnum);
