@@ -1897,7 +1897,17 @@ public partial class KiotaBuilder
             if (bindingSuffix is not null && !genericMode)
                 className = $"{className}{bindingSuffix}";
             if (genericMode)
+            {
                 ResolveGenericBoundArguments(currentNode, schema, operation, codeNamespace, frame, response, isRequestBody);
+                if (frame.BoundArgumentsByParameterName.Count != frame.TypeParametersByAnchor.Count)
+                { // a bound anchor that does not resolve to a single type (e.g. $ref to a oneOf/anyOf component)
+                  // would produce a wrong-arity closed generic at usage sites: fall back to the concrete specialization
+                    logger.LogWarning("Binding for template {ClassName} falls back to a concrete specialization: an anchor did not resolve to a single type.", className);
+                    genericMode = false;
+                    frame = RestartFrameAsConcreteBinding(schema, bindingSuffix, frame);
+                    className = $"{className}{bindingSuffix}";
+                }
+            }
             var codeDeclaration = AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, codeNamespace);
             if (codeDeclaration is CodeClass modelClass)
             {
@@ -1993,6 +2003,17 @@ public partial class KiotaBuilder
                !bareDynamicTemplateReferences.Contains(schema.GetReferenceId() ?? string.Empty) &&
                !ContainsDynamicReferenceViaAdditionalProperties(schema);
     }
+    /// <summary>
+    /// Swaps the innermost dynamic scope frame for a concrete (suffixed) one, used when a generic binding
+    /// turns out not to be closable and the schema must materialize as a per-binding concrete class.
+    /// </summary>
+    private static DynamicScopeFrame RestartFrameAsConcreteBinding(IOpenApiSchema schema, string? bindingSuffix, DynamicScopeFrame frame)
+    {
+        _dynamicScope.Value!.Pop();
+        var concreteFrame = new DynamicScopeFrame(schema, bindingSuffix);
+        _dynamicScope.Value!.Push(concreteFrame);
+        return concreteFrame;
+    }
     private static bool ContainsDiscriminator(IOpenApiSchema schema, HashSet<IOpenApiSchema>? visited = null)
     {
         visited ??= new(ReferenceEqualityComparer.Instance);
@@ -2031,7 +2052,15 @@ public partial class KiotaBuilder
         try
         {
             if (genericMode)
+            {
                 ResolveGenericBoundArguments(currentNode, schema, operation, codeNamespace, frame, response, isRequestBody);
+                if (frame.BoundArgumentsByParameterName.Count != frame.TypeParametersByAnchor.Count)
+                { // same fallback as the direct path: an anchor bound to a composed type stays concrete
+                    logger.LogWarning("Binding for inherited template {TemplateName} falls back to a concrete specialization: an anchor did not resolve to a single type.", frame.TemplateClassName);
+                    genericMode = false;
+                    frame = RestartFrameAsConcreteBinding(schema, bindingSuffix, frame);
+                }
+            }
             var codeDeclaration = CreateInheritedModelDeclarationCore(currentNode, schema, operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isViaDiscriminator, response, dynamicBindingSuffixContext, genericMode ? null : bindingSuffix);
             if (codeDeclaration is CodeClass declarationClass)
             {

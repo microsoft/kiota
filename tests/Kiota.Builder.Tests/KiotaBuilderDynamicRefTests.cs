@@ -1137,6 +1137,83 @@ components:
     }
 
     [Fact]
+    public async Task UnresolvableBoundArgumentFallsBackToConcreteSpecializationAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /envelopes:
+    get:
+      operationId: listEnvelopes
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  dataType:
+                    $dynamicAnchor: dataType
+                    $ref: '#/components/schemas/User'
+                  errorType:
+                    $dynamicAnchor: errorType
+                    $ref: '#/components/schemas/ErrorUnion'
+                $ref: '#/components/schemas/EnvelopeTemplate'
+components:
+  schemas:
+    User:
+      type: object
+    StringError:
+      type: object
+    NumberError:
+      type: object
+    ErrorUnion:
+      oneOf:
+        - $ref: '#/components/schemas/StringError'
+        - $ref: '#/components/schemas/NumberError'
+    EnvelopeTemplate:
+      $id: https://example.com/schemas/EnvelopeTemplate
+      $dynamicAnchor: dataType
+      type: object
+      required: [data]
+      properties:
+        data:
+          $dynamicRef: '#dataType'
+        error:
+          $dynamicRef: '#errorType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        // the errorType anchor resolves to a composed type, which cannot serve as a generic argument:
+        // the whole binding falls back to a concrete specialization (full union typing) instead of closing
+        // over a subset of the arguments (wrong arity) or degrading to UntypedNode
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("EnvelopeTemplateUserErrorUnion", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+        var envelopesNamespace = codeModel.FindNamespaceByName("ApiSdk.envelopes");
+        Assert.NotNull(envelopesNamespace);
+        var executor = envelopesNamespace!.FindChildByName<CodeClass>("EnvelopesRequestBuilder", true)!.Methods
+            .First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.NotEqual("UntypedNode", returnType.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Same(concrete, returnType.TypeDefinition);
+        Assert.Empty(returnType.GenericTypeParameterValues);
+    }
+
+    [Fact]
     public async Task PromotesNestedInlineModelsInsideGenericTemplatesAsync()
     {
         var tempFilePath = Path.GetTempFileName();
