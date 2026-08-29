@@ -108,7 +108,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             LowerCaseNamespaceNames(generatedCode);
             ShortenOversizedNamespaceSegments(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true, updateUsings: AddGenericTypeArgumentsImports);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true, updateUsings: static x => AddGenericTypeArgumentsImports(x, keepSameNamespaceArguments: false));
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
@@ -277,25 +277,6 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AbstractionsNamespaceName, MultipartBodyClassName)
     };
     private const string MultipartBodyClassName = "MultipartBody";
-    private static void AddGenericTypeArgumentsImports(CodeClass currentClass)
-    { // generic type arguments (e.g. User in PaginatedTemplate<User>) are not covered by AllTypes and need their own usings
-        var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
-        var usingsToAdd = currentClass.Properties.Select(static x => x.Type)
-                                .Union(currentClass.Methods.Select(static x => x.ReturnType))
-                                .Union(currentClass.Methods.SelectMany(static x => x.Parameters.Select(static y => y.Type)))
-                                .Union(currentClass.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor)).SelectMany(static x => x.ErrorMappings.Select(static y => y.Value)))
-                                .Union(currentClass.StartBlock.Inherits is not null ? new[] { currentClass.StartBlock.Inherits } : Enumerable.Empty<CodeTypeBase>())
-                                .OfType<CodeType>()
-                                .SelectMany(static x => x.GenericTypeParameterValues)
-                                .Where(static x => x.TypeDefinition is not null and not CodeTypeParameter)
-                                .Where(x => !x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name.Equals(currentClassNamespace.Name, StringComparison.Ordinal))
-                                .Select(static x => new CodeUsing { Name = x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name, Declaration = x })
-                                .GroupBy(static x => $"{x.Name}.{x.Declaration!.Name}", StringComparer.Ordinal)
-                                .Select(static x => x.First())
-                                .ToArray();
-        if (usingsToAdd.Length != 0)
-            (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //nested classes do not support imports
-    }
     private static void CorrectCommonNames(CodeElement currentElement)
     {
         if (currentElement is CodeMethod m &&
