@@ -727,6 +727,51 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestExecutorBodyForErrorModelNamedWithAbleSuffix()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var providerUnavailable = root.AddClass(new CodeClass
+        {
+            Name = "ProviderUnavailable",
+        }).First();
+        var error5XX = root.AddClass(new CodeClass
+        {
+            Name = "Error5XX",
+        }).First();
+        var error5XXInterface = root.AddInterface(new CodeInterface
+        {
+            Name = "Error5XXable",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = error5XX,
+        }).First();
+        method.AddErrorMapping("503", new CodeType { Name = "ProviderUnavailable", TypeDefinition = providerUnavailable });
+        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XXable", TypeDefinition = error5XXInterface });
+        AddRequestBodyParameters();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ctx",
+            Kind = CodeParameterKind.Cancellation,
+            Type = new CodeType
+            {
+                Name = "context.Context",
+                IsExternal = true,
+                IsNullable = false,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        // a model class whose own name ends in "able" must keep its full name: the factory is named
+        // after the class, so trimming would reference a symbol that is never generated
+        Assert.Contains("\"503\": CreateProviderUnavailableFromDiscriminatorValue", result);
+        Assert.DoesNotContain("CreateProviderUnavailFromDiscriminatorValue", result);
+        // a mapping through the model's inserted interface still trims the interface suffix
+        Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyForEnum()
     {
         setup();

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Go: fixed the factory reference emitted for a model whose name ends in `able` (e.g. `ProviderUnavailable`): the writer trimmed the suffix as if it were the model-interface suffix, referencing a `Create...FromDiscriminatorValue` symbol that is never generated, so the package did not compile. The suffix is now only trimmed when the type resolves to the inserted interface.
 - Fixed defaults primitive default-value handling during code generation for all languages
 - Ruby: added composed type (union/intersection) support to the factory, serializer and deserializer bodies, and stopped emitting composed type wrappers as inner classes. Un-suppresses the Twitter integration test. [kiota-abstractions-ruby#73](https://github.com/microsoft/kiota-abstractions-ruby/issues/73) [#1816](https://github.com/microsoft/kiota/issues/1816)
 - Ruby: `initialize` is now a reserved name. An API member called `initialize` previously generated a second `def initialize`, redefining the constructor; it is now escaped.
