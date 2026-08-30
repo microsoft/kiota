@@ -849,6 +849,59 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
     }
 
     [Fact]
+    public async Task MapsEscapedQueryParamsBackToTheirWireNameAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var testNS = root.FindOrAddNamespace(generationConfiguration.ClientNamespaceName);
+        var requestBuilder = testNS.AddClass(new CodeClass
+        {
+            Name = "requestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        requestBuilder.AddProperty(new CodeProperty
+        {
+            Kind = CodePropertyKind.UrlTemplate,
+            Name = "urlTemplate",
+            DefaultValue = "{baseurl+}",
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+
+        var requestConfig = requestBuilder.AddInnerClass(new CodeClass
+        {
+            Name = "requestConfig",
+            Kind = CodeClassKind.RequestConfiguration
+        }).First();
+
+        var queryParam = requestBuilder.AddInnerClass(new CodeClass
+        {
+            Name = "queryParams",
+            Kind = CodeClassKind.QueryParameters
+        }).First();
+
+        queryParam.AddProperty(new CodeProperty
+        {
+            Name = "export",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType
+            {
+                Name = "boolean"
+            },
+        });
+
+        requestConfig.AddProperty(new CodeProperty { Name = queryParam.Name, Type = new CodeType { Name = queryParam.Name, TypeDefinition = queryParam } });
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var queryParamsInterface = testNS.Interfaces.First(static x => x.Name.Equals("queryParams", StringComparison.OrdinalIgnoreCase));
+        var escapedProperty = queryParamsInterface.Properties.First(static x => x.IsOfKind(CodePropertyKind.QueryParameter));
+        Assert.Equal("exportEscaped", escapedProperty.Name);
+        Assert.Equal("export", escapedProperty.SerializationName);
+        Assert.Single(testNS.Constants, static x => x.IsOfKind(CodeConstantKind.QueryParametersMapper));
+    }
+
+    [Fact]
     public async Task GeneratesCodeFilesAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
