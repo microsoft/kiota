@@ -41,7 +41,13 @@ public class GoConventionService : CommonLanguageConventionService
         var typeString = GetTypeString(code, targetElement, false, false)?.Split(Dot);
         var importSymbol = typeString == null || typeString.Length < 2 ? string.Empty : typeString[0] + Dot;
         var methodName = typeString?.Last().ToFirstCharacterUpperCase();
-        if (!string.IsNullOrEmpty(trimEnd) && (methodName?.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase) ?? false))
+        // the suffix is only trimmed when the type does not resolve to a model class: a type that
+        // resolves to the model's inserted interface (or to nothing) carries the suffix in its name,
+        // while a model class whose own name happens to end with the suffix (e.g. ProviderUnavailable)
+        // must keep it, otherwise the emitted factory reference does not exist
+        if (!string.IsNullOrEmpty(trimEnd) &&
+            (methodName?.EndsWith(trimEnd, StringComparison.OrdinalIgnoreCase) ?? false) &&
+            code is not CodeType { TypeDefinition: CodeClass })
         {
             methodName = methodName[..^trimEnd.Length];
         }
