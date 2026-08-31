@@ -877,8 +877,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 {// generic property types close over the serializer arguments of their generic parameters at the usage site
                     var serializerArguments = propType.GenericTypeParameterValues
                         .OfType<CodeType>()
-                        .Select(x => x.TypeDefinition is CodeTypeParameter nestedParameter ? FindSerializerParameterName(codeFunction, nestedParameter.Name) : GetSerializerFunctionName(codeFunction, x))
-                        .OfType<string>()
+                        .Select(x => x.TypeDefinition is CodeTypeParameter nestedParameter
+                            ? FindSerializerParameterName(codeFunction, nestedParameter.Name) ?? throw new InvalidOperationException($"Serializer parameter for type parameter {nestedParameter.Name} not found in function {codeFunction.Name}")
+                            : GetSerializerFunctionName(codeFunction, x))
                         .ToArray();
                     return $"(w, v) => {GetSerializerFunctionName(codeFunction, propType)}({string.Join(", ", serializerArguments)}, w, v)";
                 }
