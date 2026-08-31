@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests;
 
-public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
+public sealed class CodeInterfaceDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -14,7 +14,7 @@ public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeInterface parentInterface;
 
-    public CodeInterfaceDeclaraterWriterTests()
+    public CodeInterfaceDeclarationWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
         tw = new StringWriter();
