@@ -200,11 +200,18 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
         CrawlTree(currentElement, x => UpdateReferencesToDisambiguatedClasses(x, classesToUpdate, suffix));
     }
-    [GeneratedRegex(@"\\.(<letter>\\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline, 500)]
+    // `\\.` matches a literal backslash and `(<letter>...)` is an ordinary group capturing the text
+    // "<letter>", so the original pattern never matched and every nested model kept the dots from
+    // its namespace, which are not legal in a Ruby constant
+    [GeneratedRegex(@"\.(?<letter>\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline, 500)]
     private static partial Regex CapitalizedFirstLetterAfterDot();
     private static void FlattenModelsNamespaces(CodeElement currentElement, CodeNamespace modelsNS)
     {
-        if (currentElement.Parent is CodeNamespace currentElementNamespace &&
+        // only classes and enums are moved up to the models namespace; without this guard any other
+        // child, a nested namespace included, was still detached and renamed but never re-added,
+        // which corrupted the prefix computed for every element visited afterwards
+        if (currentElement is CodeClass or CodeEnum &&
+            currentElement.Parent is CodeNamespace currentElementNamespace &&
             currentElementNamespace.IsChildOf(modelsNS))
         {
             var elementPrefix = CapitalizedFirstLetterAfterDot().Replace(currentElementNamespace.Name[(modelsNS.Name.Length + 1)..], x => x.Groups["letter"].Value.ToUpperInvariant());

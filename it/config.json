@@ -99,10 +99,6 @@
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
       },
       {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
-      },
-      {
         "Language": "php",
         "Rationale": "https://github.com/microsoft/kiota/issues/5354"
       }
@@ -111,10 +107,6 @@
       {
         "Language": "java",
         "Rationale": "https://github.com/microsoft/kiota/issues/2842"
-      },
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
       }
     ]
   },

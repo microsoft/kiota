@@ -354,6 +354,31 @@ public class RubyLanguageRefinerTests
         Assert.Empty(subModelsNS.Enums);
     }
     [Fact]
+    public async Task FlattensNestedModelsNamespaceIntoACamelCasedNameAsync()
+    {
+        // a namespace more than one level below models keeps its separators in the flattened name,
+        // and a dot is not legal in a Ruby constant: stripe generated `class S.v2.billingMeterEvent`
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        var nestedNS = modelsNS.AddNamespace($"{config.ModelsNamespaceName}.sub.deep");
+        nestedNS.AddClass(new CodeClass
+        {
+            Name = "somemodel",
+            Kind = CodeClassKind.Model,
+        });
+        nestedNS.AddEnum(new CodeEnum
+        {
+            Name = "someenum",
+        });
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
+        var flattenedClass = Assert.Single(modelsNS.Classes);
+        var flattenedEnum = Assert.Single(modelsNS.Enums);
+        Assert.DoesNotContain('.', flattenedClass.Name);
+        Assert.DoesNotContain('.', flattenedEnum.Name);
+        Assert.Equal("subDeepSomemodel", flattenedClass.Name);
+        Assert.Equal("subDeepSomeenum", flattenedEnum.Name);
+    }
+    [Fact]
     public async Task DoesNotCorrectNamesWhenCollisionOccursAsync()
     {
         var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
