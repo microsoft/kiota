@@ -345,7 +345,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             (shouldReplaceCallback?.Invoke(current) ?? true))// re-invoke the callback if present as conditions above may have renamed dependencies.
         {
             if (current is CodeProperty currentProperty &&
-                currentProperty.IsOfKind(CodePropertyKind.Custom) &&
+                currentProperty.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
                 string.IsNullOrEmpty(currentProperty.SerializationName))
             {
                 currentProperty.SerializationName = currentProperty.Name;
