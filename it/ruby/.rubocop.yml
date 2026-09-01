@@ -139,3 +139,9 @@ Metrics/PerceivedComplexity:
 # Generated factory methods may just delegate to super
 Lint/UselessMethodDefinition:
   Enabled: false
+
+# The cop matches by method name, so it flags the accessor for an API property called `inherited`
+# (the GitHub description has one). Ruby's inheritance hook is a class method, and an instance
+# method of the same name does not shadow it, so renaming the property would be the worse trade
+Lint/MissingSuper:
+  Enabled: false

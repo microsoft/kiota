@@ -15,10 +15,6 @@
     "MockServerITFolder": "gh",
     "Suppressions": [
       {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/73"
-      },
-      {
         "Language": "dart",
         "Rationale": "Multiple compilation errors with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7821"
       },
@@ -37,6 +33,11 @@
         "Language": "java",
         "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
         "Rationale": "Compilation fails for Java with api version 1.1.4 dated 2026-06-23 - https://github.com/microsoft/kiota/issues/7829"
+      },
+      {
+        "Language": "ruby",
+        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
+        "Rationale": "The oneOf response leaves a model detached from the DOM while a using still references it, so the composed type wrapper requires a file that is never generated. Same endpoint excluded for Java and TypeScript - https://github.com/microsoft/kiota/issues/7829"
       }
     ]
   },
