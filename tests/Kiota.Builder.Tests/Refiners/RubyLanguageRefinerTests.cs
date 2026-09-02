@@ -151,6 +151,42 @@ public class RubyLanguageRefinerTests
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
+    public async Task AppliesTheDisambiguationSuffixOnlyOnceAsync()
+    {
+        // CodeType.Name delegates to TypeDefinition.Name for a resolved, non-external type, so
+        // "updating a reference" renames the class itself. Walking several references therefore
+        // appended the suffix once per reference and twilio failed to generate with
+        // "The element to rename was not found available_phone_number_countryModelModelModelModel"
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        var collidingModel = modelsNS.AddClass(new CodeClass
+        {
+            Name = "availablePhoneNumberCountry",
+            Kind = CodeClassKind.Model,
+        }).First();
+        // the class only gets disambiguated when a sibling namespace carries its name
+        modelsNS.AddNamespace($"{modelsNS.Name}.availablePhoneNumberCountry");
+
+        var holder = modelsNS.AddClass(new CodeClass { Name = "holder", Kind = CodeClassKind.Model }).First();
+        holder.AddProperty(new CodeProperty
+        {
+            Name = "country",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "availablePhoneNumberCountry", TypeDefinition = collidingModel },
+        });
+        holder.AddMethod(new CodeMethod
+        {
+            Name = "getCountry",
+            ReturnType = new CodeType { Name = "availablePhoneNumberCountry", TypeDefinition = collidingModel },
+        });
+
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("availablePhoneNumberCountryModel", collidingModel.Name);
+        // the references track the rename through the type definition, so they must agree
+        Assert.Equal(collidingModel.Name, holder.Properties.First(static x => x.Name.Equals("country", StringComparison.OrdinalIgnoreCase)).Type.Name);
+    }
+    [Fact]
     public async Task ConvertEnumsToPascalCaseAsync()
     {
         var model = root.AddEnum(new CodeEnum

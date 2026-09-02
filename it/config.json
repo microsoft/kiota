@@ -80,18 +80,6 @@
     ]
   },
   "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml": {
-    "Suppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota-abstractions-ruby/issues/66. The API of 06/2026 reports an error 'The element to rename was not found available_phone_number_countryModelModelModelModel'"
-      }
-    ],
-    "IdempotencySuppressions": [
-      {
-        "Language": "ruby",
-        "Rationale": "https://github.com/microsoft/kiota/issues/1816"
-      }
-    ]
   },
   "https://raw.githubusercontent.com/stripe/openapi/refs/heads/master/latest/openapi.spec3.json": {
     "Suppressions": [
