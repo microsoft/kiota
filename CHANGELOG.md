@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.35.0] - 2026-09-01
+
+### Added
+
 - Added model generation for schemas used by OpenAPI 3.1 webhooks. [#6394](https://github.com/microsoft/kiota/issues/6394)
 - Adds support for resolving JSON Schema 2020-12 `$dynamicRef` against schemas declaring `$dynamicAnchor`, so recursive types (e.g. `LocalizedCategory.children: LocalizedCategory[]`) generate correctly instead of degrading to `UntypedNode`. Phase 1 of [#7815](https://github.com/microsoft/kiota/issues/7815).
 - Added binding-aware `$dynamicRef` resolution for `$defs` / `$dynamicAnchor` contexts, generating distinct concrete models for each active binding and preserving typed request bodies, responses, and error responses. Phase 2 of [#7815](https://github.com/microsoft/kiota/issues/7815).
@@ -1839,3 +1845,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
