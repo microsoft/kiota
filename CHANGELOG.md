@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Ruby: a model sharing its name with a sibling namespace had the disambiguation suffix applied once per reference to it rather than once, so generation failed with `The element to rename was not found available_phone_number_countryModelModelModelModel`. The reference pass was removed: `CodeType.Name` already delegates to the type definition, so references follow the rename on their own. Un-suppresses the Twilio integration and idempotency tests. [kiota-abstractions-ruby#66](https://github.com/microsoft/kiota-abstractions-ruby/issues/66)
+
 ## [1.35.0] - 2026-09-01
 
 ### Added
