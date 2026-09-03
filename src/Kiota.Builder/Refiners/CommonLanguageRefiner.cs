@@ -117,6 +117,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         bool enumNames = true)
     {
         ArgumentNullException.ThrowIfNull(refineName);
+        ArgumentNullException.ThrowIfNull(current);
         if (current is CodeClass currentClass && classNames &&
             refineName(currentClass.Name) is string refinedClassName &&
             !currentClass.Name.Equals(refinedClassName, StringComparison.Ordinal) &&
@@ -134,7 +135,15 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             parentBlock2.RenameChildElement(currentEnum.Name, refinedEnumName);
         }
-        CrawlTree(current, x => CorrectNames(x, refineName));
+        // Renaming mutates the tree that later elements are checked against, so when two names
+        // refine to the same value only the element reached first can take it. Children are stored
+        // in a dictionary whose enumeration order varies between runs, which made the winner, and
+        // therefore the generated output, differ from one run to the next (kiota#7997). Ordering
+        // the walk keeps it reproducible.
+        // classNames and enumNames are deliberately left to their defaults below the root, as
+        // callers rely on that: Ruby passes classNames false yet expects its models pascal-cased.
+        foreach (var childElement in current.GetChildElements(true).OrderBy(static x => x.Name, StringComparer.Ordinal))
+            CorrectNames(childElement, refineName);
     }
     protected static void ReplacePropertyNames(CodeElement current, HashSet<CodePropertyKind> propertyKindsToReplace, Func<string, string> refineAccessorName)
     {
