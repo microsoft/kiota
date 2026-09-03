@@ -186,6 +186,36 @@ public class RubyLanguageRefinerTests
         // the references track the rename through the type definition, so they must agree
         Assert.Equal(collidingModel.Name, holder.Properties.First(static x => x.Name.Equals("country", StringComparison.OrdinalIgnoreCase)).Type.Name);
     }
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CorrectsNamesDeterministicallyWhenTwoRefineToTheSameNameAsync(bool doubledFirst)
+    {
+        // Both names pascal-case to FooBar and they differ by more than case, so they coexist in
+        // the child dictionary. Only one can take the refined name. The walk followed the
+        // dictionary's own order, so the winner depended on insertion order and generation was not
+        // reproducible (kiota#7997). Whichever order they are added, the ordinally first name wins.
+        var localRoot = CodeNamespace.InitRootNamespace();
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = localRoot.AddNamespace(config.ModelsNamespaceName);
+        CodeClass doubled, single;
+        if (doubledFirst)
+        {
+            doubled = modelsNS.AddClass(new CodeClass { Name = "foo__bar", Kind = CodeClassKind.Model }).First();
+            single = modelsNS.AddClass(new CodeClass { Name = "foo_bar", Kind = CodeClassKind.Model }).First();
+        }
+        else
+        {
+            single = modelsNS.AddClass(new CodeClass { Name = "foo_bar", Kind = CodeClassKind.Model }).First();
+            doubled = modelsNS.AddClass(new CodeClass { Name = "foo__bar", Kind = CodeClassKind.Model }).First();
+        }
+
+        await ILanguageRefiner.RefineAsync(config, localRoot, cancellationToken: TestContext.Current.CancellationToken);
+
+        // "foo__bar" sorts before "foo_bar" ordinally ('_' is below 'b'), so it takes the refined name
+        Assert.Equal("FooBar", doubled.Name);
+        Assert.Equal("foo_bar", single.Name);
+    }
     [Fact]
     public async Task ConvertEnumsToPascalCaseAsync()
     {
