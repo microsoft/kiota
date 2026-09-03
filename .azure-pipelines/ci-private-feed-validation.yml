@@ -1,0 +1,128 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# Verifies that changed npm and NuGet dependency graphs can be restored through the
+# authenticated GraphDeveloperExperiences_Public Azure Artifacts feed.
+
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
+
+jobs:
+  - job: private_feed_dependency_validation
+    displayName: "private-feed-dependency-validation"
+    condition: ne(variables['System.PullRequest.IsFork'], 'True')
+    steps:
+      - checkout: self
+        fetchDepth: 2
+
+      - pwsh: |
+          $changedFiles = @(git diff --name-only HEAD^1 HEAD)
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to determine which files changed."
+          }
+
+          $vscodeLockfileChanged = $changedFiles -contains "vscode/package-lock.json"
+          $typescriptIntegrationLockfileChanged = $changedFiles -contains "it/typescript/package-lock.json"
+          $npmDependenciesChanged = $vscodeLockfileChanged -or $typescriptIntegrationLockfileChanged
+
+          [xml]$solution = Get-Content "$(Build.SourcesDirectory)/kiota.slnx"
+          $solutionProjects = @(
+            $solution.SelectNodes("//Project") |
+              ForEach-Object { $_.Path.Replace("\", "/") }
+          )
+          $nugetInputs = @("Directory.Packages.props", "kiota.slnx") + $solutionProjects
+          $nugetDependenciesChanged = $null -ne ($changedFiles | Where-Object { $_ -in $nugetInputs } | Select-Object -First 1)
+
+          $variables = @{
+            vscodeLockfileChanged = $vscodeLockfileChanged
+            typescriptIntegrationLockfileChanged = $typescriptIntegrationLockfileChanged
+            npmDependenciesChanged = $npmDependenciesChanged
+            nugetDependenciesChanged = $nugetDependenciesChanged
+          }
+          foreach ($variable in $variables.GetEnumerator()) {
+            $value = $variable.Value.ToString().ToLowerInvariant()
+            Write-Host "$($variable.Key): $value"
+            Write-Host "##vso[task.setvariable variable=$($variable.Key)]$value"
+          }
+        displayName: "Detect dependency changes"
+
+      - task: UseNode@1
+        displayName: "Install Node.js 24.x"
+        condition: and(succeeded(), eq(variables['npmDependenciesChanged'], 'true'))
+        inputs:
+          version: "24.x"
+
+      - pwsh: |
+          @"
+          registry=$(privateFeedBaseUrl)/npm/registry/
+          always-auth=true
+          "@ | Set-Content -Path "$(Agent.TempDirectory)/.npmrc" -Encoding UTF8
+        displayName: "Create central-feed .npmrc"
+        condition: and(succeeded(), eq(variables['npmDependenciesChanged'], 'true'))
+
+      - task: npmAuthenticate@0
+        displayName: "Authenticate npm dependencies"
+        condition: and(succeeded(), eq(variables['npmDependenciesChanged'], 'true'))
+        inputs:
+          workingFile: "$(Agent.TempDirectory)/.npmrc"
+
+      - pwsh: |
+          if ("$(vscodeLockfileChanged)" -eq "true") {
+            Copy-Item "$(Agent.TempDirectory)/.npmrc" "$(Build.SourcesDirectory)/vscode/.npmrc" -Force
+          }
+          if ("$(typescriptIntegrationLockfileChanged)" -eq "true") {
+            Copy-Item "$(Agent.TempDirectory)/.npmrc" "$(Build.SourcesDirectory)/it/typescript/.npmrc" -Force
+          }
+        displayName: "Copy .npmrc to changed projects"
+        condition: and(succeeded(), eq(variables['npmDependenciesChanged'], 'true'))
+
+      - script: npm ci --verbose
+        displayName: "Restore VS Code npm dependencies"
+        condition: and(succeeded(), eq(variables['vscodeLockfileChanged'], 'true'))
+        workingDirectory: "$(Build.SourcesDirectory)/vscode"
+
+      - script: npm ci --verbose
+        displayName: "Restore TypeScript integration npm dependencies"
+        condition: and(succeeded(), eq(variables['typescriptIntegrationLockfileChanged'], 'true'))
+        workingDirectory: "$(Build.SourcesDirectory)/it/typescript"
+
+      - task: UseDotNet@2
+        displayName: "Install .NET SDK from global.json"
+        condition: and(succeeded(), eq(variables['nugetDependenciesChanged'], 'true'))
+        inputs:
+          useGlobalJson: true
+          workingDirectory: "$(Build.SourcesDirectory)"
+
+      - task: NuGetAuthenticate@1
+        displayName: "Authenticate NuGet dependencies"
+        condition: and(succeeded(), eq(variables['nugetDependenciesChanged'], 'true'))
+
+      - pwsh: |
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
+            </packageSources>
+          </configuration>
+          "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
+        displayName: "Create nuget.config"
+        condition: and(succeeded(), eq(variables['nugetDependenciesChanged'], 'true'))
+
+      - pwsh: dotnet restore kiota.slnx --configfile "$(Build.SourcesDirectory)/nuget.config"
+        displayName: "Restore NuGet dependencies"
+        condition: and(succeeded(), eq(variables['nugetDependenciesChanged'], 'true'))
+        workingDirectory: "$(Build.SourcesDirectory)"
