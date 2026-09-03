@@ -31,6 +31,7 @@ schedules:
 variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
+  nodeVersion: "24.x"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
   REGISTRY: "msgraphprodregistry.azurecr.io"
   IMAGE_NAME: "public/openapi/kiota"
@@ -276,9 +277,10 @@ extends:
                   version: 6.x
 
               - task: UseDotNet@2
-                displayName: "Use .NET 10"
+                displayName: "Use .NET SDK from global.json"
                 inputs:
-                  version: 10.0.x
+                  useGlobalJson: true
+                  workingDirectory: "$(Build.SourcesDirectory)"
 
               # Pinned to a specific Go version for deterministic tool availability and formatting,
               # so the integration tests can run gofmt against the generated Go code.
@@ -523,9 +525,10 @@ extends:
                     inputs:
                       version: 6.x
                   - task: UseDotNet@2
-                    displayName: "Use .NET 10"
+                    displayName: "Use .NET SDK from global.json"
                     inputs:
-                      version: 10.0.x
+                      useGlobalJson: true
+                      workingDirectory: "$(Build.SourcesDirectory)"
 
                   - task: UseDotNet@2
                     condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
@@ -765,7 +768,7 @@ extends:
                 displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
                 inputs:
-                  version: "22.x"
+                  version: "$(nodeVersion)"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
@@ -901,7 +904,7 @@ extends:
                 displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
                 inputs:
-                  version: "22.x"
+                  version: "$(nodeVersion)"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch ${{ parameters.previewBranch }}
                 displayName: "Set version suffix"
               - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
@@ -970,7 +973,7 @@ extends:
             steps:
               - task: UseNode@1
                 inputs:
-                  version: "22.x"
+                  version: "$(nodeVersion)"
               # Route the vsce tool install through the authenticated Azure Artifacts feed
               # (GraphDeveloperExperiences_Public) instead of the public npm registry, so this
               # release job resolves the global tool from the private feed's configured upstreams.
@@ -1406,7 +1409,7 @@ extends:
             steps:
               - task: UseNode@1
                 inputs:
-                  version: "22.x"
+                  version: "$(nodeVersion)"
               - pwsh: |
                   $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)/npm-package" -Filter "*.tgz" | Select-Object -First 1
                   if (-not $pkg) { throw "No npm .tgz package found to publish." }
