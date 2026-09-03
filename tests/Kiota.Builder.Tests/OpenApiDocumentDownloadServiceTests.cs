@@ -214,6 +214,51 @@ components:
         Assert.NotNull(stream);
     }
 
+    [Theory]
+    // the wildcard must not cross the authority boundary: replaying the allowed suffix inside the
+    // path of an attacker controlled host must not satisfy a host wildcard entry.
+    [InlineData("https://*.contoso.com/*", "https://evil.attacker.com/x/.contoso.com/y.json")]
+    [InlineData("https://*.contoso.com/*", "https://evil.attacker.com/x/.contoso.com/")]
+    [InlineData("http://*.contoso.com/*", "http://127.0.0.1:8080/x/.contoso.com/y")]
+    [InlineData("http://*.contoso.com/*", "http://169.254.169.254/x/.contoso.com/")]
+    [InlineData("https://contoso.com/schemas/*", "https://evil.attacker.com/https://contoso.com/schemas/pet.yaml")]
+    // credentials in the authority must not disguise the real host
+    [InlineData("https://*.contoso.com/*", "https://zap.contoso.com@evil.attacker.com/schemas/pet.yaml")]
+    // the wildcard must not cross the scheme or the port either
+    [InlineData("https://*.contoso.com/*", "http://zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com/*", "https://zap.contoso.com:8443/schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com:443/*", "https://zap.contoso.com:8443/schemas/pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsAuthorityBypass(string allowedOrigin, string externalReference)
+    {
+        using var httpClient = new HttpClient(new ResponseHandler());
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri(externalReference),
+            TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData("https://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com/*", "https://zap.nested.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
+    [InlineData("https://*/schemas/*", "https://anything.example.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderAllowsMatchingOrigins(string allowedOrigin, string externalReference)
+    {
+        using var httpClient = new HttpClient(new ResponseHandler());
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri(externalReference),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+    }
+
     [Fact]
     public async Task AllowedExternalOriginsWildcardAllowsAnyExternalReference()
     {
