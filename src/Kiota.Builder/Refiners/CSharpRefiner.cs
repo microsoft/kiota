@@ -82,6 +82,14 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 new CSharpReservedClassNamesProvider(),
                 x => $"{x.ToFirstCharacterUpperCase()}Escaped"
             );
+            // Check properties for reserved names: https://github.com/microsoft/kiota/issues/8133
+            // Exclude everything besides "CodeProperty" types:
+            ReplaceReservedNames(
+               generatedCode,
+               new CSharpReservedPropertyNamesProvider(),
+               x => $"{x.ToFirstCharacterUpperCase()}Escaped",
+               new HashSet<Type> { typeof(CodeClass), typeof(ClassDeclaration), typeof(CodeUsing), typeof(CodeNamespace), typeof(CodeMethod), typeof(CodeEnum), typeof(CodeEnumOption) }
+            );
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
                 new CSharpExceptionsReservedNamesProvider(),

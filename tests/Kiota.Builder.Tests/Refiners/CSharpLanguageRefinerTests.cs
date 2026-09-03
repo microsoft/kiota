@@ -341,6 +341,36 @@ public class CSharpLanguageRefinerTests
         Assert.Contains("TaskNamespace", subNS.Name);
         Assert.Contains("TaskNamespace", itemSubNamespace.Name);
     }
+
+    /// <summary>
+    /// Tests that "forbidden" property names are escaped.
+    /// </summary>
+    [Theory]
+    [InlineData("equals")]
+    [InlineData("gethashcode")]
+    [InlineData("tostring")]
+    public async Task EscapesReservedPropertyNamesAsync(string propertyName)
+    {
+        // Arrange
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "Sample",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = propertyName,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        }).First();
+        // Act
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+        // Assert
+        Assert.Equal(property.Name, $"{propertyName.ToFirstCharacterUpperCase()}Escaped");
+    }
+
     [Fact]
     public async Task ConvertsUnionTypesToWrapperAsync()
     {
