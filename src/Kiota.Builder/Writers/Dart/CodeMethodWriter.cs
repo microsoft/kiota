@@ -44,9 +44,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             else if (isConstructor && parentClass.IsErrorDefinition)
             {
-                if (parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData)).Any() && parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+                if (parentClass.Properties.FirstOrDefault(static x => x.IsOfKind(CodePropertyKind.AdditionalData)) is CodeProperty additionalDataProperty)
                 {
-                    writer.CloseBlock("}) {additionalData = {};}");
+                    if (parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+                    {
+                        writer.CloseBlock($"}}) {{{additionalDataProperty.Name} = {{}};}}");
+                    }
+                    else
+                    {
+                        // additionalData is an optional named parameter so that subclasses and factory methods can call the constructor without arguments.
+                        writer.CloseBlock($"}}) : {additionalDataProperty.Name} = {additionalDataProperty.Name} ?? {{}};");
+                    }
                 }
                 else
                 {
@@ -411,10 +419,16 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             foreach (CodeProperty prop in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom, CodePropertyKind.AdditionalData))
             {
-                var required = prop.Type.IsNullable ? "" : "required ";
-
-                if (!conventions.ErrorClassPropertyExistsInSuperClass(prop))
+                if (conventions.ErrorClassPropertyExistsInSuperClass(prop))
+                    continue;
+                if (prop.IsOfKind(CodePropertyKind.AdditionalData))
                 {
+                    // Optional parameter defaulted in the initializer list so that subclasses and factory methods can call the constructor without arguments.
+                    writer.WriteLine($"{conventions.TranslateType(prop.Type)}? {prop.Name},");
+                }
+                else
+                {
+                    var required = prop.Type.IsNullable ? "" : "required ";
                     writer.WriteLine($"{required}this.{prop.Name},");
                 }
             }

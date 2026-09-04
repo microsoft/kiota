@@ -2080,4 +2080,84 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("requestInfo.headers.put('Accept', 'application/json; profile=\\'Cam\\$el\\'\\nCase')", result);
         Assert.Contains("'application/json; profile=\\'Cam\\$el\\'\\nCase'", result);
     }
+    private void SetupErrorClassWithAdditionalData()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.IsErrorDefinition = true;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "additionalData",
+            Kind = CodePropertyKind.AdditionalData,
+            Type = new CodeType
+            {
+                Name = "Map<String, Object?>",
+                IsNullable = false,
+            },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "type_",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "String",
+                IsNullable = true,
+            },
+        });
+    }
+    [Fact]
+    public void WritesErrorClassConstructorWithOptionalAdditionalData()
+    {
+        setup();
+        SetupErrorClassWithAdditionalData();
+        method.Kind = CodeMethodKind.Constructor;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("super.message,", result);
+        Assert.Contains("Map<String, Object?>? additionalData,", result);
+        Assert.Contains("this.type_,", result);
+        Assert.Contains("}) : additionalData = additionalData ?? {};", result);
+        // a required parameter would break the bare super() calls of inherited error models and the createFromDiscriminatorValue factories
+        Assert.DoesNotContain("required this.additionalData", result);
+    }
+    [Fact]
+    public void WritesErrorClassConstructorWithBackingStore()
+    {
+        setup();
+        SetupErrorClassWithAdditionalData();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType
+            {
+                Name = "BackingStore",
+            },
+        });
+        method.Kind = CodeMethodKind.Constructor;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("}) {additionalData = {};}", result);
+        Assert.DoesNotContain("required this.additionalData", result);
+    }
+    [Fact]
+    public void WritesErrorClassFactoryBodyCallableWithoutArguments()
+    {
+        setup();
+        SetupErrorClassWithAdditionalData();
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("return ParentClass(additionalData: {});", result);
+    }
 }
