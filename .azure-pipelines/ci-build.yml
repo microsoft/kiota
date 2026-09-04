@@ -352,7 +352,7 @@ extends:
                 inputs:
                   command: test
                   projects: '$(Build.SourcesDirectory)\kiota.slnx'
-                  arguments: '--configuration $(BuildConfiguration) --no-build --coverlet --coverlet-output-format cobertura --report-azdo --publish-azdo-test-results'
+                  arguments: '--configuration $(BuildConfiguration) --no-build --results-directory $(Agent.TempDirectory) --coverlet --coverlet-output-format cobertura --report-azdo --publish-azdo-test-results'
                   publishTestResults: false
 
               - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool --configfile "$(Build.SourcesDirectory)/nuget.config"
@@ -360,7 +360,7 @@ extends:
                 displayName: "Install ReportGenerator"
                 name: install_reportgenerator
 
-              - pwsh: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
+              - pwsh: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.*.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
                 condition: succeeded()
                 displayName: "Generate coverage report"
 
