@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: dotnet build kiota.slnx --no-restore
       - name: Test
-        run: dotnet test kiota.slnx --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test kiota.slnx --no-build --verbosity normal --coverlet --coverlet-output-format cobertura
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report
