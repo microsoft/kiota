@@ -98,19 +98,19 @@ httpx[http2]==0.28.1
 
 hyperframe==6.1.0 ; python_full_version >= '3.6.1'
 
-microsoft-kiota-abstractions==1.11.9
+microsoft-kiota-abstractions==1.12.0
 
-microsoft-kiota-authentication-azure==1.11.9
+microsoft-kiota-authentication-azure==1.12.0
 
-microsoft-kiota-http==1.11.9
+microsoft-kiota-http==1.12.0
 
-microsoft-kiota-serialization-json==1.11.9
+microsoft-kiota-serialization-json==1.12.0
 
-microsoft-kiota-serialization-text==1.11.9
+microsoft-kiota-serialization-text==1.12.0
 
-microsoft-kiota-serialization-form==1.11.9
+microsoft-kiota-serialization-form==1.12.0
 
-microsoft-kiota-serialization-multipart==1.11.9
+microsoft-kiota-serialization-multipart==1.12.0
 
 msal==1.38.0
 
