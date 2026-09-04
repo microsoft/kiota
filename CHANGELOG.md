@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed the generation of a schema used in two roles at once: as the schema of an error response and as an `allOf` child in the discriminator mapping of another error schema. The error refiner replaced its `allOf` base class with the language error base class while the parent's factory method still returned it as a derived type, so the generated C# and Java clients did not compile (`CS0029` / `incompatible types`). Such a schema now keeps its base class and inherits the error base class through its parent, like every other mapped child.
+
 - Dart: an error model's constructor declared the named `additionalData` parameter as `required`, but the generated callers never pass it — inherited error models call a bare `super()` and `createFromDiscriminatorValue` instantiates the class without arguments — so a document with a discriminated error hierarchy generated a client that did not compile. The parameter is now optional and defaults to an empty map in the initializer list.
 
 - Name correction now walks the code model in a fixed order. Where two names correct to the same value only the element reached first can take it, and the walk followed a dictionary whose order varies between runs, so the winner, and with it the generated output, differed from one run to the next. This removes one source of the non-reproducible generation tracked in [#7997](https://github.com/microsoft/kiota/issues/7997); other sources remain, so the descriptions suppressed for it stay suppressed.

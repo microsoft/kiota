@@ -2747,6 +2747,119 @@ paths:
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks4XXError"));
         Assert.Null(codeModel.FindChildByName<CodeClass>("tasks5XXError"));
     }
+    private const string ErrorSchemaWithDiscriminatedErrorChildDocument = @"openapi: 3.0.3
+info:
+  title: Example API
+  version: 1.0.0
+servers:
+  - url: https://localhost:8080
+paths:
+  /messages:
+    post:
+      responses:
+        '204':
+          description: no content
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+components:
+  schemas:
+    SrsError:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+      discriminator:
+        propertyName: type
+        mapping:
+          InvalidMessage: '#/components/schemas/InvalidMessage'
+          InternalSRSError: '#/components/schemas/InternalSRSError'
+    InvalidMessage:
+      allOf:
+        - $ref: '#/components/schemas/SrsError'
+        - type: object
+          properties:
+            veto:
+              type: string
+    InternalSRSError:
+      allOf:
+        - $ref: '#/components/schemas/SrsError'
+        - type: object
+          properties:
+            detail:
+              type: string
+  responses:
+    Error400:
+      description: bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SrsError'
+    Error500:
+      description: internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InternalSRSError'";
+    [Fact]
+    public async Task DoesntMarkErrorDefinitionDerivingFromAnotherErrorDefinitionAsync()
+    {
+        await using var fs = await GetDocumentStreamAsync(ErrorSchemaWithDiscriminatedErrorChildDocument);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var parentClass = codeModel.FindChildByName<CodeClass>("SrsError");
+        Assert.NotNull(parentClass);
+        Assert.True(parentClass.IsErrorDefinition);
+        Assert.Contains(parentClass.DiscriminatorInformation.DiscriminatorMappings, static x => "InternalSRSError".Equals(x.Key, StringComparison.OrdinalIgnoreCase));
+        var dualRoleChildClass = codeModel.FindChildByName<CodeClass>("InternalSRSError");
+        Assert.NotNull(dualRoleChildClass);
+        Assert.False(dualRoleChildClass.IsErrorDefinition); // it derives from the error definition through its parent
+        Assert.Equal(parentClass, dualRoleChildClass.StartBlock.Inherits?.TypeDefinition);
+        var singleRoleChildClass = codeModel.FindChildByName<CodeClass>("InvalidMessage");
+        Assert.NotNull(singleRoleChildClass);
+        Assert.False(singleRoleChildClass.IsErrorDefinition);
+        Assert.Equal(parentClass, singleRoleChildClass.StartBlock.Inherits?.TypeDefinition);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("post");
+        Assert.NotNull(executorMethod);
+        Assert.Equal(parentClass, (executorMethod.ErrorMappings.FirstOrDefault(static x => "400".Equals(x.Key, StringComparison.OrdinalIgnoreCase)).Value as CodeType)?.TypeDefinition);
+        Assert.Equal(dualRoleChildClass, (executorMethod.ErrorMappings.FirstOrDefault(static x => "500".Equals(x.Key, StringComparison.OrdinalIgnoreCase)).Value as CodeType)?.TypeDefinition);
+    }
+    [Theory]
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.Python)]
+    [InlineData(GenerationLanguage.PHP)]
+    [InlineData(GenerationLanguage.Go)]
+    public async Task KeepsBaseClassOfErrorDefinitionDerivingFromAnotherErrorDefinitionAsync(GenerationLanguage language)
+    {
+        await using var fs = await GetDocumentStreamAsync(ErrorSchemaWithDiscriminatedErrorChildDocument);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var generationConfiguration = new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost", Language = language };
+        var builder = new KiotaBuilder(mockLogger.Object, generationConfiguration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, TestContext.Current.CancellationToken);
+        var parentClass = codeModel.FindChildByName<CodeClass>("SrsError");
+        Assert.NotNull(parentClass);
+        Assert.True(parentClass.IsErrorDefinition);
+        Assert.NotNull(parentClass.StartBlock.Inherits);
+        Assert.True(parentClass.StartBlock.Inherits.IsExternal); // the language specific base error class
+        var dualRoleChildClass = codeModel.FindChildByName<CodeClass>("InternalSRSError");
+        Assert.NotNull(dualRoleChildClass);
+        Assert.Equal(parentClass, dualRoleChildClass.StartBlock.Inherits?.TypeDefinition); // and not the language specific base error class
+        var singleRoleChildClass = codeModel.FindChildByName<CodeClass>("InvalidMessage");
+        Assert.NotNull(singleRoleChildClass);
+        Assert.Equal(parentClass, singleRoleChildClass.StartBlock.Inherits?.TypeDefinition);
+    }
     [Fact]
     public void UsesDefaultAs4XXAnd5XXWhenAbsent()
     {
