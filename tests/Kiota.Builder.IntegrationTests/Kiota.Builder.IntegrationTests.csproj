@@ -11,6 +11,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.NET.Test.SDK" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Testing.Extensions.AzureDevOpsReport" />
+    <PackageReference Include="Microsoft.Testing.Extensions.GitHubActionsReport" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

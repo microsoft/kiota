@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: dotnet build kiota.slnx --no-restore
       - name: Test
-        run: dotnet test kiota.slnx --no-build --verbosity normal --results-directory ./TestResults --coverlet --coverlet-output-format cobertura --report-gh
+        run: dotnet test kiota.slnx --no-build --verbosity normal --results-directory=./TestResults --coverlet --coverlet-output-format cobertura --report-gh
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report

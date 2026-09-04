@@ -26,6 +26,8 @@
     <PackageVersion Include="Microsoft.OpenApi.ApiManifest" Version="3.0.0-preview.1" />
     <PackageVersion Include="Microsoft.OpenApi.YamlReader" Version="3.10.2" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.AzureDevOpsReport" Version="2.4.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.GitHubActionsReport" Version="2.4.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="OpenTelemetry" Version="1.18.0" />
