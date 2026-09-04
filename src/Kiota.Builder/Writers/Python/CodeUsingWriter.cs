@@ -55,7 +55,7 @@ public class CodeUsingWriter
         var parentNameSpace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var internalErrorMappingImportSymbolsAndPaths = parentClass.Usings
                                                         .Where(static x => !x.IsExternal)
-                                                        .Where(static x => x.Declaration?.TypeDefinition is CodeClass codeClass && codeClass.IsErrorDefinition)
+                                                        .Where(static x => x.Declaration?.TypeDefinition is CodeClass codeClass && (codeClass.IsErrorDefinition || codeClass.GetInheritanceTree(false, false).Any(static y => y.IsErrorDefinition)))
                                                         .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNameSpace))
                                                         .GroupBy(static x => x.Item3)
                                                         .Where(static x => !string.IsNullOrEmpty(x.Key))

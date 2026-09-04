@@ -594,6 +594,9 @@ public partial class KiotaBuilder
             CreateWebhookModels();
             StopLogAndReset(stopwatch, nameof(CreateWebhookModels));
             stopwatch.Start();
+            UnmarkDerivedErrorDefinitions();
+            StopLogAndReset(stopwatch, nameof(UnmarkDerivedErrorDefinitions));
+            stopwatch.Start();
             MapTypeDefinitions(codeNamespace);
             StopLogAndReset(stopwatch, nameof(MapTypeDefinitions));
             stopwatch.Start();
@@ -1409,6 +1412,21 @@ public partial class KiotaBuilder
             else
                 LogCouldNotCreateErrorType(errorCode, operation.OperationId);
         }
+    }
+    /// <summary>
+    /// Unmarks error definitions that derive from another error definition so they keep their inheritance hierarchy.
+    /// A schema can be used both as the schema of an error response and as a child of another discriminated error schema.
+    /// Since such a class already derives from the error base class through its parent, replacing its base class would
+    /// break the discriminator factory method of the parent which returns the derived types.
+    /// </summary>
+    private void UnmarkDerivedErrorDefinitions()
+    {
+        if (rootNamespace is null) return;
+        foreach (var derivedErrorDefinition in GetAllModels(rootNamespace)
+                                                .OfType<CodeClass>()
+                                                .Where(static x => x.IsErrorDefinition && x.GetInheritanceTree(false, false).Any(static y => y.IsErrorDefinition))
+                                                .ToArray())
+            derivedErrorDefinition.IsErrorDefinition = false;
     }
     private (CodeTypeBase?, CodeTypeBase?) GetExecutorMethodReturnType(OpenApiUrlTreeNode currentNode, IOpenApiSchema? schema, OpenApiOperation operation, CodeClass parentClass, NetHttpMethod operationType)
     {
