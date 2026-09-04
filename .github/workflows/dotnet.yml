@@ -35,11 +35,11 @@ jobs:
       - name: Build
         run: dotnet build kiota.slnx --no-restore
       - name: Test
-        run: dotnet test kiota.slnx --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test kiota.slnx --no-build --verbosity normal --results-directory=./TestResults --coverlet --coverlet-output-format cobertura --report-gh
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report
-        run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:./reports/coverage -reporttypes:"Html;MarkdownSummaryGithub;Cobertura"
+        run: reportgenerator -reports:./TestResults/**/coverage.cobertura.*.xml -targetdir:./reports/coverage -reporttypes:"Html;MarkdownSummaryGithub;Cobertura"
       - name: Add coverage to job summary
         run: cat ./reports/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       - name: Upload coverage report
