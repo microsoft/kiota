@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Dart: models whose names differ only in where a separator falls (e.g. the inline property type `Process_error` and the component schema `ProcessError`) snake-cased to the same file name, so one silently overwrote the other and the client did not compile (`Undefined class 'Process_error'`). Colliding file names are now disambiguated, leaving the generated type names unchanged. Same defect as the one fixed for Ruby, part of [#7821](https://github.com/microsoft/kiota/issues/7821).
+
 - Name correction now walks the code model in a fixed order. Where two names correct to the same value only the element reached first can take it, and the walk followed a dictionary whose order varies between runs, so the winner, and with it the generated output, differed from one run to the next. This removes one source of the non-reproducible generation tracked in [#7997](https://github.com/microsoft/kiota/issues/7997); other sources remain, so the descriptions suppressed for it stay suppressed.
 
 - Ruby: a model sharing its name with a sibling namespace had the disambiguation suffix applied once per reference to it rather than once, so generation failed with `The element to rename was not found available_phone_number_countryModelModelModelModel`. The reference pass was removed: `CodeType.Name` already delegates to the type definition, so references follow the rename on their own. Un-suppresses the Twilio integration and idempotency tests. [kiota-abstractions-ruby#66](https://github.com/microsoft/kiota-abstractions-ruby/issues/66)
