@@ -18,9 +18,12 @@ updates:
       MicrosoftExtensions:
         patterns:
           - Microsoft.Extensions.*
-      coverlet:
+      testing-dependencies:
         patterns:
           - coverlet.*
+          - Microsoft.NET.Test.Sdk
+          - Microsoft.Testing.*
+          - xunit.*
     cooldown:
       default-days: 7
   - package-ecosystem: github-actions
