@@ -65,6 +65,31 @@ public class DartLanguageRefinerTests
         Assert.Contains("Error4XX", declaration.Usings.Select(x => x.Declaration?.Name));
     }
     [Fact]
+    public async Task AddsUsingsForGenericTypeArguments()
+    { // generic type arguments (User in PaginatedTemplate<User>) are not covered by AllTypes
+        var modelsNS = root.AddNamespace($"{root.Name}.models");
+        var userClass = modelsNS.AddClass(new CodeClass { Name = "User", Kind = CodeClassKind.Model }).First();
+        var templateClass = modelsNS.AddClass(new CodeClass { Name = "PaginatedTemplate", Kind = CodeClassKind.Model }).First();
+        templateClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "somerequestbuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { TypeDefinition = templateClass },
+        });
+        ((CodeType)requestBuilder.Methods.First().ReturnType).AddGenericTypeParameterValue(new CodeType { TypeDefinition = userClass });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        var declaration = requestBuilder.StartBlock;
+
+        Assert.Contains("User", declaration.Usings.Select(static x => x.Declaration?.Name));
+    }
+    [Fact]
     public async Task EscapesReservedKeywordsInInternalDeclaration()
     {
         var model = root.AddClass(new CodeClass

@@ -18,6 +18,10 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
+        // generic model classes declare their constructor (taking per-anchor factories) alongside the class declaration,
+        // and a static parameterless factory cannot exist for them since the bound factories are only known at the usage site
+        if (parentClass.IsGeneric && codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Factory, CodeMethodKind.RawUrlConstructor))
+            return;
 
         var baseReturnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var finalReturnType = GetFinalReturnType(codeElement, baseReturnType);
@@ -567,10 +571,13 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>();");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name}::{FactoryMethodName});");
+                var factoryExpression = errorMapping.Value is CodeType errorType ?
+                    GetParsableFactoryExpression(errorType, codeElement) :
+                    $"{errorMapping.Value.Name}::{FactoryMethodName}";
+                writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {factoryExpression});");
             }
         }
-        var factoryParameter = GetSendRequestFactoryParam(returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
+        var factoryParameter = GetSendRequestFactoryParam(codeElement.ReturnType, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum, codeElement);
         var returnPrefix = codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : "return ";
         writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {errorMappingVarName}, {factoryParameter});");
     }
@@ -589,14 +596,16 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         else if (isCollection) return "sendCollection";
         return "send";
     }
-    private string GetSendRequestFactoryParam(string returnType, bool isEnum)
+    private string GetSendRequestFactoryParam(CodeTypeBase returnType, string returnTypeString, bool isEnum, CodeElement targetElement)
     {
-        if (conventions.PrimitiveTypes.Contains(returnType))
-            return $"{returnType}.class";
+        if (conventions.PrimitiveTypes.Contains(returnTypeString))
+            return $"{returnTypeString}.class";
         else if (isEnum)
-            return $"{returnType}::forValue";
+            return $"{returnTypeString}::forValue";
+        else if (returnType is CodeType { TypeDefinition: CodeClass { IsGeneric: true } } currentType)
+            return GetParsableFactoryExpression(currentType, targetElement);
         else
-            return $"{returnType}::{FactoryMethodName}";
+            return $"{returnTypeString}::{FactoryMethodName}";
     }
 
     private const string RequestInfoVarName = "requestInfo";
@@ -830,20 +839,35 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                 else if (currentType.TypeDefinition is CodeEnum enumType)
                     return $"getCollectionOfEnumValues({enumType.Name}::forValue)";
                 else
-                    return $"getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})";
+                    return $"getCollectionOfObjectValues({GetParsableFactoryExpression(currentType, method)})";
             if (currentType.TypeDefinition is CodeEnum currentEnum)
             {
                 var returnType = propertyType.ToFirstCharacterUpperCase();
                 return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({returnType}::forValue)";
             }
+            if (currentType.TypeDefinition is CodeTypeParameter || currentType.TypeDefinition is CodeClass { IsGeneric: true })
+                return $"getObjectValue({GetParsableFactoryExpression(currentType, method)})";
 
         }
         return propertyType switch
         {
             "byte[]" => "getByteArrayValue()",
             _ when conventions.PrimitiveTypes.Contains(propertyType) => $"get{propertyType}Value()",
+            _ when propType is CodeType currentType2 => $"getObjectValue({GetParsableFactoryExpression(currentType2, method)})",
             _ => $"getObjectValue({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})",
         };
+    }
+    private string GetParsableFactoryExpression(CodeType type, CodeElement targetElement, int lambdaDepth = 0)
+    {
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return $"this.{JavaConventionService.GetFactoryFieldName(typeParameter)}";
+        if (type.TypeDefinition is CodeClass { IsGeneric: true })
+        { // generic classes have no static factory, compose one from the bound argument factories at the usage site
+            var lambdaParameterName = $"n{lambdaDepth + 1}"; //unique per nesting level so nested lambdas never shadow the outer deserializer's 'n'
+            var argumentFactories = string.Join(", ", type.GenericTypeParameterValues.Select(x => GetParsableFactoryExpression(x, targetElement, lambdaDepth + 1)));
+            return $"({lambdaParameterName}) -> new {type.Name}<>({argumentFactories})";
+        }
+        return $"{conventions.GetTypeString(type, targetElement, false)}::{FactoryMethodName}";
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method)
     {

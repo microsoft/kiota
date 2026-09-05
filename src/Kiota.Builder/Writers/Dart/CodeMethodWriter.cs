@@ -20,6 +20,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
+        // generic model classes declare their constructor (taking per-anchor factories) alongside the class declaration,
+        // and a static parameterless factory cannot exist for them since the bound factories are only known at the usage site
+        if (parentClass.IsGeneric && codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Factory, CodeMethodKind.RawUrlConstructor))
+            return;
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
@@ -521,7 +525,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     return $"getCollectionOfEnumValues<{typeName}>((stringValue) => {typeName}.values.where((enumVal) => enumVal.value == stringValue).firstOrNull)";
                 }
                 else
-                    return $"getCollectionOfObjectValues<{propertyType}>({propertyType}.createFromDiscriminatorValue){collectionMethod}";
+                    return $"getCollectionOfObjectValues<{propertyType}>({GetParsableFactoryExpression(currentType, method)}){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
             {
@@ -535,8 +539,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             "UuidValue" => "getGuidValue()",
             "byte[]" => "getByteArrayValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"get{propertyType.TrimEnd(DartConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
-            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({propertyType}.createFromDiscriminatorValue)",
+            _ => $"getObjectValue<{propertyType.ToFirstCharacterUpperCase()}>({(propType is CodeType getObjectValueType ? GetParsableFactoryExpression(getObjectValueType, method) : $"{propertyType}.createFromDiscriminatorValue")})",
         };
+    }
+    private string GetParsableFactoryExpression(CodeType type, CodeElement targetElement)
+    {
+        var typeName = conventions.GetTypeString(type, targetElement, false);
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return DartConventionService.GetFactoryFieldName(typeParameter);
+        if (type.TypeDefinition is CodeClass { IsGeneric: true })
+            return $"(n) => {typeName}({string.Join(", ", type.GenericTypeParameterValues.Select(x => GetParsableFactoryExpression(x, targetElement)))})";
+        return $"{typeName}.createFromDiscriminatorValue";
     }
     protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
     {
@@ -560,13 +573,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             writer.StartBlock($"final {errorMappingVarName} = <String, ParsableFactory<Parsable>>{{");
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' :  {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.createFromDiscriminatorValue,");
+                var errorMappingType = (CodeType)errorMapping.Value.AllTypes.First();
+                writer.WriteLine($"'{errorMapping.Key.ToUpperInvariant()}' :  {GetParsableFactoryExpression(errorMappingType, codeElement)},");
             }
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
         var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass || (returnTypeCodeType != null && returnTypeCodeType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
-                                ? $", {returnTypeWithoutCollectionInformation}.createFromDiscriminatorValue"
+                                ? $", {GetParsableFactoryExpression(returnTypeCodeType, codeElement)}"
                                 : null;
         writer.WriteLine($"return await requestAdapter.{GetSendRequestMethodName(isVoid, codeElement, codeElement.ReturnType)}(requestInfo{returnTypeFactory}, {errorMappingVarName});");
     }
@@ -583,8 +597,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
         if (requestParams.requestConfiguration != null && requestParams.requestConfiguration.Type is CodeType paramType)
         {
-            var parameterClassName = paramType.GenericTypeParameterValues.First().Name;
-            writer.WriteLine($"{RequestInfoVarName}.configure<{parameterClassName}>({requestParams.requestConfiguration.Name}, () => {parameterClassName}());");
+            var parameterClassName = paramType.GenericTypeParameterValues.FirstOrDefault()?.Name;
+            if (!string.IsNullOrEmpty(parameterClassName))
+                writer.WriteLine($"{RequestInfoVarName}.configure<{parameterClassName}>({requestParams.requestConfiguration.Name}, () => {parameterClassName}());");
         }
 
         if (codeElement.ShouldAddAcceptHeader)

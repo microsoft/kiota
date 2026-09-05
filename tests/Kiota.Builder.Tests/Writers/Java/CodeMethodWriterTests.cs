@@ -1476,6 +1476,68 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesGenericTypeParameterFactoryInDeserializerBody()
+    {
+        setup();
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = itemTypeParameter, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex },
+            Setter = new CodeMethod
+            {
+                Name = "setItems",
+                ReturnType = new CodeType { Name = "void" },
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("getCollectionOfObjectValues(this._itemTypeFactory)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesGenericClassFactoryLambdaInDeserializerBody()
+    {
+        setup();
+        var templateClass = root.AddClass(new CodeClass { Name = "PaginatedTemplate" }).First();
+        templateClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var userType = new CodeType { Name = "User", TypeDefinition = root.AddClass(new CodeClass { Name = "User" }).First() };
+        var templateType = new CodeType { TypeDefinition = templateClass };
+        templateType.AddGenericTypeParameterValue(userType);
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "page",
+            Kind = CodePropertyKind.Custom,
+            Type = templateType,
+            Setter = new CodeMethod
+            {
+                Name = "setPage",
+                ReturnType = new CodeType { Name = "void" },
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("getObjectValue((n1) -> new PaginatedTemplate<>(User::createFromDiscriminatorValue))", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void SkipsFactoryAndConstructorEmissionForGenericClasses()
+    {
+        setup();
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        method.Kind = CodeMethodKind.Factory;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("createFromDiscriminatorValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesInheritedSerializerBody()
     {
         setup(true);

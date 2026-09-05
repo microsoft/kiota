@@ -108,7 +108,7 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             ReplaceReservedExceptionPropertyNames(generatedCode, new JavaExceptionsReservedNamesProvider(), x => $"{x}Escaped");
             LowerCaseNamespaceNames(generatedCode);
             ShortenOversizedNamespaceSegments(generatedCode);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, false, true, updateUsings: static x => AddGenericTypeArgumentsImports(x, keepSameNamespaceArguments: false));
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
@@ -251,6 +251,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             SerializationNamespaceName, "ParseNode"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor),
             SerializationNamespaceName, "Parsable", "ParsableFactory"),
+        new (static x => x is CodeClass @class && @class.IsOfKind(CodeClassKind.Model) && @class.IsGeneric,
+            SerializationNamespaceName, "ParsableFactory"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.Deserializer),
             "java.util", "HashMap", "Map"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor) &&

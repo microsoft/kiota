@@ -38,12 +38,40 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
                                         .OfType<string>()
                                         .ToArray();
         var derivation = derivedTypes.Length != 0 ? ": " + derivedTypes.Aggregate(static (x, y) => $"{x}, {y}") : string.Empty;
+        var typeParameters = parentClass.TypeParameters.ToArray();
+        var typeParametersDeclaration = typeParameters.Length != 0 ? $"<{string.Join(", ", typeParameters.Select(static x => x.Name))}>" : string.Empty;
+        var typeParametersConstraints = typeParameters.Length != 0 ? " " + string.Join(" ", typeParameters.Select(static x => $"where {x.Name} : IParsable")) : string.Empty;
         bool hasDescription = conventions.WriteLongDescription(parentClass, writer);
         conventions.WriteDeprecationAttribute(parentClass, writer);
         writer.WriteLine(GeneratedCodeAttribute);
         if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-        writer.WriteLine($"{conventions.GetAccessModifier(parentClass.Access)} partial class {codeElement.Name.ToFirstCharacterUpperCase()} {derivation}");
+        writer.WriteLine($"{conventions.GetAccessModifier(parentClass.Access)} partial class {codeElement.Name.ToFirstCharacterUpperCase()}{typeParametersDeclaration} {derivation}{typeParametersConstraints}");
         if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
         writer.StartBlock();
+        if (typeParameters.Length != 0)
+        {
+            // only the parameters this class's own deserializers consume own a factory field; parameters
+            // only needed by a generic base are accepted by the constructor and forwarded to it
+            var ownedParameters = typeParameters.Where(parameter => parentClass.Properties.Any(property => ReferencesTypeParameter(property.Type, parameter))).ToArray();
+            foreach (var typeParameter in ownedParameters)
+                writer.WriteLine($"private readonly ParsableFactory<{typeParameter.Name}> {CSharpConventionService.GetFactoryFieldName(typeParameter)};");
+            var forwardedParameterNames = (codeElement.Inherits?.GenericTypeParameterValues ?? Enumerable.Empty<CodeType>())
+                .Select(static x => x.TypeDefinition as CodeTypeParameter)
+                .OfType<CodeTypeParameter>()
+                .Select(CSharpConventionService.GetFactoryParameterName)
+                .ToArray();
+            var baseCall = forwardedParameterNames.Length == 0 ? string.Empty : $" : base({string.Join(", ", forwardedParameterNames)})";
+            writer.WriteLine($"public {codeElement.Name.ToFirstCharacterUpperCase()}({string.Join(", ", typeParameters.Select(x => $"ParsableFactory<{x.Name}> {CSharpConventionService.GetFactoryParameterName(x)}"))}){baseCall}");
+            writer.StartBlock();
+            foreach (var typeParameter in ownedParameters)
+                writer.WriteLine($"{CSharpConventionService.GetFactoryFieldName(typeParameter)} = {CSharpConventionService.GetFactoryParameterName(typeParameter)};");
+            writer.CloseBlock();
+        }
     }
+    private static bool ReferencesTypeParameter(CodeTypeBase propertyType, CodeTypeParameter parameter) => propertyType switch
+    {
+        CodeType codeType when codeType.TypeDefinition is CodeTypeParameter current => current.Name.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase),
+        CodeType codeType => codeType.GenericTypeParameterValues.Any(x => ReferencesTypeParameter(x, parameter)),
+        _ => false,
+    };
 }
