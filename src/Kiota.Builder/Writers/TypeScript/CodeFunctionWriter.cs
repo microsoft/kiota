@@ -242,7 +242,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
     {
-        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName()}) {{");
+        writer.StartBlock($"switch ({paramName}.{GetDiscriminatorPropertyAccessorName(discriminatorInfo)}) {{");
 
         foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {
@@ -253,6 +253,19 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
 
         writer.CloseBlock();
+    }
+
+    private static string GetDiscriminatorPropertyAccessorName(DiscriminatorInformation discriminatorInfo)
+    {
+        // the discriminator property name is the wire name, the property on the models is renamed by the refiner
+        return discriminatorInfo.DiscriminatorMappings
+                                .Select(static x => x.Value.TypeDefinition)
+                                .OfType<CodeClass>()
+                                .SelectMany(static x => x.GetInheritanceTree())
+                                .Select(x => x.Properties.FirstOrDefault(y => y.WireName.EqualsIgnoreCase(discriminatorInfo.DiscriminatorPropertyName)))
+                                .OfType<CodeProperty>()
+                                .Select(static x => x.Name.ToFirstCharacterLowerCase())
+                                .FirstOrDefault() ?? discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName();
     }
 
     private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, string key, string modelParamName, CodeFunction method, LanguageWriter writer, String prefix)

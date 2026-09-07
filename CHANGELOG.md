@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ruby: a model sharing its name with a sibling namespace had the disambiguation suffix applied once per reference to it rather than once, so generation failed with `The element to rename was not found available_phone_number_countryModelModelModelModel`. The reference pass was removed: `CodeType.Name` already delegates to the type definition, so references follow the rename on their own. Un-suppresses the Twilio integration and idempotency tests. [kiota-abstractions-ruby#66](https://github.com/microsoft/kiota-abstractions-ruby/issues/66)
 - C#: create property "EqualsEscaped" instead of "Equals" for model properties "equals" to avoid a compiler warning [#8133](https://github.com/microsoft/kiota/issues/8133)
+- TypeScript: the discriminator switch in a composed type serializer was built from the wire name, but model properties are camel cased by the refiner, so a discriminator such as `pet_type` was emitted as `.pet_type` where the generated interface declares `petType` and the client did not compile. The accessor is now resolved from the model property, which also corrects `@odata.type` from `.OdataType` to `.odataType`. [#7862](https://github.com/microsoft/kiota/issues/7862)
 
 ## [1.35.0] - 2026-09-01
 
