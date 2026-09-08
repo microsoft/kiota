@@ -6685,6 +6685,44 @@ components:
         Assert.NotNull(executor);
         Assert.Equal("void", executor.ReturnType.Name);
     }
+    [InlineData(new[] { 200 })]
+    [InlineData(new[] { 200, 304, 400 })]
+    [Theory]
+    public void GeneratesVoidReturnTypeForHeadRequests(int[] statusCodes)
+    {
+        var responses = new OpenApiResponses();
+        foreach (var statusCode in statusCodes)
+            responses[statusCode.ToString()] = new OpenApiResponse();
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["answer"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Head] = new OpenApiOperation
+                        {
+                            Responses = responses
+                        }
+                    }
+                }
+            },
+        };
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ClientNamespaceName = "TestSdk", ApiRootUrl = "https://localhost" }, _httpClient);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var rbNS = codeModel.FindNamespaceByName("TestSdk.Answer");
+        Assert.NotNull(rbNS);
+        var rbClass = rbNS.Classes.FirstOrDefault(x => x.IsOfKind(CodeClassKind.RequestBuilder));
+        Assert.NotNull(rbClass);
+        Assert.Single(rbClass.Methods, x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        var executor = rbClass.Methods.FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.NotNull(executor);
+        Assert.Equal("void", executor.ReturnType.Name);
+    }
     [InlineData(new[] { "microsoft.graph.user", "microsoft.graph.termstore.term" }, "microsoft.graph")]
     [InlineData(new[] { "microsoft.graph.user", "odata.errors.error" }, "")]
     [InlineData(new string[] { }, "")]
