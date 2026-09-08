@@ -1460,19 +1460,21 @@ public partial class KiotaBuilder
             }
             else if (modelType is null)
             {
-                return (GetExecutorMethodDefaultReturnType(operation), null);
+                return (GetExecutorMethodDefaultReturnType(operation, operationType), null);
             }
             return (modelType, null);
         }
         else
         {
-            return (GetExecutorMethodDefaultReturnType(operation), null);
+            return (GetExecutorMethodDefaultReturnType(operation, operationType), null);
         }
     }
-    private static CodeType GetExecutorMethodDefaultReturnType(OpenApiOperation operation)
+    private static CodeType GetExecutorMethodDefaultReturnType(OpenApiOperation operation, NetHttpMethod operationType)
     {
         string returnType;
-        if (operation.Responses?.Any(static x => (x.Value.Content?.ContainsKey(RequestBodyOctetStreamContentType) ?? false) && redirectStatusCodes.Contains(x.Key)) is true)
+        if (operationType == NetHttpMethod.Head)
+            returnType = VoidType;
+        else if (operation.Responses?.Any(static x => (x.Value.Content?.ContainsKey(RequestBodyOctetStreamContentType) ?? false) && redirectStatusCodes.Contains(x.Key)) is true)
             returnType = "binary";
         else if (operation.Responses?.Any(static x => noContentStatusCodes.Contains(x.Key)) is true)
             returnType = VoidType;

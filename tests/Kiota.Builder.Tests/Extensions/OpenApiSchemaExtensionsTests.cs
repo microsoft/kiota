@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Kiota.Builder.Extensions;
 using Microsoft.OpenApi;
 using Xunit;
@@ -477,7 +478,9 @@ public class OpenApiSchemaExtensionsTests
             Description = "unique identifier",
             Type = JsonSchemaType.String,
             Pattern = "^[1-9][0-9]*$",
-            Example = "1323232",
+            Examples = [
+                 (JsonNode) "1323232"
+                ]
         };
         var tmpDocument = new OpenApiDocument();
         tmpDocument.AddComponent("UserId", userIdSchema);

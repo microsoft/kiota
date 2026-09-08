@@ -92,4 +92,42 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("import './message.dart';", result);
     }
+    [Fact]
+    public void WritesDistinctImportsForClassesSnakeCasingToTheSameFileName()
+    {
+        var declaration = parentClass.StartBlock;
+        var componentSchema = new CodeClass
+        {
+            Name = "ProcessError",
+            Kind = CodeClassKind.Model,
+        };
+        var inlineType = new CodeClass
+        {
+            Name = "Process_error",
+            Kind = CodeClassKind.Model,
+        };
+        root.AddClass(componentSchema);
+        root.AddClass(inlineType);
+        declaration.AddUsings(new CodeUsing
+        {
+            Name = "project.graph",
+            Declaration = new()
+            {
+                Name = "ProcessError",
+                TypeDefinition = componentSchema
+            }
+        }, new CodeUsing
+        {
+            Name = "project.graph",
+            Declaration = new()
+            {
+                Name = "Process_error",
+                TypeDefinition = inlineType
+            }
+        });
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        Assert.Contains("import './process_error.dart';", result);
+        Assert.Contains("import './process_error_2.dart';", result);
+    }
 }
