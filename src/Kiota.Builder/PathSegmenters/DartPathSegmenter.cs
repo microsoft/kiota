@@ -25,14 +25,16 @@ public class DartPathSegmenter(string rootPath, string clientNamespaceName) : Co
     /// </summary>
     public override string NormalizeFileName(CodeElement currentElement)
     {
-        var fileName = GetLastFileNameSegment(currentElement).ToSnakeCase();
+        ArgumentNullException.ThrowIfNull(currentElement);
+        static string NormalizedFileName(CodeElement element) => GetLastFileNameSegment(element).ToSnakeCase();
+        var fileName = NormalizedFileName(currentElement);
         if (currentElement is not (CodeClass or CodeEnum) || currentElement.Parent is not CodeNamespace parentNamespace)
             return fileName;
         var collisions = collidingFileNames.GetOrAdd(parentNamespace, static ns =>
             ns.Classes.Cast<CodeElement>()
                 .Concat(ns.Enums)
-                .GroupBy(static x => GetLastFileNameSegment(x).ToSnakeCase(), StringComparer.OrdinalIgnoreCase)
-                .Where(static x => x.Skip(1).Any())
+                .GroupBy(NormalizedFileName, StringComparer.OrdinalIgnoreCase)
+                .Where(static x => x.Count() > 1)
                 .ToDictionary(static x => x.Key,
                               static x => x.OrderBy(static y => y.Name, StringComparer.Ordinal).ToArray(),
                               StringComparer.OrdinalIgnoreCase));
