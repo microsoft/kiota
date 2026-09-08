@@ -22,15 +22,15 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
         if (isNullableReferenceType)
         {
             CSharpConventionService.WriteNullableOpening(writer);
-            if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
+            if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
             WritePropertyInternal(codeElement, writer, $"{propertyType}?");
-            if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
+            if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
             CSharpConventionService.WriteNullableMiddle(writer);
         }
 
-        if (!hasDescription) writer.WriteLine("#pragma warning disable CS1591");
+        if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
         WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
-        if (!hasDescription) writer.WriteLine("#pragma warning restore CS1591");
+        if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
 
         if (isNullableReferenceType)
             CSharpConventionService.WriteNullableClosing(writer);
