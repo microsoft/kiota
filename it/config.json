@@ -17,10 +17,6 @@
       {
         "Language": "dart",
         "Rationale": "Multiple compilation errors with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7821"
-      },
-      {
-        "Language": "typescript",
-        "Rationale": "Multiple compilation errors with api from 2026-06-25 - https://github.com/microsoft/kiota/issues/7862"
       }
     ],
     "ExcludePatterns": [
