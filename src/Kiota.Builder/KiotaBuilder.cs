@@ -1424,7 +1424,7 @@ public partial class KiotaBuilder
         if (rootNamespace is null) return;
         foreach (var derivedErrorDefinition in GetAllModels(rootNamespace)
                                                 .OfType<CodeClass>()
-                                                .Where(static x => x.IsErrorDefinition && x.GetInheritanceTree(false, false).Any(static y => y.IsErrorDefinition))
+                                                .Where(static x => x.IsErrorDefinition && x.BaseClass is { } baseClass && baseClass.GetInheritanceTree().Any(static y => y.IsErrorDefinition))
                                                 .ToArray())
             derivedErrorDefinition.IsErrorDefinition = false;
     }

@@ -2806,6 +2806,64 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/InternalSRSError'";
+    private const string ErrorSchemaDerivingFromNonErrorBaseDocument = @"openapi: 3.0.3
+info:
+  title: Example API
+  version: 1.0.0
+servers:
+  - url: https://localhost:8080
+paths:
+  /messages:
+    post:
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Audited'
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationFailure'
+components:
+  schemas:
+    Audited:
+      type: object
+      properties:
+        createdAt:
+          type: string
+    ValidationFailure:
+      allOf:
+        - $ref: '#/components/schemas/Audited'
+        - type: object
+          properties:
+            reason:
+              type: string";
+    [Fact]
+    public async Task KeepsErrorDefinitionDerivingFromANonErrorBaseAsync()
+    {
+        // an error-response schema whose only ancestry is a plain base class must keep its
+        // error role: only deriving from another error definition may unmark it
+        await using var fs = await GetDocumentStreamAsync(ErrorSchemaDerivingFromNonErrorBaseDocument);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "TestClient", ApiRootUrl = "https://localhost" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var baseClass = codeModel.FindChildByName<CodeClass>("Audited");
+        Assert.NotNull(baseClass);
+        Assert.False(baseClass.IsErrorDefinition);
+        var errorClass = codeModel.FindChildByName<CodeClass>("ValidationFailure");
+        Assert.NotNull(errorClass);
+        Assert.True(errorClass.IsErrorDefinition);
+        Assert.Equal(baseClass, errorClass.StartBlock.Inherits?.TypeDefinition);
+        var executorMethod = codeModel.FindChildByName<CodeMethod>("post");
+        Assert.NotNull(executorMethod);
+        Assert.Equal(errorClass, (executorMethod.ErrorMappings.FirstOrDefault(static x => "400".Equals(x.Key, StringComparison.OrdinalIgnoreCase)).Value as CodeType)?.TypeDefinition);
+    }
     [Fact]
     public async Task DoesntMarkErrorDefinitionDerivingFromAnotherErrorDefinitionAsync()
     {
