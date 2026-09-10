@@ -23,4 +23,18 @@ public class CodeEnumTests
         }).First();
         codeEnum.AddOption(new CodeEnumOption { Name = "option1" });
     }
+
+    [Fact]
+    public void PreservesExplicitEmptySerializationName()
+    {
+        var option = new CodeEnumOption
+        {
+            Name = "Empty",
+            SerializationName = string.Empty,
+        };
+
+        Assert.True(option.IsNameEscaped);
+        Assert.Empty(option.WireName);
+        Assert.Equal("Empty", option.SymbolName);
+    }
 }
