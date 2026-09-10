@@ -10,7 +10,7 @@ namespace Kiota.Builder.Extensions;
 
 public static class OpenApiSchemaExtensions
 {
-    private static readonly Func<IOpenApiSchema, IList<IOpenApiSchema>> classNamesFlattener = x =>
+    private static readonly Func<IOpenApiSchema, IList<IOpenApiSchema>> subsequentSchemaGetter = x =>
     (x.AnyOf ?? Enumerable.Empty<IOpenApiSchema>()).Union(x.AllOf ?? []).Union(x.OneOf ?? []).ToList();
     public static IEnumerable<string> GetSchemaNames(this IOpenApiSchema schema, bool directOnly = false)
     {
@@ -21,13 +21,19 @@ public static class OpenApiSchemaExtensions
         if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
             return [refId.Split('/')[^1].Split('.')[^1]];
         if (!directOnly && schema.AnyOf is { Count: > 0 })
-            return schema.AnyOf.FlattenIfRequired(classNamesFlattener);
+            return schema.AnyOf.FlattenIfRequired(subsequentSchemaGetter);
         if (!directOnly && schema.AllOf is { Count: > 0 })
-            return schema.AllOf.FlattenIfRequired(classNamesFlattener);
+            return schema.AllOf.FlattenIfRequired(subsequentSchemaGetter);
         if (!directOnly && schema.OneOf is { Count: > 0 })
-            return schema.OneOf.FlattenIfRequired(classNamesFlattener);
+            return schema.OneOf.FlattenIfRequired(subsequentSchemaGetter);
         return [];
     }
+
+    public static IList<IOpenApiSchema> GetSubsequentSchemas(this IOpenApiSchema schema)
+    {
+        return subsequentSchemaGetter(schema);
+    }
+
     internal static string? GetReferenceId(this IOpenApiSchema schema)
     {
         return schema switch
