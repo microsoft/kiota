@@ -290,14 +290,20 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("enumObject: " + EnumName.ToFirstCharacterUpperCase(), result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-    [Fact]
-    public void WritesRequestExecutorForPrimitive()
+    [Theory]
+    [InlineData("string", "string")]
+    [InlineData("Guid", "string")]
+    [InlineData("Date", "Date")]
+    [InlineData("DateOnly", "DateOnly")]
+    [InlineData("TimeOnly", "TimeOnly")]
+    [InlineData("Duration", "Duration")]
+    public void WritesRequestExecutorForPrimitive(string typeName, string responseType)
     {
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         method.ReturnType = new CodeType
         {
-            Name = "string",
+            Name = typeName,
         };
         AddRequestBodyParameters();
         var constant = CodeConstant.FromRequestBuilderToRequestsMetadata(parentClass);
@@ -311,16 +317,23 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("sendPrimitive", result);
+        Assert.Contains($"responseBodyFactory:  \"{responseType}\"", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-    [Fact]
-    public void WritesRequestExecutorForPrimitiveCollection()
+    [Theory]
+    [InlineData("string", "string")]
+    [InlineData("Guid", "string")]
+    [InlineData("Date", "Date")]
+    [InlineData("DateOnly", "DateOnly")]
+    [InlineData("TimeOnly", "TimeOnly")]
+    [InlineData("Duration", "Duration")]
+    public void WritesRequestExecutorForPrimitiveCollection(string typeName, string responseType)
     {
         method.Kind = CodeMethodKind.RequestExecutor;
         method.HttpMethod = HttpMethod.Get;
         method.ReturnType = new CodeType
         {
-            Name = "string",
+            Name = typeName,
             CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
         };
         AddRequestBodyParameters();
@@ -335,6 +348,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         writer.Write(constant);
         var result = tw.ToString();
         Assert.Contains("sendCollectionOfPrimitive", result);
+        Assert.Contains($"responseBodyFactory:  \"{responseType}\"", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
