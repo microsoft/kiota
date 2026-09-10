@@ -908,6 +908,61 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
+    public void WritesPrimaryErrorMessageDeserializer()
+    {
+        setup();
+        parentClass.IsErrorDefinition = true;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "detail",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("def deserialize_detail(n: ParseNode) -> None:", result);
+        Assert.Contains("value = n.get_str_value()", result);
+        Assert.Contains("setattr(self, 'detail', value)", result);
+        Assert.Contains("self.message = '' if value is None else str(value)", result);
+        Assert.Contains("\"detail\": deserialize_detail,", result);
+    }
+    [Fact]
+    public void EscapesPrimaryErrorMessagePropertyName()
+    {
+        setup();
+        parentClass.IsErrorDefinition = true;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "line1'\nline2",
+            SerializationName = "detail",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("def deserialize_line1Line2(n: ParseNode) -> None:", result);
+        Assert.Contains("value = n.get_str_value()", result);
+        Assert.Contains("setattr(self, 'line1\\'\\nline2', value)", result);
+        Assert.Contains("self.message = '' if value is None else str(value)", result);
+        Assert.Contains("\"detail\": deserialize_line1Line2,", result);
+    }
+    [Fact]
     public void WritesInheritedSerializerBody()
     {
         setup(true);
@@ -1029,6 +1084,28 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var deserializerResult = tw.ToString();
         Assert.Contains("\"line1\\\"\\nline2\": lambda n : setattr(self, 'dummy_string', n.get_str_value())", deserializerResult);
+    }
+    [Fact]
+    public void EscapesPropertyNamesInDeserializerBody()
+    {
+        setup();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "line1'\nline2",
+            SerializationName = "value",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "string"
+            }
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("setattr(self, 'line1\\'\\nline2', n.get_str_value())", result);
     }
     [Fact]
     public void WritesMethodAsyncDescription()
