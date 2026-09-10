@@ -12333,4 +12333,95 @@ components:
         Assert.NotNull(patchGenerator);
         Assert.False(patchGenerator.HasUrlTemplateOverride);
     }
+
+    /// <summary>
+    /// Test for the fix of https://github.com/microsoft/kiota/issues/8139: the graph beta SDK from 09/2026 defined a base class
+    /// and a child class, which both had a property "@odata.type". Additionally, the base class had a property of subclass type.
+    /// This property was defined before the "@odata.type" property.
+    /// In this situation, Kiota did not link the subclass property "@odata.type" to the base class property, thus creating it twice.
+    /// And this resulted in a compilation warning "'PlannerTeamsPublicationInfo.OdataType' hides inherited member 'PlannerTaskCreation.OdataType'" for C# clients.
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task BaseClassHasPropertyOfChildClassTypeAndAnotherPropertyOnBothClasses()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(
+    """
+openapi: 3.0.4
+info:
+  title: OData Service for namespace microsoft.graph
+  description: This OData service is located at https://graph.microsoft.com/beta
+  version: beta
+servers:
+  - url: https://graph.microsoft.com/beta
+paths:
+  /doSomething:
+    description: a dummy operation
+    get:
+      summary: fetches data
+      responses:
+        2XX:
+          description: some response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/microsoft.graph.plannerTaskCreation"
+components:
+  schemas:
+    microsoft.graph.plannerTaskCreation:
+      title: plannerTaskCreation
+      required:
+        - '@odata.type'
+      type: object
+      properties:
+        creationSourceKind:
+          type: string
+          description: 'Specifies what kind of creation source the task is created with. The possible values are: external, publication and unknownFutureValue.'
+        teamsPublicationInfo:
+          anyOf:
+            - $ref: '#/components/schemas/microsoft.graph.plannerTeamsPublicationInfo'
+            - type: object
+              nullable: true
+          description: Information about the publication process that created this task. This field is deprecated and clients should move to using the new inheritance model.
+        '@odata.type':
+          type: string
+      discriminator:
+        propertyName: '@odata.type'
+        mapping:
+          '#microsoft.graph.plannerTeamsPublicationInfo': '#/components/schemas/microsoft.graph.plannerTeamsPublicationInfo'
+    microsoft.graph.plannerTeamsPublicationInfo:
+      allOf:
+        - $ref: '#/components/schemas/microsoft.graph.plannerTaskCreation'
+        - title: plannerTeamsPublicationInfo
+          required:
+            - '@odata.type'
+          type: object
+          properties:
+            publicationId:
+              type: string
+              description: The identifier of the publication. Read-only.
+              nullable: true
+            '@odata.type':
+              type: string
+              default: '#microsoft.graph.plannerTeamsPublicationInfo'
+""");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var baseClass = codeModel.FindChildByName<CodeClass>("PlannerTaskCreation");
+        Assert.NotNull(baseClass);
+        var baseProperty = baseClass.FindChildByName<CodeProperty>("OdataType", false);
+        Assert.NotNull(baseProperty);
+
+        var childClass = codeModel.FindChildByName<CodeClass>("PlannerTeamsPublicationInfo");
+        Assert.NotNull(childClass);
+        var childProperty = childClass.FindChildByName<CodeProperty>("OdataType", false);
+        Assert.NotNull(childProperty);
+        Assert.True(childProperty.ExistsInBaseType, "Child class property is not linked to base class property");
+        Assert.Equal(childProperty.OriginalPropertyFromBaseType, baseProperty);
+    }
 }
