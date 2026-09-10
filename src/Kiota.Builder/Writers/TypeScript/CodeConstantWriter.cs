@@ -170,9 +170,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         if (isVoid) return string.Empty;
         var typeName = conventions.TranslateType(codeElement.ReturnType);
-        if (isStream || IsPrimitiveType(typeName) || IsKiotaPrimitive(typeName)) return $" \"{typeName}\"";
         if (GetPrimitiveAlias(typeName) is { } alias && !string.IsNullOrEmpty(alias))
             return $" \"{alias}\"";
+        if (isStream || IsPrimitiveType(typeName) || IsKiotaPrimitive(typeName)) return $" \"{typeName}\"";
         return $" {GetFactoryMethodName(codeElement.ReturnType, codeElement, writer)}";
     }
     private string GetReturnTypeWithoutCollectionSymbol(CodeMethod codeElement, string fullTypeName)
