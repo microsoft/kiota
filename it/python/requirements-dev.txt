@@ -36,7 +36,7 @@ mypy-extensions==1.1.0 ; python_version >= '3.5'
 
 packaging==26.3 ; python_version >= '3.7'
 
-platformdirs==4.11.6 ; python_version >= '3.7'
+platformdirs==4.11.7 ; python_version >= '3.7'
 
 pluggy==1.6.0 ; python_version >= '3.7'
 
@@ -70,7 +70,7 @@ aiohttp==3.14.3 ; python_version >= '3.6'
 
 aiosignal==1.4.0 ; python_version >= '3.7'
 
-anyio==4.14.2 ; python_version >= '3.7'
+anyio==4.15.0 ; python_version >= '3.7'
 
 async-timeout==5.0.1 ; python_version >= '3.6'
 
