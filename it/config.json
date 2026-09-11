@@ -20,7 +20,7 @@
       },
       {
         "Language": "typescript",
-        "Rationale": "instanceof on runtime primitives imported with import type - https://github.com/microsoft/kiota/issues/8177, and a scalar assigned to a collection typed parameter in two secrets request builders - https://github.com/microsoft/kiota/issues/8178"
+        "Rationale": "instanceof on runtime primitives imported with import type - https://github.com/microsoft/kiota/issues/8177"
       }
     ],
     "ExcludePatterns": [
