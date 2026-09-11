@@ -2198,6 +2198,41 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task WritesCollectionOfPrimitiveUnionFactoryAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "selectedRepositoryIds", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex };
+        composedType.AddType(new CodeType { Name = "integer" }, new CodeType { Name = "string" });
+        var factoryMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "createSelectedRepositoryIdsFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = composedType,
+            IsStatic = true,
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode", IsExternal = true },
+        });
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var factoryFunction = root.FindChildByName<CodeFunction>("createSelectedRepositoryIdsFromDiscriminatorValue");
+        Assert.NotNull(factoryFunction);
+
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+
+        // the signature says collection, so the body has to read collections too
+        Assert.Contains("(number | string)[] | undefined", result);
+        Assert.Contains("return parseNode?.getCollectionOfPrimitiveValues<number>(\"number\") ?? parseNode?.getCollectionOfPrimitiveValues<string>(\"string\");", result);
+        Assert.DoesNotContain("getNumberValue()", result);
+        Assert.DoesNotContain("getStringValue()", result);
+    }
+
+    [Fact]
     public async Task WritesPrimitiveBinaryUnionDeserializerAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
