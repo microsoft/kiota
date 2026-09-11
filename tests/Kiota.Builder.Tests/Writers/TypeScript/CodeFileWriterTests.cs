@@ -65,4 +65,31 @@ public sealed class CodeFileWriterTests : IDisposable
         Assert.Contains("/* tslint:enable */", result);
     }
 
+    [Fact]
+    public async Task WritesValueImportForRuntimePrimitiveInComposedTypeAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass", false);
+        var composedType = new CodeUnionType { Name = "expiresAt" };
+        composedType.AddType(new CodeType { Name = "DateOnly" }, new CodeType { Name = "Guid" }, new CodeType { Name = "string" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "expiresAt",
+            Kind = CodePropertyKind.Custom,
+            Type = composedType,
+        });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var modelsNS = root.FindChildByName<CodeNamespace>(generationConfiguration.ModelsNamespaceName);
+        var codeFile = modelsNS.FindChildByName<CodeFile>("index", false);
+        WriteCode(writer, codeFile);
+
+        var result = tw.ToString();
+        // the composed type is narrowed with "instanceof", which is a value usage, so the imports cannot be erased
+        Assert.Contains("instanceof DateOnly", result);
+        Assert.Contains("instanceof Guid", result);
+        Assert.DoesNotContain("type DateOnly", result);
+        Assert.DoesNotContain("type Guid", result);
+    }
+
 }
