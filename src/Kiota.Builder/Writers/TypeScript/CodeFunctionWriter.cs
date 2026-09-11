@@ -130,7 +130,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private string GetSerializationMethodsForPrimitiveUnionTypes(CodeComposedTypeBase composedType, string parseNodeParameterName, CodeFile codeFile, bool nodeParameterCanBeNull = true)
     {
         var optionalChainingSymbol = nodeParameterCanBeNull ? "?" : string.Empty;
-        return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile)).Distinct(StringComparer.Ordinal));
+        return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile, composedType.IsCollection)).Distinct(StringComparer.Ordinal));
     }
 
     private static CodeParameter? GetComposedTypeParameter(CodeFunction codeElement)
