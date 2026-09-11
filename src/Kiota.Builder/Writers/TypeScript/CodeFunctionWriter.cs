@@ -601,9 +601,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             ? $"{prefix}if ({valueReference} instanceof {nodeType}) {{"
             : $"{prefix}if (typeof {valueReference} === \"{nodeType}\" ) {{";
     }
-    private static bool IsInstanceOfPrimitiveType(string nodeType) =>
-        nodeType is TYPE_GUID or TYPE_DATE or TYPE_DATE_ONLY or TYPE_TIME_ONLY or TYPE_DURATION;
-
     private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
     {
         var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();

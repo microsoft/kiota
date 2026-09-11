@@ -199,13 +199,30 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             }
             if (!string.IsNullOrEmpty(erasableUsing))
             {
-                //Find all usings for this type (might occur multiple times) and set the using to "Erasable = false":
-                var erasableUsings = currentClass.Usings.Where(currentUsing => currentUsing.Name.Equals(erasableUsing, StringComparison.Ordinal));
-                foreach (var currentUsing in erasableUsings)
-                {
-                    currentUsing.IsErasable = false;
-                }
+                SetUsingNotErasable(currentClass, erasableUsing);
             }
+        }
+
+        //The wrapper class generated for a composed type holds the usings for its branches. Those
+        //branches are narrowed with "instanceof" when the runtime primitives (Guid, Date, DateOnly,
+        //TimeOnly, Duration) are among them, which is a value usage, so the import cannot be
+        //"type DateOnly" there either, even when no default value is set.
+        if (currentClass.OriginalComposedType is { } composedType)
+        {
+            foreach (var type in composedType.Types.Where(static type => TypeScriptConventionService.IsInstanceOfPrimitiveType(type.Name)))
+            {
+                SetUsingNotErasable(currentClass, type.Name);
+            }
+        }
+    }
+
+    private static void SetUsingNotErasable(CodeClass currentClass, string usingName)
+    {
+        //Find all usings for this type (might occur multiple times) and set the using to "Erasable = false":
+        var erasableUsings = currentClass.Usings.Where(currentUsing => currentUsing.Name.Equals(usingName, StringComparison.Ordinal));
+        foreach (var currentUsing in erasableUsings)
+        {
+            currentUsing.IsErasable = false;
         }
     }
 
