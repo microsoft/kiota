@@ -86,6 +86,7 @@ public sealed class CodeFileWriterTests : IDisposable
 
         var result = tw.ToString();
         // the composed type is narrowed with "instanceof", which is a value usage, so the imports cannot be erased
+        Assert.Contains("import { DateOnly, Guid, ", result);
         Assert.Contains("instanceof DateOnly", result);
         Assert.Contains("instanceof Guid", result);
         Assert.DoesNotContain("type DateOnly", result);
