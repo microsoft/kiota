@@ -253,23 +253,31 @@ public sealed class GenerateSample : IDisposable
     [InlineData("GeneratesUritemplateHints.yaml")]
     [InlineData("SwaggerPetStore.json")]
     [Theory]
-    public async Task GeneratedGoCodeIsFormattedAsync(string descriptionFile)
+    public Task GeneratedGoCodeIsFormattedAsync(string descriptionFile) =>
+        AssertGeneratedGoCodeIsFormattedAsync(GetAbsolutePath(descriptionFile), Path.GetFileNameWithoutExtension(descriptionFile));
+
+    [Fact]
+    public Task GeneratedGraphGoCodeIsFormattedAsync() =>
+        AssertGeneratedGoCodeIsFormattedAsync("https://aka.ms/graph/v1.0/openapi.yaml", "GraphV1");
+
+    private async Task AssertGeneratedGoCodeIsFormattedAsync(string descriptionFile, string descriptionName)
     {
         var gofmt = GetGoFmtPath();
         Assert.SkipWhen(string.IsNullOrEmpty(gofmt), "gofmt (the Go toolchain) is not available on this machine.");
 
         var logger = LoggerFactory.Create(static builder => { }).CreateLogger<KiotaBuilder>();
 
-        var descriptionName = Path.GetFileNameWithoutExtension(descriptionFile);
         var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "Generated", "GoFormatting", descriptionName);
         var configuration = new GenerationConfiguration
         {
             Language = GenerationLanguage.Go,
-            OpenAPIFilePath = GetAbsolutePath(descriptionFile),
+            OpenAPIFilePath = descriptionFile,
             OutputPath = outputPath,
             CleanOutput = true,
         };
-        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(TestContext.Current.CancellationToken);
+        Assert.True(await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(TestContext.Current.CancellationToken),
+            $"Client generation failed for '{descriptionFile}'.");
+        Assert.NotEmpty(Directory.EnumerateFiles(outputPath, "*.go", SearchOption.AllDirectories));
 
         // "gofmt -l" lists the files whose formatting differs from gofmt's. The generated code is
         // expected to already be formatted, so the command must not report any file.
