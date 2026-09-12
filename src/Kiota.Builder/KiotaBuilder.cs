@@ -2329,8 +2329,19 @@ public partial class KiotaBuilder
         return currentNamespace;
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object modelDeclarationLock = new();
     private static readonly ThreadLocal<HashSet<string>> schemasBeingProcessedForDiscriminators = new(() => new(StringComparer.OrdinalIgnoreCase));
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
+    {
+        // Models recursively reference each other through properties, inheritance and discriminators.
+        // Serialize their construction with a reentrant lock so parallel request builders cannot
+        // hold one model's lifecycle lock while waiting for a model owned by another worker.
+        lock (modelDeclarationLock)
+        {
+            return AddModelDeclarationIfDoesntExistCore(currentNode, currentOperation, schema, declarationName, currentNamespace, inheritsFrom);
+        }
+    }
+    private CodeElement AddModelDeclarationIfDoesntExistCore(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
