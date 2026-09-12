@@ -130,7 +130,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private string GetSerializationMethodsForPrimitiveUnionTypes(CodeComposedTypeBase composedType, string parseNodeParameterName, CodeFile codeFile, bool nodeParameterCanBeNull = true)
     {
         var optionalChainingSymbol = nodeParameterCanBeNull ? "?" : string.Empty;
-        return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile)).Distinct(StringComparer.Ordinal));
+        return string.Join(" ?? ", composedType.Types.Where(x => IsPrimitiveType(x, composedType)).Select(x => $"{parseNodeParameterName}{optionalChainingSymbol}." + conventions.GetDeserializationMethodName(x, codeFile, composedType.IsCollection)).Distinct(StringComparer.Ordinal));
     }
 
     private static CodeParameter? GetComposedTypeParameter(CodeFunction codeElement)
@@ -242,7 +242,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
     {
-        writer.StartBlock($"switch ({paramName}.{discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName()}) {{");
+        writer.StartBlock($"switch ({paramName}.{GetDiscriminatorPropertyAccessorName(discriminatorInfo)}) {{");
 
         foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {
@@ -253,6 +253,19 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
 
         writer.CloseBlock();
+    }
+
+    private static string GetDiscriminatorPropertyAccessorName(DiscriminatorInformation discriminatorInfo)
+    {
+        // the discriminator property name is the wire name, the property on the models is renamed by the refiner
+        return discriminatorInfo.DiscriminatorMappings
+                                .Select(static x => x.Value.TypeDefinition)
+                                .OfType<CodeClass>()
+                                .SelectMany(static x => x.GetInheritanceTree())
+                                .Select(x => x.Properties.FirstOrDefault(y => y.WireName.EqualsIgnoreCase(discriminatorInfo.DiscriminatorPropertyName)))
+                                .OfType<CodeProperty>()
+                                .Select(static x => x.Name.ToFirstCharacterLowerCase())
+                                .FirstOrDefault() ?? discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName();
     }
 
     private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, string key, string modelParamName, CodeFunction method, LanguageWriter writer, String prefix)

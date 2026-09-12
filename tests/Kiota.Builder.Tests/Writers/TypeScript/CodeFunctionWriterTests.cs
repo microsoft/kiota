@@ -1841,6 +1841,37 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task Writes_UnionOfObjects_SerializerFunctionWithSnakeCaseDiscriminatorPropertyAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(static x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
+        Assert.NotNull(serializerFunction);
+        writer.Write(serializerFunction);
+        var serializerFunctionStr = tw.ToString();
+        // the wire name is pet_type, the property on the generated interfaces is petType
+        Assert.Contains(".petType) {", serializerFunctionStr);
+        Assert.DoesNotContain(".pet_type", serializerFunctionStr);
+    }
+
+    [Fact]
     public async Task Writes_CodeIntersectionType_FactoryMethodAsync()
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
@@ -2195,6 +2226,41 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("return parseNode?.getByteArrayValue();", result);
         Assert.DoesNotContain("getByteArrayValue() ?? parseNode?.getByteArrayValue()", result);
         Assert.DoesNotContain("getObjectValue", result);
+    }
+
+    [Fact]
+    public async Task WritesCollectionOfPrimitiveUnionFactoryAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "selectedRepositoryIds", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex };
+        composedType.AddType(new CodeType { Name = "integer" }, new CodeType { Name = "string" });
+        var factoryMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "createSelectedRepositoryIdsFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = composedType,
+            IsStatic = true,
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode", IsExternal = true },
+        });
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var factoryFunction = root.FindChildByName<CodeFunction>("createSelectedRepositoryIdsFromDiscriminatorValue");
+        Assert.NotNull(factoryFunction);
+
+        writer.Write(factoryFunction);
+        var result = tw.ToString();
+
+        // the signature says collection, so the body has to read collections too
+        Assert.Contains("(number | string)[] | undefined", result);
+        Assert.Contains("return parseNode?.getCollectionOfPrimitiveValues<number>(\"number\") ?? parseNode?.getCollectionOfPrimitiveValues<string>(\"string\");", result);
+        Assert.DoesNotContain("getNumberValue()", result);
+        Assert.DoesNotContain("getStringValue()", result);
     }
 
     [Fact]
