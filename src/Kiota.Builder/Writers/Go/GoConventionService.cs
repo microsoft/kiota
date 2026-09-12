@@ -211,7 +211,7 @@ public class GoConventionService : CommonLanguageConventionService
             _ when string.IsNullOrEmpty(description) => DocCommentPrefix,
             _ => $"{DocCommentPrefix} {description}",
         };
-        writer.WriteLine(comment);
+        writer.WriteLine(comment.Replace("''", "“", StringComparison.Ordinal).TrimEnd(' '));
     }
     public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)
     {
