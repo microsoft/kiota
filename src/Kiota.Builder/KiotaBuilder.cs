@@ -2329,19 +2329,17 @@ public partial class KiotaBuilder
         return currentNamespace;
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object modelDeclarationLock = new();
+    // Tracks, for each class currently building its properties, which thread owns it, and for each
+    // thread currently blocked waiting on a parent's properties, which lifecycle it is waiting on.
+    // Together these form a wait-for graph: a worker about to block checks whether doing so would
+    // close a cycle back to itself (its own class being, transitively, blocked on the class it is
+    // about to wait for) before waiting, so independent models still build fully in parallel and only
+    // the rare cyclic case falls back to proceeding without waiting.
+    private readonly ConcurrentDictionary<ModelClassBuildLifecycle, int> lifecycleOwnerThreadId = new();
+    private readonly ConcurrentDictionary<int, ModelClassBuildLifecycle> threadWaitingOnLifecycle = new();
+    private readonly object waitForGraphLock = new();
     private static readonly ThreadLocal<HashSet<string>> schemasBeingProcessedForDiscriminators = new(() => new(StringComparer.OrdinalIgnoreCase));
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
-    {
-        // Models recursively reference each other through properties, inheritance and discriminators.
-        // Serialize their construction with a reentrant lock so parallel request builders cannot
-        // hold one model's lifecycle lock while waiting for a model owned by another worker.
-        lock (modelDeclarationLock)
-        {
-            return AddModelDeclarationIfDoesntExistCore(currentNode, currentOperation, schema, declarationName, currentNamespace, inheritsFrom);
-        }
-    }
-    private CodeElement AddModelDeclarationIfDoesntExistCore(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
@@ -2487,21 +2485,24 @@ public partial class KiotaBuilder
         var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
         if (!lifecycle.IsPropertiesBuilt() && !lifecycle.IsPropertiesBuildingInProgress())
         {
+            var currentThreadId = Environment.CurrentManagedThreadId;
             try
             {
                 lifecycle.StartBuildingProperties();
+                lifecycleOwnerThreadId[lifecycle] = currentThreadId;
                 if (!lifecycle.IsPropertiesBuilt())
                 {
                     if (inheritsFrom != null)
                     {
                         classLifecycles.TryGetValue(inheritsFrom.Parent!.Name + "." + inheritsFrom.Name, out var superClassLifecycle);
-                        superClassLifecycle!.WaitForPropertiesBuilt();
+                        WaitForSuperClassProperties(superClassLifecycle!, currentThreadId, declarationName, currentNamespace.Name);
                     }
                     CreatePropertiesForModelClass(currentNode, schema, currentNamespace, newClass); // order matters since we might be recursively generating ancestors for discriminator mappings and duplicating additional data/backing store properties
                 }
             }
             finally
             {
+                lifecycleOwnerThreadId.TryRemove(lifecycle, out _);
                 lifecycle.PropertiesBuildingDone();
             }
         }
@@ -2537,6 +2538,55 @@ public partial class KiotaBuilder
                 discriminatorVisited.Remove(schemaRefId);
         }
         return newClass;
+    }
+    /// <summary>
+    /// Waits for the superclass' properties to be built before letting the current thread build its own,
+    /// unless doing so would deadlock: two (or more) threads can each be building a class whose parent is,
+    /// transitively through some other in-flight class, waiting on the class the other thread owns. Before
+    /// blocking, this walks the current wait-for graph from <paramref name="superClassLifecycle"/> back through
+    /// each owning thread's own wait, if any; finding our own thread proves waiting would close a cycle, so we
+    /// skip the wait and proceed with whatever properties the superclass currently has, same as the existing
+    /// same-thread circular reference case.
+    /// </summary>
+    private void WaitForSuperClassProperties(ModelClassBuildLifecycle superClassLifecycle, int currentThreadId, string declarationName, string namespaceName)
+    {
+        bool wouldDeadlock;
+        lock (waitForGraphLock)
+        {
+            wouldDeadlock = WouldWaitingCreateCycle(superClassLifecycle, currentThreadId);
+            if (!wouldDeadlock)
+                threadWaitingOnLifecycle[currentThreadId] = superClassLifecycle;
+        }
+        if (wouldDeadlock)
+        {
+            LogCircularInheritanceWait(declarationName, namespaceName);
+            return;
+        }
+        try
+        {
+            superClassLifecycle.WaitForPropertiesBuilt();
+        }
+        finally
+        {
+            lock (waitForGraphLock)
+            {
+                threadWaitingOnLifecycle.TryRemove(currentThreadId, out _);
+            }
+        }
+    }
+    private bool WouldWaitingCreateCycle(ModelClassBuildLifecycle target, int currentThreadId)
+    {
+        var visited = new HashSet<ModelClassBuildLifecycle>();
+        var cursor = target;
+        while (visited.Add(cursor) && lifecycleOwnerThreadId.TryGetValue(cursor, out var ownerThreadId))
+        {
+            if (ownerThreadId == currentThreadId)
+                return true;
+            if (!threadWaitingOnLifecycle.TryGetValue(ownerThreadId, out var next))
+                return false;
+            cursor = next;
+        }
+        return false;
     }
     /// <summary>
     /// Creates a reference to the component so inheritance scenarios get the right class name
@@ -3107,4 +3157,6 @@ public partial class KiotaBuilder
     private partial void LogIgnoringDuplicateParameter(string name);
     [LoggerMessage(Level = LogLevel.Warning, Message = "Circular property reference detected for model {ModelName} in namespace {Namespace}. Skipping property creation to prevent infinite recursion.")]
     private partial void LogCircularPropertyReference(string modelName, string @namespace);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Circular inheritance wait detected for model {ModelName} in namespace {Namespace}. Proceeding without waiting for the parent's properties to avoid a deadlock.")]
+    private partial void LogCircularInheritanceWait(string modelName, string @namespace);
 }

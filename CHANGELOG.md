@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript: the discriminator switch in a composed type serializer was built from the wire name, but model properties are camel cased by the refiner, so a discriminator such as `pet_type` was emitted as `.pet_type` where the generated interface declares `petType` and the client did not compile. The accessor is now resolved from the model property, which also corrects `@odata.type` from `.OdataType` to `.odataType`. [#7862](https://github.com/microsoft/kiota/issues/7862)
 - TypeScript: the factory generated for a collection of a primitive union was declared returning the collection but its body read a scalar, so `(number | string)[] | undefined` came back from `parseNode?.getNumberValue() ?? parseNode?.getStringValue()` and only the first item of the payload survived. The collection reads are now emitted for that case, matching what the deserializer already does for the same shape. [#8178](https://github.com/microsoft/kiota/issues/8178)
 - Golang: Fix comment format [#8186](https://github.com/microsoft/kiota/pull/8186)
-- Fix deadlock in code generation [#8186](https://github.com/microsoft/kiota/pull/8186)
+- Fixed a deadlock where two parallel workers could each be building a model class whose parent was, transitively, waiting on the other worker's class. The fix detects that cross-thread wait cycle before blocking and falls back to proceeding without waiting, instead of serializing all model construction behind a single lock, which would have undone the concurrency `MaxDegreeOfParallelism` provides for large specifications such as Graph. [#8186](https://github.com/microsoft/kiota/pull/8186)
 
 ## [1.35.0] - 2026-09-01
 
