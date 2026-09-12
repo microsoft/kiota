@@ -589,6 +589,8 @@ public partial class KiotaBuilder
         {
             stopwatch.Start();
             CreateRequestBuilderClass(codeNamespace, root, root);
+            // Check for subclass properties that are not properly linked to base class properties
+            FixInheritedProperties(codeNamespace);
             StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
             stopwatch.Start();
             CreateWebhookModels();
@@ -3024,6 +3026,69 @@ public partial class KiotaBuilder
         paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         return paramType;
     }
+
+    /// <summary>
+    /// Workaround for https://github.com/microsoft/kiota/issues/8139: if a class has a property whose type is one of its own subclasses
+    /// and both the current class and the subclass have another property with the same name, the sub class property might not be linked
+    /// to the base class property due to the order of class/property processing. This method tries to find such cases and
+    /// link the properties.
+    /// </summary>
+    /// <param name="codeNamespace"></param>
+    private static void FixInheritedProperties(CodeNamespace codeNamespace)
+    {
+        foreach (CodeNamespace codeSubNamespace in codeNamespace.Namespaces)
+        {
+            FixInheritedProperties(codeSubNamespace);
+        }
+
+        foreach (CodeClass codeClass in codeNamespace.Classes)
+        {
+            // Check only classes that have a base class:
+            if (codeClass.BaseClass != null)
+            {
+                foreach (CodeProperty property in codeClass.Properties)
+                {
+                    //Check only properties that are not already linked to a base class property:
+                    if (property.OriginalPropertyFromBaseType == null)
+                    {
+                        // Is this property also contained in any base class?
+                        CodeProperty? propertyInBaseClass = FindPropertyInBaseClass(codeClass.BaseClass, property);
+                        if (propertyInBaseClass != null)
+                        {
+                            property.OriginalPropertyFromBaseType = propertyInBaseClass;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Searches a property of a sub class in a base class. Recurses into the full class hierarchy.
+    /// </summary>
+    /// <param name="baseClass"></param>
+    /// <param name="propertyToSearch"></param>
+    /// <returns>Found parent class property or null.</returns>
+    private static CodeProperty? FindPropertyInBaseClass(CodeClass baseClass, CodeProperty propertyToSearch)
+    {
+        // Check properties of current class:
+        foreach (CodeProperty propertyOfBaseClass in baseClass.Properties)
+        {
+            if (propertyOfBaseClass.Name == propertyToSearch.Name)
+            {
+                return propertyOfBaseClass;
+            }
+        }
+
+        // Not found: check base class:
+        if (baseClass.BaseClass != null)
+        {
+            return FindPropertyInBaseClass(baseClass.BaseClass, propertyToSearch);
+        }
+
+        return null;
+    }
+
 
     private void CleanUpInternalState()
     {
