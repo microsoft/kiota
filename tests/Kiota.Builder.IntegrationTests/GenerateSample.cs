@@ -256,6 +256,7 @@ public sealed class GenerateSample : IDisposable
     public Task GeneratedGoCodeIsFormattedAsync(string descriptionFile) =>
         AssertGeneratedGoCodeIsFormattedAsync(GetAbsolutePath(descriptionFile), Path.GetFileNameWithoutExtension(descriptionFile));
 
+    // dotnet run --project tests/Kiota.Builder.IntegrationTests -- -explicit on -method '*GeneratedGraphGoCodeIsFormattedAsync'
     [Fact(Explicit = true)]
     public Task GeneratedGraphGoCodeIsFormattedAsync() =>
         AssertGeneratedGoCodeIsFormattedAsync("https://aka.ms/graph/v1.0/openapi.yaml", "GraphV1");
