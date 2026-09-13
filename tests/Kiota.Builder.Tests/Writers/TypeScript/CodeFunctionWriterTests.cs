@@ -2329,6 +2329,76 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task WritesUnionOfPrimitiveCollectionsPropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "integer", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array });
+
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => typeof item === \"number\")) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<number>(\"tags\", parentClass.tags as number[]);", result);
+        Assert.Contains("else if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => typeof item === \"string\")) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<string>(\"tags\", parentClass.tags as string[]);", result);
+        Assert.DoesNotContain("writeObjectValue", result);
+    }
+
+    [Fact]
+    public async Task WritesPrimitiveCollectionMemberOfMixedUnionPropertySerializerAsync()
+    {
+        var modelNameSpace = root.AddNamespace($"{root.Name}.models");
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "string" },
+            new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "ArrayOfObjects", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "ArrayOfObjects") },
+            new CodeType { Name = "SingleObject", TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "SingleObject") });
+
+        Assert.Contains("writer.writeStringValue(\"tags\", parentClass.tags as string);", result);
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => typeof item === \"string\")) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<string>(\"tags\", parentClass.tags as string[]);", result);
+        Assert.Contains("writer.writeCollectionOfObjectValues<ArrayOfObjects>(\"tags\", parentClass.tags as ArrayOfObjects[] | undefined | null", result);
+        Assert.Contains("writer.writeObjectValue<SingleObject>(\"tags\", parentClass.tags as SingleObject | undefined | null", result);
+        Assert.DoesNotContain("ArrayOfObjects | string", result);
+    }
+
+    [Fact]
+    public async Task WritesByteArrayCollectionMemberOfUnionPropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "string" });
+
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => item instanceof ArrayBuffer)) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<ArrayBuffer>(\"tags\", parentClass.tags as ArrayBuffer[]);", result);
+        Assert.DoesNotContain("writeCollectionOfObjectValues<ArrayBuffer>", result);
+    }
+
+    private async Task<string> WriteSerializerForUnionPropertyAsync(params CodeType[] memberTypes)
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "tags" };
+        composedType.AddType(memberTypes);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "tags",
+            SerializationName = "tags",
+            Type = composedType,
+            Kind = CodePropertyKind.Custom,
+        });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+
+        writer.Write(serializeFunction);
+        return tw.ToString();
+    }
+
+    [Fact]
     public async Task WritesOneOfWithInheritanceDeserializationAsync()
     {
         // Create base class "Device"
