@@ -212,7 +212,7 @@ public class GoConventionService : CommonLanguageConventionService
             _ => $"{DocCommentPrefix} {description}",
         };
         // the replacement of double backticks and double single quotes with quotation marks will be removed in go1.28 (https://github.com/golang/go/issues/76975)
-        writer.WriteLine(comment.Replace("``", "“", StringComparison.Ordinal).Replace("''", "”", StringComparison.Ordinal).TrimEnd(' '));
+        writer.WriteLine(comment.Replace("``", "“", StringComparison.Ordinal).Replace("''", "”", StringComparison.Ordinal).TrimEnd());
     }
     public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)
     {
