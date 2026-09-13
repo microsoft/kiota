@@ -12,6 +12,24 @@ namespace Kiota.Builder.Tests.Writers.Go;
 public class GoConventionServiceTests
 {
     private readonly GoConventionService instance = new();
+    [Theory]
+    [InlineData("``quoted''", "“quoted”")]
+    [InlineData("`code`", "`code`")]
+    [InlineData("```", "```")]
+    [InlineData("```go", "```go")]
+    [InlineData("````", "````")]
+    [InlineData("`````", "`````")]
+    [InlineData("```code``` and ``quoted''", "```code``` and “quoted”")]
+    public void NormalizesOnlyDoubleBacktickRuns(string description, string expected)
+    {
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, "./", "name");
+        using var textWriter = new StringWriter();
+        writer.SetTextWriter(textWriter);
+
+        instance.WriteDescriptionItem(description, writer);
+
+        Assert.Equal($"// {expected}{textWriter.NewLine}", textWriter.ToString());
+    }
     [Fact]
     public void ThrowsOnInvalidOverloads()
     {
