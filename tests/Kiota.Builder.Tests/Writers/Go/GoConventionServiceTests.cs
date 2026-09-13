@@ -30,6 +30,21 @@ public class GoConventionServiceTests
 
         Assert.Equal($"// {expected}{textWriter.NewLine}", textWriter.ToString());
     }
+    [Theory]
+    [InlineData("description ")]
+    [InlineData("description\t")]
+    [InlineData("description\u00A0")]
+    [InlineData("description\u2003")]
+    public void TrimsTrailingWhitespaceInDescriptionItems(string description)
+    {
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, "./", "name");
+        using var textWriter = new StringWriter();
+        writer.SetTextWriter(textWriter);
+
+        instance.WriteDescriptionItem(description, writer);
+
+        Assert.Equal($"// description{textWriter.NewLine}", textWriter.ToString());
+    }
     [Fact]
     public void ThrowsOnInvalidOverloads()
     {
