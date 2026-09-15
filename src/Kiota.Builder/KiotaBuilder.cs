@@ -2754,15 +2754,16 @@ public partial class KiotaBuilder
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
     /// <summary>
-    /// An inline schema is named after its parent model and property, which can be the name of a component schema in the same namespace
-    /// (e.g. the inline property "case" of "test" and the component "test_case"). The inline schema then reused, or was reused by, the component's class.
-    /// This appends a numeric suffix until the name is not used by any component, which does not depend on the order models are generated in.
+    /// Returns the class name for an inline property schema, which is named after its parent model and property and can match a component schema
+    /// in the same namespace (e.g. the inline property "case" of "test" and the component "test_case"). A numeric suffix is appended until no component
+    /// uses the name, skipping suffixed names that are the plain name of a sibling inline property (e.g. "case1"), so the result does not depend on
+    /// the order models are generated in.
     /// </summary>
-    private string GetClassNameNotUsedByComponent(string className, CodeNamespace targetNamespace)
+    private string GetClassNameNotUsedByComponent(string className, CodeNamespace targetNamespace, HashSet<string> siblingClassNames)
     {
         var result = className;
         var index = 0;
-        while (componentModelNames.Contains($"{targetNamespace.Name}{NsNameSeparator}{result}"))
+        while (componentModelNames.Contains($"{targetNamespace.Name}{NsNameSeparator}{result}") || (index > 0 && siblingClassNames.Contains(result)))
             result = $"{className}{++index}";
         return result;
     }
@@ -2781,6 +2782,9 @@ public partial class KiotaBuilder
         modelCreationDepth.Value++;
         try
         {
+            var inlineClassNames = schema.Properties?.Keys
+                    .Select(x => $"{model.Name}_{x.CleanupSymbolName()}")
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var propertiesToAdd = schema.Properties
                     ?.Select(x =>
                     {
@@ -2788,7 +2792,7 @@ public partial class KiotaBuilder
                         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.GetReferenceId());
                         var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                             rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
-                        var className = GetClassNameNotUsedByComponent($"{model.Name}_{x.Key.CleanupSymbolName()}", targetNamespace);
+                        var className = GetClassNameNotUsedByComponent($"{model.Name}_{x.Key.CleanupSymbolName()}", targetNamespace, inlineClassNames);
                         var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
                         if (definition == null)
                         {

@@ -9561,6 +9561,81 @@ components:
         Assert.Same(modelsNamespace, inlineClass.Parent);
     }
     [Fact]
+    public async Task InlinePropertySchemaSuffixDoesNotTakeASiblingInlinePropertyNameAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://localhost
+paths:
+  /tests_cases:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/test_case'
+  /tests:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/test'
+components:
+  schemas:
+    test_case:
+      type: object
+      properties:
+        name:
+          type: integer
+    test:
+      type: object
+      properties:
+        case:
+          type: object
+          properties:
+            name2:
+              type: integer
+        case1:
+          type: object
+          properties:
+            name3:
+              type: integer");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var componentClass = modelsNamespace.FindChildByName<CodeClass>("test_case", false);
+        Assert.NotNull(componentClass);
+        Assert.NotNull(componentClass.FindChildByName<CodeProperty>("name", false));
+        Assert.Null(componentClass.FindChildByName<CodeProperty>("name2", false));
+        var testClass = modelsNamespace.FindChildByName<CodeClass>("test", false);
+        Assert.NotNull(testClass);
+        var caseProperty = testClass.FindChildByName<CodeProperty>("case", false);
+        Assert.NotNull(caseProperty);
+        var case1Property = testClass.FindChildByName<CodeProperty>("case1", false);
+        Assert.NotNull(case1Property);
+        var caseClass = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(caseProperty.Type).TypeDefinition);
+        var case1Class = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(case1Property.Type).TypeDefinition);
+        Assert.NotSame(caseClass, case1Class);
+        // test_case1 is the plain name of the case1 property, so the case property skips to test_case2
+        Assert.Equal("test_case2", caseClass.Name);
+        Assert.NotNull(caseClass.FindChildByName<CodeProperty>("name2", false));
+        Assert.Null(caseClass.FindChildByName<CodeProperty>("name3", false));
+        Assert.Equal("test_case1", case1Class.Name);
+        Assert.NotNull(case1Class.FindChildByName<CodeProperty>("name3", false));
+        Assert.Null(case1Class.FindChildByName<CodeProperty>("name2", false));
+    }
+    [Fact]
     public async Task AllOfInheritanceModelReferencedViaComposedTypeKeepsItsPropertiesAsync()
     {
         // Regression test: a model defined as allOf [ $ref base, { inline properties } ] that is also reached
