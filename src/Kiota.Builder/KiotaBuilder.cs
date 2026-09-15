@@ -2782,8 +2782,10 @@ public partial class KiotaBuilder
         modelCreationDepth.Value++;
         try
         {
-            var inlineClassNames = schema.Properties?.Keys
-                    .Select(x => $"{model.Name}_{x.CleanupSymbolName()}")
+            // a $ref property doesn't take the inline name (see CreateModelDeclarations) unless it's a $dynamicRef, so only these can collide with a suffixed name
+            var inlineClassNames = schema.Properties?
+                    .Where(static x => !x.Value.IsReferencedSchema() || !string.IsNullOrEmpty(x.Value.DynamicRef))
+                    .Select(x => $"{model.Name}_{x.Key.CleanupSymbolName()}")
                     .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var propertiesToAdd = schema.Properties
                     ?.Select(x =>

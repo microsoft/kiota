@@ -9560,11 +9560,17 @@ components:
         Assert.NotNull(inlineClass.FindChildByName<CodeProperty>("uuid2", false));
         Assert.Same(modelsNamespace, inlineClass.Parent);
     }
-    [Fact]
-    public async Task InlinePropertySchemaSuffixDoesNotTakeASiblingInlinePropertyNameAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InlinePropertySchemaSuffixDoesNotTakeASiblingInlinePropertyNameAsync(bool siblingIsReference)
     {
         var tempFilePath = Path.GetTempFileName();
-        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+        var case1Schema = siblingIsReference ? @"          $ref: '#/components/schemas/other'" : @"          type: object
+          properties:
+            name3:
+              type: integer";
+        await using var fs = await GetDocumentStreamAsync($@"openapi: 3.0.1
 info:
   title: Test
   version: 1.0.0
@@ -9594,6 +9600,11 @@ components:
       properties:
         name:
           type: integer
+    other:
+      type: object
+      properties:
+        name3:
+          type: integer
     test:
       type: object
       properties:
@@ -9603,10 +9614,7 @@ components:
             name2:
               type: integer
         case1:
-          type: object
-          properties:
-            name3:
-              type: integer");
+{case1Schema}");
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
@@ -9627,11 +9635,12 @@ components:
         var caseClass = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(caseProperty.Type).TypeDefinition);
         var case1Class = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(case1Property.Type).TypeDefinition);
         Assert.NotSame(caseClass, case1Class);
-        // test_case1 is the plain name of the case1 property, so the case property skips to test_case2
-        Assert.Equal("test_case2", caseClass.Name);
+        // test_case1 is the plain name of an inline case1 property, so the case property skips to test_case2,
+        // while a $ref case1 uses its component's class and leaves test_case1 free
+        Assert.Equal(siblingIsReference ? "test_case1" : "test_case2", caseClass.Name);
         Assert.NotNull(caseClass.FindChildByName<CodeProperty>("name2", false));
         Assert.Null(caseClass.FindChildByName<CodeProperty>("name3", false));
-        Assert.Equal("test_case1", case1Class.Name);
+        Assert.Equal(siblingIsReference ? "other" : "test_case1", case1Class.Name);
         Assert.NotNull(case1Class.FindChildByName<CodeProperty>("name3", false));
         Assert.Null(case1Class.FindChildByName<CodeProperty>("name2", false));
     }
