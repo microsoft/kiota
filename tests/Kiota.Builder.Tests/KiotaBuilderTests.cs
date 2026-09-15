@@ -9481,17 +9481,15 @@ components:
         Assert.NotNull(modelsNamespace);
         Assert.Equal(4, modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
     }
-    [Fact]
-    public async Task InlinePropertySchemaDoesNotOverwriteComponentWithTheSameNameAsync()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task InlinePropertySchemaDoesNotOverwriteComponentWithTheSameNameAsync(bool componentIsGenerated)
     {
         var tempFilePath = Path.GetTempFileName();
-        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
-info:
-  title: Test
-  version: 1.0.0
-servers:
-  - url: https://localhost
-paths:
+        // when no path uses the component, its class is not generated, but the inline name still gets the suffix
+        // so it stays the same whatever paths are included or excluded
+        var componentPath = componentIsGenerated ? @"
   /tests_cases:
     get:
       responses:
@@ -9499,7 +9497,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/test_case'
+                $ref: '#/components/schemas/test_case'" : string.Empty;
+        await using var fs = await GetDocumentStreamAsync($@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://localhost
+paths:{componentPath}
   /tests:
     get:
       responses:
@@ -9535,10 +9540,15 @@ components:
         var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models");
         Assert.NotNull(modelsNamespace);
         var componentClass = modelsNamespace.FindChildByName<CodeClass>("test_case", false);
-        Assert.NotNull(componentClass);
-        Assert.NotNull(componentClass.FindChildByName<CodeProperty>("name", false));
-        Assert.NotNull(componentClass.FindChildByName<CodeProperty>("uuid", false));
-        Assert.Null(componentClass.FindChildByName<CodeProperty>("name2", false));
+        if (componentIsGenerated)
+        {
+            Assert.NotNull(componentClass);
+            Assert.NotNull(componentClass.FindChildByName<CodeProperty>("name", false));
+            Assert.NotNull(componentClass.FindChildByName<CodeProperty>("uuid", false));
+            Assert.Null(componentClass.FindChildByName<CodeProperty>("name2", false));
+        }
+        else
+            Assert.Null(componentClass);
         var testClass = modelsNamespace.FindChildByName<CodeClass>("test", false);
         Assert.NotNull(testClass);
         var caseProperty = testClass.FindChildByName<CodeProperty>("case", false);
