@@ -46,6 +46,25 @@ public class GoConventionServiceTests
         Assert.Equal($"// description{textWriter.NewLine}", textWriter.ToString());
     }
     [Fact]
+    public void ConvertsNullableUuidPathParameters()
+    {
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Go, "./", "name");
+        using var textWriter = new StringWriter();
+        writer.SetTextWriter(textWriter);
+        const string pathParameterName = "userObject\"'\n\r\t\\$Id";
+
+        instance.AddParametersAssignment(writer, new CodeType { Name = "map[string]string" }, "pathParameters", "urlTplParams", false, (new CodeType
+        {
+            Name = "UUID",
+            IsNullable = true,
+        }, pathParameterName, "userObjectId"));
+
+        var result = textWriter.ToString();
+        Assert.Contains("if userObjectId != nil {", result);
+        Assert.Contains("urlTplParams[\"userObject\\\"'\\n\\r\\t\\\\$Id\"] = (*userObjectId).String()", result);
+        Assert.DoesNotContain("*userObjectId.String()", result);
+    }
+    [Fact]
     public void ThrowsOnInvalidOverloads()
     {
         var root = CodeNamespace.InitRootNamespace();
