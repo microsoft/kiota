@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
+- Ruby: a composed type without a discriminator generated `parse_node.get_child_node("")`, which raises, and composed type wrappers referenced their member classes unqualified so the constants did not resolve. Completes the composed type support added in [#8065](https://github.com/microsoft/kiota/pull/8065). [kiota-ruby#73](https://github.com/microsoft/kiota-ruby/issues/73)
+
 - Fixed TypeScript request metadata to use string response factories for UUID values and collections.
 
 - TypeScript: a composed type holding one of the runtime primitives imported from `@microsoft/kiota-abstractions` (`Guid`, `DateOnly`, `TimeOnly`, `Duration`) generated a client that did not compile, with `error TS1361: 'DateOnly' cannot be used as a value because it was imported using 'import type'`. The serializer narrows those types with `instanceof`, which is a value usage, but a value import was only forced for properties carrying a default value. Composed types now force it as well. [#8177](https://github.com/microsoft/kiota/issues/8177)
