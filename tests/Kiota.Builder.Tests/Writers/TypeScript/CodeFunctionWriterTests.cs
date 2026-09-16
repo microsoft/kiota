@@ -2372,7 +2372,35 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("writeCollectionOfObjectValues<ArrayBuffer>", result);
     }
 
-    private async Task<string> WriteSerializerForUnionPropertyAsync(params CodeType[] memberTypes)
+    [Fact]
+    public async Task WritesDateOnlyCollectionMemberOfUnionPropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "DateOnly", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "string" });
+
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => item instanceof DateOnly)) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<DateOnly>(\"tags\", parentClass.tags as DateOnly[]);", result);
+        Assert.DoesNotContain("writeCollectionOfObjectValues<DateOnly>", result);
+    }
+
+    [Fact]
+    public async Task WritesUnionOfPrimitiveCollectionsWithDefaultValuePropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyWithDefaultAsync(
+            "\"2024-01-01\"",
+            new CodeType { Name = "DateOnly", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "string" });
+
+        // "a ?? b as T" parses as "a ?? (b as T)", so without the parentheses the string literal is cast to DateOnly[]
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<DateOnly>(\"tags\", (parentClass.tags ?? \"2024-01-01\") as DateOnly[]);", result);
+        Assert.DoesNotContain("parentClass.tags ?? \"2024-01-01\" as DateOnly[]", result);
+    }
+
+    private Task<string> WriteSerializerForUnionPropertyAsync(params CodeType[] memberTypes) =>
+        WriteSerializerForUnionPropertyWithDefaultAsync(string.Empty, memberTypes);
+
+    private async Task<string> WriteSerializerForUnionPropertyWithDefaultAsync(string defaultValue, params CodeType[] memberTypes)
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
@@ -2384,6 +2412,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             SerializationName = "tags",
             Type = composedType,
             Kind = CodePropertyKind.Custom,
+            DefaultValue = defaultValue,
         });
         TestHelper.AddSerializationPropertiesToModelClass(parentClass);
 

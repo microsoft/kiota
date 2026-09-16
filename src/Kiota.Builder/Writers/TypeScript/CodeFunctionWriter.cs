@@ -570,6 +570,11 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
 
+    // A union whose members are all primitive gets no else clause, so a member reaches the wire only when the value
+    // matches the guard generated for its type. Two shapes do not match: a Guid collection deserializes through
+    // getCollectionOfPrimitiveValues<Guid>("string") and reads back as strings, and a binary collection deserializes
+    // through the scalar getByteArrayValue() and reads back as a single ArrayBuffer. Both mismatches come from the
+    // deserializer and predate this gate.
     private static bool HasPrimitiveMembers(CodeComposedTypeBase composedType) =>
         composedType.IsComposedOfPrimitives(IsPrimitiveTypeOrPrimitiveCollection) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveTypeOrPrimitiveCollection);
 
@@ -589,6 +594,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         foreach (var type in composedType.Types.Where(x => IsPrimitiveTypeOrPrimitiveCollection(x, composedType)))
         {
             var nodeType = conventions.GetTypeString(type, method, false);
+            // the guard narrows the element type, while the cast is on the property, so it keeps the collection suffix
+            var castType = conventions.GetTypeString(type, method);
             var serializationName = type.IsCollection ? $"writeCollectionOfPrimitiveValues<{nodeType}>" : GetSerializationMethodName(type, method.OriginalLocalMethod);
             if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
             if (!writtenTypeChecks.Add($"{nodeType}|{type.IsCollection}")) continue;
@@ -596,7 +603,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var isElse = isFirst ? "" : "else ";
             writer.StartBlock(GetPrimitiveTypeCheck(type, $"{modelParamName}.{codePropertyName}", nodeType, isElse));
 
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {conventions.GetTypeString(type, method)});");
+            // "a ?? b as T" parses as "a ?? (b as T)", so a property carrying a default value needs its own
+            // parentheses to keep the cast on the property instead of on the default literal
+            var serializedValue = string.IsNullOrEmpty(defaultValueSuffix) ?
+                $"{modelParamName}.{codePropertyName}" :
+                $"({modelParamName}.{codePropertyName}{defaultValueSuffix})";
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {serializedValue} as {castType});");
             writer.CloseBlock();
             isFirst = false;
         }
