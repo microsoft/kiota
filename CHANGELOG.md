@@ -13,7 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
+
 - Fixed TypeScript request metadata to use string response factories for UUID values and collections.
+
+- TypeScript: a composed type holding one of the runtime primitives imported from `@microsoft/kiota-abstractions` (`Guid`, `DateOnly`, `TimeOnly`, `Duration`) generated a client that did not compile, with `error TS1361: 'DateOnly' cannot be used as a value because it was imported using 'import type'`. The serializer narrows those types with `instanceof`, which is a value usage, but a value import was only forced for properties carrying a default value. Composed types now force it as well. [#8177](https://github.com/microsoft/kiota/issues/8177)
 
 - Fixed the generation of a schema used in two roles at once: as the schema of an error response and as an `allOf` child in the discriminator mapping of another error schema. The error refiner replaced its `allOf` base class with the language error base class while the parent's factory method still returned it as a derived type, so the generated C# and Java clients did not compile (`CS0029` / `incompatible types`). Such a schema now keeps its base class and inherits the error base class through its parent, like every other mapped child.
 
@@ -28,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A HEAD operation with no response schema generated an executor returning a `Stream`. The default return type was picked from the response codes alone, so a HEAD declaring only a `200` fell through to binary, while one that happened to list `304` returned void by accident. The request method is now checked first, so a HEAD that falls through to the default returns void. [#4245](https://github.com/microsoft/kiota/issues/4245)
 - TypeScript: the discriminator switch in a composed type serializer was built from the wire name, but model properties are camel cased by the refiner, so a discriminator such as `pet_type` was emitted as `.pet_type` where the generated interface declares `petType` and the client did not compile. The accessor is now resolved from the model property, which also corrects `@odata.type` from `.OdataType` to `.odataType`. [#7862](https://github.com/microsoft/kiota/issues/7862)
 - TypeScript: the factory generated for a collection of a primitive union was declared returning the collection but its body read a scalar, so `(number | string)[] | undefined` came back from `parseNode?.getNumberValue() ?? parseNode?.getStringValue()` and only the first item of the payload survived. The collection reads are now emitted for that case, matching what the deserializer already does for the same shape. [#8178](https://github.com/microsoft/kiota/issues/8178)
+- Golang: Fix comment format [#8186](https://github.com/microsoft/kiota/pull/8186)
 
 ## [1.35.0] - 2026-09-01
 
@@ -1862,4 +1867,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-

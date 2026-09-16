@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -9,7 +10,7 @@ using Kiota.Builder.Refiners;
 
 namespace Kiota.Builder.Writers.Go;
 
-public class GoConventionService : CommonLanguageConventionService
+public partial class GoConventionService : CommonLanguageConventionService
 {
     public override string StreamTypeName => "[]byte";
 
@@ -211,8 +212,11 @@ public class GoConventionService : CommonLanguageConventionService
             _ when string.IsNullOrEmpty(description) => DocCommentPrefix,
             _ => $"{DocCommentPrefix} {description}",
         };
-        writer.WriteLine(comment);
+        // the replacement of double backticks and double single quotes with quotation marks will be removed in go1.28 (https://github.com/golang/go/issues/76975)
+        writer.WriteLine(DoubleBackticksRegex().Replace(comment, "“").Replace("''", "”", StringComparison.Ordinal).TrimEnd());
     }
+    [GeneratedRegex(@"(?<!`)``(?!`)", RegexOptions.None, 500)]
+    private static partial Regex DoubleBackticksRegex();
     public void WriteLinkDescription(CodeDocumentation documentation, LanguageWriter writer)
     {
         if (documentation is null) return;
@@ -285,6 +289,7 @@ public class GoConventionService : CommonLanguageConventionService
             "float" or "double" or "decimal" or "float64" or "float32" => $"{StrConvHash}.FormatFloat({reference}, 'E', -1, 64)",
             "DateTimeOffset" or "Time" => $"({reference}).Format({TimeFormatHash}.RFC3339)", // default to using ISO 8601
             "ISODuration" or "TimeSpan" or "TimeOnly" or "DateOnly" => $"({reference}).String()",
+            "Guid" or "UUID" when reference.StartsWith('*') => $"({reference}).String()",
             "Guid" or "UUID" => $"{reference}.String()",
             _ => reference,
         };
