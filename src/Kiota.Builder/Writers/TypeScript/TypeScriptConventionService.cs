@@ -258,6 +258,21 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         };
     }
 
+    // Types the generated code narrows with "instanceof" instead of "typeof". "instanceof" is a value
+    // usage, so the imports for these types cannot be erased to "import type".
+    public static bool IsInstanceOfPrimitiveType(string typeName)
+    {
+        return typeName switch
+        {
+            TYPE_GUID or
+            TYPE_DATE or
+            TYPE_DATE_ONLY or
+            TYPE_TIME_ONLY or
+            TYPE_DURATION => true,
+            _ => false,
+        };
+    }
+
     public static string? GetPrimitiveAlias(string typeName)
     {
         return typeName switch

@@ -13,7 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
+
 - Fixed TypeScript request metadata to use string response factories for UUID values and collections.
+
+- TypeScript: a composed type holding one of the runtime primitives imported from `@microsoft/kiota-abstractions` (`Guid`, `DateOnly`, `TimeOnly`, `Duration`) generated a client that did not compile, with `error TS1361: 'DateOnly' cannot be used as a value because it was imported using 'import type'`. The serializer narrows those types with `instanceof`, which is a value usage, but a value import was only forced for properties carrying a default value. Composed types now force it as well. [#8177](https://github.com/microsoft/kiota/issues/8177)
 
 - Fixed the generation of a schema used in two roles at once: as the schema of an error response and as an `allOf` child in the discriminator mapping of another error schema. The error refiner replaced its `allOf` base class with the language error base class while the parent's factory method still returned it as a derived type, so the generated C# and Java clients did not compile (`CS0029` / `incompatible types`). Such a schema now keeps its base class and inherits the error base class through its parent, like every other mapped child.
 
