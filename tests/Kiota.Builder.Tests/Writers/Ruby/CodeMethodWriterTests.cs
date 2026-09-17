@@ -1620,6 +1620,45 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return result", result);
     }
     [Fact]
+    public void WritesUnionFactoryBodySkipsDiscriminatorWithoutAPropertyName()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ComplexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "stringValue", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("get_child_node(\"\")", result);
+        Assert.DoesNotContain("mapping_value_node", result);
+        Assert.Contains("result.string_value = val", result);
+        Assert.Contains("return result", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesUnionFactoryBodyQualifyingMembersFromAnotherNamespace()
+    {
+        setup();
+        var modelsNS = root.AddNamespace("models");
+        var complexType1 = modelsNS.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("#kiota.complexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result.complex_type1_value = Models::ComplexType1.new", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
     public void WritesIntersectionFactoryBody()
     {
         AddIntersectionTypeWrapper();

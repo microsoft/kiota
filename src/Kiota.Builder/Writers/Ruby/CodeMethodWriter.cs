@@ -133,9 +133,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 .FirstOrDefault(x => x.Value.Name.Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase)).Key))
             .Where(static x => !string.IsNullOrEmpty(x.mappedKey))
             .ToArray();
-        if (complexPropertiesWithMappings.Length > 0)
+        var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
+        if (complexPropertiesWithMappings.Length > 0 && !string.IsNullOrEmpty(discriminatorPropertyName))
         {
-            writer.WriteLine($"{NodeVarName} = {parseNodeParameterName}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
+            writer.WriteLine($"{NodeVarName} = {parseNodeParameterName}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(discriminatorPropertyName)}\")");
             writer.StartBlock($"unless {NodeVarName}.nil?");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
             var elseIfPrefix = string.Empty;
@@ -144,7 +145,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 // safe navigation: a ParseNode may yield a nil discriminator value, and the
                 // inherited factory's `case` path tolerates that, so this one must too
                 writer.StartBlock($"{elseIfPrefix}if {DiscriminatorMappingVarName}&.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedKey)}\".downcase");
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetQualifiedTypeName(property.Type)}.new");
                 writer.DecreaseIndent();
                 elseIfPrefix = "els";
             }
@@ -204,7 +205,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.StartBlock("else");
             foreach (var property in complexProperties)
             {
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetQualifiedTypeName(property.Type)}.new");
             }
             writer.DecreaseIndent();
         }
@@ -212,7 +213,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         {
             foreach (var property in complexProperties)
             {
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {property.Type.Name.ToFirstCharacterUpperCase()}.new");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetQualifiedTypeName(property.Type)}.new");
             }
         }
         if (nonComplexProperties.Length > 0)
@@ -687,10 +688,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         if (targetTypeBase is not CodeType targetType)
             return "lambda {|pn| nil }";
+        return $"lambda {{|pn| {GetQualifiedTypeName(targetType)}.create_from_discriminator_value(pn) }}";
+    }
+    private static string GetQualifiedTypeName(CodeTypeBase targetTypeBase)
+    {
+        var typeName = targetTypeBase.Name.ToFirstCharacterUpperCase();
+        if (targetTypeBase is not CodeType targetType)
+            return typeName;
         var nsPrefix = targetType.TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase();
-        if (!string.IsNullOrEmpty(nsPrefix))
-            nsPrefix += "::";
-        return $"lambda {{|pn| {nsPrefix}{targetType.Name.ToFirstCharacterUpperCase()}.create_from_discriminator_value(pn) }}";
+        return string.IsNullOrEmpty(nsPrefix) ? typeName : $"{nsPrefix}::{typeName}";
     }
     private static string TranslateObjectType(string typeName)
     {
