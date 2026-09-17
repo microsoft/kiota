@@ -59,8 +59,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {
-  },
+  "https://raw.githubusercontent.com/googlemaps/openapi-specification/refs/tags/v1.22.5/dist/google-maps-platform-openapi3.yml": {},
   "https://developers.pipedrive.com/docs/api/v1/openapi.yaml": {
     "ExcludePatterns": [
       {
@@ -75,8 +74,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml": {
-  },
+  "https://raw.githubusercontent.com/twilio/twilio-oai/refs/heads/main/spec/yaml/twilio_api_v2010.yaml": {},
   "https://raw.githubusercontent.com/stripe/openapi/refs/heads/master/latest/openapi.spec3.json": {
     "Suppressions": [
       {
@@ -119,8 +117,7 @@
       }
     ]
   },
-  "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json": {
-  },
+  "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/refs/heads/master/esignature.rest.swagger-v2.1.json": {},
   "https://api.twitter.com/2/openapi.json": {
     "Suppressions": [
       {
@@ -157,6 +154,10 @@
         "Rationale": "Excluded to reduce generation scope for performance testing"
       },
       {
+        "Pattern": "/copilot/*",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
         "Pattern": "/copilot/**",
         "Rationale": "Excluded to reduce generation scope for performance testing"
       },
@@ -165,8 +166,312 @@
         "Rationale": "Excluded to reduce generation scope for performance testing"
       },
       {
+        "Pattern": "/me/*",
+        "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
         "Pattern": "/me/**",
         "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/users/{user-id}/chats",
+        "Rationale": "Chat resources are addressable through /chats/{chat-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/chats/*",
+        "Rationale": "Chat resources are addressable through /chats/{chat-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/chats/**",
+        "Rationale": "Chat resources are addressable through /chats/{chat-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/devices",
+        "Rationale": "Device resources are addressable through /devices/{device-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/devices/*",
+        "Rationale": "Device resources are addressable through /devices/{device-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/devices/**",
+        "Rationale": "Device resources are addressable through /devices/{device-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drive",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drive/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drive/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drives",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drives/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drives/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/managedDevices",
+        "Rationale": "Managed device resources are addressable through /deviceManagement/managedDevices/{managedDevice-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/managedDevices/*",
+        "Rationale": "Managed device resources are addressable through /deviceManagement/managedDevices/{managedDevice-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/managedDevices/**",
+        "Rationale": "Managed device resources are addressable through /deviceManagement/managedDevices/{managedDevice-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/planner",
+        "Rationale": "Planner resources are addressable through /planner; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/planner/*",
+        "Rationale": "Planner resources are addressable through /planner; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/planner/**",
+        "Rationale": "Planner resources are addressable through /planner; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drive",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drive/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drive/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drives",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drives/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drives/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/sites",
+        "Rationale": "Site resources are addressable through /sites/{site-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/sites/*",
+        "Rationale": "Site resources are addressable through /sites/{site-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/sites/**",
+        "Rationale": "Site resources are addressable through /sites/{site-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drive",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drive/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drive/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drives",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drives/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drives/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/team",
+        "Rationale": "Team resources are addressable through /teams/{team-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/team/*",
+        "Rationale": "Team resources are addressable through /teams/{team-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/team/**",
+        "Rationale": "Team resources are addressable through /teams/{team-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/termStore",
+        "Rationale": "Term store resources are addressable through /termStore; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/termStore/*",
+        "Rationale": "Term store resources are addressable through /termStore; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/termStore/**",
+        "Rationale": "Term store resources are addressable through /termStore; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/drives/{drive-id}/items",
+        "Rationale": "Drive item navigation is deeply cyclical in Graph CSDL and dominates generated surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/drives/{drive-id}/items/*",
+        "Rationale": "Drive item navigation is deeply cyclical in Graph CSDL and dominates generated surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/drives/{drive-id}/items/**",
+        "Rationale": "Drive item navigation is deeply cyclical in Graph CSDL and dominates generated surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/entitlementManagement",
+        "Rationale": "Entitlement management navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/entitlementManagement/*",
+        "Rationale": "Entitlement management navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/entitlementManagement/**",
+        "Rationale": "Entitlement management navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceAppManagement/mobileApps",
+        "Rationale": "Mobile app navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceAppManagement/mobileApps/*",
+        "Rationale": "Mobile app navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceAppManagement/mobileApps/**",
+        "Rationale": "Mobile app navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/accessReviews",
+        "Rationale": "Access review navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/accessReviews/*",
+        "Rationale": "Access review navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/accessReviews/**",
+        "Rationale": "Access review navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/lifecycleWorkflows",
+        "Rationale": "Lifecycle workflow navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/lifecycleWorkflows/*",
+        "Rationale": "Lifecycle workflow navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/lifecycleWorkflows/**",
+        "Rationale": "Lifecycle workflow navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/teamwork/teamTemplates",
+        "Rationale": "Team template navigation repeats team definition surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/teamwork/teamTemplates/*",
+        "Rationale": "Team template navigation repeats team definition surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/teamwork/teamTemplates/**",
+        "Rationale": "Team template navigation repeats team definition surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/financials/companies",
+        "Rationale": "Financial company navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/financials/companies/*",
+        "Rationale": "Financial company navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/financials/companies/**",
+        "Rationale": "Financial company navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/solutions/backupRestore",
+        "Rationale": "Backup restore navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/solutions/backupRestore/*",
+        "Rationale": "Backup restore navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/solutions/backupRestore/**",
+        "Rationale": "Backup restore navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/admin/windows",
+        "Rationale": "Windows admin navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/admin/windows/*",
+        "Rationale": "Windows admin navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/admin/windows/**",
+        "Rationale": "Windows admin navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/tenantRelationships/managedTenants",
+        "Rationale": "Managed tenant navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/tenantRelationships/managedTenants/*",
+        "Rationale": "Managed tenant navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/tenantRelationships/managedTenants/**",
+        "Rationale": "Managed tenant navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/catalogs",
+        "Rationale": "Access package catalog navigation repeats entitlement management surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/catalogs/*",
+        "Rationale": "Access package catalog navigation repeats entitlement management surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/catalogs/**",
+        "Rationale": "Access package catalog navigation repeats entitlement management surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceManagement/virtualEndpoint",
+        "Rationale": "Virtual endpoint navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceManagement/virtualEndpoint/*",
+        "Rationale": "Virtual endpoint navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceManagement/virtualEndpoint/**",
+        "Rationale": "Virtual endpoint navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
       }
     ],
     "Suppressions": [
