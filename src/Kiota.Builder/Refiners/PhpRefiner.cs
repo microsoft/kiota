@@ -139,6 +139,7 @@ public class PhpRefiner : CommonLanguageRefiner
                     CodePropertyKind.QueryParameter,
                 },
                 static s => s.ToCamelCase(UnderscoreArray));
+            AddDefaultImports(generatedCode, queryParameterUsingEvaluators);
         }, cancellationToken);
     }
     private static readonly Dictionary<string, (string, CodeUsing?)> DateTypesReplacements = new(StringComparer.OrdinalIgnoreCase)
@@ -212,12 +213,18 @@ public class PhpRefiner : CommonLanguageRefiner
         new(static x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTime", StringComparison.OrdinalIgnoreCase), "", "\\DateTime"),
         new(static x => x is CodeProperty {Type.Name: {}} property && property.Type.Name.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase), "", "\\DateTime"),
         new(static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.ClientConstructor), AbstractionsNamespaceName, "ApiClientBuilder"),
-        new(static x => x is CodeProperty property && property.IsOfKind(CodePropertyKind.QueryParameter) && !string.IsNullOrEmpty(property.SerializationName), AbstractionsNamespaceName, "QueryParameter"),
         new(static x => x is CodeClass codeClass && codeClass.IsOfKind(CodeClassKind.RequestConfiguration), AbstractionsNamespaceName, "RequestOption"),
         new (static x => x is CodeClass { OriginalComposedType: CodeIntersectionType intersectionType } && intersectionType.Types.Any(static y => !y.IsExternal),
             $@"{AbstractionsNamespaceName}\Serialization", "ParseNodeHelper"),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
             AbstractionsNamespaceName, MultipartBodyClassName)
+    };
+    private static readonly AdditionalUsingEvaluator[] queryParameterUsingEvaluators = {
+        new(static x => x is CodeProperty property &&
+            property.IsOfKind(CodePropertyKind.QueryParameter) &&
+            !string.IsNullOrEmpty(property.SerializationName),
+            AbstractionsNamespaceName,
+            "QueryParameter"),
     };
 
     private const string MultipartBodyClassName = "MultiPartBody";
@@ -473,4 +480,3 @@ public class PhpRefiner : CommonLanguageRefiner
         CrawlTree(codeElement, AddQueryParameterFactoryMethod);
     }
 }
-
