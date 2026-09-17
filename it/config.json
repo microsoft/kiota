@@ -172,6 +172,114 @@
       {
         "Pattern": "/me/**",
         "Rationale": "Excluded to reduce generation scope for performance testing"
+      },
+      {
+        "Pattern": "/users/{user-id}/chats",
+        "Rationale": "Chat resources are addressable through /chats/{chat-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/chats/*",
+        "Rationale": "Chat resources are addressable through /chats/{chat-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/chats/**",
+        "Rationale": "Chat resources are addressable through /chats/{chat-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/devices",
+        "Rationale": "Device resources are addressable through /devices/{device-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/devices/*",
+        "Rationale": "Device resources are addressable through /devices/{device-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/devices/**",
+        "Rationale": "Device resources are addressable through /devices/{device-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drive",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drive/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drive/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drives",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drives/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/drives/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drive",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drive/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drive/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drives",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drives/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/drives/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/sites",
+        "Rationale": "Site resources are addressable through /sites/{site-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/sites/*",
+        "Rationale": "Site resources are addressable through /sites/{site-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/sites/**",
+        "Rationale": "Site resources are addressable through /sites/{site-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drive",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drive/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drive/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drives",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drives/*",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/drives/**",
+        "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
       }
     ],
     "Suppressions": [
