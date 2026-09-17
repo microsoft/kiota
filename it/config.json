@@ -222,6 +222,30 @@
         "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
       },
       {
+        "Pattern": "/users/{user-id}/managedDevices",
+        "Rationale": "Managed device resources are addressable through /deviceManagement/managedDevices/{managedDevice-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/managedDevices/*",
+        "Rationale": "Managed device resources are addressable through /deviceManagement/managedDevices/{managedDevice-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/managedDevices/**",
+        "Rationale": "Managed device resources are addressable through /deviceManagement/managedDevices/{managedDevice-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/planner",
+        "Rationale": "Planner resources are addressable through /planner; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/planner/*",
+        "Rationale": "Planner resources are addressable through /planner; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/users/{user-id}/planner/**",
+        "Rationale": "Planner resources are addressable through /planner; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
         "Pattern": "/groups/{group-id}/drive",
         "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
       },
@@ -280,6 +304,174 @@
       {
         "Pattern": "/sites/{site-id}/drives/**",
         "Rationale": "Drive resources are addressable through /drives/{drive-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/team",
+        "Rationale": "Team resources are addressable through /teams/{team-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/team/*",
+        "Rationale": "Team resources are addressable through /teams/{team-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/groups/{group-id}/team/**",
+        "Rationale": "Team resources are addressable through /teams/{team-id}; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/termStore",
+        "Rationale": "Term store resources are addressable through /termStore; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/termStore/*",
+        "Rationale": "Term store resources are addressable through /termStore; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/sites/{site-id}/termStore/**",
+        "Rationale": "Term store resources are addressable through /termStore; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/drives/{drive-id}/items",
+        "Rationale": "Drive item navigation is deeply cyclical in Graph CSDL and dominates generated surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/drives/{drive-id}/items/*",
+        "Rationale": "Drive item navigation is deeply cyclical in Graph CSDL and dominates generated surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/drives/{drive-id}/items/**",
+        "Rationale": "Drive item navigation is deeply cyclical in Graph CSDL and dominates generated surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/entitlementManagement",
+        "Rationale": "Entitlement management navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/entitlementManagement/*",
+        "Rationale": "Entitlement management navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/entitlementManagement/**",
+        "Rationale": "Entitlement management navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceAppManagement/mobileApps",
+        "Rationale": "Mobile app navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceAppManagement/mobileApps/*",
+        "Rationale": "Mobile app navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceAppManagement/mobileApps/**",
+        "Rationale": "Mobile app navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/accessReviews",
+        "Rationale": "Access review navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/accessReviews/*",
+        "Rationale": "Access review navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/accessReviews/**",
+        "Rationale": "Access review navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/lifecycleWorkflows",
+        "Rationale": "Lifecycle workflow navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/lifecycleWorkflows/*",
+        "Rationale": "Lifecycle workflow navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/lifecycleWorkflows/**",
+        "Rationale": "Lifecycle workflow navigation is deeply cyclical in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/teamwork/teamTemplates",
+        "Rationale": "Team template navigation repeats team definition surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/teamwork/teamTemplates/*",
+        "Rationale": "Team template navigation repeats team definition surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/teamwork/teamTemplates/**",
+        "Rationale": "Team template navigation repeats team definition surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/financials/companies",
+        "Rationale": "Financial company navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/financials/companies/*",
+        "Rationale": "Financial company navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/financials/companies/**",
+        "Rationale": "Financial company navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/solutions/backupRestore",
+        "Rationale": "Backup restore navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/solutions/backupRestore/*",
+        "Rationale": "Backup restore navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/solutions/backupRestore/**",
+        "Rationale": "Backup restore navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/admin/windows",
+        "Rationale": "Windows admin navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/admin/windows/*",
+        "Rationale": "Windows admin navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/admin/windows/**",
+        "Rationale": "Windows admin navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/tenantRelationships/managedTenants",
+        "Rationale": "Managed tenant navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/tenantRelationships/managedTenants/*",
+        "Rationale": "Managed tenant navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/tenantRelationships/managedTenants/**",
+        "Rationale": "Managed tenant navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/catalogs",
+        "Rationale": "Access package catalog navigation repeats entitlement management surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/catalogs/*",
+        "Rationale": "Access package catalog navigation repeats entitlement management surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/identityGovernance/catalogs/**",
+        "Rationale": "Access package catalog navigation repeats entitlement management surface; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceManagement/virtualEndpoint",
+        "Rationale": "Virtual endpoint navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceManagement/virtualEndpoint/*",
+        "Rationale": "Virtual endpoint navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
+      },
+      {
+        "Pattern": "/deviceManagement/virtualEndpoint/**",
+        "Rationale": "Virtual endpoint navigation is deeply nested in Graph CSDL; excluded to reduce redundant Graph Beta integration scope"
       }
     ],
     "Suppressions": [
