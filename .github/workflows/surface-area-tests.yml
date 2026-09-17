@@ -68,13 +68,18 @@ jobs:
         shell: pwsh
         timeout-minutes: 30
         run: |
+          $additionalArguments = ./it/get-additional-arguments.ps1 `
+            -descriptionKey "${{ matrix.description }}" `
+            -language "${{ matrix.language }}" `
+            -includeOutputParameter $false
           $patchFileName = "${{ matrix.language }}-dom-export.patch"
           $patchPath = Join-Path -Path (Get-Location) -ChildPath $patchFileName
           ./it/compare-dom-export.ps1 `
             -descriptionUrl "${{ matrix.description }}" `
             -language "${{ matrix.language }}" `
             -patchPath $patchPath `
-            -baselineVersion "${{ github.event.inputs.baselineVersion }}"
+            -baselineVersion "${{ github.event.inputs.baselineVersion }}" `
+            -additionalArguments $additionalArguments
           $hasPatch = (Test-Path $patchPath) -and ((Get-Item $patchPath).Length -gt 0)
           # The diff tool runs as a Docker container action with the repository mounted at
           # /github/workspace, so it must receive a workspace-relative path. Passing the
