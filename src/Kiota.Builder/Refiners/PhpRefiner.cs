@@ -308,17 +308,23 @@ public class PhpRefiner : CommonLanguageRefiner
 
     private static void AliasUsingWithSameSymbol(CodeElement currentElement)
     {
-        if (currentElement is CodeClass currentClass && currentClass.StartBlock != null && currentClass.StartBlock.Usings.Any(x => !x.IsExternal))
+        if (currentElement is CodeClass currentClass && currentClass.StartBlock != null)
         {
-            var duplicatedSymbolsUsings = currentClass.StartBlock.Usings
+            var nonExternalUsings = currentClass.StartBlock.Usings
+                .Where(static x => !x.IsExternal)
+                .ToArray();
+            if (nonExternalUsings.Length == 0)
+            {
+                CrawlTree(currentElement, AliasUsingWithSameSymbol);
+                return;
+            }
+            var duplicatedSymbolsUsings = nonExternalUsings
                 .Distinct(usingComparer)
                 .Where(static x => !string.IsNullOrEmpty(x.Declaration?.Name) && x.Declaration.TypeDefinition != null)
                 .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
-                .Where(x => x.Count() > 1)
-                .SelectMany(x => x)
-                .Union(currentClass.StartBlock
-                    .Usings
-                    .Where(x => !x.IsExternal)
+                .Where(static x => x.Skip(1).Any())
+                .SelectMany(static x => x)
+                .Union(nonExternalUsings
                     .Where(x => x.Declaration!
                         .Name
                         .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
@@ -473,4 +479,3 @@ public class PhpRefiner : CommonLanguageRefiner
         CrawlTree(codeElement, AddQueryParameterFactoryMethod);
     }
 }
-
