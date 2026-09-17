@@ -13,6 +13,7 @@ using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
+using Kiota.Builder.Writers.Rust;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Writers;
@@ -223,6 +224,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
             GenerationLanguage.Python => new PythonWriter(outputPath, clientNamespaceName, usesBackingStore),
             GenerationLanguage.Go => new GoWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
             GenerationLanguage.Dart => new DartWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.Rust => new RustWriter(outputPath, clientNamespaceName),
             GenerationLanguage.HTTP => new HttpWriter(outputPath, clientNamespaceName),
             _ => throw new InvalidEnumArgumentException($"{language} language currently not supported."),
         };
