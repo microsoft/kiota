@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- TypeScript: `GetTypeAlias` rebuilt the set of usings of the enclosing block for every type reference written, so the cost of the file writing step grew quadratically with the number of models in a `CodeFile`. That set is now gathered once per block, while the alias of each using is still read on every lookup. On the GitHub API description this drops the writing step from 19.5 s to 1.9 s, and on the Stripe description from 93.5 s to 7.8 s, with byte-identical output.
+
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
 - Ruby: a composed type without a discriminator generated `parse_node.get_child_node("")`, which raises, and composed type wrappers referenced their member classes unqualified so the constants did not resolve. Completes the composed type support added in [#8065](https://github.com/microsoft/kiota/pull/8065). [kiota-ruby#73](https://github.com/microsoft/kiota-ruby/issues/73)
