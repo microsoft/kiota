@@ -545,7 +545,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
             var serializeName = GetSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
-            if (GetOriginalComposedType(propType.TypeDefinition) is { } ct && (ct.IsComposedOfPrimitives(IsPrimitiveType) || ct.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
+            if (GetOriginalComposedType(propType.TypeDefinition) is { } ct && HasPrimitiveMembers(ct))
                 WriteSerializationStatementForComposedTypeProperty(ct, modelParamName, codeFunction, writer, codeProperty, serializeName);
             else
                 writer.WriteLine($"writer.{serializationName}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix}, {serializeName});");
@@ -564,36 +564,54 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (isCollectionOfEnum)
             writer.WriteLine($"if({modelParamName}.{codePropertyName})");
-        if (composedType is not null && (composedType.IsComposedOfPrimitives(IsPrimitiveType) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
+        if (composedType is not null && HasPrimitiveMembers(composedType))
             WriteSerializationStatementForComposedTypeProperty(composedType, modelParamName, codeFunction, writer, codeProperty, string.Empty);
         else
             writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix});");
     }
 
+    // A union whose members are all primitive gets no else clause, so a member reaches the wire only when the value
+    // matches the guard generated for its type. Two shapes do not match: a Guid collection deserializes through
+    // getCollectionOfPrimitiveValues<Guid>("string") and reads back as strings, and a binary collection deserializes
+    // through the scalar getByteArrayValue() and reads back as a single ArrayBuffer. Both mismatches come from the
+    // deserializer and predate this gate.
+    private static bool HasPrimitiveMembers(CodeComposedTypeBase composedType) =>
+        composedType.IsComposedOfPrimitives(IsPrimitiveTypeOrPrimitiveCollection) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveTypeOrPrimitiveCollection);
+
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
     {
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
-        WriteComposedTypeIfClause(composedType, method, writer, codeProperty, modelParamName, defaultValueSuffix);
-        WriteComposedTypeDefaultClause(composedType, writer, codeProperty, modelParamName, defaultValueSuffix, serializeName);
+        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
+        var valueReference = $"{modelParamName}.{codePropertyName}";
+        if (!string.IsNullOrEmpty(defaultValueSuffix))
+        {
+            // the type checks and the casts read one local holding the default, so a property left unset sends its default
+            // through the branch matching the default's type, and no cast lands on the default literal the way
+            // "a ?? b as T" would, since that parses as "a ?? (b as T)"
+            var valueOrDefault = $"{codePropertyName}OrDefault";
+            writer.WriteLine($"const {valueOrDefault} = {valueReference}{defaultValueSuffix};");
+            valueReference = valueOrDefault;
+        }
+        WriteComposedTypeIfClause(composedType, method, writer, codeProperty, valueReference);
+        WriteComposedTypeDefaultClause(composedType, writer, codeProperty, valueReference, serializeName);
     }
 
-    private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix)
+    private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string valueReference)
     {
-        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-
         bool isFirst = true;
         var writtenTypeChecks = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var type in composedType.Types.Where(x => IsPrimitiveType(x, composedType)))
+        foreach (var type in composedType.Types.Where(x => IsPrimitiveTypeOrPrimitiveCollection(x, composedType)))
         {
             var nodeType = conventions.GetTypeString(type, method, false);
-            var serializationName = GetSerializationMethodName(type, method.OriginalLocalMethod);
+            // the guard narrows the element type, while the cast is on the property, so it keeps the collection suffix
+            var castType = conventions.GetTypeString(type, method);
+            var serializationName = type.IsCollection ? $"writeCollectionOfPrimitiveValues<{nodeType}>" : GetSerializationMethodName(type, method.OriginalLocalMethod);
             if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
             if (!writtenTypeChecks.Add($"{nodeType}|{type.IsCollection}")) continue;
 
             var isElse = isFirst ? "" : "else ";
-            writer.StartBlock(GetPrimitiveTypeCheck(type, $"{modelParamName}.{codePropertyName}", nodeType, isElse));
-
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {nodeType});");
+            writer.StartBlock(GetPrimitiveTypeCheck(type, valueReference, nodeType, isElse));
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {valueReference} as {castType});");
             writer.CloseBlock();
             isFirst = false;
         }
@@ -614,10 +632,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             ? $"{prefix}if ({valueReference} instanceof {nodeType}) {{"
             : $"{prefix}if (typeof {valueReference} === \"{nodeType}\" ) {{";
     }
-    private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
+    private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string valueReference, string? serializeName)
     {
-        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-        var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveType(x, composedType)).ToArray();
+        var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
         if (nonPrimitiveTypes.Length > 0)
         {
             writer.StartBlock("else {");
@@ -631,7 +648,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 var propertyTypes = collectionCodeType.IsNullable ? " | undefined | null" : string.Empty;
                 var groupSymbol = groupedTypes.Key ? "[]" : string.Empty;
 
-                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
+                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {valueReference} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
             }
             writer.CloseBlock();
         }
