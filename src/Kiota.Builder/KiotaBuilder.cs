@@ -569,6 +569,7 @@ public partial class KiotaBuilder
     private CodeNamespace? rootNamespace;
     private CodeNamespace? modelsNamespace;
     private string? modelNamespacePrefixToTrim;
+    private HashSet<string> componentModelNames = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Convert UriSpace of OpenApiPathItems into conceptual SDK Code model
@@ -583,6 +584,7 @@ public partial class KiotaBuilder
         rootNamespace = CodeNamespace.InitRootNamespace();
         var codeNamespace = rootNamespace.AddNamespace(config.ClientNamespaceName);
         modelsNamespace = rootNamespace.AddNamespace(config.ModelsNamespaceName);
+        componentModelNames = GetComponentModelNames();
         InitializeInheritanceIndex();
         StopLogAndReset(stopwatch, nameof(InitializeInheritanceIndex));
         if (root != null)
@@ -2743,6 +2745,28 @@ public partial class KiotaBuilder
         }
         return result;
     }
+    private HashSet<string> GetComponentModelNames()
+    {
+        if (openApiDocument?.Components?.Schemas is not { Count: > 0 } schemas)
+            return new(StringComparer.OrdinalIgnoreCase);
+        return schemas.Keys
+                    .Select(x => $"{GetModelsNamespaceNameFromReferenceId(x)}{NsNameSeparator}{x.Split('/').Last().Split(NsNameSeparator).Last().CleanupSymbolName()}")
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+    /// <summary>
+    /// Returns the class name for an inline property schema, which is named after its parent model and property and can match a component schema
+    /// in the same namespace (e.g. the inline property "case" of "test" and the component "test_case"). A numeric suffix is appended until no component
+    /// uses the name, skipping suffixed names that are the plain name of a sibling inline property (e.g. "case1"), so the result does not depend on
+    /// the order models are generated in.
+    /// </summary>
+    private string GetClassNameNotUsedByComponent(string className, CodeNamespace targetNamespace, HashSet<string> siblingClassNames)
+    {
+        var result = className;
+        var index = 0;
+        while (componentModelNames.Contains($"{targetNamespace.Name}{NsNameSeparator}{result}") || (index > 0 && siblingClassNames.Contains(result)))
+            result = $"{className}{++index}";
+        return result;
+    }
     private static readonly ThreadLocal<int> modelCreationDepth = new(() => 0);
     // Parallel.ForEach may inline tasks on the calling thread, so this depth counter can be
     // inflated across unrelated URL tree nodes sharing a thread. 50 is conservative enough
@@ -2758,14 +2782,19 @@ public partial class KiotaBuilder
         modelCreationDepth.Value++;
         try
         {
+            // a $ref property doesn't take the inline name (see CreateModelDeclarations) unless it's a $dynamicRef, so only these can collide with a suffixed name
+            var inlineClassNames = schema.Properties?
+                    .Where(static x => !x.Value.IsReferencedSchema() || !string.IsNullOrEmpty(x.Value.DynamicRef))
+                    .Select(x => $"{model.Name}_{x.Key.CleanupSymbolName()}")
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var propertiesToAdd = schema.Properties
                     ?.Select(x =>
                     {
                         var propertySchema = x.Value;
-                        var className = $"{model.Name}_{x.Key.CleanupSymbolName()}";
                         var shortestNamespaceName = GetModelsNamespaceNameFromReferenceId(propertySchema.GetReferenceId());
                         var targetNamespace = string.IsNullOrEmpty(shortestNamespaceName) ? ns :
                                             rootNamespace?.FindOrAddNamespace(shortestNamespaceName) ?? ns;
+                        var className = GetClassNameNotUsedByComponent($"{model.Name}_{x.Key.CleanupSymbolName()}", targetNamespace, inlineClassNames);
                         var definition = CreateModelDeclarations(currentNode, propertySchema, default, targetNamespace, string.Empty, typeNameForInlineSchema: className);
                         if (definition == null)
                         {
