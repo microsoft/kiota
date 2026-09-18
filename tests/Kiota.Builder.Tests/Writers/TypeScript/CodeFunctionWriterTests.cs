@@ -2392,9 +2392,32 @@ public sealed class CodeFunctionWriterTests : IDisposable
             new CodeType { Name = "DateOnly", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
             new CodeType { Name = "string" });
 
-        // "a ?? b as T" parses as "a ?? (b as T)", so without the parentheses the string literal is cast to DateOnly[]
-        Assert.Contains("writer.writeCollectionOfPrimitiveValues<DateOnly>(\"tags\", (parentClass.tags ?? \"2024-01-01\") as DateOnly[]);", result);
-        Assert.DoesNotContain("parentClass.tags ?? \"2024-01-01\" as DateOnly[]", result);
+        // the checks and the casts read one local holding the default, so an unset property still sends its default as a string
+        Assert.Contains("const tagsOrDefault = parentClass.tags ?? \"2024-01-01\";", result);
+        Assert.Contains("if (Array.isArray(tagsOrDefault) && (tagsOrDefault).every(item => item instanceof DateOnly)) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<DateOnly>(\"tags\", tagsOrDefault as DateOnly[]);", result);
+        Assert.Contains("else if (typeof tagsOrDefault === \"string\" ) {", result);
+        Assert.Contains("writer.writeStringValue(\"tags\", tagsOrDefault as string);", result);
+        // "a ?? b as T" parses as "a ?? (b as T)", which would cast the string literal to DateOnly[]
+        Assert.DoesNotContain("\"2024-01-01\" as DateOnly[]", result);
+        Assert.DoesNotContain("Array.isArray(parentClass.tags)", result);
+    }
+
+    [Fact]
+    public async Task WritesMixedUnionWithDefaultValuePropertySerializerAsync()
+    {
+        var modelNameSpace = root.AddNamespace($"{root.Name}.models");
+        var result = await WriteSerializerForUnionPropertyWithDefaultAsync(
+            "\"none\"",
+            new CodeType { Name = "string" },
+            new CodeType { Name = "SingleObject", TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "SingleObject") });
+
+        // an unset property takes the string branch with its default instead of falling through to writeObjectValue
+        Assert.Contains("const tagsOrDefault = parentClass.tags ?? \"none\";", result);
+        Assert.Contains("if (typeof tagsOrDefault === \"string\" ) {", result);
+        Assert.Contains("writer.writeStringValue(\"tags\", tagsOrDefault as string);", result);
+        Assert.Contains("writer.writeObjectValue<SingleObject>(\"tags\", tagsOrDefault as SingleObject | undefined | null", result);
+        Assert.DoesNotContain("\"none\" as SingleObject", result);
     }
 
     private Task<string> WriteSerializerForUnionPropertyAsync(params CodeType[] memberTypes) =>

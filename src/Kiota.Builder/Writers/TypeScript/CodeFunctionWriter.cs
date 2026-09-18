@@ -581,14 +581,23 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
     {
         var defaultValueSuffix = GetDefaultValueLiteralForProperty(codeProperty) is string dft && !string.IsNullOrEmpty(dft) && !dft.EqualsIgnoreCase("\"null\"") ? $" ?? {dft}" : string.Empty;
-        WriteComposedTypeIfClause(composedType, method, writer, codeProperty, modelParamName, defaultValueSuffix);
-        WriteComposedTypeDefaultClause(composedType, writer, codeProperty, modelParamName, defaultValueSuffix, serializeName);
+        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
+        var valueReference = $"{modelParamName}.{codePropertyName}";
+        if (!string.IsNullOrEmpty(defaultValueSuffix))
+        {
+            // the type checks and the casts read one local holding the default, so a property left unset sends its default
+            // through the branch matching the default's type, and no cast lands on the default literal the way
+            // "a ?? b as T" would, since that parses as "a ?? (b as T)"
+            var valueOrDefault = $"{codePropertyName}OrDefault";
+            writer.WriteLine($"const {valueOrDefault} = {valueReference}{defaultValueSuffix};");
+            valueReference = valueOrDefault;
+        }
+        WriteComposedTypeIfClause(composedType, method, writer, codeProperty, valueReference);
+        WriteComposedTypeDefaultClause(composedType, writer, codeProperty, valueReference, serializeName);
     }
 
-    private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix)
+    private void WriteComposedTypeIfClause(CodeComposedTypeBase composedType, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string valueReference)
     {
-        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
-
         bool isFirst = true;
         var writtenTypeChecks = new HashSet<string>(StringComparer.Ordinal);
         foreach (var type in composedType.Types.Where(x => IsPrimitiveTypeOrPrimitiveCollection(x, composedType)))
@@ -601,14 +610,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             if (!writtenTypeChecks.Add($"{nodeType}|{type.IsCollection}")) continue;
 
             var isElse = isFirst ? "" : "else ";
-            writer.StartBlock(GetPrimitiveTypeCheck(type, $"{modelParamName}.{codePropertyName}", nodeType, isElse));
-
-            // "a ?? b as T" parses as "a ?? (b as T)", so a property carrying a default value needs its own
-            // parentheses to keep the cast on the property instead of on the default literal
-            var serializedValue = string.IsNullOrEmpty(defaultValueSuffix) ?
-                $"{modelParamName}.{codePropertyName}" :
-                $"({modelParamName}.{codePropertyName}{defaultValueSuffix})";
-            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {serializedValue} as {castType});");
+            writer.StartBlock(GetPrimitiveTypeCheck(type, valueReference, nodeType, isElse));
+            writer.WriteLine($"writer.{serializationName}(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {valueReference} as {castType});");
             writer.CloseBlock();
             isFirst = false;
         }
@@ -629,9 +632,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             ? $"{prefix}if ({valueReference} instanceof {nodeType}) {{"
             : $"{prefix}if (typeof {valueReference} === \"{nodeType}\" ) {{";
     }
-    private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string modelParamName, string defaultValueSuffix, string? serializeName)
+    private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string valueReference, string? serializeName)
     {
-        var codePropertyName = codeProperty.Name.ToFirstCharacterLowerCase();
         var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
         if (nonPrimitiveTypes.Length > 0)
         {
@@ -646,7 +648,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
                 var propertyTypes = collectionCodeType.IsNullable ? " | undefined | null" : string.Empty;
                 var groupSymbol = groupedTypes.Key ? "[]" : string.Empty;
 
-                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {modelParamName}.{codePropertyName}{defaultValueSuffix} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
+                writer.WriteLine($"writer.{writerFunction}<{propTypeName}>(\"{codeProperty.WireName.SanitizeDoubleQuote()}\", {valueReference} as {propTypeName}{groupSymbol}{propertyTypes}, {serializeName});");
             }
             writer.CloseBlock();
         }
