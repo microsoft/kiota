@@ -79,14 +79,23 @@ public class CodeMethodWriter(TypeScriptConventionService conventionService) : B
         var staticPrefix = code.IsStatic && !isFunction ? "static " : string.Empty;
         var exportPrefix = code.Access is AccessModifier.Public ? "export" : string.Empty;
         var functionPrefix = isFunction ? $"{exportPrefix}{asyncPrefix.TrimEnd()} function " : " ";
-        var parameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer).Select(p => pConventions.GetParameterSignature(p, code)));
+        var orderedParameters = code.Parameters.Order(parameterOrderComparer);
+        if (code.Parent is CodeFunction)
+        {// global functions render their per type parameter factory/serializer parameters first so usage sites can partially apply them
+            orderedParameters = orderedParameters.OrderByDescending(static x => x.Type is CodeType { IsExternal: true } parameterType &&
+                parameterType.GenericTypeParameterValues.Any(static y => y.TypeDefinition is CodeTypeParameter));
+        }
+        var parameters = string.Join(", ", orderedParameters.Select(p => pConventions.GetParameterSignature(p, code)));
+        var typeParametersSuffix = code.Parent is CodeFunction { IsGeneric: true } genericFunction ?
+            $"<{string.Join(", ", genericFunction.TypeParameters.Select(static x => $"{x.Name} extends Parsable"))}>" :
+            string.Empty;
         var asyncReturnTypePrefix = code.IsAsync ? "Promise<" : string.Empty;
         var asyncReturnTypeSuffix = code.IsAsync ? ">" : string.Empty;
         var nullableSuffix = code.ReturnType.IsNullable && !isVoid ? " | undefined" : string.Empty;
         var shouldHaveTypeSuffix = !code.IsAccessor && !isConstructor && !string.IsNullOrEmpty(returnType);
         var returnTypeSuffix = shouldHaveTypeSuffix ? $" : {asyncReturnTypePrefix}{returnType}{nullableSuffix}{asyncReturnTypeSuffix}" : string.Empty;
         var openBracketSuffix = code.Parent is CodeClass || isFunction ? " {" : ";";
-        writer.WriteLine($"{accessModifier}{functionPrefix}{staticPrefix}{methodName}{(isFunction ? string.Empty : asyncPrefix)}({parameters}){returnTypeSuffix}{openBracketSuffix}");
+        writer.WriteLine($"{accessModifier}{functionPrefix}{staticPrefix}{methodName}{typeParametersSuffix}({parameters}){returnTypeSuffix}{openBracketSuffix}");
     }
 
     internal static void WriteMethodTypecheckIgnoreInternal(CodeMethod code, LanguageWriter writer)

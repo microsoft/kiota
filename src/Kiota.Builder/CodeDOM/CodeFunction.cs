@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -27,6 +30,17 @@ public class CodeFunction : CodeBlock<BlockDeclaration, BlockEnd>
         get;
         private set;
     }
+    private readonly ConcurrentDictionary<string, CodeTypeParameter> typeParameters = new(StringComparer.OrdinalIgnoreCase);
+    public void AddTypeParameter(params CodeTypeParameter[] parameters)
+    {
+        if (parameters is null || parameters.Any(static x => x == null))
+            throw new ArgumentNullException(nameof(parameters));
+        EnsureElementsAreChildren(parameters);
+        foreach (var parameter in parameters)
+            typeParameters.TryAdd(parameter.Name, parameter);
+    }
+    public IReadOnlyList<CodeTypeParameter> TypeParameters => typeParameters.Values.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    public bool IsGeneric => !typeParameters.IsEmpty;
     public CodeFunction(CodeMethod method)
     {
         ArgumentNullException.ThrowIfNull(method);

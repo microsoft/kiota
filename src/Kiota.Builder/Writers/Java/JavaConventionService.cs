@@ -60,9 +60,12 @@ public partial class JavaConventionService : CommonLanguageConventionService
                 CodeTypeBase.CodeTypeCollectionKind.Array when includeCollectionInformation => "[]",
                 _ => string.Empty,
             };
+            var genericParameters = currentType.GenericTypeParameterValues.Any() ?
+                $"<{string.Join(", ", currentType.GenericTypeParameterValues.Select(x => GetTypeString(x, targetElement, includeCollectionInformation)))}>" :
+                string.Empty;
             if (currentType.ActionOf)
-                return $"java.util.function.Consumer<{collectionPrefix}{typeName}{collectionSuffix}>";
-            return $"{collectionPrefix}{typeName}{collectionSuffix}";
+                return $"java.util.function.Consumer<{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}>";
+            return $"{collectionPrefix}{typeName}{genericParameters}{collectionSuffix}";
         }
 
         throw new InvalidOperationException($"type of type {code?.GetType()} is unknown");
@@ -82,6 +85,8 @@ public partial class JavaConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return typeParameter.Name;
         return type.Name switch
         {
             "Int64" => "Long",
@@ -93,6 +98,77 @@ public partial class JavaConventionService : CommonLanguageConventionService
             _ when type.Name.Contains('.', StringComparison.OrdinalIgnoreCase) => type.Name, // casing
             _ => type.Name is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "Object",
         };
+    }
+    internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal static string GetFactoryFieldName(CodeTypeParameter typeParameter) => $"_{GetFactoryParameterName(typeParameter)}";
+    private const string NullValueString = "null";
+    /// <summary>
+    /// Emits the property default assignments for model constructors (also used by the synthesized
+    /// constructors of generic model classes).
+    /// </summary>
+    internal IEnumerable<string> GetModelConstructorDefaultAssignments(CodeClass parentClass)
+    {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
+                                        .OrderBy(static x => x.Name))
+        {
+            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
+            var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
+            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
+            {
+                defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
+            }
+            else if (propWithDefault.Type.IsNullable &&
+                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
+            {// avoid setting null as a string.
+                defaultValue = NullValueString;
+            }
+            else if (propWithDefault.Type is CodeType propertyType2 &&
+                TryGetDefaultValue(defaultValue, propertyType2, out var convertedDefaultValue))
+            {
+                if (convertedDefaultValue is null)
+                    continue;
+                defaultValue = convertedDefaultValue;
+            }
+            yield return $"this.{setterName}({defaultValue});";
+        }
+    }
+    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
+    {
+        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+        {
+            "localdate" => $"LocalDate.parse({defaultValue})",
+            "offsetdatetime" => $"OffsetDateTime.parse({defaultValue})",
+            "localtime" => $"LocalTime.parse({defaultValue})",
+            "uuid" => $"UUID.fromString({defaultValue})",
+            _ => null,
+        };
+        if (convertedDefaultValue is not null)
+            return true;
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            if (PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue))
+                convertedDefaultValue = booleanDefaultValue;
+            return true;
+        }
+        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
+        {
+            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
+            {
+                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+                {
+                    "double" => $"{numericDefaultValue}d",
+                    "float" => $"{numericDefaultValue}f",
+                    "int64" => $"{numericDefaultValue}L",
+                    _ => numericDefaultValue,
+                };
+            }
+            return true;
+        }
+        return false;
     }
     internal string GetReturnDocComment(string returnType)
     {

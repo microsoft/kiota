@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Writers;
@@ -87,5 +88,19 @@ public sealed class CodeInterfaceDeclarationWriterTests : IDisposable
         Assert.Contains("import (", result);
         Assert.Contains("ib040b76fd8c2f056725723d35361c053f34e28d2ff1828ce830f3e00e807a59b \"project/graph\"", result);
         Assert.Contains("i5bda920e7ace9d5445a4ab998b248741f78d1219c76fbec57ddf13651f485ee4 \"Go.util\"", result);
+    }
+    [Fact]
+    public void WritesGenericDeclarationWithParameterizedImplements()
+    {
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        parentInterface.StartBlock.AddImplements(new CodeType
+        {
+            Name = "someParent",
+            GenericTypeParameterValues = [new CodeType { Name = "TItemType", TypeDefinition = parentInterface.TypeParameters.First() }],
+        });
+        codeElementWriter.WriteCodeElement(parentInterface.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains($"type ParentClass[TItemType {GoTestConstants.SerializationHashPrefix}Parsable] interface {{", result);
+        Assert.Contains("SomeParent[TItemType]", result);
     }
 }

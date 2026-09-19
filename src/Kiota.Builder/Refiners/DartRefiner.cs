@@ -114,7 +114,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 });
             MoveQueryParameterClass(generatedCode);
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
-            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
+            AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter, updateUsings: static x => AddGenericTypeArgumentsImports(x, keepSameNamespaceArguments: true));
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
             AddConstructorsForDefaultValues(generatedCode, true);
             AddConstructorForErrorClass(generatedCode);
