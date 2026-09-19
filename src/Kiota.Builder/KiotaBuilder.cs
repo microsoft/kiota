@@ -2800,8 +2800,8 @@ public partial class KiotaBuilder
     // is schema-locally indistinguishable from Phase 1 recursive anchor types, so full determinism would need a
     // document-wide pre-scan collecting bound template targets before any materialization (the bare-reference
     // pre-scan also misses components first visited in binding scope and only reached bare later in the same walk).
-    // Generic models additionally skip constructor emission in C#/Java/Dart, so property default values from
-    // AddConstructorsForDefaultValues are silently dropped — templates rarely carry defaults; revisit if they must.
+    // Generic models skip regular constructor emission in C#/Java/Dart, so their synthesized factory constructors
+    // assign the property default values from AddConstructorsForDefaultValues.
     private CodeType DegradeToUntypedNode(OpenApiUrlTreeNode currentNode, string templateName)
     {
         logger.LogWarning("Schema at {Location} references generic template {TemplateName} without a binding context. Generating UntypedNode.", currentNode.Path, templateName);

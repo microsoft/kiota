@@ -250,78 +250,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
     }
-    private static readonly HashSet<string> NumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "byte", "decimal", "double", "float", "int", "int64", "integer", "sbyte"
-    };
-    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
-    {
-        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-        {
-            "date" => $"new Date(DateTimeOffset.Parse({defaultValue}).Date)",
-            "datetimeoffset" => $"DateTimeOffset.Parse({defaultValue})",
-            "time" => $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)",
-            "guid" => $"Guid.Parse({defaultValue})",
-            _ => null,
-        };
-        if (convertedDefaultValue is not null)
-            return true;
-        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
-        {
-            if (bool.TryParse(defaultValue.TrimQuotes(), out var booleanDefaultValue))
-                convertedDefaultValue = booleanDefaultValue ? "true" : "false";
-            return true;
-        }
-        if (NumericTypeNames.Contains(propertyType.Name))
-        {
-            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
-            {
-                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-                {
-                    "decimal" => $"{numericDefaultValue}m",
-                    "float" => $"{numericDefaultValue}f",
-                    "int64" => $"{numericDefaultValue}L",
-                    _ => numericDefaultValue,
-                };
-            }
-            return true;
-        }
-        return false;
-    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
-        foreach (var propWithDefault in parentClass
-                                        .Properties
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters))
-                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-                                        .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name))
-        {
-            var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType { TypeDefinition: CodeEnum })
-            {
-                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
-            }
-            else if (propWithDefault.Type.IsNullable &&
-                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            { // avoid setting null as a string.
-                defaultValue = NullValueString;
-            }
-            else if (propWithDefault.Type is CodeType propertyType &&
-                TryGetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType, out var convertedDefaultValue))
-            {
-                if (convertedDefaultValue is null)
-                    continue;
-                defaultValue = convertedDefaultValue;
-            }
-            else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
-            {
-                defaultValue = defaultValue.SanitizeQuotedStringLiteral();
-            }
-
-            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
-        }
+        foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass, currentMethod))
+            writer.WriteLine(assignment);
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
@@ -340,7 +272,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
     }
 
-    private const string NullValueString = "null";
     private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {

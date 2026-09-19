@@ -81,8 +81,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
         return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
     }
-    private static string SanitizeDartSingleQuoteLiteral(string? value) =>
-        string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeSingleQuote().Replace("$", "\\$", StringComparison.Ordinal);
+    private static string SanitizeDartSingleQuoteLiteral(string? value) => DartConventionService.SanitizeDartSingleQuoteLiteral(value);
 
     protected virtual void HandleMethodKind(CodeMethod codeElement, LanguageWriter writer, bool doesInherit, CodeClass parentClass, bool isVoid)
     {
@@ -306,65 +305,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}({serializationClassName}.new);");
     }
-    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
-    {
-        return propertyType.Name.ToLowerInvariant() switch
-        {
-            "string" => $"'{defaultValue}'",
-            "dateonly" => $"DateOnly.fromDateTimeString('{defaultValue}')",
-            "datetime" => $"DateTime.parse('{defaultValue}')",
-            "timeonly" => $"TimeOnly.fromDateTimeString('{defaultValue}')",
-            "uuidvalue" => $"UuidValue.fromString('{defaultValue}')",
-            _ => null,
-        };
-    }
-    private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
-    {
-        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
-        {
-            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue) ?
-                booleanDefaultValue :
-                null;
-            return true;
-        }
-        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
-        {
-            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue) ?
-                numericDefaultValue :
-                null;
-            return true;
-        }
-        normalizedDefaultValue = null;
-        return false;
-    }
-    private bool TryGetConstructorDefaultValue(CodeProperty property, CodeMethod currentMethod, out string defaultValue)
-    {
-        defaultValue = property.DefaultValue;
-        if (property.Type is CodeType { TypeDefinition: CodeEnum })
-        {
-            defaultValue = $"{conventions.GetTypeString(property.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
-            return true;
-        }
-        if (property.Type is not CodeType propertyType)
-            return true;
-        if (propertyType.IsNullable && defaultValue.TrimQuotes().Equals("null", StringComparison.OrdinalIgnoreCase))
-        {
-            defaultValue = "null";
-            return true;
-        }
-        if (TryNormalizePrimitiveDefaultValue(defaultValue, propertyType, out var normalizedDefaultValue))
-        {
-            defaultValue = normalizedDefaultValue ?? string.Empty;
-            return normalizedDefaultValue is not null;
-        }
-        defaultValue = defaultValue.Trim('"');
-        if (defaultValue.StartsWith('\'') && defaultValue.EndsWith('\'') && defaultValue.Length > 1)
-            defaultValue = defaultValue[1..^1];
-        defaultValue = SanitizeDartSingleQuoteLiteral(defaultValue);
-        if (GetDefaultValue(defaultValue, propertyType) is string convertedDefaultValue)
-            defaultValue = convertedDefaultValue;
-        return true;
-    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
         if (parentClass.IsErrorDefinition)
@@ -373,26 +313,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            var separator = ',';
-            var propWithDefaults = parentClass.Properties
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.BackingStore))
-                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-                                        .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name)
-                                        .Select(x => (Property: x, IsValid: TryGetConstructorDefaultValue(x, currentMethod, out var value), Value: value))
-                                        .Where(static x => x.IsValid)
-                                        .ToArray();
-            var lastOption = propWithDefaults.LastOrDefault();
+            var assignments = conventions.GetModelConstructorInitializerAssignments(parentClass, currentMethod).ToArray();
+            var lastOption = assignments.LastOrDefault();
 
-            foreach (var propWithDefault in propWithDefaults)
+            foreach (var assignment in assignments)
             {
-                var defaultValue = propWithDefault.Value;
-                if (propWithDefault.Equals(lastOption))
-                {
-                    separator = ';';
-                }
-                writer.WriteLine($"{propWithDefault.Property.Name} = {defaultValue}{separator}");
+                var separator = assignment.Equals(lastOption, StringComparison.Ordinal) ? ';' : ',';
+                writer.WriteLine($"{assignment}{separator}");
             }
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
@@ -779,7 +706,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else if (isConstructor &&
             parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData) || (x.IsOfKind(CodePropertyKind.Custom) && !string.IsNullOrEmpty(x.DefaultValue)))
-                .Any(x => TryGetConstructorDefaultValue(x, currentMethod, out _)) &&
+                .Any(x => conventions.TryGetConstructorDefaultValue(x, currentMethod, out _)) &&
             !parentClass.IsErrorDefinition &&
             !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
         {

@@ -176,4 +176,25 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("final ParsableFactory<TItemType> _itemTypeFactory;", result);
         Assert.Contains("parentClass(ParsableFactory<TItemType> itemTypeFactory) : _itemTypeFactory = itemTypeFactory;", result);
     }
+    [Fact]
+    public void WritesGenericConstructorWithPropertyDefaults()
+    {
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var itemsType = new CodeType { TypeDefinition = itemTypeParameter, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex };
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Type = itemsType,
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pageSize",
+            Type = new CodeType { Name = "integer", IsExternal = true },
+            DefaultValue = "10",
+        });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        Assert.Contains("parentClass(ParsableFactory<TItemType> itemTypeFactory) : _itemTypeFactory = itemTypeFactory, pageSize = 10;", result);
+    }
 }

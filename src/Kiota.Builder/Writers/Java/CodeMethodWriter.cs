@@ -329,40 +329,6 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             foreach (var module in serializationModules)
                 writer.WriteLine($"ApiClientBuilder.{methodName}(() -> new {module}());");
     }
-    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
-    {
-        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-        {
-            "localdate" => $"LocalDate.parse({defaultValue})",
-            "offsetdatetime" => $"OffsetDateTime.parse({defaultValue})",
-            "localtime" => $"LocalTime.parse({defaultValue})",
-            "uuid" => $"UUID.fromString({defaultValue})",
-            _ => null,
-        };
-        if (convertedDefaultValue is not null)
-            return true;
-        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
-        {
-            if (PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue))
-                convertedDefaultValue = booleanDefaultValue;
-            return true;
-        }
-        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
-        {
-            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
-            {
-                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-                {
-                    "double" => $"{numericDefaultValue}d",
-                    "float" => $"{numericDefaultValue}f",
-                    "int64" => $"{numericDefaultValue}L",
-                    _ => numericDefaultValue,
-                };
-            }
-            return true;
-        }
-        return false;
-    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
@@ -388,32 +354,8 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
         }
-        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-                                        .OrderBy(static x => x.Name))
-        {
-            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
-            var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
-            {
-                defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
-            }
-            else if (propWithDefault.Type.IsNullable &&
-                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            {// avoid setting null as a string.
-                defaultValue = NullValueString;
-            }
-            else if (propWithDefault.Type is CodeType propertyType2 &&
-                TryGetDefaultValue(defaultValue, propertyType2, out var convertedDefaultValue))
-            {
-                if (convertedDefaultValue is null)
-                    continue;
-                defaultValue = convertedDefaultValue;
-            }
-            writer.WriteLine($"this.{setterName}({defaultValue});");
-        }
+        foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass))
+            writer.WriteLine(assignment);
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
@@ -430,7 +372,6 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                                                 .ToArray());
         }
     }
-    private const string NullValueString = "null";
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         if (parentClass.GetBackingStoreProperty() is not CodeProperty backingStore || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))

@@ -65,6 +65,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, CS
             writer.StartBlock();
             foreach (var typeParameter in ownedParameters)
                 writer.WriteLine($"{CSharpConventionService.GetFactoryFieldName(typeParameter)} = {CSharpConventionService.GetFactoryParameterName(typeParameter)};");
+            foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass, parentClass))
+                writer.WriteLine(assignment);
             writer.CloseBlock();
         }
     }

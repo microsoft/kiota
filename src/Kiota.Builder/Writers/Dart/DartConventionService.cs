@@ -256,6 +256,84 @@ public class DartConventionService : CommonLanguageConventionService
 
     internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
     internal static string GetFactoryFieldName(CodeTypeParameter typeParameter) => $"_{GetFactoryParameterName(typeParameter)}";
+    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
+    {
+        return propertyType.Name.ToLowerInvariant() switch
+        {
+            "string" => $"'{defaultValue}'",
+            "dateonly" => $"DateOnly.fromDateTimeString('{defaultValue}')",
+            "datetime" => $"DateTime.parse('{defaultValue}')",
+            "timeonly" => $"TimeOnly.fromDateTimeString('{defaultValue}')",
+            "uuidvalue" => $"UuidValue.fromString('{defaultValue}')",
+            _ => null,
+        };
+    }
+    private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
+    {
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue) ?
+                booleanDefaultValue :
+                null;
+            return true;
+        }
+        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
+        {
+            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue) ?
+                numericDefaultValue :
+                null;
+            return true;
+        }
+        normalizedDefaultValue = null;
+        return false;
+    }
+    internal bool TryGetConstructorDefaultValue(CodeProperty property, CodeElement typeStringContext, out string defaultValue)
+    {
+        defaultValue = property.DefaultValue;
+        if (property.Type is CodeType { TypeDefinition: CodeEnum })
+        {
+            defaultValue = $"{GetTypeString(property.Type, typeStringContext).TrimEnd('?')}.{defaultValue}";
+            return true;
+        }
+        if (property.Type is not CodeType propertyType)
+            return true;
+        if (propertyType.IsNullable && defaultValue.TrimQuotes().Equals("null", StringComparison.OrdinalIgnoreCase))
+        {
+            defaultValue = "null";
+            return true;
+        }
+        if (TryNormalizePrimitiveDefaultValue(defaultValue, propertyType, out var normalizedDefaultValue))
+        {
+            defaultValue = normalizedDefaultValue ?? string.Empty;
+            return normalizedDefaultValue is not null;
+        }
+        defaultValue = defaultValue.Trim('"');
+        if (defaultValue.StartsWith('\'') && defaultValue.EndsWith('\'') && defaultValue.Length > 1)
+            defaultValue = defaultValue[1..^1];
+        defaultValue = SanitizeDartSingleQuoteLiteral(defaultValue);
+        if (GetDefaultValue(defaultValue, propertyType) is string convertedDefaultValue)
+            defaultValue = convertedDefaultValue;
+        return true;
+    }
+    /// <summary>
+    /// Emits the property default initializer entries (without trailing separators) for model constructors,
+    /// also used by the synthesized constructors of generic model classes.
+    /// </summary>
+    internal IEnumerable<string> GetModelConstructorInitializerAssignments(CodeClass parentClass, CodeElement typeStringContext)
+    {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        foreach (var propWithDefault in parentClass.Properties
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.BackingStore))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name))
+        {
+            if (!TryGetConstructorDefaultValue(propWithDefault, typeStringContext, out var defaultValue))
+                continue;
+            yield return $"{propWithDefault.Name} = {defaultValue}";
+        }
+    }
 
     public bool IsPrimitiveType(string typeName)
     {
