@@ -590,6 +590,61 @@ public sealed class GenerateSample : IDisposable
     }
 
     [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Dart)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Python)]
+    [Theory]
+    public async Task MergesGenericBindingPropertyDefaultsAsync(GenerationLanguage language)
+    {
+        // generic model classes drop their regular constructors, so the synthesized
+        // factory constructors must also assign the property default values
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = GetAbsolutePath("generic-with-defaults.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "GenericWithDefaults", language.ToString()),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "GenericWithDefaults", language.ToString()));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        switch (language)
+        {
+            case GenerationLanguage.CSharp:
+                Assert.Contains("class PaginatedTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("PageSize = 10;", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Java:
+                Assert.Contains("class PaginatedTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("this.setPageSize(10);", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Dart:
+                Assert.Contains("class PaginatedTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("pageSize = 10;", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Python:
+                Assert.Contains("class PaginatedTemplate(AdditionalDataHolder, Parsable, Generic[TItemType]):", allModelText, StringComparison.Ordinal);
+                Assert.Contains("page_size: Optional[int] = 10", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.TypeScript:
+                Assert.Contains("export interface PaginatedTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("paginatedTemplate.pageSize = n.getNumberValue() ?? 10;", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Go:
+                Assert.Contains("type PaginatedTemplate[TItemType ", allModelText, StringComparison.Ordinal);
+                Assert.Contains("pageSizeValue := int32(10)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("m.SetPageSize(&pageSizeValue)", allModelText, StringComparison.Ordinal);
+                break;
+            default:
+                throw new Exception($"Please implement a test-case for {language}");
+        }
+    }
+
+    [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.Java)]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Go)]

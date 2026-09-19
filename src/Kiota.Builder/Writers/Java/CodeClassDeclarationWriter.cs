@@ -61,6 +61,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
                 writer.WriteLine($"super({string.Join(", ", forwardedParameterNames)});");
             foreach (var typeParameter in ownedParameters)
                 writer.WriteLine($"this.{JavaConventionService.GetFactoryFieldName(typeParameter)} = {JavaConventionService.GetFactoryParameterName(typeParameter)};");
+            foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass))
+                writer.WriteLine(assignment);
             writer.CloseBlock();
         }
     }

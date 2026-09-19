@@ -71,6 +71,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Da
                 .Select(DartConventionService.GetFactoryParameterName)
                 .ToArray();
             var initializers = ownedParameters.Select(static x => $"{DartConventionService.GetFactoryFieldName(x)} = {DartConventionService.GetFactoryParameterName(x)}").ToList();
+            initializers.AddRange(conventions.GetModelConstructorInitializerAssignments(parentClass, parentClass));
             if (forwardedParameterNames.Length != 0)
                 initializers.Add($"super({string.Join(", ", forwardedParameterNames)})");
             var initializerList = initializers.Count == 0 ? string.Empty : $" : {string.Join(", ", initializers)}";
