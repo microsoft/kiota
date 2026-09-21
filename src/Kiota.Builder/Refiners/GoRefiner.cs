@@ -95,7 +95,7 @@ public class GoRefiner : CommonLanguageRefiner
             ReplaceReservedNames(
                 generatedCode,
                 new GoNamespaceReservedNamesProvider(),
-                x => $"{x}Escaped",
+                x => $"{x}escaped",
                 shouldReplaceCallback: x => x is CodeNamespace
             );
             ReplaceReservedNames(
