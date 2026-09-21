@@ -839,6 +839,44 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("nil)", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CastsScalarEnumInUnionFactory(bool hasDiscriminator)
+    {
+        setup();
+        var wrapper = AddUnionTypeWrapper();
+        if (!hasDiscriminator)
+            wrapper.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        wrapper.AddProperty(new CodeProperty
+        {
+            Name = "enumValue",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "SomeEnum", TypeDefinition = new CodeEnum { Name = "SomeEnum" }, IsNullable = true },
+            Setter = new CodeMethod { Name = "SetEnumValue", Kind = CodeMethodKind.Setter, ReturnType = new CodeType { Name = "void" } },
+        });
+        var factory = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType { Name = wrapper.Name, TypeDefinition = wrapper },
+        }).First();
+        factory.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode" },
+        });
+        writer.Write(factory);
+        var result = tw.ToString();
+        Assert.DoesNotContain("GetChildNode(\"\")", result);
+        Assert.Contains("parseNode.GetEnumValue(ParseSomeEnum)", result);
+        Assert.Contains("if cast, ok := val.(*SomeEnum); ok {", result);
+        Assert.Contains("result.SetEnumValue(cast)", result);
+        Assert.DoesNotContain("result.SetEnumValue(val)", result);
+        Assert.Contains("result.SetStringValue(val)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
     [Fact]
     public void WritesModelFactoryBodyForUnionModels()
     {

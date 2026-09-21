@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Go: cast scalar enum values in union factories and avoid reading an empty discriminator name for undiscriminated unions. Addresses [#7808](https://github.com/microsoft/kiota/issues/7808).
+
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
 - Ruby: a composed type without a discriminator generated `parse_node.get_child_node("")`, which raises, and composed type wrappers referenced their member classes unqualified so the constants did not resolve. Completes the composed type support added in [#8065](https://github.com/microsoft/kiota/pull/8065). [kiota-ruby#73](https://github.com/microsoft/kiota-ruby/issues/73)
