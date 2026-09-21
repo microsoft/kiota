@@ -12,6 +12,31 @@ namespace Kiota.Builder.Tests.Refiners;
 public class DartLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    [Theory]
+    [InlineData("value", "value_")]
+    [InlineData("Value", "value_")]
+    [InlineData("VALUE", "value_")]
+    [InlineData("values", "values_")]
+    [InlineData("label", "label")]
+    public async Task PreservesEnumWireValuesWhenEscapingMembersAsync(string wireValue, string expectedName)
+    {
+        var models = root.AddNamespace("models");
+        var labels = models.AddEnum(new CodeEnum { Name = "Labels" }).First();
+        var option = new CodeEnumOption { Name = wireValue, SerializationName = wireValue };
+        labels.AddOption(option);
+        var model = models.AddClass(new CodeClass { Name = "Settings", Kind = CodeClassKind.Model }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = labels },
+            DefaultValue = $"\"{wireValue}\"",
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(expectedName, option.Name);
+        Assert.Equal(wireValue, option.SerializationName);
+        Assert.Equal(expectedName, property.DefaultValue);
+    }
     #region CommonLanguageRefinerTests
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
