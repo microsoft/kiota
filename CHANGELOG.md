@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
+- Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
