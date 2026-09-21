@@ -15,6 +15,56 @@ namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    [Fact]
+    public async Task PreservesDistinctModelsWhenFlattenedNamesCollideAsync()
+    {
+        var package = root.AddNamespace("ApiSdk.oauth");
+        var nested = root.AddNamespace("ApiSdk.oauth.token");
+        root.AddNamespace("ApiSdk.models");
+        var first = package.AddClass(new CodeClass { Name = "TokenPostResponse", Kind = CodeClassKind.Model }).First();
+        var second = nested.AddClass(new CodeClass { Name = "TokenPostResponse", Kind = CodeClassKind.Model }).First();
+        foreach (var model in new[] { first, second })
+            model.StartBlock.AddImplements(new CodeType { Name = "IAdditionalDataHolder", IsExternal = true });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration
+        {
+            ClientNamespaceName = "ApiSdk",
+            Language = GenerationLanguage.Go,
+        }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotEqual(first.Name, second.Name);
+        Assert.Same(package, first.GetImmediateParentOfType<CodeNamespace>());
+        Assert.Same(package, second.GetImmediateParentOfType<CodeNamespace>());
+        Assert.NotNull(first.AssociatedInterface);
+        Assert.NotNull(second.AssociatedInterface);
+        Assert.NotSame(first.AssociatedInterface, second.AssociatedInterface);
+        Assert.All(new[] { first, second }, model => Assert.DoesNotContain(model.AssociatedInterface.StartBlock.Implements, type => type.Name == "IAdditionalDataHolder"));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ResolvesFlattenedModelCollisionsDeterministicallyAsync(bool reverseInsertion)
+    {
+        var package = root.AddNamespace("ApiSdk.oauth");
+        root.AddNamespace("ApiSdk.models");
+        package.AddClass(new CodeClass { Name = "TokenPostResponse", Kind = CodeClassKind.Model });
+        package.AddClass(new CodeClass { Name = "TokenPostResponse1", Kind = CodeClassKind.Model });
+        var specs = new[] { (Namespace: "token", Name: "TokenPostResponse"), (Namespace: "tokenPost", Name: "Response") };
+        var models = (reverseInsertion ? specs.Reverse() : specs).Select(spec =>
+            root.AddNamespace($"ApiSdk.oauth.{spec.Namespace}").AddClass(new CodeClass
+            {
+                Name = spec.Name,
+                Kind = CodeClassKind.Model,
+            }).First()).ToArray();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration
+        {
+            ClientNamespaceName = "ApiSdk",
+            Language = GenerationLanguage.Go,
+        }, root, cancellationToken: TestContext.Current.CancellationToken);
+        if (reverseInsertion)
+            Array.Reverse(models);
+        Assert.Equal("TokenPostResponse2", models[0].Name);
+        Assert.Equal("TokenPostResponse3", models[1].Name);
+        Assert.NotSame(models[0].AssociatedInterface, models[1].AssociatedInterface);
+    }
     #region CommonLangRefinerTests
     [Fact]
     public async Task AddsInnerClassesAsync()
