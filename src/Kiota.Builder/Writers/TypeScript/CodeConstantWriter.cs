@@ -57,26 +57,28 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         foreach (var navigationMethod in navigationMethods)
         {
             writer.StartBlock($"{navigationMethod.Name.ToFirstCharacterLowerCase()}: {{");
-            var requestBuilderName = navigationMethod.ReturnType.Name.ToFirstCharacterUpperCase();
-            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom).Select(static x => $"\"{x.WireName.SanitizeDoubleQuote()}\"").ToArray());
+            WriteNavigationMetadataEntry(codeElement, parentNamespace, writer, navigationMethod.ReturnType, navigationMethod.Parameters.Where(static x => x.Kind is CodeParameterKind.Path or CodeParameterKind.Custom).Select(static x => $"\"{x.WireName.SanitizeDoubleQuote()}\"").ToArray());
             writer.CloseBlock("},");
         }
         foreach (var navigationProperty in navigationProperties)
         {
             writer.StartBlock($"{navigationProperty.Name.ToFirstCharacterLowerCase()}: {{");
-            var requestBuilderName = navigationProperty.Type.Name.ToFirstCharacterUpperCase();
-            WriteNavigationMetadataEntry(parentNamespace, writer, requestBuilderName);
+            WriteNavigationMetadataEntry(codeElement, parentNamespace, writer, navigationProperty.Type);
             writer.CloseBlock("},");
         }
         writer.CloseBlock("};");
     }
 
-    private static void WriteNavigationMetadataEntry(CodeNamespace parentNamespace, LanguageWriter writer, string requestBuilderName, string[]? pathParameters = null)
+    private void WriteNavigationMetadataEntry(CodeConstant source, CodeNamespace parentNamespace, LanguageWriter writer, CodeTypeBase requestBuilderType, string[]? pathParameters = null)
     {
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
-            writer.WriteLine($"requestsMetadata: {requestsMetadataConstant.Name.ToFirstCharacterUpperCase()},");
-        if (parentNamespace.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
-            writer.WriteLine($"navigationMetadata: {navigationMetadataConstant.Name.ToFirstCharacterUpperCase()},");
+        var requestBuilderName = requestBuilderType.Name.ToFirstCharacterUpperCase();
+        IBlock targetBlock = parentNamespace;
+        if (requestBuilderType is CodeType { TypeDefinition: not null } type)
+            targetBlock = type.TypeDefinition.Parent is CodeFile targetFile ? targetFile : type.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
+        if (targetBlock.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
+            writer.WriteLine($"requestsMetadata: {conventions.GetTypeString(new CodeType { TypeDefinition = requestsMetadataConstant }, source)},");
+        if (targetBlock.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
+            writer.WriteLine($"navigationMetadata: {conventions.GetTypeString(new CodeType { TypeDefinition = navigationMetadataConstant }, source)},");
         if (pathParameters is { Length: > 0 })
             writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
     }

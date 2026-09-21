@@ -231,6 +231,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (currentElement is CodeFile codeFile)
         {
             var enumeratedUsings = codeFile.GetChildElements(true).SelectMany(GetUsingsFromCodeElement).ToArray();
+            AliasCollidingSymbols(enumeratedUsings, codeFile.GetChildElements(true).Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase));
 
             //Can happen for model classes: If the property type occurs multiple times in different model classes and one of the
             //occurences has "erasable = false" (because it defines a default value that requires parsing),
