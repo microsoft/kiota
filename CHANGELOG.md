@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Preserve referenced model properties when an array member of an `anyOf` or `oneOf` is generated before a direct reference to that model.
+- Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
