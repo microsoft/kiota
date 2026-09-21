@@ -33,6 +33,8 @@ public class JavaLanguageRefinerTests
                 _ => null,
             },
         }).First();
+        if (kind == "inherited")
+            mapped.StartBlock.Inherits = new CodeType { Name = model.Name, TypeDefinition = model };
         model.DiscriminatorInformation.DiscriminatorPropertyName = "kind";
         model.DiscriminatorInformation.AddDiscriminatorMapping("mapped", new CodeType { Name = mapped.Name, TypeDefinition = mapped });
         model.AddProperty(new CodeProperty { Name = "member", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = member.Name, TypeDefinition = member } });
