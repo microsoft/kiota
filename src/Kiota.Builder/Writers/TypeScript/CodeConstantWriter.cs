@@ -73,11 +73,17 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
     {
         var requestBuilderName = requestBuilderType.Name.ToFirstCharacterUpperCase();
         IBlock targetBlock = parentNamespace;
+        uint searchDepth = 3;
         if (requestBuilderType is CodeType { TypeDefinition: not null } type)
+        {
             targetBlock = type.TypeDefinition.Parent is CodeFile targetFile ? targetFile : type.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();
-        if (targetBlock.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", 3) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
+            // An unrefined request-builder class still belongs to its namespace.
+            // Search its immediate files, never a descendant builder's namespace.
+            searchDepth = targetBlock is CodeFile ? 1U : 2U;
+        }
+        if (targetBlock.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.RequestsMetadataSuffix}", searchDepth) is CodeConstant requestsMetadataConstant && requestsMetadataConstant.Kind is CodeConstantKind.RequestsMetadata)
             writer.WriteLine($"requestsMetadata: {conventions.GetTypeString(new CodeType { TypeDefinition = requestsMetadataConstant }, source)},");
-        if (targetBlock.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", 3) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
+        if (targetBlock.FindChildByName<CodeConstant>($"{requestBuilderName}{CodeConstant.NavigationMetadataSuffix}", searchDepth) is CodeConstant navigationMetadataConstant && navigationMetadataConstant.Kind is CodeConstantKind.NavigationMetadata)
             writer.WriteLine($"navigationMetadata: {conventions.GetTypeString(new CodeType { TypeDefinition = navigationMetadataConstant }, source)},");
         if (pathParameters is { Length: > 0 })
             writer.WriteLine($"pathParametersMappings: [{string.Join(", ", pathParameters)}],");
