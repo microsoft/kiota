@@ -2970,4 +2970,55 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("MultiPartBody $body", result);
         Assert.Contains("$requestInfo->setContentFromParsable($this->requestAdapter, \"multipart/form-data\", $body);", result);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritesFactoryForEquivalentBinaryAlternatives(bool intersection)
+    {
+        var wrapper = root.AddClass(new CodeClass
+        {
+            Name = "BinaryWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = intersection ? new CodeIntersectionType() : new CodeUnionType(),
+        }).First();
+        foreach (var name in new[] { "base64", "binary" })
+        {
+            var property = new CodeProperty
+            {
+                Name = name,
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "StreamInterface", IsExternal = true },
+            };
+            property.Setter = new CodeMethod
+            {
+                Name = "set" + name.ToFirstCharacterUpperCase(),
+                Kind = CodeMethodKind.Setter,
+                AccessedProperty = property,
+                ReturnType = new CodeType { Name = "void" },
+            };
+            wrapper.AddProperty(property);
+        }
+        var factory = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "createFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            IsStatic = true,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = wrapper.Name, TypeDefinition = wrapper },
+        }).First();
+        factory.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode", IsExternal = true },
+        });
+        languageWriter.Write(factory);
+        var result = stringWriter.ToString();
+        Assert.DoesNotContain("else if", result);
+        Assert.Contains("$parseNode->getBinaryContent() !== null", result);
+        Assert.Contains("$result->setBase64(", result);
+        Assert.DoesNotContain("setBinary", result);
+        Assert.Equal(2, result.Split("$parseNode->getBinaryContent()", StringSplitOptions.None).Length - 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
 }
