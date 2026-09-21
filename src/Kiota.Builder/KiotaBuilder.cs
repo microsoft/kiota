@@ -1702,11 +1702,12 @@ public partial class KiotaBuilder
                     if (mediaType.Encoding is not null && mediaType.Encoding.Count != 0)
                     {
                         requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
-                        foreach (var encodingEntry in mediaType.Encoding
-                                    .Where(x => !string.IsNullOrEmpty(x.Value.ContentType) &&
-                                                config.StructuredMimeTypes.Contains(x.Value.ContentType)))
+                        foreach (var property in requestBodySchema.Properties
+                                    .Where(x => mediaType.Encoding.TryGetValue(x.Key, out var encoding) && !string.IsNullOrEmpty(encoding.ContentType)
+                                        ? config.StructuredMimeTypes.Contains(encoding.ContentType)
+                                        : IsSupportedMultipartDefault(x.Value, config.StructuredMimeTypes)))
                         {
-                            if (CreateModelDeclarations(currentNode, requestBodySchema.Properties[encodingEntry.Key],
+                            if (CreateModelDeclarations(currentNode, property.Value,
                                     operation, method, $"{operationType.Method.ToLowerInvariant().ToFirstCharacterUpperCase()}RequestBody",
                                     isRequestBody: true) is CodeType propertyType &&
                                 propertyType.TypeDefinition is not null)
