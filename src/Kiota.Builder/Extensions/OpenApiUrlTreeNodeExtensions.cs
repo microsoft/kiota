@@ -61,12 +61,16 @@ public static partial class OpenApiUrlTreeNodeExtensions
                 (names.Contains(name) || namespaces.Contains(namespaceName)))
             {
                 var candidate = name + EscapedSuffix;
+                var candidateNamespaceName = ("\\" + candidate).GetNamespaceFromPath(string.Empty);
                 var index = 1;
-                while (reservedNames.Contains(candidate) || reservedNamespaces.Contains(candidate) || names.Contains(candidate) || namespaces.Contains(candidate))
+                while (reservedNames.Contains(candidate) || reservedNamespaces.Contains(candidateNamespaceName) || names.Contains(candidate) || namespaces.Contains(candidateNamespaceName))
+                {
                     candidate = name + EscapedSuffix + index++;
+                    candidateNamespaceName = ("\\" + candidate).GetNamespaceFromPath(string.Empty);
+                }
                 child.AddDeduplicatedSegment(candidate);
                 name = candidate;
-                namespaceName = candidate;
+                namespaceName = candidateNamespaceName;
             }
             names.Add(name);
             namespaces.Add(namespaceName);
