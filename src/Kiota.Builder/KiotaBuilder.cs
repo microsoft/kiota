@@ -2929,14 +2929,28 @@ public partial class KiotaBuilder
 
         return null;
     }
+    private static IOpenApiSchema? UnwrapNullableQueryParameterSchema(IOpenApiSchema? schema)
+    {
+        var visited = new HashSet<IOpenApiSchema>();
+        while (schema is not null && visited.Add(schema) && !schema.IsSemanticallyMeaningful() && schema.AllOf is not { Count: > 0 })
+        {
+            var members = schema.AnyOf is { Count: 2 } && schema.OneOf is not { Count: > 0 } ? schema.AnyOf :
+                schema.OneOf is { Count: 2 } && schema.AnyOf is not { Count: > 0 } ? schema.OneOf : null;
+            if (members is null || members.Count(static x => x.Type == JsonSchemaType.Null) != 1)
+                break;
+            schema = members.First(static x => x.Type != JsonSchemaType.Null);
+        }
+        return schema;
+    }
     private void AddPropertyForQueryParameter(OpenApiUrlTreeNode node, NetHttpMethod operationType, IOpenApiParameter parameter, CodeClass parameterClass)
     {
+        var parameterSchema = UnwrapNullableQueryParameterSchema(parameter.Schema);
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
 
-        if (parameter.Schema is not null && (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum())))
+        if (parameterSchema is not null && (parameterSchema.IsEnum() || (parameterSchema.IsArray() && parameterSchema.Items.IsEnum())))
         {
-            var enumSchema = parameter.Schema.IsArray() ? parameter.Schema.Items! : parameter.Schema;
+            var enumSchema = parameterSchema.IsArray() ? parameterSchema.Items! : parameterSchema;
             var codeNamespace = enumSchema.IsReferencedSchema() switch
             {
                 true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
@@ -2951,19 +2965,19 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = !parameter.Schema.IsArray()
+                    IsNullable = !parameterSchema.IsArray()
                 };
                 addBackwardCompatibleParameter = true;
             }
         }
-        resultType ??= GetPrimitiveType(parameter.Schema) ?? new CodeType()
+        resultType ??= GetPrimitiveType(parameterSchema) ?? new CodeType()
         {
             // since its a query parameter default to string if there is no schema
             // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
             Name = "string",
             IsExternal = true,
         };
-        resultType.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        resultType.CollectionKind = parameterSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         if (parameter.Name?.SanitizeParameterNameForCodeSymbols() is not string propName) return;
         var prop = new CodeProperty
         {
