@@ -964,9 +964,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     currentClass.AddMethod(newM);
                 }
 
+                var usingComparer = new CodeUsingDeclarationNameComparer();
                 foreach (var u in currentParent
                     .Usings
-                    .Where(pu => !currentClass.Usings.Any(cu => cu.Name.Equals(pu.Name, StringComparison.OrdinalIgnoreCase))))
+                    .Where(pu => !currentClass.Usings.Contains(pu, usingComparer)))
                 {
                     var newU = (CodeUsing)u.Clone();
                     newU.Parent = currentClass;
