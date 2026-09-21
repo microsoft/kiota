@@ -131,6 +131,13 @@ public partial class GenerationConfiguration : ICloneable
     /// The overrides loaded from the api manifest when refreshing a client, as opposed to the user provided ones.
     /// </summary>
     public HashSet<string> PatternsOverride { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// Regenerate output even when the description and configuration are unchanged, without cleaning the output directory.
+    /// </summary>
+    public bool ForceGeneration
+    {
+        get; set;
+    }
     public bool ClearCache
     {
         get; set;
@@ -176,6 +183,7 @@ public partial class GenerationConfiguration : ICloneable
             IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ClearCache = ClearCache,
+            ForceGeneration = ForceGeneration,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             AllowedExternalOrigins = new(AllowedExternalOrigins ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             IncludeKiotaValidationRules = IncludeKiotaValidationRules,

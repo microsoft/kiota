@@ -111,7 +111,7 @@ public partial class WorkspaceManagementService
     public async Task<bool> ShouldGenerateAsync(GenerationConfiguration inputConfig, string descriptionHash, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(inputConfig);
-        if (inputConfig.CleanOutput) return true;
+        if (inputConfig.CleanOutput || inputConfig.ForceGeneration) return true;
         if (UseKiotaConfig)
         {
             var (wsConfig, apiManifest) = await workspaceConfigurationStorageService.GetWorkspaceConfigurationAsync(cancellationToken).ConfigureAwait(false);

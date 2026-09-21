@@ -54,6 +54,10 @@ public sealed class PluginRefreshTests
             string[] arguments = singlePlugin ? ["generate", "--refresh", "--plugin-name", "First"] : ["generate", "--refresh"];
             Assert.Equal(0, await KiotaPluginCommands.GetPluginNodeCommand(services).Parse(arguments)
                 .InvokeAsync(cancellationToken: TestContext.Current.CancellationToken));
+            await File.WriteAllTextAsync("output/first-openapi.yml", "stale again", TestContext.Current.CancellationToken);
+            Assert.Equal(0, await KiotaPluginCommands.GetPluginNodeCommand(services).Parse(arguments)
+                .InvokeAsync(cancellationToken: TestContext.Current.CancellationToken));
+            Assert.NotEqual("stale again", await File.ReadAllTextAsync("output/first-openapi.yml", TestContext.Current.CancellationToken));
             foreach (var name in new[] { "first", "second", "third" })
             {
                 Assert.True(File.Exists($"output/{name}-apiplugin.json"));

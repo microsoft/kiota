@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Preserve other plugins and user files in shared output directories when refreshing workspace plugins. [#6033](https://github.com/microsoft/kiota/issues/6033)
+- Preserve other plugins and user files in shared output directories while forcing regeneration of refreshed workspace plugins. [#6033](https://github.com/microsoft/kiota/issues/6033)
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 

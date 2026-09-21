@@ -81,6 +81,30 @@ public sealed class WorkspaceManagementServiceTests : IDisposable
         var result = await service.ShouldGenerateAsync(configuration, "foo", cancellationToken: TestContext.Current.CancellationToken);
         Assert.False(result);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ForcesGenerationWithoutCleaningUnchangedPluginAsync(bool forceGeneration)
+    {
+        Directory.CreateDirectory(tempPath);
+        var service = new WorkspaceManagementService(Mock.Of<ILogger>(), httpClient, true, tempPath);
+        var configuration = new GenerationConfiguration
+        {
+            ClientClassName = "pluginName",
+            OutputPath = Path.Combine(tempPath, "plugin"),
+            OpenAPIFilePath = Path.Combine(tempPath, "openapi.yaml"),
+            ApiRootUrl = "https://example.test",
+            PluginTypes = [PluginType.APIPlugin],
+        };
+        await service.UpdateStateFromConfigurationAsync(configuration, "unchanged",
+            new Dictionary<string, HashSet<string>> { { "/foo", ["GET"] } },
+            Stream.Null, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.False(await service.ShouldGenerateAsync(configuration, "unchanged", TestContext.Current.CancellationToken));
+        configuration.ForceGeneration = forceGeneration;
+        Assert.False(configuration.CleanOutput);
+        Assert.Equal(forceGeneration, await service.ShouldGenerateAsync((GenerationConfiguration)configuration.Clone(),
+            "unchanged", TestContext.Current.CancellationToken));
+    }
     [Fact]
     public async Task RemovesAClientAsync()
     {
