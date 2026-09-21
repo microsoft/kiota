@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Ruby;
 
 public class RubyConventionService : CommonLanguageConventionService
 {
-    public override string StreamTypeName => "stdin";
+    public override string StreamTypeName => "StringIO";
     private const string InternalVoidTypeName = "nil";
     public override string VoidTypeName => InternalVoidTypeName;
     public override string DocCommentPrefix => "## ";
@@ -58,11 +58,19 @@ public class RubyConventionService : CommonLanguageConventionService
 
         throw new InvalidOperationException();
     }
+    public bool IsPrimitiveType(string typeName) => typeName switch
+    {
+        "string" or "boolean" or "number" or "float" or "Guid" or "Date" or "Time" or "DateTime"
+            or "DateTimeOffset" or "TimeOnly" or "DateOnly" or "MicrosoftKiotaAbstractions::ISODuration" => true,
+        _ => false,
+    };
     public override string TranslateType(CodeType type)
     {
         return type?.Name switch
         {
-            "integer" => "number",
+            "integer" or "int64" or "int8" or "uint8" or "sbyte" or "byte" => "number",
+            "double" or "decimal" => "float",
+            "binary" or "base64" or "base64url" => "binary",
             "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
             null => "object",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",

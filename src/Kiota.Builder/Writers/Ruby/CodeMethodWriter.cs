@@ -441,10 +441,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, string returnType, LanguageWriter writer)
     {
-        if (returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
-            returnType = "nil"; //generic type for the future
-        else if (codeElement.ReturnType is CodeType returnT && returnT.TypeDefinition is not null)
-            returnType = getDeserializationLambda(returnT);
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
 
@@ -465,8 +461,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.DecreaseIndent();
         }
         writer.WriteLine(")");
-        var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
-        var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
+        var (sendMethodName, responseArgument) = GetSendRequest(codeElement.ReturnType, returnType);
         var errorMappingVarName = "nil";
         if (codeElement.ErrorMappings.Any())
         {
@@ -477,7 +472,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.WriteLine($"{errorMappingVarName}[\"{errorMapping.Key.ToUpperInvariant()}\"] = {getDeserializationLambda(errorMapping.Value)}");
             }
         }
-        writer.WriteLine($"return @request_adapter.{genericTypeForSendMethod}(request_info, {returnType}, {errorMappingVarName})");
+        writer.WriteLine($"return @request_adapter.{sendMethodName}(request_info, {responseArgument}{errorMappingVarName})");
     }
 
     private void WriteRequestGeneratorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, LanguageWriter writer)
@@ -502,18 +497,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                     writer.WriteLine($"request_info.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
                 writer.CloseBlock("end");
             }
-            if (requestParams.requestBody != null)
+        }
+        if (requestParams.requestBody != null)
+        {
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
+            if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
-                var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
-                if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (requestParams.requestContentType is not null)
-                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
-                    else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
-                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, '{sanitizedRequestBodyContentType}')");
-                }
-                else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {requestParams.requestBody.Name})");
+                if (requestParams.requestContentType is not null)
+                    writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
+                else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
+                    writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, '{sanitizedRequestBodyContentType}')");
+            }
+            else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
+            {
+                var setMethodName = requestParams.requestBody.Type is CodeType bodyType &&
+                    (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)) ?
+                    "set_content_from_parsable" :
+                    "set_content_from_scalar";
+                writer.WriteLine($"request_info.{setMethodName}(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {requestParams.requestBody.Name})");
             }
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
@@ -664,13 +665,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var propertyType = conventions.TranslateType(propType);
         if (propType is CodeType currentType)
         {
+            if (currentType.TypeDefinition is CodeEnum currentEnum)
+            {
+                var enumName = conventions.GetQualifiedTypeName(currentType);
+                if (isCollection)
+                    return $"get_collection_of_enum_values({enumName})";
+                return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({enumName})";
+            }
             if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return $"get_collection_of_primitive_values({TranslateObjectType(propertyType.ToFirstCharacterUpperCase())})";
                 else
                     return $"get_collection_of_object_values({getDeserializationLambda(currentType)})";
-            if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({conventions.GetQualifiedTypeName(currentType)})";
         }
         return propertyType switch
         {
@@ -697,8 +703,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             "Boolean" => "\"boolean\"",
             "Number" => "Integer",
             "Guid" => "UUIDTools::UUID",
-            "Date" => "Time",
-            "DateTimeOffset" => "Time",
+            "DateTimeOffset" => "DateTime",
+            "Binary" => "String",
             _ => typeName.ToFirstCharacterUpperCase() is string tName && !string.IsNullOrEmpty(tName) ? tName : "Object",
         };
     }
@@ -708,13 +714,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var propertyType = conventions.TranslateType(propType);
         if (propType is CodeType currentType)
         {
+            if (currentType.TypeDefinition is CodeEnum)
+                return isCollection ? "write_collection_of_enum_values" : "write_enum_value";
             if (isCollection)
                 if (currentType.TypeDefinition == null)
                     return "write_collection_of_primitive_values";
                 else
                     return "write_collection_of_object_values";
-            if (currentType.TypeDefinition is CodeEnum)
-                return "write_enum_value";
         }
         return propertyType switch
         {
@@ -727,9 +733,33 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             _ => "write_object_value",
         };
     }
-    private static string GetSendRequestMethodName(bool isStream)
+    /// <summary>
+    /// Each response shape is read by a different request adapter method, and each of those takes a
+    /// different second argument: a type for a primitive, an enum constant, a factory for a model,
+    /// and nothing at all when there is no content.
+    /// </summary>
+    private (string methodName, string argument) GetSendRequest(CodeTypeBase returnTypeBase, string returnType)
     {
-        if (isStream) return "send_primitive_async";
-        return "send_async";
+        if (returnType.Equals(conventions.VoidTypeName, StringComparison.OrdinalIgnoreCase) ||
+            returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
+            return ("send_no_response_content_async", string.Empty);
+
+        var isCollection = returnTypeBase.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
+        // an enum, a stream and a scalar are all read by type rather than by factory, so they only
+        // differ in the type they name
+        var byType = isCollection ? "send_collection_of_primitive_async" : "send_primitive_async";
+        if (returnTypeBase is CodeType { TypeDefinition: CodeEnum } enumType)
+            return (byType, $"{conventions.GetQualifiedTypeName(enumType)}, ");
+        // a resolved model is read by its factory whatever it is called, so the name checks below
+        // only decide for types the builder never resolved
+        if (returnTypeBase is not CodeType { TypeDefinition: null })
+            return (isCollection ? "send_collection_async" : "send_async",
+                    $"{getDeserializationLambda(returnTypeBase)}, ");
+        if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
+            return (byType, $"{conventions.StreamTypeName}, ");
+        if (conventions.IsPrimitiveType(returnType))
+            return (byType, $"{TranslateObjectType(returnType.ToFirstCharacterUpperCase())}, ");
+        return (isCollection ? "send_collection_async" : "send_async",
+                $"{getDeserializationLambda(returnTypeBase)}, ");
     }
 }
