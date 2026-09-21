@@ -1552,6 +1552,38 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return", result);
     }
     [Fact]
+    public void WritesInheritedModelFieldInitializers()
+    {
+        setup(true);
+        parentClass.Kind = CodeClassKind.Model;
+        method.IsAsync = false;
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "additionalData",
+            Kind = CodePropertyKind.AdditionalData,
+            DefaultValue = "{}",
+            Type = new CodeType { Name = "Map<String, Object?>", IsNullable = false },
+        });
+        const string payload = "line'\"\n\r\t\\$value";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = $"\"{payload}\"",
+            Type = new CodeType { Name = "String", IsNullable = false },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("additionalData = {}", result);
+        Assert.Contains($"label = '{DartConventionService.SanitizeDartSingleQuoteLiteral(payload)}'", result);
+        Assert.DoesNotContain(payload, result);
+        Assert.Contains(", super()", result);
+        Assert.True(result.IndexOf("additionalData =", StringComparison.Ordinal) < result.IndexOf("super()", StringComparison.Ordinal));
+        Assert.DoesNotContain("super() {", result);
+        Assert.EndsWith(";", result.TrimEnd());
+    }
+    [Fact]
     public void WritesConstructor()
     {
         setup();
