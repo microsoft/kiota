@@ -2007,7 +2007,8 @@ public partial class KiotaBuilder
         if (schemas is not null)
             foreach (var currentSchema in schemas)
             {
-                var shortestNamespace = GetShortestNamespace(codeNamespace, currentSchema);
+                var memberSchema = currentSchema.IsArray() && currentSchema.Items is { } itemsSchema ? itemsSchema : currentSchema;
+                var shortestNamespace = GetShortestNamespace(codeNamespace, memberSchema);
                 var className = currentSchema.GetSchemaName().CleanupSymbolName();
                 if (string.IsNullOrEmpty(className))
                     if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
@@ -2022,7 +2023,7 @@ public partial class KiotaBuilder
                         className = $"{unionType.Name}Member{++membersWithNoName}";
                 var declarationType = new CodeType
                 {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
+                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, memberSchema, className, shortestNamespace, null),
                     CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
                 };
                 if (!unionType.ContainsType(declarationType))
