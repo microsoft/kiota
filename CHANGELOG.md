@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
+- Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
