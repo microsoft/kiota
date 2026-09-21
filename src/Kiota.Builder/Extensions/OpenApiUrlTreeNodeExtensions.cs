@@ -40,7 +40,40 @@ public static partial class OpenApiUrlTreeNodeExtensions
     public static string GetNodeNamespaceFromPath(this OpenApiUrlTreeNode currentNode, string prefix)
     {
         ArgumentNullException.ThrowIfNull(currentNode);
+        if (currentNode.AdditionalData.TryGetValue(CodePathKey, out var paths) && paths.FirstOrDefault() is string codePath)
+            return codePath.GetNamespaceFromPath(prefix);
         return currentNode.Path.GetNamespaceFromPath(prefix);
+    }
+    private const string CodePathKey = "x-ms-kiota-codePath";
+    internal static void DisambiguateStaticSegments(this OpenApiUrlTreeNode node, StructuredMimeTypesCollection mimeTypes, string parentCodePath = "")
+    {
+        var children = node.Children.Values.OrderBy(x => x.Segment.Equals(x.GetNavigationPropertyName(mimeTypes), StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(static x => x.Segment, StringComparer.Ordinal).ToArray();
+        var reservedNames = children.Select(x => x.GetNavigationPropertyName(mimeTypes)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var reservedNamespaces = children.Select(x => ("\\" + x.DeduplicatedSegment()).GetNamespaceFromPath(string.Empty)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var namespaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var child in children)
+        {
+            var name = child.GetNavigationPropertyName(mimeTypes);
+            var namespaceName = ("\\" + child.DeduplicatedSegment()).GetNamespaceFromPath(string.Empty);
+            if (!child.IsPathSegmentWithSingleSimpleParameter() && !child.IsComplexPathMultipleParameters() &&
+                (names.Contains(name) || namespaces.Contains(namespaceName)))
+            {
+                var candidate = name + EscapedSuffix;
+                var index = 1;
+                while (reservedNames.Contains(candidate) || reservedNamespaces.Contains(candidate) || names.Contains(candidate) || namespaces.Contains(candidate))
+                    candidate = name + EscapedSuffix + index++;
+                child.AddDeduplicatedSegment(candidate);
+                name = candidate;
+                namespaceName = candidate;
+            }
+            names.Add(name);
+            namespaces.Add(namespaceName);
+            var codePath = parentCodePath + "\\" + child.DeduplicatedSegment();
+            child.AdditionalData[CodePathKey] = [codePath];
+            child.DisambiguateStaticSegments(mimeTypes, codePath);
+        }
     }
     //{id}, name(idParam={id}), name(idParam='{id}'), name(idParam='{id}',idParam2='{id2}')
     [GeneratedRegex(@"(?<prefix>\w+)?(?<equals>=?)'?\{(?<paramName>\w+)\}'?,?", RegexOptions.Singleline, 500)]
