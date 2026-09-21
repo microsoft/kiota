@@ -152,7 +152,8 @@ public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDiscriminatorMappingsUsingsToParentClasses(
                 generatedCode,
                 "ParseNode",
-                addUsings: true
+                addUsings: true,
+                addUsingsForComposedTypes: false
             );
             SplitLongDiscriminatorMethods(generatedCode);
             AddPrimaryErrorMessage(generatedCode,
