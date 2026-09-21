@@ -1783,11 +1783,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.OutsideOfBlock("$result = new UnionTypeWrapper()", "$mappingValueNode !== null", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
-    [Fact]
-    public async Task WritesModelFactoryBodyForIntersectionModelsAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WritesModelFactoryBodyForIntersectionModelsAsync(bool duplicateReader)
     {
         setup();
         var wrapper = AddIntersectionTypeWrapper();
+        if (duplicateReader)
+            wrapper.AddProperty(new CodeProperty
+            {
+                Name = "stringValue2",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "string" },
+            });
         var factoryMethod = wrapper.AddMethod(new CodeMethod
         {
             Name = "factory",
@@ -1818,6 +1827,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("if mappingValue != null {", result);
         Assert.DoesNotContain("switch (mappingValue) {", result);
         Assert.DoesNotContain("case \"ns.childmodel\": return new ChildModel();", result);
+        Assert.DoesNotContain("setStringValue2", result);
+        Assert.Equal(2, result.Split("$parseNode->getStringValue()", StringSplitOptions.None).Length - 1);
         Assert.Contains("$result = new IntersectionTypeWrapper();", result);
         Assert.DoesNotContain("if (\"#kiota.complexType1\" === $mappingValue) {", result);
         Assert.Contains("$result->setComplexType1Value(new ComplexType1())", result);
