@@ -18,6 +18,8 @@ public sealed partial class KiotaBuilderTests
     [InlineData("""{"allOf":[{"allOf":[{"$ref":"#/components/schemas/WidgetType"}]}]}""", false)]
     [InlineData("""{"type":"array","items":{"allOf":[{"$ref":"#/components/schemas/WidgetType"}]}}""", true)]
     [InlineData("""{"allOf":[{"type":"array","items":{"$ref":"#/components/schemas/WidgetType"}}]}""", true)]
+    [InlineData("""{"type":"array","items":{"allOf":[{"allOf":[{"$ref":"#/components/schemas/WidgetType"}]}]}}""", true)]
+    [InlineData("""{"allOf":[{"type":"array","items":{"allOf":[{"allOf":[{"$ref":"#/components/schemas/WidgetType"}]}]}}]}""", true)]
     public async Task ResolvesSingleAllOfQueryEnumsAsync(string parameterSchema, bool isArray)
     {
         var description = """
@@ -51,5 +53,6 @@ public sealed partial class KiotaBuilderTests
         Assert.Equal("WidgetType", enumType.Name);
         Assert.Equal(new[] { "Basic", "Advanced" }, enumType.Options.Select(static x => x.Name));
         Assert.Equal(isArray, type.IsArray);
+        Assert.Equal(!isArray, type.IsNullable);
     }
 }

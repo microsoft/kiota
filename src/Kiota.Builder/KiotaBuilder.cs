@@ -2934,7 +2934,10 @@ public partial class KiotaBuilder
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
         var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema);
-        var enumSchema = parameterSchema.IsArray() ? UnwrapQueryParameterSchema(parameterSchema?.Items) : parameterSchema;
+        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items);
+        var isArray = parameterSchema.IsArray() ||
+            parameterSchema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && itemSchema.IsEnum();
+        var enumSchema = isArray ? itemSchema : parameterSchema;
         if (enumSchema is not null && enumSchema.IsEnum())
         {
             var codeNamespace = enumSchema.IsReferencedSchema() switch
@@ -2951,7 +2954,7 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = !parameterSchema.IsArray()
+                    IsNullable = !isArray
                 };
                 addBackwardCompatibleParameter = true;
             }
@@ -2963,7 +2966,7 @@ public partial class KiotaBuilder
             Name = "string",
             IsExternal = true,
         };
-        resultType.CollectionKind = parameterSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        resultType.CollectionKind = isArray ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         if (parameter.Name?.SanitizeParameterNameForCodeSymbols() is not string propName) return;
         var prop = new CodeProperty
         {
