@@ -10,6 +10,8 @@ In general cases, the `kiota plugin generate` command will generate the output f
 
 ## Parameters
 
+Refreshing overwrites the selected plugins' generated files without clearing their output directories. Other plugins and user-created files in shared output directories are preserved.
+
 | Parameters | Required | Example | Description | Telemetry |
 | -- | -- | -- | -- | -- |
 | `--plugin-name \| --pn` | No | GitHub | Name of the plugin. Unique within the parent API. | Yes, without its value |

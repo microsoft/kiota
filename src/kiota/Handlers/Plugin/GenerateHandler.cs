@@ -91,7 +91,8 @@ internal class GenerateHandler : BaseKiotaCommandHandler
                         generationConfiguration.AllowedExternalOrigins = allowedExternalOrigins.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                     DefaultSerializersAndDeserializers(generationConfiguration);
                     generationConfiguration.ClearCache = refresh;
-                    generationConfiguration.CleanOutput = refresh;
+                    // Plugin files are overwritten in place; cleaning can delete other plugins sharing this output directory.
+                    generationConfiguration.CleanOutput = false;
                     generationConfiguration.Operation = ConsumerOperation.Generate;
                     var builder = new KiotaBuilder(logger, generationConfiguration, httpClient, true);
                     var result = await builder.GeneratePluginAsync(cancellationToken).ConfigureAwait(false);
