@@ -588,6 +588,7 @@ public partial class KiotaBuilder
         if (root != null)
         {
             stopwatch.Start();
+            root.DisambiguateStaticSegments(config.StructuredMimeTypes);
             CreateRequestBuilderClass(codeNamespace, root, root);
             StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
             stopwatch.Start();
