@@ -187,6 +187,66 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
 
     }
+    [Fact]
+    public void WritesRequestBuilderWithParametersUsingTheSnakeCasedParameter()
+    {
+        setup();
+        var targetNamespace = root.AddNamespace("models.sub");
+        var target = targetNamespace.AddClass(new CodeClass
+        {
+            Name = "WithDomainNameQuoteRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
+        method.ReturnType = new CodeType { Name = "WithDomainNameQuoteRequestBuilder", TypeDefinition = target };
+        method.AddParameter(new CodeParameter
+        {
+            Name = "domainName",
+            Kind = CodeParameterKind.Path,
+            Type = new CodeType { Name = "string" },
+        });
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("Models::Sub::WithDomainNameQuoteRequestBuilder.new", result);
+        Assert.Contains("domain_name", result);
+        Assert.DoesNotContain("domainName", result);
+    }
+    [Fact]
+    public void WritesRequestBuilderInTheRootNamespaceWithoutALeadingSeparator()
+    {
+        setup();
+        var target = root.AddClass(new CodeClass
+        {
+            Name = "RootRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        method.Kind = CodeMethodKind.RequestBuilderWithParameters;
+        method.ReturnType = new CodeType { Name = "RootRequestBuilder", TypeDefinition = target };
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("return RootRequestBuilder.new", result);
+        Assert.DoesNotContain("::RootRequestBuilder", result);
+    }
+    [Fact]
+    public void WritesEnumDeserializerInTheRootNamespaceWithoutALeadingSeparator()
+    {
+        setup();
+        var enumDefinition = root.AddEnum(new CodeEnum { Name = "SomeEnum" }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "enumValue",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "SomeEnum", TypeDefinition = enumDefinition },
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("get_enum_value(SomeEnum)", result);
+        Assert.DoesNotContain("(::SomeEnum)", result);
+    }
     private void AddRequestBodyParameters()
     {
         var stringType = new CodeType
@@ -944,7 +1004,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("request_adapter", result);
         Assert.Contains("path_parameters", result);
-        Assert.Contains("pathParam", result);
+        Assert.Contains("path_param", result);
+        Assert.DoesNotContain("pathParam", result);
         Assert.Contains("return Somecustomtype.new", result);
     }
     [Fact]
