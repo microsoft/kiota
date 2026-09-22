@@ -455,6 +455,58 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("create_from_discriminator_value", result);
         Assert.DoesNotContain("send_primitive_async", result);
     }
+    [Theory]
+    // kiota type, scalar reader, scalar writer, collection element constant
+    [InlineData("string", "get_string_value()", "write_string_value", "String")]
+    [InlineData("boolean", "get_boolean_value()", "write_boolean_value", "\"boolean\"")]
+    [InlineData("integer", "get_number_value()", "write_number_value", "Integer")]
+    [InlineData("int64", "get_number_value()", "write_number_value", "Integer")]
+    [InlineData("int8", "get_number_value()", "write_number_value", "Integer")]
+    [InlineData("uint8", "get_number_value()", "write_number_value", "Integer")]
+    [InlineData("double", "get_float_value()", "write_float_value", "Float")]
+    [InlineData("decimal", "get_float_value()", "write_float_value", "Float")]
+    [InlineData("guid", "get_guid_value()", "write_guid_value", "UUIDTools::UUID")]
+    [InlineData("binary", "get_string_value()", "write_string_value", "String")]
+    [InlineData("base64", "get_string_value()", "write_string_value", "String")]
+    [InlineData("base64url", "get_string_value()", "write_string_value", "String")]
+    public void ReadsAndWritesEveryPrimitiveConsistently(string kiotaType, string reader, string writerMethod, string elementConstant)
+    {
+        setup();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "scalar",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = kiotaType },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "collection",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = kiotaType, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        });
+
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var deserialized = tw.ToString();
+        Assert.Contains($"\"scalar\" => lambda {{|n| @scalar = n.{reader} }}", deserialized);
+        Assert.Contains($"get_collection_of_primitive_values({elementConstant})", deserialized);
+
+        using var serializerWriter = new StringWriter();
+        var second = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
+        second.SetTextWriter(serializerWriter);
+        var serializer = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "serialize",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        second.Write(serializer);
+        var serialized = serializerWriter.ToString();
+        Assert.Contains($"{writerMethod}(\"scalar\", @scalar)", serialized);
+        Assert.Contains("write_collection_of_primitive_values(\"collection\", @collection)", serialized);
+    }
     private void AddRequestBodyParameters()
     {
         var stringType = new CodeType

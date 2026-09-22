@@ -58,12 +58,37 @@ public class RubyConventionService : CommonLanguageConventionService
 
         throw new InvalidOperationException();
     }
-    public bool IsPrimitiveType(string typeName) => typeName switch
+    /// <summary>
+    /// The single description of a Ruby primitive: the constant that names it, and the parse node
+    /// and serialization writer methods that read and write it. Everything that used to decide
+    /// those three separately, by matching rendered type names, now reads them from here.
+    /// </summary>
+    internal sealed record RubyPrimitive(string Constant, string Reader, string Writer);
+    private static readonly Dictionary<string, RubyPrimitive> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "string" or "boolean" or "number" or "float" or "Guid" or "Date" or "Time" or "DateTime"
-            or "DateTimeOffset" or "TimeOnly" or "DateOnly" or "MicrosoftKiotaAbstractions::ISODuration" => true,
-        _ => false,
+        { "string", new("String", "get_string_value", "write_string_value") },
+        { "boolean", new("\"boolean\"", "get_boolean_value", "write_boolean_value") },
+        { "number", new("Integer", "get_number_value", "write_number_value") },
+        { "float", new("Float", "get_float_value", "write_float_value") },
+        { "Guid", new("UUIDTools::UUID", "get_guid_value", "write_guid_value") },
+        { "Date", new("Date", "get_date_value", "write_date_value") },
+        { "Time", new("Time", "get_time_value", "write_time_value") },
+        { "DateTime", new("DateTime", "get_date_time_value", "write_date_time_value") },
+        { DurationTypeName, new(DurationTypeName, "get_duration_value", "write_duration_value") },
+        // a binary value inside a payload is carried by JSON as a string, unlike a binary request
+        // or response body, which the refiner rewrites to the native stream type
+        { "binary", new("String", "get_string_value", "write_string_value") },
     };
+    internal const string DurationTypeName = "MicrosoftKiotaAbstractions::ISODuration";
+    internal static bool IsPrimitiveType(string typeName) => PrimitiveTypes.ContainsKey(typeName ?? string.Empty);
+    internal static bool TryGetPrimitiveType(string typeName, out RubyPrimitive primitive) =>
+        PrimitiveTypes.TryGetValue(typeName ?? string.Empty, out primitive!);
+    /// <summary>
+    /// The constant a collection element or a primitive send method names, such as the Integer in
+    /// get_collection_of_primitive_values(Integer).
+    /// </summary>
+    internal static string GetPrimitiveConstant(string typeName) =>
+        TryGetPrimitiveType(typeName, out var primitive) ? primitive.Constant : typeName.ToFirstCharacterUpperCase();
     public override string TranslateType(CodeType type)
     {
         return type?.Name switch
@@ -71,6 +96,12 @@ public class RubyConventionService : CommonLanguageConventionService
             "integer" or "int64" or "int8" or "uint8" or "sbyte" or "byte" => "number",
             "double" or "decimal" => "float",
             "binary" or "base64" or "base64url" => "binary",
+            // the refiner normally replaces these, but resolving the aliases here too keeps the
+            // rendered name the single key everything else looks up
+            "dateTimeOffset" => "DateTime",
+            "dateOnly" => "Date",
+            "timeOnly" => "Time",
+            "timeSpan" => DurationTypeName,
             "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
             null => "object",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",

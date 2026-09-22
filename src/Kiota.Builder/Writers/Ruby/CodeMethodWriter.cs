@@ -674,39 +674,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             if (isCollection)
                 if (currentType.TypeDefinition == null)
-                    return $"get_collection_of_primitive_values({TranslateObjectType(propertyType.ToFirstCharacterUpperCase())})";
+                    return $"get_collection_of_primitive_values({RubyConventionService.GetPrimitiveConstant(propertyType)})";
                 else
                     return $"get_collection_of_object_values({getDeserializationLambda(currentType)})";
         }
-        return propertyType switch
-        {
-            "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
-            "binary" or "Binary" or "base64" or "base64url" => "get_string_value()", //TODO: add support for binary
-            "DateTimeOffset" or "DateTime" => "get_date_time_value()",
-            "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "get_duration_value()",
-            "DateOnly" or "Date" => "get_date_value()",
-            "TimeOnly" or "Time" => "get_time_value()",
-            _ => $"get_object_value({getDeserializationLambda(propType)})",
-        };
+        return RubyConventionService.TryGetPrimitiveType(propertyType, out var primitive) ?
+            $"{primitive.Reader}()" :
+            $"get_object_value({getDeserializationLambda(propType)})";
     }
     private string getDeserializationLambda(CodeTypeBase targetTypeBase)
     {
         if (targetTypeBase is not CodeType targetType)
             return "lambda {|pn| nil }";
         return $"lambda {{|pn| {conventions.GetQualifiedTypeName(targetType)}.create_from_discriminator_value(pn) }}";
-    }
-    private static string TranslateObjectType(string typeName)
-    {
-        return typeName switch
-        {
-            "String" or "Float" or "Object" => typeName,
-            "Boolean" => "\"boolean\"",
-            "Number" => "Integer",
-            "Guid" => "UUIDTools::UUID",
-            "DateTimeOffset" => "DateTime",
-            "Binary" => "String",
-            _ => typeName.ToFirstCharacterUpperCase() is string tName && !string.IsNullOrEmpty(tName) ? tName : "Object",
-        };
     }
     private string GetSerializationMethodName(CodeTypeBase propType)
     {
@@ -722,16 +702,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 else
                     return "write_collection_of_object_values";
         }
-        return propertyType switch
-        {
-            "string" or "boolean" or "number" or "float" or "Guid" => $"write_{propertyType.ToSnakeCase()}_value",
-            "binary" or "base64" or "base64url" => "write_string_value", //TODO: add support for binary
-            "DateTimeOffset" or "DateTime" => "write_date_time_value",
-            "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "write_duration_value",
-            "DateOnly" or "Date" => "write_date_value",
-            "TimeOnly" or "Time" => "write_time_value",
-            _ => "write_object_value",
-        };
+        return RubyConventionService.TryGetPrimitiveType(propertyType, out var primitive) ?
+            primitive.Writer :
+            "write_object_value";
     }
     /// <summary>
     /// Each response shape is read by a different request adapter method, and each of those takes a
@@ -757,8 +730,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                     $"{getDeserializationLambda(returnTypeBase)}, ");
         if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
             return (byType, $"{conventions.StreamTypeName}, ");
-        if (conventions.IsPrimitiveType(returnType))
-            return (byType, $"{TranslateObjectType(returnType.ToFirstCharacterUpperCase())}, ");
+        if (RubyConventionService.IsPrimitiveType(returnType))
+            return (byType, $"{RubyConventionService.GetPrimitiveConstant(returnType)}, ");
         return (isCollection ? "send_collection_async" : "send_async",
                 $"{getDeserializationLambda(returnTypeBase)}, ");
     }
