@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Java: omit unused discriminator-mapping imports for union/intersection wrappers, avoiding imports of nonexistent models while retaining member and inherited-factory imports.
 - Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
+- Ruby: a path with an escaped suffix, such as `/domains/{domainName}!quote`, generated a request builder method that passed the raw path parameter name where the signature had snake cased it, and referenced the builder class without its namespace. Both raised `NameError` on first use. [#7956](https://github.com/microsoft/kiota/issues/7956)
+
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
 - Ruby: a composed type without a discriminator generated `parse_node.get_child_node("")`, which raises, and composed type wrappers referenced their member classes unqualified so the constants did not resolve. Completes the composed type support added in [#8065](https://github.com/microsoft/kiota/pull/8065). [kiota-ruby#73](https://github.com/microsoft/kiota-ruby/issues/73)
