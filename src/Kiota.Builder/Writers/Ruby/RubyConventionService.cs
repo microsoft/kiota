@@ -87,10 +87,17 @@ public class RubyConventionService : CommonLanguageConventionService
         if (type is CodeType xType)
             if ((xType.TypeDefinition is CodeClass || xType.TypeDefinition is CodeEnum) &&
                 xType.TypeDefinition.Parent is CodeNamespace ns)
-                return $"{ns.Name.NormalizeNameSpaceName("::")}::";
+                return ns.Name.NormalizeNameSpaceName("::") is string normalized && !string.IsNullOrEmpty(normalized) ?
+                    $"{normalized}::" :
+                    string.Empty;
             else if (xType.TypeDefinition is CodeType definition && definition.IsExternal && !string.IsNullOrEmpty(definition.Name))
                 return $"{definition.Name}::";
         return string.Empty;
+    }
+    public string GetQualifiedTypeName(CodeTypeBase type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return $"{GetNormalizedNamespacePrefixForType(type)}{type.Name.ToFirstCharacterUpperCase()}";
     }
 #pragma warning restore CA1822 // Method should be static
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
@@ -106,8 +113,8 @@ public class RubyConventionService : CommonLanguageConventionService
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
             var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) ? $"@{pathParametersProp.Name.ToSnakeCase()}" : urlTemplateVarName;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => $"{x.Name}"))}";
-            writer.WriteLine($"{prefix}{returnType.ToFirstCharacterUpperCase()}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => x.Name.ToSnakeCase()))}";
+            writer.WriteLine($"{prefix}{returnType}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
         }
     }
 #pragma warning restore CA1822 // Method should be static
