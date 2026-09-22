@@ -84,7 +84,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         var rawUrlParameter = codeElement.Parameters.OfKind(CodeParameterKind.RawUrl) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RawUrl parameter");
         var requestAdapterProperty = parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) ?? throw new InvalidOperationException("RawUrlBuilder method should have a RequestAdapter property");
-        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new({rawUrlParameter.Name.ToSnakeCase()}, @{requestAdapterProperty.Name.ToSnakeCase()})");
+        writer.WriteLine($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new({RubyConventionService.GetParameterName(rawUrlParameter)}, @{requestAdapterProperty.Name.ToSnakeCase()})");
     }
     private const string DiscriminatorMappingVarName = "mapping_value";
     private const string NodeVarName = "mapping_value_node";
@@ -104,7 +104,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var discriminatorMappings = parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key).ToArray();
         if (writeDiscriminatorValueRead && discriminatorMappings.Length > 0)
         {
-            writer.WriteLine($"{NodeVarName} = {parseNodeParameter.Name.ToSnakeCase()}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
+            writer.WriteLine($"{NodeVarName} = {RubyConventionService.GetParameterName(parseNodeParameter)}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(parentClass.DiscriminatorInformation.DiscriminatorPropertyName)}\")");
             writer.StartBlock($"unless {NodeVarName}.nil?");
             writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
             writer.StartBlock($"case {DiscriminatorMappingVarName}", false);
@@ -122,7 +122,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private void WriteFactoryMethodBodyForUnionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
     {
         writer.WriteLine($"result = {parentClass.Name.ToFirstCharacterUpperCase()}.new");
-        var parseNodeParameterName = parseNodeParameter.Name.ToSnakeCase();
+        var parseNodeParameterName = RubyConventionService.GetParameterName(parseNodeParameter);
         var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                           .OrderBy(static x => x, new CodePropertyTypeComparer())
                                           .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
@@ -173,7 +173,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private void WriteFactoryMethodBodyForIntersectionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
     {
         writer.WriteLine($"result = {parentClass.Name.ToFirstCharacterUpperCase()}.new");
-        var parseNodeParameterName = parseNodeParameter.Name.ToSnakeCase();
+        var parseNodeParameterName = RubyConventionService.GetParameterName(parseNodeParameter);
         var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                           .OrderBy(static x => x, new CodePropertyTypeComparer(orderByDesc: true))
                                           .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
@@ -233,7 +233,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         var parameter = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.QueryParametersMapperParameter));
         if (parameter == null) throw new InvalidOperationException("QueryParametersMapper should have a parameter of type QueryParametersMapper");
-        var parameterName = parameter.Name.ToSnakeCase();
+        var parameterName = RubyConventionService.GetParameterName(parameter);
         writer.StartBlock($"case {parameterName}", false);
         var escapedProperties = parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
         foreach (var escapedProperty in escapedProperties)
@@ -289,9 +289,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             {
                 var sanitizedUrlTemplate = RubyConventionService.SanitizeRubyDoubleQuoteLiteral(urlTemplateProperty.DefaultValue);
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
-                    writer.WriteLine($"super({pathParametersParameter.Name.ToSnakeCase()}, {requestAdapterParameter.Name.ToSnakeCase()}, {sanitizedUrlTemplate})");
+                    writer.WriteLine($"super({RubyConventionService.GetParameterName(pathParametersParameter)}, {RubyConventionService.GetParameterName(requestAdapterParameter)}, {sanitizedUrlTemplate})");
                 else
-                    writer.WriteLine($"super(Hash.new, {requestAdapterParameter.Name.ToSnakeCase()}, {sanitizedUrlTemplate})");
+                    writer.WriteLine($"super(Hash.new, {RubyConventionService.GetParameterName(requestAdapterParameter)}, {sanitizedUrlTemplate})");
             }
             else
                 writer.WriteLine("super");
@@ -362,7 +362,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        var parameterName = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.SetterValue))?.Name.ToSnakeCase();
+        var parameterName = codeElement.Parameters.FirstOrDefault(static x => x.IsOfKind(CodeParameterKind.SetterValue)) is CodeParameter setterValue ? RubyConventionService.GetParameterName(setterValue) : null;
         if (codeElement.AccessedProperty is not null)
             writer.WriteLine($"@{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty.Name.ToSnakeCase()} = {parameterName}");
     }
@@ -378,7 +378,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}.clone",
-                            $"{conventions.TempDictionaryVarName}[\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(codeElement.OriginalIndexer.IndexParameter.SerializationName)}\"] = {codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()}");
+                            $"{conventions.TempDictionaryVarName}[\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(codeElement.OriginalIndexer.IndexParameter.SerializationName)}\"] = {RubyConventionService.GetParameterName(codeElement.OriginalIndexer.IndexParameter)}");
         conventions.AddRequestBuilderBody(parentClass, conventions.GetQualifiedTypeName(codeElement.ReturnType), writer, conventions.TempDictionaryVarName, "return ");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer)
@@ -452,7 +452,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         writer.WriteLine($"request_info = self.{generatorMethodName}(");
         var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
             .OfType<CodeParameter>()
-            .Select(static x => x.Name.ToSnakeCase())
+            .Select(RubyConventionService.GetParameterName)
             .ToArray();
         if (requestInfoParameters.Length != 0)
         {
@@ -487,14 +487,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             var options = requestParams.Options;
             if (headers != null || queryString != null)
             {
-                writer.WriteLine($"unless {requestParams.requestConfiguration.Name.ToSnakeCase()}.nil?");
+                writer.WriteLine($"unless {RubyConventionService.GetParameterName(requestParams.requestConfiguration)}.nil?");
                 writer.IncreaseIndent();
                 if (headers != null)
-                    writer.WriteLine($"request_info.add_headers_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{headers.Name.ToSnakeCase()})");
+                    writer.WriteLine($"request_info.add_headers_from_raw_object({RubyConventionService.GetParameterName(requestParams.requestConfiguration)}.{headers.Name.ToSnakeCase()})");
                 if (queryString != null)
-                    writer.WriteLine($"request_info.set_query_string_parameters_from_raw_object({requestParams.requestConfiguration.Name.ToSnakeCase()}.{queryString.Name.ToSnakeCase()})");
+                    writer.WriteLine($"request_info.set_query_string_parameters_from_raw_object({RubyConventionService.GetParameterName(requestParams.requestConfiguration)}.{queryString.Name.ToSnakeCase()})");
                 if (options != null)
-                    writer.WriteLine($"request_info.add_request_options({requestParams.requestConfiguration.Name.ToSnakeCase()}.{options.Name.ToSnakeCase()})");
+                    writer.WriteLine($"request_info.add_request_options({RubyConventionService.GetParameterName(requestParams.requestConfiguration)}.{options.Name.ToSnakeCase()})");
                 writer.CloseBlock("end");
             }
         }
@@ -504,9 +504,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
-                    writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
+                    writer.WriteLine($"request_info.set_stream_content({RubyConventionService.GetParameterName(requestParams.requestBody)}, {RubyConventionService.GetParameterName(requestParams.requestContentType)})");
                 else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
-                    writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, '{sanitizedRequestBodyContentType}')");
+                    writer.WriteLine($"request_info.set_stream_content({RubyConventionService.GetParameterName(requestParams.requestBody)}, '{sanitizedRequestBodyContentType}')");
             }
             else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
             {
@@ -514,7 +514,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                     (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)) ?
                     "set_content_from_parsable" :
                     "set_content_from_scalar";
-                writer.WriteLine($"request_info.{setMethodName}(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {requestParams.requestBody.Name})");
+                writer.WriteLine($"request_info.{setMethodName}(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {RubyConventionService.GetParameterName(requestParams.requestBody)})");
             }
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
@@ -627,7 +627,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         };
         var parameters = string.Join(", ", code.Parameters
                                                 .OrderBy(static x => x, parameterOrderComparer)
-                                                .Select(p => conventions.GetParameterSignature(p, code).ToSnakeCase())
+                                                .Select(p => conventions.GetParameterSignature(p, code))
                                                 .ToList());
         var staticPrefix = code.IsStatic ? "self." : string.Empty;
         var openParenthesis = code.IsOfKind(CodeMethodKind.Getter) ? string.Empty : "(";

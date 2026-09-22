@@ -41,13 +41,22 @@ public class RubyConventionService : CommonLanguageConventionService
             _ => "private",
         };
     }
+    /// <summary>
+    /// The one place a parameter becomes a Ruby local. The signature and every site that refers to
+    /// a parameter read it from here, so the two cannot disagree.
+    /// </summary>
+    internal static string GetParameterName(CodeParameter parameter)
+    {
+        ArgumentNullException.ThrowIfNull(parameter);
+        return parameter.Name.ToSnakeCase();
+    }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
             $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : SanitizeRubyDoubleQuoteLiteral(parameter.DefaultValue))}" :
             string.Empty;
-        return $"{parameter.Name}{defaultValue}";
+        return $"{GetParameterName(parameter)}{defaultValue}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
@@ -152,7 +161,7 @@ public class RubyConventionService : CommonLanguageConventionService
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
             var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) ? $"@{pathParametersProp.Name.ToSnakeCase()}" : urlTemplateVarName;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => x.Name.ToSnakeCase()))}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(GetParameterName))}";
             writer.WriteLine($"{prefix}{returnType}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
         }
     }

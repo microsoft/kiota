@@ -507,6 +507,49 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{writerMethod}(\"scalar\", @scalar)", serialized);
         Assert.Contains("write_collection_of_primitive_values(\"collection\", @collection)", serialized);
     }
+    [Fact]
+    public void WritesStreamContentWithTheSnakeCasedContentTypeParameter()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Put;
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType { Name = "StringIO" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "contentType",
+            Kind = CodeParameterKind.RequestBodyContentType,
+            Type = new CodeType { Name = "string" },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("set_stream_content(body, content_type)", result);
+        Assert.DoesNotContain("contentType", result);
+    }
+    [Fact]
+    public void WritesAParameterDefaultValueWithoutSnakeCasingIt()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "someParam",
+            Kind = CodeParameterKind.Custom,
+            Optional = true,
+            DefaultValue = "\"SomeDefaultValue\"",
+            Type = new CodeType { Name = "string" },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("some_param=\"SomeDefaultValue\"", result);
+    }
     private void AddRequestBodyParameters()
     {
         var stringType = new CodeType
