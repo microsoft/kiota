@@ -376,7 +376,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private static bool UsesInheritedModelInitializers(CodeClass parentClass, CodeMethod method) =>
         parentClass.IsOfKind(CodeClassKind.Model) && method.IsOfKind(CodeMethodKind.Constructor) &&
         parentClass.StartBlock.Inherits is not null && !parentClass.IsErrorDefinition &&
-        !parentClass.Properties.Any(static x => x.IsOfKind(CodePropertyKind.BackingStore));
+        parentClass.GetBackingStoreProperty() is null;
 
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {

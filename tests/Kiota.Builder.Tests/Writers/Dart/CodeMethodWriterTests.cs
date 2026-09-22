@@ -1583,6 +1583,43 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super() {", result);
         Assert.EndsWith(";", result.TrimEnd());
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritesInheritedBackingStoreDefaultsInConstructorBody(bool fromGrandparent)
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.IsAsync = false;
+        method.Kind = CodeMethodKind.Constructor;
+        var storeOwner = root.AddClass(new CodeClass { Name = "BaseModel", Kind = CodeClassKind.Model }).First();
+        parentClass.StartBlock.Inherits = new CodeType { Name = storeOwner.Name, TypeDefinition = storeOwner };
+        if (fromGrandparent)
+        {
+            var grandparent = root.AddClass(new CodeClass { Name = "Grandparent", Kind = CodeClassKind.Model }).First();
+            storeOwner.StartBlock.Inherits = new CodeType { Name = grandparent.Name, TypeDefinition = grandparent };
+            storeOwner = grandparent;
+        }
+        storeOwner.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "BackingStore" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = "\"value\"",
+            Type = new CodeType { Name = "String", IsNullable = false },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("super() {", result);
+        Assert.Contains("label = 'value';", result);
+        Assert.True(result.IndexOf("super()", StringComparison.Ordinal) < result.IndexOf("label =", StringComparison.Ordinal));
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
     [Fact]
     public void WritesConstructor()
     {
