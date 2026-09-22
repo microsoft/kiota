@@ -53,7 +53,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
             conventions.WriteNamespaceModules(ns, writer);
         }
 
-        var derivation = codeElement.Inherits == null ? string.Empty : $" < {conventions.GetNormalizedNamespacePrefixForType(codeElement.Inherits)}{codeElement.Inherits.Name.ToFirstCharacterUpperCase()}";
+        var derivation = codeElement.Inherits == null ? string.Empty : $" < {conventions.GetQualifiedTypeName(codeElement.Inherits)}";
         if (codeElement.Parent is CodeClass parentClass)
             conventions.WriteShortDescription(parentClass, writer);
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
