@@ -13,15 +13,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
         conventions.WriteShortDescription(codeElement, writer);
-        var returnType = conventions.GetTypeString(codeElement.Type, codeElement);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
                 writer.IncreaseIndent();
-                var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.Type);
-                conventions.AddRequestBuilderBody(parentClass, returnType, writer, prefix: $"return {prefix}");
+                conventions.AddRequestBuilderBody(parentClass, conventions.GetQualifiedTypeName(codeElement.Type), writer, prefix: "return ");
                 writer.DecreaseIndent();
                 writer.WriteLine("end");
                 break;
