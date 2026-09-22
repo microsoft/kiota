@@ -40,6 +40,19 @@ public sealed class CodeEnumWriterTests : IDisposable
         GC.SuppressFinalize(this);
     }
     [Fact]
+    public void DisambiguatesEnumConstantsWithoutStealingExistingNames()
+    {
+        currentEnum.AddOption(
+            new CodeEnumOption { Name = "chatConversationJoin", SerializationName = "chat.conversation.join" },
+            new CodeEnumOption { Name = "chatConversation_join", SerializationName = "chat.conversation_join" },
+            new CodeEnumOption { Name = "chatConversation_join_2", SerializationName = "reserved" });
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains("public const CHAT_CONVERSATION_JOIN = \"chat.conversation.join\";", result);
+        Assert.Contains("public const CHAT_CONVERSATION_JOIN_3 = \"chat.conversation_join\";", result);
+        Assert.Contains("public const CHAT_CONVERSATION_JOIN_2 = \"reserved\";", result);
+    }
+    [Fact]
     public async Task WritesEnumAsync()
     {
         var declaration = currentEnum.Parent as CodeNamespace;
