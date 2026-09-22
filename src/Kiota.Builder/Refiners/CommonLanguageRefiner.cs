@@ -1032,7 +1032,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         }
         CrawlTree(currentElement, x => AddParentClassToErrorClasses(x, parentClassName, parentClassNamespace, addNamespaceToInheritDeclaration, isInterface, isErasable));
     }
-    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false)
+    protected static void AddDiscriminatorMappingsUsingsToParentClasses(CodeElement currentElement, string parseNodeInterfaceName, bool addFactoryMethodImport = false, bool addUsings = true, bool includeParentNamespace = false, bool addUsingsForComposedTypes = true)
     {
         if (currentElement is CodeMethod currentMethod &&
             currentMethod.Parent is CodeClass parentClass &&
@@ -1042,7 +1042,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 (parentClass.DiscriminatorInformation?.HasBasicDiscriminatorInformation ?? false) &&
                 parentClass.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace parentClassNamespace)
             {
-                if (addUsings && includeParentNamespace)
+                var shouldAddUsings = addUsings && (addUsingsForComposedTypes || parentClass.OriginalComposedType is null);
+                if (shouldAddUsings && includeParentNamespace)
                     declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                         .Select(static x => x.Value)
                         .OfType<CodeType>()
@@ -1056,7 +1057,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                                 TypeDefinition = x.TypeDefinition,
                             },
                         }).ToArray());
-                else if (addUsings && !includeParentNamespace)
+                else if (shouldAddUsings && !includeParentNamespace)
                     declaration.AddUsings(parentClass.DiscriminatorInformation.DiscriminatorMappings
                         .Select(static x => x.Value)
                         .OfType<CodeType>()
@@ -1091,7 +1092,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 });
             }
         }
-        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings, includeParentNamespace));
+        CrawlTree(currentElement, x => AddDiscriminatorMappingsUsingsToParentClasses(x, parseNodeInterfaceName, addFactoryMethodImport, addUsings, includeParentNamespace, addUsingsForComposedTypes));
     }
     protected static void ReplaceLocalMethodsByGlobalFunctions(CodeElement currentElement, Func<CodeMethod, string> nameUpdateCallback, Func<CodeMethod, CodeUsing[]>? usingsCallback, params CodeMethodKind[] kindsToReplace)
     {
