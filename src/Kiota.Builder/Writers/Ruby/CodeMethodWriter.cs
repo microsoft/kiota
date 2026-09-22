@@ -37,7 +37,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 WriteDeserializerBody(parentClass, writer);
                 break;
             case CodeMethodKind.IndexerBackwardCompatibility:
-                WriteIndexerBody(codeElement, parentClass, writer, returnType);
+                WriteIndexerBody(codeElement, parentClass, writer);
                 break;
             case CodeMethodKind.RequestGenerator:
                 WriteRequestGeneratorBody(codeElement, requestParams, parentClass, writer);
@@ -145,7 +145,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 // safe navigation: a ParseNode may yield a nil discriminator value, and the
                 // inherited factory's `case` path tolerates that, so this one must too
                 writer.StartBlock($"{elseIfPrefix}if {DiscriminatorMappingVarName}&.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedKey)}\".downcase");
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetQualifiedTypeName(property.Type)}.new");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {conventions.GetQualifiedTypeName(property.Type)}.new");
                 writer.DecreaseIndent();
                 elseIfPrefix = "els";
             }
@@ -205,7 +205,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.StartBlock("else");
             foreach (var property in complexProperties)
             {
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetQualifiedTypeName(property.Type)}.new");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {conventions.GetQualifiedTypeName(property.Type)}.new");
             }
             writer.DecreaseIndent();
         }
@@ -213,7 +213,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         {
             foreach (var property in complexProperties)
             {
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {GetQualifiedTypeName(property.Type)}.new");
+                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {conventions.GetQualifiedTypeName(property.Type)}.new");
             }
         }
         if (nonComplexProperties.Length > 0)
@@ -249,7 +249,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteRequestBuilderBody(CodeClass parentClass, CodeMethod codeElement, LanguageWriter writer)
     {
-        var importSymbol = conventions.GetTypeString(codeElement.ReturnType, parentClass);
+        var importSymbol = conventions.GetQualifiedTypeName(codeElement.ReturnType);
         conventions.AddRequestBuilderBody(parentClass, importSymbol, writer, prefix: "return ", pathParameters: codeElement.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)));
     }
     private static void WriteApiConstructorBody(CodeClass parentClass, CodeMethod method, LanguageWriter writer)
@@ -315,7 +315,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 var trimmedDefault = defaultValue.TrimQuotes();
                 var matchingOption = enumDefinition.Options.FirstOrDefault(x => x.WireName.Equals(trimmedDefault, StringComparison.OrdinalIgnoreCase));
                 var optionName = (matchingOption?.Name ?? trimmedDefault).CleanupSymbolName().ToFirstCharacterUpperCase();
-                defaultValue = $"{conventions.GetNormalizedNamespacePrefixForType(propWithDefault.Type)}{conventions.GetTypeString(propWithDefault.Type, currentMethod)}[:{optionName}]";
+                defaultValue = $"{conventions.GetQualifiedTypeName(propWithDefault.Type)}[:{optionName}]";
             }
             else
             {
@@ -373,14 +373,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (codeElement.AccessedProperty is not null)
             writer.WriteLine($"return @{codeElement.AccessedProperty.NamePrefix}{codeElement.AccessedProperty.Name.ToSnakeCase()}");
     }
-    private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, string returnType)
+    private void WriteIndexerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
-        var prefix = conventions.GetNormalizedNamespacePrefixForType(codeElement.ReturnType);
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty &&
             codeElement.OriginalIndexer != null)
             writer.WriteLines($"{conventions.TempDictionaryVarName} = @{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}.clone",
                             $"{conventions.TempDictionaryVarName}[\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(codeElement.OriginalIndexer.IndexParameter.SerializationName)}\"] = {codeElement.OriginalIndexer.IndexParameter.Name.ToSnakeCase()}");
-        conventions.AddRequestBuilderBody(parentClass, returnType, writer, conventions.TempDictionaryVarName, $"return {prefix}");
+        conventions.AddRequestBuilderBody(parentClass, conventions.GetQualifiedTypeName(codeElement.ReturnType), writer, conventions.TempDictionaryVarName, "return ");
     }
     private void WriteDeserializerBody(CodeClass parentClass, LanguageWriter writer)
     {
@@ -671,7 +670,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 else
                     return $"get_collection_of_object_values({getDeserializationLambda(currentType)})";
             if (currentType.TypeDefinition is CodeEnum currentEnum)
-                return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({currentType.TypeDefinition.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase()}::{propertyType.ToFirstCharacterUpperCase()})";
+                return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({conventions.GetQualifiedTypeName(currentType)})";
         }
         return propertyType switch
         {
@@ -684,19 +683,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             _ => $"get_object_value({getDeserializationLambda(propType)})",
         };
     }
-    private static string getDeserializationLambda(CodeTypeBase targetTypeBase)
+    private string getDeserializationLambda(CodeTypeBase targetTypeBase)
     {
         if (targetTypeBase is not CodeType targetType)
             return "lambda {|pn| nil }";
-        return $"lambda {{|pn| {GetQualifiedTypeName(targetType)}.create_from_discriminator_value(pn) }}";
-    }
-    private static string GetQualifiedTypeName(CodeTypeBase targetTypeBase)
-    {
-        var typeName = targetTypeBase.Name.ToFirstCharacterUpperCase();
-        if (targetTypeBase is not CodeType targetType)
-            return typeName;
-        var nsPrefix = targetType.TypeDefinition?.Parent?.Name.NormalizeNameSpaceName("::").ToFirstCharacterUpperCase();
-        return string.IsNullOrEmpty(nsPrefix) ? typeName : $"{nsPrefix}::{typeName}";
+        return $"lambda {{|pn| {conventions.GetQualifiedTypeName(targetType)}.create_from_discriminator_value(pn) }}";
     }
     private static string TranslateObjectType(string typeName)
     {
