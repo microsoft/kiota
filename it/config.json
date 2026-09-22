@@ -26,11 +26,6 @@
         "Rationale": "Kiota fails for typescript with api version 1.1.4 dated 2026-06-17 - https://github.com/microsoft/kiota/issues/7803"
       },
       {
-        "Language": "java",
-        "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
-        "Rationale": "Compilation fails for Java with api version 1.1.4 dated 2026-06-23 - https://github.com/microsoft/kiota/issues/7829"
-      },
-      {
         "Language": "ruby",
         "Pattern": "/repos/{owner}/{repo}/contents/{path}#GET",
         "Rationale": "The oneOf response leaves a model detached from the DOM while a using still references it, so the composed type wrapper requires a file that is never generated. Same endpoint excluded for Java and TypeScript - https://github.com/microsoft/kiota/issues/7829"
@@ -95,10 +90,6 @@
   },
   "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json": {
     "Suppressions": [
-      {
-        "Language": "dart",
-        "Rationale": "Compilation fails with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7822"
-      },
       {
         "Language": "go",
         "Rationale": "Compilation fails only on linux systems (CI) with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7828"
