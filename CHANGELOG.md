@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Preserve array and enum item types for query parameters wrapped in nullable anyOf or oneOf schemas. [#7210](https://github.com/microsoft/kiota/issues/7210)
+- Java: omit unused discriminator-mapping imports for union/intersection wrappers, avoiding imports of nonexistent models while retaining member and inherited-factory imports.
 - Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
