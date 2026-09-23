@@ -18,6 +18,9 @@ jobs:
       github.repository == 'microsoft/kiota' &&
       github.actor != 'dependabot[bot]' &&
       (github.event.action != 'edited' || github.event.changes.body != null)
+    concurrency:
+      group: linked-issue-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Comment when no issue is linked
