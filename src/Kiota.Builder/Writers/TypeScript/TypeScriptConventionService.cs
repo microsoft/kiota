@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -181,21 +182,40 @@ public class TypeScriptConventionService : CommonLanguageConventionService
         return collectionSuffix.Length > 0 ? $"({returnTypeString}){collectionSuffix}" : returnTypeString;
     }
 
+    /// <summary>
+    /// Caches the usings that are in scope for a block. GetTypeAlias is called for every type reference
+    /// that gets written, and gathering that set is the expensive part: a CodeFile aggregates the usings
+    /// of all of its children, so every call walked the whole file and copied a ConcurrentDictionary key
+    /// set per child. The set of usings a block holds is only ever built by the refiners, so it is safe to
+    /// gather once per block.
+    /// Only the set is cached. The alias of a using is assigned in place, after the using itself exists
+    /// (see AliasCollidingSymbols), so it is read on every lookup rather than captured here.
+    /// </summary>
+    private static readonly ConditionalWeakTable<IBlock, CodeUsing[]> usingsByBlock = new();
+
     private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
+        if (targetType.TypeDefinition is null)
+            return string.Empty;
         var block = targetElement.GetImmediateParentOfType<IBlock>();
-        var usings = block is CodeFile cf ? cf.GetChildElements(true).SelectMany(GetUsingsFromCodeElement) : block?.Usings ?? Array.Empty<CodeUsing>();
-        return GetTypeAlias(targetType, usings);
+        if (block is null)
+            return string.Empty;
+        var usings = usingsByBlock.GetValue(block, static b => GatherUsings(b));
+        foreach (var codeUsing in usings)
+        {
+            if (!codeUsing.IsExternal &&
+                codeUsing.Declaration?.TypeDefinition is not null &&
+                codeUsing.Declaration.TypeDefinition == targetType.TypeDefinition &&
+                !string.IsNullOrEmpty(codeUsing.Alias))
+                return codeUsing.Alias;
+        }
+        return string.Empty;
     }
 
-    private static string GetTypeAlias(CodeType targetType, IEnumerable<CodeUsing> usings)
+    private static CodeUsing[] GatherUsings(IBlock block)
     {
-        var aliasedUsing = usings.FirstOrDefault(x => !x.IsExternal &&
-                                                      x.Declaration?.TypeDefinition != null &&
-                                                      x.Declaration.TypeDefinition == targetType.TypeDefinition &&
-                                                      !string.IsNullOrEmpty(x.Alias));
-
-        return aliasedUsing != null ? aliasedUsing.Alias : string.Empty;
+        var usings = block is CodeFile cf ? cf.GetChildElements(true).SelectMany(GetUsingsFromCodeElement) : block.Usings ?? Array.Empty<CodeUsing>();
+        return usings.ToArray();
     }
 
     public override string TranslateType(CodeType type)
