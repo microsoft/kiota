@@ -13,10 +13,10 @@ public class DartLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     [Theory]
-    [InlineData("value", "value_")]
-    [InlineData("Value", "value_")]
-    [InlineData("VALUE", "value_")]
-    [InlineData("values", "values_")]
+    [InlineData("value", "valueEscaped")]
+    [InlineData("Value", "valueEscaped")]
+    [InlineData("VALUE", "valueEscaped")]
+    [InlineData("values", "valuesEscaped")]
     [InlineData("label", "label")]
     public async Task PreservesEnumWireValuesWhenEscapingMembersAsync(string wireValue, string expectedName)
     {
