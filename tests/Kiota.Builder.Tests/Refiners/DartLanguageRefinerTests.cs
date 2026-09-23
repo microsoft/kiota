@@ -52,6 +52,31 @@ public class DartLanguageRefinerTests
         Assert.Equal("override", property.SerializationName);
     }
     #region CommonLanguageRefinerTests
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesInheritedErrorPropertyImports(bool separateNamespace)
+    {
+        var models = root.AddNamespace("client.models");
+        var dependencies = separateNamespace ? root.AddNamespace("client.details") : models;
+        var details = dependencies.AddClass(new CodeClass { Name = "Details", Kind = CodeClassKind.Model }).First();
+        var metadata = dependencies.AddClass(new CodeClass { Name = "Metadata", Kind = CodeClassKind.Model }).First();
+        var parent = models.AddClass(new CodeClass { Name = "ErrorBase", Kind = CodeClassKind.Model }).First();
+        parent.AddProperty(
+            new CodeProperty { Name = "details", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = details.Name, TypeDefinition = details } },
+            new CodeProperty { Name = "metadata", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = metadata.Name, TypeDefinition = metadata } });
+        var error = models.AddClass(new CodeClass { Name = "ErrorResponse", Kind = CodeClassKind.Model, IsErrorDefinition = true }).First();
+        error.StartBlock.Inherits = new CodeType { Name = parent.Name, TypeDefinition = parent };
+        // The child already imports one type from the same namespace as an inherited property.
+        error.AddProperty(new CodeProperty { Name = "ownDetails", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = details.Name, TypeDefinition = details } });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("ApiException", error.StartBlock.Inherits.Name);
+        Assert.Contains(error.Properties, x => x.Name == "metadata" && x.Type is CodeType type && type.TypeDefinition == metadata);
+        Assert.Single(error.Usings, x => x.Declaration?.TypeDefinition == details);
+        Assert.Single(error.Usings, x => x.Declaration?.TypeDefinition == metadata);
+    }
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
     {
