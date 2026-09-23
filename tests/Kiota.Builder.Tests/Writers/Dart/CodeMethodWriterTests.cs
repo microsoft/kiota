@@ -1605,6 +1605,52 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.EndsWith(";", result.TrimEnd());
     }
     [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void WritesRepeatedInheritedDefaultsAfterLocalInitializers(int repeatedCount)
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.IsAsync = false;
+        method.Kind = CodeMethodKind.Constructor;
+        var baseClass = root.AddClass(new CodeClass { Name = "BaseModel", Kind = CodeClassKind.Model }).First();
+        parentClass.StartBlock.Inherits = new CodeType { Name = baseClass.Name, TypeDefinition = baseClass };
+        for (var i = 0; i < repeatedCount; i++)
+        {
+            baseClass.AddProperty(new CodeProperty
+            {
+                Name = $"label{i}",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "String", IsNullable = false },
+            });
+            var repeated = new CodeProperty
+            {
+                Name = $"label{i}",
+                Kind = CodePropertyKind.Custom,
+                DefaultValue = "\"derived\"",
+                Type = new CodeType { Name = "String", IsNullable = false },
+            };
+            parentClass.AddProperty(repeated);
+            Assert.True(repeated.ExistsInBaseType);
+        }
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "localLabel",
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = "\"local\"",
+            Type = new CodeType { Name = "String", IsNullable = false },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("localLabel = 'local', super() {", result);
+        for (var i = 0; i < repeatedCount; i++)
+        {
+            Assert.Contains($"label{i} = 'derived';", result);
+            Assert.True(result.IndexOf($"label{i} =", StringComparison.Ordinal) > result.IndexOf("super()", StringComparison.Ordinal));
+        }
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void WritesInheritedBackingStoreDefaultsInConstructorBody(bool fromGrandparent)

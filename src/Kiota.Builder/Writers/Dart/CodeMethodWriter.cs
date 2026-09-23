@@ -68,11 +68,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
+    private bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
     {
         if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor) && !parentClass.IsErrorDefinition)
         {
-            return UsesInheritedModelInitializers(parentClass, codeElement) || parentClass.Properties.All(prop => string.IsNullOrEmpty(prop.DefaultValue));
+            return UsesInheritedModelInitializers(parentClass, codeElement)
+                ? !GetConstructorDefaults(parentClass, codeElement).Any(static x => x.Property.ExistsInBaseType)
+                : parentClass.Properties.All(prop => string.IsNullOrEmpty(prop.DefaultValue));
         }
         var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
         return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
@@ -392,7 +394,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
         if (UsesInheritedModelInitializers(parentClass, currentMethod))
+        {
+            foreach (var inheritedDefault in GetConstructorDefaults(parentClass, currentMethod).Where(static x => x.Property.ExistsInBaseType))
+                writer.WriteLine($"{inheritedDefault.Property.Name} = {inheritedDefault.Value};");
             return;
+        }
         if (parentClass.IsErrorDefinition)
         {
             WriteErrorClassConstructor(parentClass, writer);
@@ -763,6 +769,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (isConstructor && UsesInheritedModelInitializers(parentClass, currentMethod))
         {
             var initializers = GetConstructorDefaults(parentClass, currentMethod)
+                .Where(static x => !x.Property.ExistsInBaseType)
                 .Select(static x => $"{x.Property.Name} = {x.Value}")
                 .Append("super()");
             return $" : {string.Join(", ", initializers)}";
