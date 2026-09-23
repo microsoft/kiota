@@ -571,12 +571,18 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     }
 
     // A union whose members are all primitive gets no else clause, so a member reaches the wire only when the value
-    // matches the guard generated for its type. Two shapes do not match: a Guid collection deserializes through
-    // getCollectionOfPrimitiveValues<Guid>("string") and reads back as strings, and a binary collection deserializes
-    // through the scalar getByteArrayValue() and reads back as a single ArrayBuffer. Both mismatches come from the
-    // deserializer and predate this gate.
+    // matches the guard generated for its type. A Guid collection does not match: it deserializes through
+    // getCollectionOfPrimitiveValues<Guid>("string") and reads back as strings, a deserializer mismatch that predates this gate.
     private static bool HasPrimitiveMembers(CodeComposedTypeBase composedType) =>
-        composedType.IsComposedOfPrimitives(IsPrimitiveTypeOrPrimitiveCollection) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveTypeOrPrimitiveCollection);
+        composedType.IsComposedOfPrimitives(IsPrimitiveMember) || composedType.IsComposedOfObjectsAndPrimitives(IsPrimitiveMember);
+
+    // A primitive, or a collection of primitives other than byte arrays. The parse node API has no reader for a collection
+    // of byte arrays, since getCollectionOfPrimitiveValues does not accept "ArrayBuffer", and the generated deserializer reads
+    // such a member with the scalar getByteArrayValue(). Writing it as a primitive collection would send a shape the client
+    // cannot read back, so a binary, base64 or base64url collection stays out of the primitive members, as it was before.
+    private static bool IsPrimitiveMember(CodeType codeType, CodeComposedTypeBase composedType) =>
+        IsPrimitiveTypeOrPrimitiveCollection(codeType, composedType) &&
+        !(codeType.IsCollection && TYPE_ARRAYBUFFER.Equals(GetTypescriptTypeString(codeType, composedType, false), StringComparison.OrdinalIgnoreCase));
 
     private void WriteSerializationStatementForComposedTypeProperty(CodeComposedTypeBase composedType, string modelParamName, CodeFunction method, LanguageWriter writer, CodeProperty codeProperty, string? serializeName)
     {
@@ -600,7 +606,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         bool isFirst = true;
         var writtenTypeChecks = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var type in composedType.Types.Where(x => IsPrimitiveTypeOrPrimitiveCollection(x, composedType)))
+        foreach (var type in composedType.Types.Where(x => IsPrimitiveMember(x, composedType)))
         {
             var nodeType = conventions.GetTypeString(type, method, false);
             // the guard narrows the element type, while the cast is on the property, so it keeps the collection suffix
@@ -634,7 +640,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     }
     private static void WriteComposedTypeDefaultClause(CodeComposedTypeBase composedType, LanguageWriter writer, CodeProperty codeProperty, string valueReference, string? serializeName)
     {
-        var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveTypeOrPrimitiveCollection(x, composedType)).ToArray();
+        var nonPrimitiveTypes = composedType.Types.Where(x => !IsPrimitiveMember(x, composedType)).ToArray();
         if (nonPrimitiveTypes.Length > 0)
         {
             writer.StartBlock("else {");

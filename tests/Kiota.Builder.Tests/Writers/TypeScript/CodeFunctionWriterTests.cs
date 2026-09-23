@@ -2360,16 +2360,23 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("ArrayOfObjects | string", result);
     }
 
-    [Fact]
-    public async Task WritesByteArrayCollectionMemberOfUnionPropertySerializerAsync()
+    [Theory]
+    [InlineData("binary")]
+    [InlineData("base64")]
+    [InlineData("base64url")]
+    public async Task KeepsByteArrayCollectionMemberOfUnionPropertyOutOfPrimitiveCollectionsAsync(string byteArrayTypeName)
     {
         var result = await WriteSerializerForUnionPropertyAsync(
-            new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = byteArrayTypeName, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
             new CodeType { Name = "string" });
 
-        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => item instanceof ArrayBuffer)) {", result);
-        Assert.Contains("writer.writeCollectionOfPrimitiveValues<ArrayBuffer>(\"tags\", parentClass.tags as ArrayBuffer[]);", result);
-        Assert.DoesNotContain("writeCollectionOfObjectValues<ArrayBuffer>", result);
+        // the parse node has no reader for a collection of byte arrays and the deserializer reads this member with the scalar
+        // getByteArrayValue(), so the serializer does not write it as a primitive collection and it stays in the object branch
+        Assert.DoesNotContain("writeCollectionOfPrimitiveValues<ArrayBuffer>", result);
+        Assert.DoesNotContain("item instanceof ArrayBuffer", result);
+        Assert.Contains("if (typeof parentClass.tags === \"string\" ) {", result);
+        Assert.Contains("writer.writeStringValue(\"tags\", parentClass.tags as string);", result);
+        Assert.Contains("writer.writeCollectionOfObjectValues<ArrayBuffer>(\"tags\", parentClass.tags as ArrayBuffer[] | undefined | null", result);
     }
 
     [Fact]
