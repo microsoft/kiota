@@ -85,7 +85,11 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static bool MatchesAnyUriCandidate(string pattern, IEnumerable<string> rawCandidates, IEnumerable<Uri> absoluteCandidates)
     {
         if (!pattern.Contains('*', StringComparison.Ordinal))
+        {
+            if (Uri.TryCreate(pattern, UriKind.Absolute, out var allowedUri) && !string.IsNullOrEmpty(allowedUri.UserInfo))
+                return false;
             return rawCandidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+        }
 
         // A wildcard URL pattern is matched component by component against the parsed URI instead of
         // against the URI string: matching the string lets the wildcard cross the authority boundary,
@@ -196,8 +200,12 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
 
     private static string NormalizeAllowedPath(string allowedOrigin)
     {
-        if (Uri.TryCreate(allowedOrigin, UriKind.Absolute, out var uri) && !uri.IsFile)
-            return allowedOrigin;
+        if (Uri.TryCreate(allowedOrigin, UriKind.Absolute, out var uri))
+        {
+            if (!uri.IsFile)
+                return allowedOrigin;
+            allowedOrigin = uri.LocalPath;
+        }
 
         var path = allowedOrigin.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
         if (!Path.IsPathRooted(path))
