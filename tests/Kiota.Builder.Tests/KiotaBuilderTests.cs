@@ -9481,6 +9481,169 @@ components:
         Assert.NotNull(modelsNamespace);
         Assert.Equal(4, modelsNamespace.Classes.Count());// only 4 classes for user, member, group and directoryObject
     }
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task InlinePropertySchemaDoesNotOverwriteComponentWithTheSameNameAsync(bool componentIsGenerated)
+    {
+        var tempFilePath = Path.GetTempFileName();
+        // when no path uses the component, its class is not generated, but the inline name still gets the suffix
+        // so it stays the same whatever paths are included or excluded
+        var componentPath = componentIsGenerated ? @"
+  /tests_cases:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/test_case'" : string.Empty;
+        await using var fs = await GetDocumentStreamAsync($@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://localhost
+paths:{componentPath}
+  /tests:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/test'
+components:
+  schemas:
+    test_case:
+      type: object
+      properties:
+        name:
+          type: integer
+        uuid:
+          type: string
+    test:
+      type: object
+      properties:
+        case:
+          type: object
+          properties:
+            name2:
+              type: integer
+            uuid2:
+              type: string");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var componentClass = modelsNamespace.FindChildByName<CodeClass>("test_case", false);
+        if (componentIsGenerated)
+        {
+            Assert.NotNull(componentClass);
+            Assert.NotNull(componentClass.FindChildByName<CodeProperty>("name", false));
+            Assert.NotNull(componentClass.FindChildByName<CodeProperty>("uuid", false));
+            Assert.Null(componentClass.FindChildByName<CodeProperty>("name2", false));
+        }
+        else
+            Assert.Null(componentClass);
+        var testClass = modelsNamespace.FindChildByName<CodeClass>("test", false);
+        Assert.NotNull(testClass);
+        var caseProperty = testClass.FindChildByName<CodeProperty>("case", false);
+        Assert.NotNull(caseProperty);
+        var inlineClass = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(caseProperty.Type).TypeDefinition);
+        Assert.NotSame(componentClass, inlineClass);
+        Assert.Equal("test_case1", inlineClass.Name);
+        Assert.NotNull(inlineClass.FindChildByName<CodeProperty>("name2", false));
+        Assert.NotNull(inlineClass.FindChildByName<CodeProperty>("uuid2", false));
+        Assert.Same(modelsNamespace, inlineClass.Parent);
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InlinePropertySchemaSuffixDoesNotTakeASiblingInlinePropertyNameAsync(bool siblingIsReference)
+    {
+        var tempFilePath = Path.GetTempFileName();
+        var case1Schema = siblingIsReference ? @"          $ref: '#/components/schemas/other'" : @"          type: object
+          properties:
+            name3:
+              type: integer";
+        await using var fs = await GetDocumentStreamAsync($@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://localhost
+paths:
+  /tests_cases:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/test_case'
+  /tests:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/test'
+components:
+  schemas:
+    test_case:
+      type: object
+      properties:
+        name:
+          type: integer
+    other:
+      type: object
+      properties:
+        name3:
+          type: integer
+    test:
+      type: object
+      properties:
+        case:
+          type: object
+          properties:
+            name2:
+              type: integer
+        case1:
+{case1Schema}");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNamespace = codeModel.FindChildByName<CodeNamespace>("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        var componentClass = modelsNamespace.FindChildByName<CodeClass>("test_case", false);
+        Assert.NotNull(componentClass);
+        Assert.NotNull(componentClass.FindChildByName<CodeProperty>("name", false));
+        Assert.Null(componentClass.FindChildByName<CodeProperty>("name2", false));
+        var testClass = modelsNamespace.FindChildByName<CodeClass>("test", false);
+        Assert.NotNull(testClass);
+        var caseProperty = testClass.FindChildByName<CodeProperty>("case", false);
+        Assert.NotNull(caseProperty);
+        var case1Property = testClass.FindChildByName<CodeProperty>("case1", false);
+        Assert.NotNull(case1Property);
+        var caseClass = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(caseProperty.Type).TypeDefinition);
+        var case1Class = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(case1Property.Type).TypeDefinition);
+        Assert.NotSame(caseClass, case1Class);
+        // test_case1 is the plain name of an inline case1 property, so the case property skips to test_case2,
+        // while a $ref case1 uses its component's class and leaves test_case1 free
+        Assert.Equal(siblingIsReference ? "test_case1" : "test_case2", caseClass.Name);
+        Assert.NotNull(caseClass.FindChildByName<CodeProperty>("name2", false));
+        Assert.Null(caseClass.FindChildByName<CodeProperty>("name3", false));
+        Assert.Equal(siblingIsReference ? "other" : "test_case1", case1Class.Name);
+        Assert.NotNull(case1Class.FindChildByName<CodeProperty>("name3", false));
+        Assert.Null(case1Class.FindChildByName<CodeProperty>("name2", false));
+    }
     [Fact]
     public async Task AllOfInheritanceModelReferencedViaComposedTypeKeepsItsPropertiesAsync()
     {
