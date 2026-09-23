@@ -24,7 +24,6 @@ jobs:
     steps:
       - name: check if prs are dirty
         uses: eps1lon/actions-label-merge-conflict@0273be72a0bbd58fcd71d0d6c02c209b50d1e5e1 # v3.1.0
-        if: env.LABELING_TOKEN != '' && env.LABELING_TOKEN != null
         id: check
         with:
           dirtyLabel: "conflicting"
