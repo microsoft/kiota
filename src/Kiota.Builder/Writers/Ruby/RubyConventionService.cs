@@ -100,6 +100,10 @@ public class RubyConventionService : CommonLanguageConventionService
         TryGetPrimitiveType(typeName, out var primitive) ? primitive.Constant : typeName.ToFirstCharacterUpperCase();
     public override string TranslateType(CodeType type)
     {
+        // a resolved model or enum keeps the name the builder gave it, so the aliases below only
+        // rename types the builder never resolved
+        if (type?.TypeDefinition is not null)
+            return type.Name.ToFirstCharacterUpperCase();
         return type?.Name switch
         {
             "integer" or "int64" or "int8" or "uint8" or "sbyte" or "byte" => "number",

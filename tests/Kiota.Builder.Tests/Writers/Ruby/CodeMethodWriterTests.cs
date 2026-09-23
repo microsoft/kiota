@@ -641,6 +641,18 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("send_collection_of_primitive_async(request_info, SomeEnum,", result);
         Assert.DoesNotContain("create_from_discriminator_value", result);
     }
+    [Theory]
+    [InlineData("int64")]
+    [InlineData("double")]
+    [InlineData("string")]
+    [InlineData("binary")]
+    public void DocumentsAModelNamedLikeAPrimitiveByItsOwnName(string modelName)
+    {
+        setup();
+        var model = root.AddClass(new CodeClass { Name = modelName, Kind = CodeClassKind.Model }).First();
+        Assert.Equal(modelName.ToFirstCharacterUpperCase(),
+            new RubyConventionService().TranslateType(new CodeType { Name = modelName, TypeDefinition = model }));
+    }
     private void AddRequestBodyParameters()
     {
         var stringType = new CodeType
