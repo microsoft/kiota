@@ -483,6 +483,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void EscapesErrorMappingKeys()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var errorType = root.AddClass(new CodeClass
+        {
+            Name = "ErrorType",
+        }).First();
+        method.AddErrorMapping("4\"\n\u2028\u2029xx", new CodeType { Name = "ErrorType", TypeDefinition = errorType });
+        AddRequestBodyParameters();
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("{ \"4\\\"\\n\\u2028\\u2029XX\", ErrorType.CreateFromDiscriminatorValue },", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyWithUntypedReturnValue()
     {
         setup();

@@ -451,7 +451,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
+                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant().SanitizeCSharpDoubleQuote()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
             }
             writer.CloseBlock("};");
         }
@@ -626,7 +626,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             var statusCode = exception.Key.ToUpperInvariant() switch
             {
                 "XXX" => "4XX or 5XX",
-                _ => exception.Key,
+                _ => CSharpConventionService.RemoveInvalidDescriptionCharacters(exception.Key.CleanupXMLString()),
             };
             conventions.WriteAdditionalDescriptionItem($"<exception cref=\"{conventions.GetTypeString(exception.Value, element)}\">When receiving a {statusCode} status code</exception>", writer);
         }
