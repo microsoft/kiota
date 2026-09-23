@@ -91,10 +91,6 @@
   "https://raw.githubusercontent.com/meraki/openapi/refs/heads/master/openapi/spec3.json": {
     "Suppressions": [
       {
-        "Language": "dart",
-        "Rationale": "Compilation fails with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7822"
-      },
-      {
         "Language": "go",
         "Rationale": "Compilation fails only on linux systems (CI) with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7828"
       }
