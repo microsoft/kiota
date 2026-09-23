@@ -3,8 +3,6 @@
 name: PullRequestConflicting
 
 on:
-  push:
-    branches: [ main ]
   pull_request_target:
     types: [opened, reopened, synchronize]
     branches: [ main ]
@@ -22,15 +20,15 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: check if prs are dirty
-      uses: eps1lon/actions-label-merge-conflict@0273be72a0bbd58fcd71d0d6c02c209b50d1e5e1 # v3.1.0
-      if: env.LABELING_TOKEN != '' && env.LABELING_TOKEN != null
-      id: check
-      with:
-        dirtyLabel: "conflicting"
-        repoToken: "${{ secrets.GITHUB_TOKEN  }}"
-        continueOnMissingPermissions: true
-        commentOnDirty: 'This pull request has conflicting changes, the author must resolve the conflicts before this pull request can be merged.'
-        commentOnClean: 'Conflicts have been resolved. A maintainer will take a look shortly.'
-      env:
-        LABELING_TOKEN: ${{secrets.GITHUB_TOKEN }}
+      - name: check if prs are dirty
+        uses: eps1lon/actions-label-merge-conflict@0273be72a0bbd58fcd71d0d6c02c209b50d1e5e1 # v3.1.0
+        if: env.LABELING_TOKEN != '' && env.LABELING_TOKEN != null
+        id: check
+        with:
+          dirtyLabel: "conflicting"
+          repoToken: "${{ secrets.GITHUB_TOKEN  }}"
+          continueOnMissingPermissions: true
+          commentOnDirty: 'This pull request has conflicting changes, the author must resolve the conflicts before this pull request can be merged.'
+          commentOnClean: 'Conflicts have been resolved. A maintainer will take a look shortly.'
+        env:
+          LABELING_TOKEN: ${{secrets.GITHUB_TOKEN }}
