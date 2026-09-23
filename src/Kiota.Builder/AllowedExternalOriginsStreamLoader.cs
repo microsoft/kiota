@@ -19,7 +19,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
     private const string SchemeSeparator = "://";
 
-    private readonly record struct UriPattern(string Scheme, string Host, int? Port, string? Path);
+    private readonly record struct UriPattern(string Scheme, string? UserInfo, string Host, int? Port, string? Path);
 
     public AllowedExternalOriginsStreamLoader(HttpClient httpClient, IEnumerable<string> allowedExternalOrigins) : base(httpClient)
     {
@@ -85,11 +85,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static bool MatchesAnyUriCandidate(string pattern, IEnumerable<string> rawCandidates, IEnumerable<Uri> absoluteCandidates)
     {
         if (!pattern.Contains('*', StringComparison.Ordinal))
-        {
-            if (Uri.TryCreate(pattern, UriKind.Absolute, out var allowedUri) && !string.IsNullOrEmpty(allowedUri.UserInfo))
-                return false;
             return rawCandidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
-        }
 
         // A wildcard URL pattern is matched component by component against the parsed URI instead of
         // against the URI string: matching the string lets the wildcard cross the authority boundary,
@@ -110,9 +106,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     {
         if (!string.Equals(pattern.Scheme, candidate.Scheme, StringComparison.OrdinalIgnoreCase))
             return false;
-        // credentials in the authority make the effective host hard to read for a human reviewing the
-        // allow list, and are never required to resolve an external reference.
-        if (!string.IsNullOrEmpty(candidate.UserInfo))
+        if (pattern.UserInfo is { } expectedUserInfo && !MatchesComponent(expectedUserInfo, candidate.UserInfo))
             return false;
         // the host is matched on its own so the wildcard cannot expand past the authority.
         if (!MatchesComponent(pattern.Host, candidate.Host))
@@ -155,12 +149,13 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         var pathSeparatorIndex = remainder.IndexOf('/', StringComparison.Ordinal);
         var authority = pathSeparatorIndex < 0 ? remainder : remainder[..pathSeparatorIndex];
         var path = pathSeparatorIndex < 0 ? null : remainder[pathSeparatorIndex..];
-        // credentials are not supported in an allow list entry: they would make the entry match a URL
-        // whose real host is whatever follows the '@'.
-        if (authority.Contains('@', StringComparison.Ordinal) || !TryParseAuthority(authority, out var host, out var port))
+        var userInfoSeparatorIndex = authority.LastIndexOf('@');
+        var userInfo = userInfoSeparatorIndex < 0 ? null : authority[..userInfoSeparatorIndex];
+        var hostAndPort = userInfoSeparatorIndex < 0 ? authority : authority[(userInfoSeparatorIndex + 1)..];
+        if (!TryParseAuthority(hostAndPort, out var host, out var port))
             return false;
 
-        result = new UriPattern(scheme, host, port, path);
+        result = new UriPattern(scheme, userInfo, host, port, path);
         return true;
     }
 

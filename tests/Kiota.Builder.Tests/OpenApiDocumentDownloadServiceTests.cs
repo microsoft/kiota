@@ -224,7 +224,7 @@ components:
     [InlineData("https://contoso.com/schemas/*", "https://evil.attacker.com/https://contoso.com/schemas/pet.yaml")]
     // credentials in the authority must not disguise the real host
     [InlineData("https://*.contoso.com/*", "https://zap.contoso.com@evil.attacker.com/schemas/pet.yaml")]
-    [InlineData("https://zap.contoso.com@evil.attacker.com/schemas/pet.yaml", "https://zap.contoso.com@evil.attacker.com/schemas/pet.yaml")]
+    [InlineData("https://admin@*.contoso.com/*", "https://user1@zap.contoso.com/schemas/pet.yaml")]
     // the wildcard must not cross the scheme or the port either
     [InlineData("https://*.contoso.com/*", "http://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*.contoso.com/*", "https://zap.contoso.com:8443/schemas/pet.yaml")]
@@ -247,6 +247,9 @@ components:
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
     [InlineData("https://*/schemas/*", "https://anything.example.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com/*", "https://user1@zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://user*@*.contoso.com/*", "https://user1@zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://user1@contoso.com/schemas/pet.yaml", "https://user1@contoso.com/schemas/pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderAllowsMatchingOrigins(string allowedOrigin, string externalReference)
     {
         using var httpClient = new HttpClient(new ResponseHandler());
@@ -303,18 +306,18 @@ components:
     [Fact]
     public async Task AllowedExternalOriginsStreamLoaderAllowsWildcardFileUris()
     {
-        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var schemaPath = Path.Combine(tempDirectory, "schemas", "pet.yaml");
+        var tempDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+        var schemaPath = Path.Join(tempDirectory, "schemas", "pet.yaml");
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(schemaPath)!);
             await File.WriteAllTextAsync(schemaPath, "type: object", TestContext.Current.CancellationToken);
             using var httpClient = new HttpClient(new ResponseHandler());
-            var allowedOrigin = new Uri(Path.Combine(tempDirectory, "schemas", "*")).AbsoluteUri;
+            var allowedOrigin = new Uri(Path.Join(tempDirectory, "schemas", "*")).AbsoluteUri;
             var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
 
             await using var stream = await loader.LoadAsync(
-                new Uri(Path.Combine(tempDirectory, "openapi.yaml")),
+                new Uri(Path.Join(tempDirectory, "openapi.yaml")),
                 new Uri(schemaPath),
                 TestContext.Current.CancellationToken);
 
