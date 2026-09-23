@@ -715,8 +715,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     /// </summary>
     private (string methodName, string argument) GetSendRequest(CodeTypeBase returnTypeBase, string returnType)
     {
-        if (returnType.Equals(conventions.VoidTypeName, StringComparison.OrdinalIgnoreCase) ||
-            returnType.Equals("void", StringComparison.OrdinalIgnoreCase))
+        var isResolved = returnTypeBase is CodeType { TypeDefinition: not null };
+        if (!isResolved &&
+            (returnType.Equals(conventions.VoidTypeName, StringComparison.OrdinalIgnoreCase) ||
+             returnType.Equals("void", StringComparison.OrdinalIgnoreCase)))
             return ("send_no_response_content_async", string.Empty);
 
         var isCollection = returnTypeBase.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
@@ -727,7 +729,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             return (byType, $"{conventions.GetQualifiedTypeName(enumType)}, ");
         // a resolved model is read by its factory whatever it is called, so the name checks below
         // only decide for types the builder never resolved
-        if (returnTypeBase is not CodeType { TypeDefinition: null })
+        if (isResolved || returnTypeBase is not CodeType)
             return (isCollection ? "send_collection_async" : "send_async",
                     $"{getDeserializationLambda(returnTypeBase)}, ");
         if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))

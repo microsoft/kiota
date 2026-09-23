@@ -595,7 +595,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         setup();
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Post;
-        method.RequestBodyContentType = "application/json'; system('rm -rf /') #\n$x";
+        method.RequestBodyContentType = "application/json'; system('rm -rf /') #\n\r\t\\\"$x";
         AddRequestProperties();
         method.AddParameter(new CodeParameter
         {
@@ -605,8 +605,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
+        // the single quoted literal must not be closed early, and every control character and
+        // backslash has to arrive escaped
         Assert.DoesNotContain("'application/json'; system", result);
         Assert.Contains("\\'", result);
+        var emitted = result.Split('\n').First(static x => x.Contains("set_content_from", StringComparison.Ordinal));
+        Assert.Contains("\\n", emitted, StringComparison.Ordinal);
+        Assert.Contains("\\r", emitted, StringComparison.Ordinal);
+        Assert.Contains("\\t", emitted, StringComparison.Ordinal);
+        Assert.Contains("\\\\", emitted, StringComparison.Ordinal);
+        Assert.Contains("\\\"", emitted, StringComparison.Ordinal);
     }
     [Fact]
     public void WritesEnumRequestExecutorWithTheEnumConstant()
@@ -652,6 +660,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         var model = root.AddClass(new CodeClass { Name = modelName, Kind = CodeClassKind.Model }).First();
         Assert.Equal(modelName.ToFirstCharacterUpperCase(),
             new RubyConventionService().TranslateType(new CodeType { Name = modelName, TypeDefinition = model }));
+    }
+    [Theory]
+    [InlineData("void")]
+    [InlineData("nil")]
+    public void WritesAModelNamedLikeVoidThroughItsFactory(string modelName)
+    {
+        setup();
+        var model = root.AddClass(new CodeClass { Name = modelName, Kind = CodeClassKind.Model }).First();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType { Name = modelName, TypeDefinition = model };
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("send_async", result);
+        Assert.Contains("create_from_discriminator_value", result);
+        Assert.DoesNotContain("send_no_response_content_async", result);
     }
     private void AddRequestBodyParameters()
     {
