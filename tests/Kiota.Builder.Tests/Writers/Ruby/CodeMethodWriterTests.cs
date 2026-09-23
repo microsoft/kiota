@@ -550,6 +550,97 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("some_param=\"SomeDefaultValue\"", result);
     }
+    [Theory]
+    [InlineData("double")]
+    [InlineData("int64")]
+    [InlineData("binary")]
+    public void WritesAModelNamedLikeAPrimitiveThroughItsFactory(string modelName)
+    {
+        setup();
+        var model = root.AddClass(new CodeClass { Name = modelName, Kind = CodeClassKind.Model }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "value",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = modelName, TypeDefinition = model },
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var deserialized = tw.ToString();
+        Assert.Contains("get_object_value", deserialized);
+        Assert.DoesNotContain("get_float_value", deserialized);
+        Assert.DoesNotContain("get_number_value", deserialized);
+        Assert.DoesNotContain("get_string_value", deserialized);
+
+        using var serializerWriter = new StringWriter();
+        var second = LanguageWriter.GetLanguageWriter(GenerationLanguage.Ruby, DefaultPath, DefaultName);
+        second.SetTextWriter(serializerWriter);
+        var serializer = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "serialize",
+            Kind = CodeMethodKind.Serializer,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        second.Write(serializer);
+        var serialized = serializerWriter.ToString();
+        Assert.Contains("write_object_value", serialized);
+        Assert.DoesNotContain("write_float_value", serialized);
+        Assert.DoesNotContain("write_number_value", serialized);
+    }
+    [Fact]
+    public void EscapesTheRequestBodyContentTypeLiteral()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "application/json'; system('rm -rf /') #\n$x";
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType { Name = "string" },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("'application/json'; system", result);
+        Assert.Contains("\\'", result);
+    }
+    [Fact]
+    public void WritesEnumRequestExecutorWithTheEnumConstant()
+    {
+        setup();
+        var enumDefinition = root.AddEnum(new CodeEnum { Name = "SomeEnum" }).First();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType { Name = "SomeEnum", TypeDefinition = enumDefinition };
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("send_primitive_async(request_info, SomeEnum,", result);
+        Assert.DoesNotContain("create_from_discriminator_value", result);
+    }
+    [Fact]
+    public void WritesEnumCollectionRequestExecutorWithTheEnumConstant()
+    {
+        setup();
+        var enumDefinition = root.AddEnum(new CodeEnum { Name = "SomeEnum" }).First();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType
+        {
+            Name = "SomeEnum",
+            TypeDefinition = enumDefinition,
+            CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+        };
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("send_collection_of_primitive_async(request_info, SomeEnum,", result);
+        Assert.DoesNotContain("create_from_discriminator_value", result);
+    }
     private void AddRequestBodyParameters()
     {
         var stringType = new CodeType

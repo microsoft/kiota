@@ -672,11 +672,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                     return $"get_collection_of_enum_values({enumName})";
                 return $"get_enum_value{(currentEnum.Flags ? "s" : string.Empty)}({enumName})";
             }
+            // a resolved model is read by its factory whatever it is called, so the primitive map
+            // below only decides for types the builder never resolved
+            if (currentType.TypeDefinition is not null)
+                return isCollection ?
+                    $"get_collection_of_object_values({getDeserializationLambda(currentType)})" :
+                    $"get_object_value({getDeserializationLambda(currentType)})";
             if (isCollection)
-                if (currentType.TypeDefinition == null)
-                    return $"get_collection_of_primitive_values({RubyConventionService.GetPrimitiveConstant(propertyType)})";
-                else
-                    return $"get_collection_of_object_values({getDeserializationLambda(currentType)})";
+                return $"get_collection_of_primitive_values({RubyConventionService.GetPrimitiveConstant(propertyType)})";
         }
         return RubyConventionService.TryGetPrimitiveType(propertyType, out var primitive) ?
             $"{primitive.Reader}()" :
@@ -696,11 +699,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         {
             if (currentType.TypeDefinition is CodeEnum)
                 return isCollection ? "write_collection_of_enum_values" : "write_enum_value";
+            if (currentType.TypeDefinition is not null)
+                return isCollection ? "write_collection_of_object_values" : "write_object_value";
             if (isCollection)
-                if (currentType.TypeDefinition == null)
-                    return "write_collection_of_primitive_values";
-                else
-                    return "write_collection_of_object_values";
+                return "write_collection_of_primitive_values";
         }
         return RubyConventionService.TryGetPrimitiveType(propertyType, out var primitive) ?
             primitive.Writer :
