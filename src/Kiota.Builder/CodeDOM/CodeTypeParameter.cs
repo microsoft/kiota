@@ -1,5 +1,5 @@
 ﻿namespace Kiota.Builder.CodeDOM;
 
-public class CodeTypeParameter : CodeTerminal
+public class CodeTypeParameter : CodeTerminal, ITypeDefinition
 {
 }

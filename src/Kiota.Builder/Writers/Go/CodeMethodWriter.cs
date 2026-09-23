@@ -160,7 +160,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         {
             if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
                 writer.CloseBlock();
-            writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}(), nil");
+            if (parentClass.IsGeneric)
+                writer.WriteLine($"return {GetTypeConstructorCall(new CodeType { Name = parentClass.Name, TypeDefinition = parentClass, GenericTypeParameterValues = [.. parentClass.TypeParameters.Select(static x => new CodeType { TypeDefinition = x })] }, parentClass, false)}, nil");
+            else
+                writer.WriteLine($"return New{parentClass.Name.ToFirstCharacterUpperCase()}(), nil");
         }
     }
     private void WriteFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
@@ -453,8 +456,20 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         };
         if (!writePrototypeOnly)
             WriteMethodDocumentation(code, methodName, writer);
-        var parameters = string.Join(", ", code.Parameters.OrderBy(x => x, ParameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList());
-        var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock }, parentBlock);
+        var typeParameters = parentBlock switch
+        {
+            CodeClass parentBlockClass => parentBlockClass.TypeParameters.ToArray(),
+            CodeInterface parentBlockInterface => parentBlockInterface.TypeParameters.ToArray(),
+            _ => [],
+        };
+        // package level functions (constructors, factories) of generic blocks declare their own type parameters,
+        // methods on the block use the receiver's instantiation instead
+        var takesTypeParameters = !writePrototypeOnly && typeParameters.Length != 0 && (isConstructor || code.IsOfKind(CodeMethodKind.Factory));
+        var factoryParameters = takesTypeParameters ?
+            typeParameters.Select(x => $"{GoConventionService.GetTypeParameterFactoryName(x)} {conventions.SerializationHash}.ParsableFactory") :
+            Enumerable.Empty<string>();
+        var parameters = string.Join(", ", factoryParameters.Concat(code.Parameters.OrderBy(x => x, ParameterOrderComparer).Select(p => conventions.GetParameterSignature(p, parentBlock)).ToList()));
+        var classType = conventions.GetTypeString(new CodeType { Name = parentBlock.Name, TypeDefinition = parentBlock, GenericTypeParameterValues = [.. typeParameters.Select(static x => new CodeType { TypeDefinition = x })] }, parentBlock);
         var associatedTypePrefix = isConstructor || code.IsStatic || writePrototypeOnly ? string.Empty : $"(m {classType}) ";
         var finalReturnType = isConstructor ? classType : returnType;
         var errorDeclaration = code.IsOfKind(CodeMethodKind.ClientConstructor,
@@ -472,6 +487,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                                                 string.Empty :
                                                 "error";
         var funcPrefix = writePrototypeOnly ? string.Empty : "func ";
+        var typeParametersSuffix = takesTypeParameters ? conventions.GetTypeParametersDeclaration(typeParameters) : string.Empty;
         var returnTypeString = (code, finalReturnType, errorDeclaration) switch
         {
             _ when code.IsAsync && !string.IsNullOrEmpty(finalReturnType) => $"({finalReturnType}, error)",
@@ -487,7 +503,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             _ when string.IsNullOrEmpty(returnTypeString) => "{", // no leading space in this case
             _ => " {",
         };
-        var firstPart = $"{funcPrefix}{associatedTypePrefix}{methodName}({parameters})";
+        var firstPart = $"{funcPrefix}{associatedTypePrefix}{methodName}{typeParametersSuffix}({parameters})";
         var finalString = (returnTypeString, openingBracket) switch
         {
             _ when string.IsNullOrEmpty(returnTypeString) && string.IsNullOrEmpty(openingBracket) => firstPart,
@@ -627,12 +643,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
+        var typeParametersInstantiation = parentClass.IsGeneric ?
+            $"[{string.Join(", ", parentClass.TypeParameters.Select(static x => x.Name))}]" :
+            string.Empty;
         if (inherits || parentClass.IsErrorDefinition)
         {
-            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{");
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{typeParametersInstantiation}{{");
             writer.IncreaseIndent();
             var parentClassName = parentClass.StartBlock.Inherits!.Name.ToFirstCharacterUpperCase();
-            var newMethodName = conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass);
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
                 currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter &&
                 parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
@@ -640,17 +658,24 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 var pathParametersValue = ", map[string]string{}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     pathParametersValue = $", {pathParametersParameter.Name.ToFirstCharacterLowerCase()}";
-                writer.WriteLine($"{parentClassName}: *{newMethodName}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{pathParametersValue}),");
+                writer.WriteLine($"{parentClassName}: *{conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass)}({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{pathParametersValue}),");
             }
+            else if (parentClass.StartBlock.Inherits is CodeType parentType && parentType.GenericTypeParameterValues.Any())
+                writer.WriteLine($"{parentClassName}: *{GetTypeConstructorCall(parentType, parentClass, false)},");
             else
+            {
+                var newMethodName = conventions.GetImportedStaticMethodName(parentClass.StartBlock.Inherits, parentClass);
                 writer.WriteLine($"{parentClassName}: *{newMethodName}(),");
+            }
             writer.DecreaseIndent();
             writer.CloseBlock(decreaseIndent: false);
         }
         else
         {
-            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{{}}");
+            writer.WriteLine($"m := &{parentClass.Name.ToFirstCharacterUpperCase()}{typeParametersInstantiation}{{}}");
         }
+        foreach (var typeParameter in parentClass.TypeParameters) // generic models carry their factories as fields
+            writer.WriteLine($"m.{GoConventionService.GetTypeParameterFactoryName(typeParameter)} = {GoConventionService.GetTypeParameterFactoryName(typeParameter)}");
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
@@ -837,8 +862,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         if (property.Setter is null) return;
         writer.StartBlock($"res[\"{property.WireName.SanitizeDoubleQuote()}\"] = func(n {parsableImportSymbol}) error {{");
         var propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, false);
-        var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
-        writer.WriteLine($"val, err := n.{deserializationMethodName}");
+        if (property.Type is CodeType { } genericPropertyType && genericPropertyType.GenericTypeParameterValues.Any())
+        { // generic types construct through a factory closure, which gofmt always splits over multiple lines
+            var collectionPrefix = property.Type.IsCollection ? "CollectionOf" : string.Empty;
+            writer.Write($"val, err := n.Get{collectionPrefix}ObjectValue(");
+            writer.WriteLine($"func(parseNode {conventions.SerializationHash}.ParseNode) {GetParsableFactoryReturnType()} {{", includeIndent: false);
+            writer.IncreaseIndent();
+            writer.WriteLine($"return {GetTypeConstructorCall(genericPropertyType, parentClass, true)}, nil");
+            writer.DecreaseIndent();
+            writer.WriteLine("})");
+        }
+        else
+        {
+            var deserializationMethodName = GetDeserializationMethodName(property.Type, parentClass);
+            writer.WriteLine($"val, err := n.{deserializationMethodName}");
+        }
         WriteReturnError(writer);
         writer.StartBlock("if val != nil {");
         var (valueArgument, pointerSymbol, dereference) = (property.Type.AllTypes.First().TypeDefinition, property.Type.IsCollection) switch
@@ -847,6 +885,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             (CodeClass, true) or (CodeEnum, true) => ("res", "*", true),
             (CodeInterface, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
             (CodeInterface, true) => ("res", string.Empty, false),
+            // type parameter values are assertions against the constrained parameter, no pointer involved
+            (CodeTypeParameter, false) => (GetTypeAssertion("val", propertyTypeImportName), string.Empty, false),
+            (CodeTypeParameter, true) => ("res", string.Empty, false),
             (_, true) => ("res", "*", true),
             (null, false) when property.Type.AllTypes.First().Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase) => (GetTypeAssertion("val", $"{propertyTypeImportName}"), string.Empty, true),
             _ => ("val", string.Empty, true),
@@ -933,7 +974,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
         var assignmentPrefix = isVoid ?
                     "err =" :
                     "res, err :=";
-        writer.WriteLine($"{assignmentPrefix} m.{BaseRequestBuilderVarName}.RequestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
+        if (codeElement.ReturnType is CodeType { } genericReturn && genericReturn.GenericTypeParameterValues.Any())
+        { // generic results construct through a factory closure, which gofmt always splits over multiple lines
+            writer.Write($"{assignmentPrefix} m.{BaseRequestBuilderVarName}.RequestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, ");
+            writer.WriteLine($"func(parseNode {conventions.SerializationHash}.ParseNode) {GetParsableFactoryReturnType()} {{", includeIndent: false);
+            writer.IncreaseIndent();
+            writer.WriteLine($"return {GetTypeConstructorCall(genericReturn, parentClass, false)}, nil");
+            writer.DecreaseIndent();
+            writer.WriteLine($"}}, {errorMappingVarName})");
+        }
+        else
+            writer.WriteLine($"{assignmentPrefix} m.{BaseRequestBuilderVarName}.RequestAdapter.{sendMethodName}({contextVarName}, {RequestInfoVarName}, {constructorFunction}{errorMappingVarName})");
         WriteReturnError(writer, returnType);
         var valueVarName = string.Empty;
         if (codeElement.ReturnType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None)
@@ -1125,16 +1176,50 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     private string GetTypeFactory(CodeTypeBase propTypeBase, CodeClass parentClass, string propertyTypeName)
     {
         if (propTypeBase is CodeType propType)
+        {
+            if (propType.TypeDefinition is CodeTypeParameter typeParameter)
+                return $"m.{GoConventionService.GetTypeParameterFactoryName(typeParameter)}";
+            if (propType.GenericTypeParameterValues.Any())
+                return $"{GetParsableFactoryClosure(propType, parentClass, true)}";
             return $"{conventions.GetImportedStaticMethodName(propType, parentClass, "Create", "FromDiscriminatorValue", "able")}";
+        }
         return GetTypeFactory(propTypeBase.AllTypes.First(), parentClass, propertyTypeName);
+    }
+    private string GetParsableFactoryReturnType() => $"({conventions.SerializationHash}.Parsable, error)";
+    private string GetParsableFactoryClosure(CodeType type, CodeClass parentClass, bool qualifyParametersWithReceiver) =>
+        $"func(parseNode {conventions.SerializationHash}.ParseNode) {GetParsableFactoryReturnType()} {{ return {GetTypeConstructorCall(type, parentClass, qualifyParametersWithReceiver)}, nil }}";
+    /// <summary>
+    /// Renders a constructor call for the type, instantiating generic arguments and threading per-parameter
+    /// factories: parameter arguments read the receiver's (or the enclosing function's) factory, closed
+    /// arguments use their discriminator factory.
+    /// </summary>
+    private string GetTypeConstructorCall(CodeType type, CodeClass parentClass, bool qualifyParametersWithReceiver)
+    {
+        var definition = type.TypeDefinition is CodeInterface { OriginalClass: { } originalClass } ? originalClass : type.TypeDefinition;
+        var importSymbol = string.Empty;
+        if (definition?.GetImmediateParentOfType<CodeNamespace>() is CodeNamespace definitionNamespace &&
+            definitionNamespace != parentClass.GetImmediateParentOfType<CodeNamespace>())
+            importSymbol = $"{definitionNamespace.GetNamespaceImportSymbol()}.";
+        var className = (definition?.Name ?? type.Name).ToFirstCharacterUpperCase();
+        var typeArguments = string.Empty;
+        var factoryArguments = string.Empty;
+        if (type.GenericTypeParameterValues.Any())
+        {
+            typeArguments = $"[{string.Join(", ", type.GenericTypeParameterValues.Select(x => conventions.GetTypeString(x, parentClass, false, false)))}]";
+            factoryArguments = string.Join(", ", type.GenericTypeParameterValues.Select(x => x.TypeDefinition is CodeTypeParameter typeParameter
+                ? $"{(qualifyParametersWithReceiver ? "m." : string.Empty)}{GoConventionService.GetTypeParameterFactoryName(typeParameter)}"
+                : conventions.GetImportedStaticMethodName(x, parentClass, "Create", "FromDiscriminatorValue", "able")));
+        }
+        return $"{importSymbol}New{className}{typeArguments}({factoryArguments})";
     }
     private void WriteSerializationMethodCall(CodeTypeBase propType, CodeElement parentBlock, string serializationKey, string valueGet, bool shouldDeclareErrorVar, LanguageWriter writer, bool addBlockForErrorScope = true)
     {
         serializationKey = $"\"{serializationKey.SanitizeDoubleQuote()}\"";
         var errorPrefix = $"err {errorVarDeclaration(shouldDeclareErrorVar)}= writer.";
         var isEnum = propType is CodeType eType && eType.TypeDefinition is CodeEnum;
-        var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface || cType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase));
+        var isComplexType = propType is CodeType cType && (cType.TypeDefinition is CodeClass || cType.TypeDefinition is CodeInterface || cType.TypeDefinition is CodeTypeParameter || cType.GenericTypeParameterValues.Any() || cType.Name.Equals(GoRefiner.UntypedNodeName, StringComparison.OrdinalIgnoreCase));
         var isInterface = propType is CodeType iType && iType.TypeDefinition is CodeInterface;
+        var isTypeParameter = propType is CodeType pType && pType.TypeDefinition is CodeTypeParameter;
         if (addBlockForErrorScope)
             if (isEnum || propType.IsCollection)
                 writer.StartBlock($"if {valueGet} != nil {{");
@@ -1148,13 +1233,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLines($"cast := make([]{parsableSymbol}, len({valueGet}))",
                 $"for i, v := range {valueGet} {{");
             writer.IncreaseIndent();
-            writer.StartBlock("if v != nil {");
-            if (isInterface)
-                writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
+            if (!isTypeParameter)
+            {
+                writer.StartBlock("if v != nil {");
+                if (isInterface)
+                    writer.WriteLine($"cast[i] = {GetTypeAssertion("v", parsableSymbol)}");
+                else
+                    writer.WriteLines("temp := v", // temporary creating a new reference to avoid pointers to the same object
+                        $"cast[i] = {parsableSymbol}(&temp)");
+                writer.CloseBlock();
+            }
             else
-                writer.WriteLines("temp := v", // temporary creating a new reference to avoid pointers to the same object
-                    $"cast[i] = {parsableSymbol}(&temp)");
-            writer.CloseBlock();
+                writer.WriteLine("cast[i] = v"); // constrained to Parsable, assignable as-is
             writer.CloseBlock();
         }
         var collectionPrefix = propType.IsCollection ? "CollectionOf" : string.Empty;

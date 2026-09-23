@@ -19,6 +19,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
+        // generic model classes declare their constructor (taking per-anchor factories) alongside the class declaration,
+        // and a static parameterless factory cannot exist for them since the bound factories are only known at the usage site
+        if (parentClass.IsGeneric && codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Factory, CodeMethodKind.RawUrlConstructor))
+            return;
 
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
@@ -246,78 +250,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}<{serializationClassName}>();");
     }
-    private static readonly HashSet<string> NumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "byte", "decimal", "double", "float", "int", "int64", "integer", "sbyte"
-    };
-    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
-    {
-        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-        {
-            "date" => $"new Date(DateTimeOffset.Parse({defaultValue}).Date)",
-            "datetimeoffset" => $"DateTimeOffset.Parse({defaultValue})",
-            "time" => $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)",
-            "guid" => $"Guid.Parse({defaultValue})",
-            _ => null,
-        };
-        if (convertedDefaultValue is not null)
-            return true;
-        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
-        {
-            if (bool.TryParse(defaultValue.TrimQuotes(), out var booleanDefaultValue))
-                convertedDefaultValue = booleanDefaultValue ? "true" : "false";
-            return true;
-        }
-        if (NumericTypeNames.Contains(propertyType.Name))
-        {
-            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
-            {
-                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-                {
-                    "decimal" => $"{numericDefaultValue}m",
-                    "float" => $"{numericDefaultValue}f",
-                    "int64" => $"{numericDefaultValue}L",
-                    _ => numericDefaultValue,
-                };
-            }
-            return true;
-        }
-        return false;
-    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
-        foreach (var propWithDefault in parentClass
-                                        .Properties
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters))
-                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-                                        .OrderByDescending(static x => x.Kind)
-                                        .ThenBy(static x => x.Name))
-        {
-            var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType { TypeDefinition: CodeEnum })
-            {
-                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
-            }
-            else if (propWithDefault.Type.IsNullable &&
-                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            { // avoid setting null as a string.
-                defaultValue = NullValueString;
-            }
-            else if (propWithDefault.Type is CodeType propertyType &&
-                TryGetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType, out var convertedDefaultValue))
-            {
-                if (convertedDefaultValue is null)
-                    continue;
-                defaultValue = convertedDefaultValue;
-            }
-            else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
-            {
-                defaultValue = defaultValue.SanitizeQuotedStringLiteral();
-            }
-
-            writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
-        }
+        foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass, currentMethod))
+            writer.WriteLine(assignment);
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
@@ -336,7 +272,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         }
     }
 
-    private const string NullValueString = "null";
     private string DefaultDeserializerValue => $"new Dictionary<string, Action<{conventions.ParseNodeInterfaceName}>>";
     private void WriteDeserializerBody(bool shouldHide, CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -416,7 +351,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 else if (currentType.TypeDefinition is CodeEnum)
                     return $"GetCollectionOfEnumValues<{propertyType.TrimEnd('?')}>(){collectionMethod}";
                 else
-                    return $"GetCollectionOfObjectValues<{propertyType}>({propertyType}.CreateFromDiscriminatorValue){collectionMethod}";
+                    return $"GetCollectionOfObjectValues<{propertyType}>({GetParsableFactoryExpression(currentType, method)}){collectionMethod}";
             }
             else if (currentType.TypeDefinition is CodeEnum enumType)
                 return $"GetEnumValue<{enumType.GetFullName()}>()";
@@ -425,8 +360,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         {
             "byte[]" => "GetByteArrayValue()",
             _ when conventions.IsPrimitiveType(propertyType) => $"Get{propertyType.TrimEnd(CSharpConventionService.NullableMarker).ToFirstCharacterUpperCase()}Value()",
-            _ => $"GetObjectValue<{propertyType}>({propertyType}.CreateFromDiscriminatorValue)",
+            _ => $"GetObjectValue<{propertyType}>({(propType is CodeType getObjectValueType ? GetParsableFactoryExpression(getObjectValueType, method) : $"{propertyType}.CreateFromDiscriminatorValue")})",
         };
+    }
+    private string GetParsableFactoryExpression(CodeType type, CodeElement targetElement)
+    {
+        var typeName = conventions.GetTypeString(type, targetElement, false);
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return CSharpConventionService.GetFactoryFieldName(typeParameter);
+        if (type.TypeDefinition is CodeClass { IsGeneric: true })
+            return $"n => new {typeName}({string.Join(", ", type.GenericTypeParameterValues.Select(x => GetParsableFactoryExpression(x, targetElement)))})";
+        return $"{typeName}.CreateFromDiscriminatorValue";
     }
     protected void WriteRequestExecutorBody(CodeMethod codeElement, RequestParams requestParams, CodeClass parentClass, bool isVoid, string returnTypeWithoutCollectionInformation, LanguageWriter writer)
     {
@@ -451,13 +395,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
+                var errorMappingType = (CodeType)errorMapping.Value.AllTypes.First();
+                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {GetParsableFactoryExpression(errorMappingType, codeElement)} }},");
             }
             writer.CloseBlock("};");
         }
         var returnTypeCodeType = codeElement.ReturnType as CodeType;
         var returnTypeFactory = returnTypeCodeType?.TypeDefinition is CodeClass || (returnTypeCodeType != null && returnTypeCodeType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))
-                                ? $", {returnTypeWithoutCollectionInformation}.CreateFromDiscriminatorValue"
+                                ? $", {GetParsableFactoryExpression(returnTypeCodeType, codeElement)}"
                                 : null;
         var prefix = (isVoid, codeElement.ReturnType.IsCollection) switch
         {

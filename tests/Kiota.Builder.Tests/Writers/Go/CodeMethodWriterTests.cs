@@ -1002,6 +1002,218 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesGenericConstructorAndFactoryBodies()
+    {
+        setup();
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        parentClass.AddUsing(new CodeUsing
+        {
+            Name = "Parsable",
+            Declaration = new CodeType
+            {
+                Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                IsExternal = true,
+            },
+        });
+        var constructorMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "parentClass",
+                TypeDefinition = parentClass,
+            },
+        }).First();
+        writer.Write(constructorMethod);
+        var constructorResult = tw.ToString();
+        Assert.Contains($"func NewParentClass[TItemType {SerializationPackageHash}.Parsable](itemTypeFactory {SerializationPackageHash}.ParsableFactory) *ParentClass[TItemType] {{", constructorResult);
+        Assert.Contains("m := &ParentClass[TItemType]{}", constructorResult);
+        Assert.Contains("m.itemTypeFactory = itemTypeFactory", constructorResult);
+        AssertExtensions.CurlyBracesAreClosed(constructorResult);
+        tw.GetStringBuilder().Clear();
+        var factoryMethod = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            IsStatic = true,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "Parsable",
+                IsExternal = true,
+                IsNullable = false,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                IsExternal = true,
+                IsNullable = false,
+            },
+            Optional = false,
+        });
+        writer.Write(factoryMethod);
+        var factoryResult = tw.ToString();
+        Assert.Contains($"func CreateParentClassFromDiscriminatorValue[TItemType {SerializationPackageHash}.Parsable](itemTypeFactory {SerializationPackageHash}.ParsableFactory, parseNode ParseNode) ({SerializationPackageHash}.Parsable, error)", factoryResult);
+        Assert.Contains("return NewParentClass[TItemType](itemTypeFactory), nil", factoryResult);
+        AssertExtensions.CurlyBracesAreClosed(factoryResult);
+    }
+    [Fact]
+    public void WritesGenericGetterOnGenericTypeReceiver()
+    {
+        setup();
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var getter = parentClass.AddMethod(new CodeMethod
+        {
+            Name = "GetItems",
+            Kind = CodeMethodKind.Getter,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = "TItemType",
+                TypeDefinition = parentClass.TypeParameters.First(),
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        }).First();
+        writer.Write(getter);
+        var result = tw.ToString();
+        Assert.Contains("func (m *ParentClass[TItemType]) GetItems() []TItemType {", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorBodyForGenericReturnType()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestBodyParameters();
+        parentClass.AddUsing(new CodeUsing
+        {
+            Name = "Parsable",
+            Declaration = new CodeType
+            {
+                Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                IsExternal = true,
+            },
+        });
+        var userModel = root.AddClass(new CodeClass
+        {
+            Name = "user",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var userable = root.AddInterface(new CodeInterface
+        {
+            Name = "Userable",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = userModel,
+        }).First();
+        userModel.AssociatedInterface = userable;
+        method.ReturnType = new CodeType
+        {
+            Name = "paginatedTemplateable",
+            TypeDefinition = root.AddInterface(new CodeInterface
+            {
+                Name = "PaginatedTemplateable",
+                Kind = CodeInterfaceKind.Model,
+                OriginalClass = root.AddClass(new CodeClass
+                {
+                    Name = "PaginatedTemplate",
+                    Kind = CodeClassKind.Model,
+                }).First(),
+            }).First(),
+        };
+        ((CodeType)method.ReturnType).AddGenericTypeParameterValue(new CodeType
+        {
+            Name = "userable",
+            TypeDefinition = userable,
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ctx",
+            Kind = CodeParameterKind.Cancellation,
+            Type = new CodeType
+            {
+                Name = "context.Context",
+                IsExternal = true,
+                IsNullable = false,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"func(parseNode {SerializationPackageHash}.ParseNode) ({SerializationPackageHash}.Parsable, error) {{", result);
+        Assert.Contains("return NewPaginatedTemplate[Userable](CreateUserFromDiscriminatorValue), nil", result);
+        Assert.Contains("res.(PaginatedTemplateable[Userable])", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesSerializerAndDeserializerBodiesForGenericModel()
+    {
+        setup();
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        parentClass.AddUsing(new CodeUsing
+        {
+            Name = "Parsable",
+            Declaration = new CodeType
+            {
+                Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                IsExternal = true,
+            },
+        });
+        var typeParameter = parentClass.TypeParameters.First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = "TItemType",
+                TypeDefinition = typeParameter,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+            Getter = new CodeMethod
+            {
+                Name = "GetItems",
+                ReturnType = new CodeType
+                {
+                    Name = "TItemType",
+                    TypeDefinition = typeParameter,
+                    CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+                },
+            },
+            Setter = new CodeMethod
+            {
+                Name = "SetItems",
+                ReturnType = new CodeType
+                {
+                    Name = "void",
+                },
+            },
+        });
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        writer.Write(method);
+        var deserializerResult = tw.ToString();
+        Assert.Contains("GetCollectionOfObjectValues(m.itemTypeFactory)", deserializerResult);
+        Assert.Contains("res := make([]TItemType, len(val))", deserializerResult);
+        Assert.Contains("res[i] = v.(TItemType)", deserializerResult);
+        AssertExtensions.CurlyBracesAreClosed(deserializerResult);
+        tw.GetStringBuilder().Clear();
+        method.Kind = CodeMethodKind.Serializer;
+        writer.Write(method);
+        var serializerResult = tw.ToString();
+        Assert.Contains($"cast := make([]{SerializationPackageHash}.Parsable, len(m.GetItems()))", serializerResult);
+        Assert.Contains("cast[i] = v", serializerResult);
+        Assert.Contains("writer.WriteCollectionOfObjectValues(\"items\", cast)", serializerResult);
+        AssertExtensions.CurlyBracesAreClosed(serializerResult);
+    }
+    [Fact]
     public void EscapesModelFactoryBody()
     {
         setup();
@@ -1273,6 +1485,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     private const string AbstractionsPackageHash = "i2ae4187f7daee263371cb1c977df639813ab50ffa529013b7437480d1ec0158f";
+    private const string SerializationPackageHash = "i878a80d2330e89d26896388a3f487eef27b0a0e6c010c493bf80be1452208f91";
     [Fact]
     public async Task WritesRequestGeneratorBodyForScalarAsync()
     {

@@ -18,6 +18,10 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         if (codeElement.ReturnType == null) throw new InvalidOperationException($"{nameof(codeElement.ReturnType)} should not be null");
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("the parent of a method should be a class");
+        // generic model classes declare their constructor (taking per-anchor factories) alongside the class declaration,
+        // and a static parameterless factory cannot exist for them since the bound factories are only known at the usage site
+        if (parentClass.IsGeneric && codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Factory, CodeMethodKind.RawUrlConstructor))
+            return;
 
         var baseReturnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var finalReturnType = GetFinalReturnType(codeElement, baseReturnType);
@@ -325,40 +329,6 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             foreach (var module in serializationModules)
                 writer.WriteLine($"ApiClientBuilder.{methodName}(() -> new {module}());");
     }
-    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
-    {
-        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-        {
-            "localdate" => $"LocalDate.parse({defaultValue})",
-            "offsetdatetime" => $"OffsetDateTime.parse({defaultValue})",
-            "localtime" => $"LocalTime.parse({defaultValue})",
-            "uuid" => $"UUID.fromString({defaultValue})",
-            _ => null,
-        };
-        if (convertedDefaultValue is not null)
-            return true;
-        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
-        {
-            if (PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue))
-                convertedDefaultValue = booleanDefaultValue;
-            return true;
-        }
-        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
-        {
-            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
-            {
-                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
-                {
-                    "double" => $"{numericDefaultValue}d",
-                    "float" => $"{numericDefaultValue}f",
-                    "int64" => $"{numericDefaultValue}L",
-                    _ => numericDefaultValue,
-                };
-            }
-            return true;
-        }
-        return false;
-    }
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer, bool inherits)
     {
         if (inherits)
@@ -384,32 +354,8 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         {
             writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
         }
-        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.AdditionalData, CodePropertyKind.Custom) //additional data and custom properties rely on accessors
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
-                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
-                                        .OrderBy(static x => x.Name))
-        {
-            var setterName = propWithDefault.SetterFromCurrentOrBaseType?.Name is string sName && !string.IsNullOrEmpty(sName) ? sName : $"set{propWithDefault.Name.ToFirstCharacterUpperCase()}";
-            var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
-            if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
-            {
-                defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
-            }
-            else if (propWithDefault.Type.IsNullable &&
-                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
-            {// avoid setting null as a string.
-                defaultValue = NullValueString;
-            }
-            else if (propWithDefault.Type is CodeType propertyType2 &&
-                TryGetDefaultValue(defaultValue, propertyType2, out var convertedDefaultValue))
-            {
-                if (convertedDefaultValue is null)
-                    continue;
-                defaultValue = convertedDefaultValue;
-            }
-            writer.WriteLine($"this.{setterName}({defaultValue});");
-        }
+        foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass))
+            writer.WriteLine(assignment);
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
             parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProp &&
             currentMethod.IsOfKind(CodeMethodKind.Constructor) &&
@@ -426,7 +372,6 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                                                                 .ToArray());
         }
     }
-    private const string NullValueString = "null";
     private static void WriteSetterBody(CodeMethod codeElement, LanguageWriter writer, CodeClass parentClass)
     {
         if (parentClass.GetBackingStoreProperty() is not CodeProperty backingStore || (codeElement.AccessedProperty?.IsOfKind(CodePropertyKind.BackingStore) ?? false))
@@ -567,10 +512,13 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             writer.WriteLine($"final HashMap<String, ParsableFactory<? extends Parsable>> {errorMappingVarName} = new HashMap<String, ParsableFactory<? extends Parsable>>();");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {errorMapping.Value.Name}::{FactoryMethodName});");
+                var factoryExpression = errorMapping.Value is CodeType errorType ?
+                    GetParsableFactoryExpression(errorType, codeElement) :
+                    $"{errorMapping.Value.Name}::{FactoryMethodName}";
+                writer.WriteLine($"{errorMappingVarName}.put(\"{errorMapping.Key.ToUpperInvariant()}\", {factoryExpression});");
             }
         }
-        var factoryParameter = GetSendRequestFactoryParam(returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum);
+        var factoryParameter = GetSendRequestFactoryParam(codeElement.ReturnType, returnType, codeElement.ReturnType.AllTypes.First().TypeDefinition is CodeEnum, codeElement);
         var returnPrefix = codeElement.ReturnType.Name.Equals("void", StringComparison.OrdinalIgnoreCase) ? string.Empty : "return ";
         writer.WriteLine($"{returnPrefix}this.requestAdapter.{sendMethodName}({RequestInfoVarName}, {errorMappingVarName}, {factoryParameter});");
     }
@@ -589,14 +537,16 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
         else if (isCollection) return "sendCollection";
         return "send";
     }
-    private string GetSendRequestFactoryParam(string returnType, bool isEnum)
+    private string GetSendRequestFactoryParam(CodeTypeBase returnType, string returnTypeString, bool isEnum, CodeElement targetElement)
     {
-        if (conventions.PrimitiveTypes.Contains(returnType))
-            return $"{returnType}.class";
+        if (conventions.PrimitiveTypes.Contains(returnTypeString))
+            return $"{returnTypeString}.class";
         else if (isEnum)
-            return $"{returnType}::forValue";
+            return $"{returnTypeString}::forValue";
+        else if (returnType is CodeType { TypeDefinition: CodeClass { IsGeneric: true } } currentType)
+            return GetParsableFactoryExpression(currentType, targetElement);
         else
-            return $"{returnType}::{FactoryMethodName}";
+            return $"{returnTypeString}::{FactoryMethodName}";
     }
 
     private const string RequestInfoVarName = "requestInfo";
@@ -830,20 +780,35 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
                 else if (currentType.TypeDefinition is CodeEnum enumType)
                     return $"getCollectionOfEnumValues({enumType.Name}::forValue)";
                 else
-                    return $"getCollectionOfObjectValues({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})";
+                    return $"getCollectionOfObjectValues({GetParsableFactoryExpression(currentType, method)})";
             if (currentType.TypeDefinition is CodeEnum currentEnum)
             {
                 var returnType = propertyType.ToFirstCharacterUpperCase();
                 return $"getEnum{(currentEnum.Flags ? "Set" : string.Empty)}Value({returnType}::forValue)";
             }
+            if (currentType.TypeDefinition is CodeTypeParameter || currentType.TypeDefinition is CodeClass { IsGeneric: true })
+                return $"getObjectValue({GetParsableFactoryExpression(currentType, method)})";
 
         }
         return propertyType switch
         {
             "byte[]" => "getByteArrayValue()",
             _ when conventions.PrimitiveTypes.Contains(propertyType) => $"get{propertyType}Value()",
+            _ when propType is CodeType currentType2 => $"getObjectValue({GetParsableFactoryExpression(currentType2, method)})",
             _ => $"getObjectValue({propertyType.ToFirstCharacterUpperCase()}::{FactoryMethodName})",
         };
+    }
+    private string GetParsableFactoryExpression(CodeType type, CodeElement targetElement, int lambdaDepth = 0)
+    {
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return $"this.{JavaConventionService.GetFactoryFieldName(typeParameter)}";
+        if (type.TypeDefinition is CodeClass { IsGeneric: true })
+        { // generic classes have no static factory, compose one from the bound argument factories at the usage site
+            var lambdaParameterName = $"n{lambdaDepth + 1}"; //unique per nesting level so nested lambdas never shadow the outer deserializer's 'n'
+            var argumentFactories = string.Join(", ", type.GenericTypeParameterValues.Select(x => GetParsableFactoryExpression(x, targetElement, lambdaDepth + 1)));
+            return $"({lambdaParameterName}) -> new {type.Name}<>({argumentFactories})";
+        }
+        return $"{conventions.GetTypeString(type, targetElement, false)}::{FactoryMethodName}";
     }
     private string GetSerializationMethodName(CodeTypeBase propType, CodeMethod method)
     {
