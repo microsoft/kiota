@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- External reference allowlist URI patterns now match scheme, host, port, and path independently so wildcards remain within their intended URI component.
 - Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
