@@ -2181,4 +2181,49 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("return ParentClass(additionalData: {});", result);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritesFactoryForEquivalentBinaryAlternatives(bool intersection)
+    {
+        var wrapper = root.AddClass(new CodeClass
+        {
+            Name = "BinaryWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = intersection ? new CodeIntersectionType() : new CodeUnionType(),
+        }).First();
+        foreach (var name in new[] { "base64", "binary" })
+        {
+            var property = new CodeProperty
+            {
+                Name = name,
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "Iterable<int>", IsExternal = true },
+            };
+            wrapper.AddProperty(property);
+        }
+        var factory = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "createFromDiscriminatorValue",
+            Kind = CodeMethodKind.Factory,
+            IsStatic = true,
+            IsAsync = false,
+            ReturnType = new CodeType { Name = wrapper.Name, TypeDefinition = wrapper },
+        }).First();
+        factory.AddParameter(new CodeParameter
+        {
+            Name = "parseNode",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType { Name = "ParseNode", IsExternal = true },
+        });
+        writer.Write(factory);
+        var result = tw.ToString();
+        Assert.DoesNotContain("else if", result);
+        Assert.DoesNotContain(" != null", result);
+        Assert.DoesNotContain(" is Iterable<int>", result);
+        Assert.Contains("result.base64 = parseNode.getCollectionOfPrimitiveValues<int>();", result);
+        Assert.DoesNotContain("result.binary", result);
+        Assert.Equal(1, result.Split("getCollectionOfPrimitiveValues<int>()", StringSplitOptions.None).Length - 1);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
 }
