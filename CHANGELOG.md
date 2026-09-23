@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
+- Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
 - Dart: qualify model fields named `node` or `deserializerMap` during deserialization so local variables do not shadow them; escape `override` model members to preserve Dart annotations. Fixes [#7822](https://github.com/microsoft/kiota/issues/7822).
 - PHP: disambiguate enum constants that normalize to the same name while preserving wire values and existing constant names.

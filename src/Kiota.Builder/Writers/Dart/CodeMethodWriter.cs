@@ -248,6 +248,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private void WriteFactoryMethodBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
+        var composedProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray();
+        if (parentClass.OriginalComposedType is not null && composedProperties.Length > 0 &&
+            composedProperties.All(x => x.Type is CodeType { IsCollection: false, TypeDefinition: null } propertyType && conventions.TranslateType(propertyType) == "Iterable<int>"))
+        {
+            // Binary and base64 alternatives have the same non-nullable collection reader in Dart.
+            // Preserve its result, including an empty collection, without an always-true branch.
+            writer.WriteLine($"var {ResultVarName} = {parentClass.Name}();");
+            writer.WriteLine($"{ResultVarName}.{composedProperties[0].Name} = {parseNodeParameter.Name}.{GetDeserializationMethodName(composedProperties[0].Type, codeElement)};");
+            writer.WriteLine($"return {ResultVarName};");
+            return;
+        }
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
         {
