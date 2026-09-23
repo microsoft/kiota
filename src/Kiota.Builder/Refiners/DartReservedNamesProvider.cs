@@ -55,6 +55,7 @@ public class DartReservedNamesProvider : IReservedNamesProvider
         "of",
         "on",
         "operator",
+        "override",
         "part",
         "required",
         "rethrow",
