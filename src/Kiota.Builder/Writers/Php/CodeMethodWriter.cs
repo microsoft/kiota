@@ -962,6 +962,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                                 .Where(static x => x.Type is not CodeType propertyType || propertyType.IsCollection || propertyType.TypeDefinition is not CodeClass)
                                 .Order(CodePropertyTypeBackwardComparer)
                                 .ThenBy(static x => x.Name)
+                                .DistinctBy(x => GetDeserializationMethodName(x.Type, codeElement).Item2)
                                 .ToArray();
         foreach (var property in otherProps)
         {
@@ -1037,6 +1038,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
             .Where(static x => x.Type is CodeType xType && (xType.IsCollection || xType.TypeDefinition is null or CodeEnum))
             .Order(CodePropertyTypeForwardComparer)
             .ThenBy(static x => x.Name)
+            .DistinctBy(x => GetDeserializationMethodName(x.Type, currentElement).Item2)
             .ToArray();
         foreach (var property in otherProps)
         {
