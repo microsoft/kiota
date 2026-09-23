@@ -344,6 +344,8 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                     targetFile.AddElements(otherFile.GetChildElements(true).ToArray());
                     codeNamespace.RemoveChildElement(otherFile);
                 }
+                var childElements = targetFile.GetChildElements(true).ToArray();
+                AliasCollidingSymbols(childElements.SelectMany(GetUsingsFromCodeElement).Distinct(), childElements.Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase));
             }
         }
         CrawlTree(currentElement, GroupRequestBuilderFiles);

@@ -43,4 +43,33 @@ public sealed partial class KiotaBuilderTests
             Assert.Contains($"uriTemplate: {char.ToUpperInvariant(expectedTemplate.Name[0])}{expectedTemplate.Name[1..]}", output.ToString());
         }
     }
+    [Fact]
+    public async Task AliasesImportsCollidingWithMergedRequestBuilderDeclarationsAsync()
+    {
+        const string description = """
+        {"openapi":"3.0.3","info":{"title":"Trailing slash import collision","version":"1"},
+        "paths":{"/token":{"get":{"responses":{"200":{"description":"ok","content":{"text/plain":{"schema":{"type":"string"}}}}}}},
+        "/token/":{"post":{"responses":{"200":{"description":"ok","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TokenRequestBuilder"}}}}}}}},
+        "components":{"schemas":{"TokenRequestBuilder":{"type":"object","properties":{"value":{"type":"string"}}}}}}
+        """;
+        await using var stream = await GetDocumentStreamAsync(description);
+        var configuration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await ILanguageRefiner.RefineAsync(configuration, model, TestContext.Current.CancellationToken);
+        var ns = model.FindNamespaceByName($"{configuration.ClientNamespaceName}.token");
+        Assert.NotNull(ns);
+        var file = Assert.Single(ns.Files);
+        Assert.Equal(2, file.Interfaces.Count(x => x.Kind == CodeInterfaceKind.RequestBuilder));
+        var declarationNames = file.GetChildElements(true).Select(x => x.Name).ToHashSet(System.StringComparer.OrdinalIgnoreCase);
+        var collidingImports = file.AllUsingsFromChildElements
+            .Where(x => !x.IsExternal && x.Declaration != null && declarationNames.Contains(x.Declaration.Name)).ToArray();
+        Assert.NotEmpty(collidingImports);
+        Assert.All(collidingImports, imported =>
+        {
+            Assert.False(string.IsNullOrEmpty(imported.Alias));
+            Assert.DoesNotContain(imported.Alias, declarationNames, System.StringComparer.OrdinalIgnoreCase);
+        });
+    }
 }
