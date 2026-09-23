@@ -151,6 +151,117 @@ public class TypeScriptConventionServiceTests
         // Assert - should be camelCase, not PascalCase
         Assert.Equal("createPolicyFromDiscriminatorValue", result);
     }
+    /// <summary>
+    /// Builds a code file holding a model interface and a constant, with a single using on the
+    /// interface. A constant is not a block of its own, so the enclosing block of the returned
+    /// target element is the code file, which is the case where the aliases of every child of the
+    /// file have to be aggregated.
+    /// </summary>
+    private static (CodeConstant TargetElement, CodeType TargetType) BuildCodeFileWithUsing(string alias, bool isExternal = false, bool aliasAnotherType = false)
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var modelsNS = root.AddNamespace("models");
+        var modelInterface = new CodeInterface
+        {
+            Name = "Policy",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass { Name = "Policy" },
+        };
+        var otherInterface = new CodeInterface
+        {
+            Name = "OtherPolicy",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = new CodeClass { Name = "OtherPolicy" },
+        };
+        var declaredType = aliasAnotherType ? otherInterface : modelInterface;
+        modelInterface.AddUsing(new CodeUsing
+        {
+            Name = declaredType.Name,
+            Alias = alias,
+            Declaration = new CodeType { Name = declaredType.Name, TypeDefinition = declaredType, IsExternal = isExternal },
+        });
+        var constant = new CodeConstant
+        {
+            Name = "policyMapper",
+            Kind = CodeConstantKind.QueryParametersMapper,
+        };
+        modelsNS.TryAddCodeFile("policyFile", modelInterface, constant);
+        return (constant, new CodeType { Name = "Policy", TypeDefinition = modelInterface });
+    }
+
+    [Fact]
+    public void GetTypescriptTypeString_ReturnsAlias_WhenTheEnclosingCodeFileHasAnAliasedUsing()
+    {
+        var (targetElement, targetType) = BuildCodeFileWithUsing("SomeAliasedPolicy");
+
+        var result = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+
+        Assert.Equal("SomeAliasedPolicy", result);
+    }
+
+    [Fact]
+    public void GetTypescriptTypeString_ReturnsTheSameAlias_WhenCalledRepeatedlyForTheSameBlock()
+    {
+        var (targetElement, targetType) = BuildCodeFileWithUsing("SomeAliasedPolicy");
+
+        var first = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+        var second = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+        var third = TypeScriptConventionService.GetTypescriptTypeString(new CodeType { Name = targetType.Name, TypeDefinition = targetType.TypeDefinition }, targetElement, false);
+
+        Assert.Equal("SomeAliasedPolicy", first);
+        Assert.Equal(first, second);
+        Assert.Equal(first, third);
+    }
+
+    [Fact]
+    public void GetTypescriptTypeString_PicksUpAnAliasAssignedAfterAnEarlierLookup()
+    {
+        // AliasCollidingSymbols assigns Alias in place on a using that already exists, so a lookup that
+        // ran before the assignment must not make the writers miss the alias afterwards.
+        var (targetElement, targetType) = BuildCodeFileWithUsing(string.Empty);
+        var codeUsing = ((CodeFile)targetElement.Parent!).GetChildElements(true)
+                            .OfType<CodeInterface>()
+                            .SelectMany(static x => x.Usings)
+                            .Single();
+
+        var before = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+        codeUsing.Alias = "SomeAliasedPolicy";
+        var after = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+
+        Assert.Equal("Policy", before);
+        Assert.Equal("SomeAliasedPolicy", after);
+    }
+
+    [Fact]
+    public void GetTypescriptTypeString_IgnoresTheAlias_WhenTheUsingIsExternal()
+    {
+        var (targetElement, targetType) = BuildCodeFileWithUsing("SomeAliasedPolicy", isExternal: true);
+
+        var result = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+
+        Assert.Equal("Policy", result);
+    }
+
+    [Fact]
+    public void GetTypescriptTypeString_IgnoresTheUsing_WhenItCarriesNoAlias()
+    {
+        var (targetElement, targetType) = BuildCodeFileWithUsing(string.Empty);
+
+        var result = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+
+        Assert.Equal("Policy", result);
+    }
+
+    [Fact]
+    public void GetTypescriptTypeString_IgnoresTheAlias_WhenItBelongsToAnotherType()
+    {
+        var (targetElement, targetType) = BuildCodeFileWithUsing("SomeAliasedPolicy", aliasAnotherType: true);
+
+        var result = TypeScriptConventionService.GetTypescriptTypeString(targetType, targetElement, false);
+
+        Assert.Equal("Policy", result);
+    }
+
     [Fact]
     public void RemoveInvalidDescriptionCharacters_SanitizesCommentBreakoutCharacters()
     {
