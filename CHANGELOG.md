@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
 - Dart: qualify model fields named `node` or `deserializerMap` during deserialization so local variables do not shadow them; escape `override` model members to preserve Dart annotations. Fixes [#7822](https://github.com/microsoft/kiota/issues/7822).
