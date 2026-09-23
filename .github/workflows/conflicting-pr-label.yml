@@ -27,9 +27,7 @@ jobs:
         id: check
         with:
           dirtyLabel: "conflicting"
-          repoToken: "${{ secrets.GITHUB_TOKEN  }}"
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
           continueOnMissingPermissions: true
           commentOnDirty: 'This pull request has conflicting changes, the author must resolve the conflicts before this pull request can be merged.'
           commentOnClean: 'Conflicts have been resolved. A maintainer will take a look shortly.'
-        env:
-          LABELING_TOKEN: ${{secrets.GITHUB_TOKEN }}
