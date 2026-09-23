@@ -51,15 +51,19 @@ jobs:
               --jq '.data.repository.pullRequest.closingIssuesReferences.totalCount'
           )"
 
-          if [[ "$linked_issue_count" -gt 0 ]]; then
-            exit 0
-          fi
-
           comment_marker='<!-- missing-linked-issue -->'
           existing_comment_ids="$(
             gh api --paginate "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
               --jq '.[] | select(.body | contains("<!-- missing-linked-issue -->")) | .id'
           )"
+          if [[ "$linked_issue_count" -gt 0 ]]; then
+            while IFS= read -r comment_id; do
+              [[ -z "$comment_id" ]] && continue
+              gh api --method DELETE "repos/$REPOSITORY/issues/comments/$comment_id"
+            done <<< "$existing_comment_ids"
+            exit 0
+          fi
+
           if [[ -n "$existing_comment_ids" ]]; then
             exit 0
           fi
