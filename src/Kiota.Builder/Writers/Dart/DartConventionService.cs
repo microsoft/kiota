@@ -12,7 +12,6 @@ namespace Kiota.Builder.Writers.Dart;
 
 public class DartConventionService : CommonLanguageConventionService
 {
-    private const string EscapedSuffix = "Escaped";
     private static string AutoGenerationHeader => "/// auto generated";
     internal static readonly HashSet<string> ErrorClassProperties = new(StringComparer.OrdinalIgnoreCase) { "message", "statusCode", "responseHeaders", "innerExceptions" };
     public override string StreamTypeName => "Stream";
@@ -314,6 +313,6 @@ public class DartConventionService : CommonLanguageConventionService
             correctedName = name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name.ToFirstCharacterLowerCase();
         }
         // Generated enums use value for wire values; Dart also supplies a static values list.
-        return correctedName is "value" or "values" ? correctedName + EscapedSuffix : correctedName;
+        return correctedName is "value" or "values" ? correctedName + Constants.EscapedSuffix : correctedName;
     }
 }
