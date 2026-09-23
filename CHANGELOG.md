@@ -14,11 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
+- Dart: qualify model fields named `node` or `deserializerMap` during deserialization so local variables do not shadow them; escape `override` model members to preserve Dart annotations. Fixes [#7822](https://github.com/microsoft/kiota/issues/7822).
 - PHP: disambiguate enum constants that normalize to the same name while preserving wire values and existing constant names.
 - Java: omit unused discriminator-mapping imports for union/intersection wrappers, avoiding imports of nonexistent models while retaining member and inherited-factory imports.
 - Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
 - Ruby: a path with an escaped suffix, such as `/domains/{domainName}!quote`, generated a request builder method that passed the raw path parameter name where the signature had snake cased it, and referenced the builder class without its namespace. Both raised `NameError` on first use. [#7956](https://github.com/microsoft/kiota/issues/7956)
+- TypeScript: `GetTypeAlias` rebuilt the set of usings of the enclosing block for every type reference written, so the cost of the file writing step grew quadratically with the number of models in a `CodeFile`. That set is now gathered once per block, while the alias of each using is still read on every lookup. On the GitHub API description this drops the writing step from 19.5 s to 1.9 s, and on the Stripe description from 93.5 s to 7.8 s, with byte-identical output.
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
 
