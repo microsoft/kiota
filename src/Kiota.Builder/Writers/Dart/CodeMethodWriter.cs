@@ -498,7 +498,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     .Where(x => !x.ExistsInBaseType && !conventions.ErrorClassPropertyExistsInSuperClass(x))
                     .OrderBy(static x => x.Name)
                     .Select(x =>
-                        $"{DeserializerVarName}['{SanitizeDartSingleQuoteLiteral(x.WireName)}'] = (node) => {x.Name} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
+                        $"{DeserializerVarName}['{SanitizeDartSingleQuoteLiteral(x.WireName)}'] = (node) => {(x.Name is "node" or DeserializerVarName ? "this." : string.Empty)}{x.Name} = node.{GetDeserializationMethodName(x.Type, codeElement)};")
                     .ToList()
                     .ForEach(x => writer.WriteLine(x));
         }

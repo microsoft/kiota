@@ -12,6 +12,20 @@ namespace Kiota.Builder.Tests.Refiners;
 public class DartLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    [Fact]
+    public async Task EscapesOverridePropertyAndPreservesWireName()
+    {
+        var model = root.AddClass(new CodeClass { Name = "Redirect", Kind = CodeClassKind.Model }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "override",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("override_", property.Name);
+        Assert.Equal("override", property.SerializationName);
+    }
     #region CommonLanguageRefinerTests
     [Fact]
     public async Task AddsExceptionInheritanceOnErrorClasses()
