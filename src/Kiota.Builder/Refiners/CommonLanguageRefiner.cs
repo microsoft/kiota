@@ -425,18 +425,22 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         CrawlTree(current, c => AddDefaultImports(c, evaluators));
     }
     private static readonly HashSet<string> BinaryTypes = new(StringComparer.OrdinalIgnoreCase) { "binary", "base64", "base64url" };
+    // CodeType.Name writes through to TypeDefinition.Name, so renaming a resolved type would rename
+    // the model class itself rather than retype the reference to it
+    private static bool IsCoreBinaryType(CodeTypeBase? type) =>
+        type is CodeType { TypeDefinition: null } && BinaryTypes.Contains(type.Name);
     protected static void ReplaceBinaryByNativeType(CodeElement currentElement, string symbol, string ns, bool addDeclaration = false, bool isNullable = false)
     {
         if (currentElement is CodeMethod currentMethod)
         {
             var shouldInsertUsing = false;
-            if (!string.IsNullOrEmpty(currentMethod.ReturnType?.Name) && BinaryTypes.Contains(currentMethod.ReturnType.Name))
+            if (IsCoreBinaryType(currentMethod.ReturnType))
             {
                 currentMethod.ReturnType.Name = symbol;
                 currentMethod.ReturnType.IsNullable = isNullable;
                 shouldInsertUsing = !string.IsNullOrWhiteSpace(ns);
             }
-            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => BinaryTypes.Contains(x.Type?.Name ?? string.Empty));
+            var binaryParameter = currentMethod.Parameters.FirstOrDefault(static x => IsCoreBinaryType(x.Type));
             if (binaryParameter != null)
             {
                 binaryParameter.Type.Name = symbol;
