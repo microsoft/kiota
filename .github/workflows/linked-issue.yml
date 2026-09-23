@@ -54,7 +54,7 @@ jobs:
           comment_marker='<!-- missing-linked-issue -->'
           existing_comment_ids="$(
             gh api --paginate "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
-              --jq '.[] | select(.body | contains("<!-- missing-linked-issue -->")) | .id'
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- missing-linked-issue -->"))) | .id'
           )"
           if [[ "$linked_issue_count" -gt 0 ]]; then
             while IFS= read -r comment_id; do
