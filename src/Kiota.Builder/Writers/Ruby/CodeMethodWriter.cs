@@ -501,7 +501,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (requestParams.requestBody != null)
         {
             var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
-            if (requestParams.requestBody.Type is CodeType { TypeDefinition: null } &&
+            // only a whole body is a stream; the refiner keeps the collection kind, and a list of
+            // binary values is a payload of JSON strings rather than something to stream
+            if (requestParams.requestBody.Type is CodeType { TypeDefinition: null, CollectionKind: CodeTypeBase.CodeTypeCollectionKind.None } &&
                 requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)

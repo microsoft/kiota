@@ -510,6 +510,31 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("write_collection_of_primitive_values(\"collection\", @collection)", serialized);
     }
     [Fact]
+    public void WritesACollectionOfBinaryRequestBodyAsAScalarNotAStream()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Put;
+        method.RequestBodyContentType = "application/json";
+        AddRequestProperties();
+        // the refiner renames a binary body to StringIO but keeps the collection kind, and
+        // set_stream_content takes one stream rather than a list of them
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType
+            {
+                Name = "StringIO",
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("set_stream_content", result);
+        Assert.Contains("set_content_from_scalar(@request_adapter, 'application/json', body)", result);
+    }
+    [Fact]
     public void WritesStreamContentWithTheSnakeCasedContentTypeParameter()
     {
         setup();
