@@ -11,6 +11,7 @@ namespace Kiota.Builder.Refiners;
 
 public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
+    private static readonly CodeUsingDeclarationNameComparer usingDeclarationNameComparer = new();
     protected static readonly char[] UnderscoreArray = new[] { '_' };
     protected CommonLanguageRefiner(GenerationConfiguration configuration)
     {
@@ -964,10 +965,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     currentClass.AddMethod(newM);
                 }
 
-                var usingComparer = new CodeUsingDeclarationNameComparer();
                 foreach (var u in currentParent
                     .Usings
-                    .Where(pu => !currentClass.Usings.Contains(pu, usingComparer)))
+                    .Where(pu => !currentClass.Usings.Contains(pu, usingDeclarationNameComparer)))
                 {
                     var newU = (CodeUsing)u.Clone();
                     newU.Parent = currentClass;
