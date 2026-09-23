@@ -1305,6 +1305,27 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("super.getFieldDeserializers()", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Theory]
+    [InlineData("node", false)]
+    [InlineData("node", true)]
+    [InlineData("deserializerMap", false)]
+    [InlineData("deserializerMap", true)]
+    public void QualifiesDeserializerFieldsShadowedByLocalVariables(string propertyName, bool inherits)
+    {
+        setup(inherits);
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = propertyName,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "String", IsExternal = true },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"['{propertyName}'] = (node) => this.{propertyName} = node.getStringValue();", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
     [Fact]
     public void WritesDeSerializerBody()
     {
