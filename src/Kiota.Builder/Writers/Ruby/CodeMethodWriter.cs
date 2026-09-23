@@ -501,7 +501,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (requestParams.requestBody != null)
         {
             var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
-            if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
+            if (requestParams.requestBody.Type is CodeType { TypeDefinition: null } &&
+                requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
                     writer.WriteLine($"request_info.set_stream_content({RubyConventionService.GetParameterName(requestParams.requestBody)}, {RubyConventionService.GetParameterName(requestParams.requestContentType)})");
@@ -733,7 +734,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             return (isCollection ? "send_collection_async" : "send_async",
                     $"{getDeserializationLambda(returnTypeBase)}, ");
         if (conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase))
-            return (byType, $"{conventions.StreamTypeName}, ");
+            // only a whole body is a stream; a binary value inside a payload arrives as a JSON
+            // string, and the runtime has no collection reader for a stream
+            return (byType, isCollection ?
+                $"{RubyConventionService.GetPrimitiveConstant("string")}, " :
+                $"{conventions.StreamTypeName}, ");
         if (RubyConventionService.IsPrimitiveType(returnType))
             return (byType, $"{RubyConventionService.GetPrimitiveConstant(returnType)}, ");
         return (isCollection ? "send_collection_async" : "send_async",

@@ -418,7 +418,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("send_collection_of_primitive_async(request_info, StringIO,", result);
+        // a whole binary body is a stream, but elements inside a payload arrive as JSON strings and
+        // the runtime has no collection reader for a stream
+        Assert.Contains("send_collection_of_primitive_async(request_info, String,", result);
     }
     [Theory]
     [InlineData("binary")]
@@ -677,6 +679,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("send_async", result);
         Assert.Contains("create_from_discriminator_value", result);
         Assert.DoesNotContain("send_no_response_content_async", result);
+    }
+    [Fact]
+    public void WritesAModelNamedLikeTheStreamTypeAsParsable()
+    {
+        setup();
+        var model = root.AddClass(new CodeClass { Name = "StringIO", Kind = CodeClassKind.Model }).First();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "application/json";
+        AddRequestProperties();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType { Name = "StringIO", TypeDefinition = model },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("set_content_from_parsable", result);
+        Assert.DoesNotContain("set_stream_content", result);
     }
     private void AddRequestBodyParameters()
     {
