@@ -252,6 +252,9 @@ components:
     [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
     // wildcards from the path onwards keep matching any character, the destination is already pinned by then
     [InlineData("https://*.contoso.com/schemas/pet.yaml?version=*", "https://zap.contoso.com/schemas/pet.yaml?version=2")]
+    // a query or a fragment can follow the authority without a path, and its wildcard is not bounded either
+    [InlineData("https://contoso.com?next=*", "https://contoso.com?next=schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com#*", "https://zap.contoso.com#schemas/pet.yaml")]
     [InlineData("https://user1@contoso.com/schemas/*", "https://user1@contoso.com/schemas/pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderAllowsMatchingOrigins(string allowedOrigin, string externalReference)
     {

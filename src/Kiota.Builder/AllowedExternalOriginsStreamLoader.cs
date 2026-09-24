@@ -18,7 +18,8 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
     private const string SchemeSeparator = "://";
     // the delimiters that separate the scheme, the user information, the host and the port from the rest of the URI.
-    private const string AuthorityWildcardExpression = "[^/@:?#]*";
+    private const string AuthorityWildcardExpression = "[^/\\\\@:?#]*";
+    private static readonly char[] AuthorityTerminators = ['/', '?', '#'];
 
     public AllowedExternalOriginsStreamLoader(HttpClient httpClient, IEnumerable<string> allowedExternalOrigins) : base(httpClient)
     {
@@ -96,9 +97,9 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static string BuildUriPatternExpression(string pattern)
     {
         var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
-        var pathIndex = schemeSeparatorIndex < 0 ? -1 : pattern.IndexOf('/', schemeSeparatorIndex + SchemeSeparator.Length);
-        var authority = pathIndex < 0 ? pattern : pattern[..pathIndex];
-        var remainder = pathIndex < 0 ? string.Empty : pattern[pathIndex..];
+        var authorityEndIndex = schemeSeparatorIndex < 0 ? -1 : pattern.IndexOfAny(AuthorityTerminators, schemeSeparatorIndex + SchemeSeparator.Length);
+        var authority = authorityEndIndex < 0 ? pattern : pattern[..authorityEndIndex];
+        var remainder = authorityEndIndex < 0 ? string.Empty : pattern[authorityEndIndex..];
         return $"^{Regex.Escape(authority).Replace("\\*", AuthorityWildcardExpression, StringComparison.Ordinal)}{Regex.Escape(remainder).Replace("\\*", ".*", StringComparison.Ordinal)}$";
     }
 
