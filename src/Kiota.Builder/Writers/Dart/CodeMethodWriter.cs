@@ -68,11 +68,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
+    private bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
     {
         if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor) && !parentClass.IsErrorDefinition)
         {
-            return parentClass.Properties.All(prop => string.IsNullOrEmpty(prop.DefaultValue));
+            return UsesInheritedModelInitializers(parentClass, codeElement)
+                ? !GetConstructorDefaults(parentClass, codeElement).Any(static x => x.Property.ExistsInBaseType)
+                : parentClass.Properties.All(prop => string.IsNullOrEmpty(prop.DefaultValue));
         }
         var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
         return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
@@ -372,16 +374,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             defaultValue = convertedDefaultValue;
         return true;
     }
-    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    private (CodeProperty Property, bool IsValid, string Value)[] GetConstructorDefaults(CodeClass parentClass, CodeMethod currentMethod)
     {
-        if (parentClass.IsErrorDefinition)
-        {
-            WriteErrorClassConstructor(parentClass, writer);
-        }
-        else
-        {
-            var separator = ',';
-            var propWithDefaults = parentClass.Properties
+        return parentClass.Properties
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.BackingStore))
                                         // do not apply the default value if the type is composed as the default value may not necessarily which type to use
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
@@ -390,6 +385,28 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .Select(x => (Property: x, IsValid: TryGetConstructorDefaultValue(x, currentMethod, out var value), Value: value))
                                         .Where(static x => x.IsValid)
                                         .ToArray();
+    }
+    private static bool UsesInheritedModelInitializers(CodeClass parentClass, CodeMethod method) =>
+        parentClass.IsOfKind(CodeClassKind.Model) && method.IsOfKind(CodeMethodKind.Constructor) &&
+        parentClass.StartBlock.Inherits is not null && !parentClass.IsErrorDefinition &&
+        parentClass.GetBackingStoreProperty() is null;
+
+    private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
+    {
+        if (UsesInheritedModelInitializers(parentClass, currentMethod))
+        {
+            foreach (var inheritedDefault in GetConstructorDefaults(parentClass, currentMethod).Where(static x => x.Property.ExistsInBaseType))
+                writer.WriteLine($"{inheritedDefault.Property.Name} = {inheritedDefault.Value};");
+            return;
+        }
+        if (parentClass.IsErrorDefinition)
+        {
+            WriteErrorClassConstructor(parentClass, writer);
+        }
+        else
+        {
+            var separator = ',';
+            var propWithDefaults = GetConstructorDefaults(parentClass, currentMethod);
             var lastOption = propWithDefaults.LastOrDefault();
 
             foreach (var propWithDefault in propWithDefaults)
@@ -749,6 +766,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
     private string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod)
     {
+        if (isConstructor && UsesInheritedModelInitializers(parentClass, currentMethod))
+        {
+            var initializers = GetConstructorDefaults(parentClass, currentMethod)
+                .Where(static x => !x.Property.ExistsInBaseType)
+                .Select(static x => $"{x.Property.Name} = {x.Value}")
+                .Append("super()");
+            return $" : {string.Join(", ", initializers)}";
+        }
         if (isConstructor && inherits)
         {
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) && parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty &&

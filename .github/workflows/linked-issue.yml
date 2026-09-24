@@ -1,0 +1,73 @@
+name: Linked issue
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  check-linked-issue:
+    if: >-
+      github.repository == 'microsoft/kiota' &&
+      github.actor != 'dependabot[bot]' &&
+      (github.event.action != 'edited' || github.event.changes.body != null)
+    concurrency:
+      group: linked-issue-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment when no issue is linked
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          repository_owner="${REPOSITORY%%/*}"
+          repository_name="${REPOSITORY#*/}"
+
+          linked_issue_count="$(
+            gh api graphql \
+              -f query='
+                query($owner: String!, $name: String!, $number: Int!) {
+                  repository(owner: $owner, name: $name) {
+                    pullRequest(number: $number) {
+                      closingIssuesReferences(first: 1) {
+                        totalCount
+                      }
+                    }
+                  }
+                }' \
+              -f owner="$repository_owner" \
+              -f name="$repository_name" \
+              -F number="$PR_NUMBER" \
+              --jq '.data.repository.pullRequest.closingIssuesReferences.totalCount'
+          )"
+
+          comment_marker='<!-- missing-linked-issue -->'
+          existing_comment_ids="$(
+            gh api --paginate "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- missing-linked-issue -->"))) | .id'
+          )"
+          if [[ "$linked_issue_count" -gt 0 ]]; then
+            while IFS= read -r comment_id; do
+              [[ -z "$comment_id" ]] && continue
+              gh api --method DELETE "repos/$REPOSITORY/issues/comments/$comment_id"
+            done <<< "$existing_comment_ids"
+            exit 0
+          fi
+
+          if [[ -n "$existing_comment_ids" ]]; then
+            exit 0
+          fi
+
+          gh api --method POST "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+            -f body="$comment_marker
+          Thanks for opening this pull request! Please link it to an issue by adding the fixes syntax to the pull request description, for example: \`Fixes #1234\`."
