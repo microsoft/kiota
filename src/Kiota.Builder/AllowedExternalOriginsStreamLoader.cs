@@ -16,6 +16,9 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
 {
     private readonly HashSet<string> allowedExternalOrigins;
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
+    private const string SchemeSeparator = "://";
+    // the delimiters that separate the scheme, the user information, the host and the port from the rest of the URI.
+    private const string AuthorityWildcardExpression = "[^/@:?#]*";
 
     public AllowedExternalOriginsStreamLoader(HttpClient httpClient, IEnumerable<string> allowedExternalOrigins) : base(httpClient)
     {
@@ -50,7 +53,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         var pathCandidates = GetPathCandidates(targetUri, originalUri);
         return allowedExternalOrigins.Any(allowedOrigin =>
             allowedOrigin.Equals("*", StringComparison.Ordinal) ||
-            MatchesAnyCandidate(allowedOrigin, uriCandidates) ||
+            MatchesAnyUriCandidate(allowedOrigin, uriCandidates) ||
             MatchesAnyCandidate(NormalizeAllowedPath(allowedOrigin), pathCandidates));
     }
 
@@ -72,6 +75,31 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static bool MatchesAnyCandidate(string pattern, IEnumerable<string> candidates)
     {
         return candidates.Any(candidate => Matches(pattern, candidate));
+    }
+
+    private static bool MatchesAnyUriCandidate(string pattern, IEnumerable<string> candidates)
+    {
+        if (!pattern.Contains('*', StringComparison.Ordinal))
+            return candidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+
+        var expression = BuildUriPatternExpression(pattern);
+        return candidates.Any(candidate => Regex.IsMatch(candidate, expression, RegexOptions.IgnoreCase, RegexTimeout));
+    }
+
+    /// <summary>
+    /// Builds the expression for a URI pattern so a wildcard placed before the path cannot consume the delimiters
+    /// that end the authority. Expanding such a wildcard to ".*" lets it continue past the host and complete the
+    /// match with text taken from the path, the user information or the port, which authorizes hosts outside the
+    /// intended set.
+    /// Wildcards from the path onwards keep matching any character since the destination is already pinned by then.
+    /// </summary>
+    private static string BuildUriPatternExpression(string pattern)
+    {
+        var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
+        var pathIndex = schemeSeparatorIndex < 0 ? -1 : pattern.IndexOf('/', schemeSeparatorIndex + SchemeSeparator.Length);
+        var authority = pathIndex < 0 ? pattern : pattern[..pathIndex];
+        var remainder = pathIndex < 0 ? string.Empty : pattern[pathIndex..];
+        return $"^{Regex.Escape(authority).Replace("\\*", AuthorityWildcardExpression, StringComparison.Ordinal)}{Regex.Escape(remainder).Replace("\\*", ".*", StringComparison.Ordinal)}$";
     }
 
     private static bool Matches(string pattern, string candidate)
