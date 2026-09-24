@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - C#: resolve child-namespace name collisions after composed wrapper classes are created, avoiding CS0101 for dotted component schemas. Fixes [#7729](https://github.com/microsoft/kiota/issues/7729).
+- Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
 - Dart: qualify model fields named `node` or `deserializerMap` during deserialization so local variables do not shadow them; escape `override` model members to preserve Dart annotations. Fixes [#7822](https://github.com/microsoft/kiota/issues/7822).
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript: the discriminator switch in a composed type serializer was built from the wire name, but model properties are camel cased by the refiner, so a discriminator such as `pet_type` was emitted as `.pet_type` where the generated interface declares `petType` and the client did not compile. The accessor is now resolved from the model property, which also corrects `@odata.type` from `.OdataType` to `.odataType`. [#7862](https://github.com/microsoft/kiota/issues/7862)
 - TypeScript: the factory generated for a collection of a primitive union was declared returning the collection but its body read a scalar, so `(number | string)[] | undefined` came back from `parseNode?.getNumberValue() ?? parseNode?.getStringValue()` and only the first item of the payload survived. The collection reads are now emitted for that case, matching what the deserializer already does for the same shape. [#8178](https://github.com/microsoft/kiota/issues/8178)
 - Golang: Fix comment format [#8186](https://github.com/microsoft/kiota/pull/8186)
+- An inline property schema is named after its parent model and property, so the inline `case` property of a `test` schema was named `test_case`, the name of a `test_case` component in the same namespace. Both schemas then resolved to one class and one of them silently lost its properties, depending on the order models were generated in. The inline schema now gets a numeric suffix (`test_case1`) when a component in the description has its name, even one not generated for the selected paths, so the name stays the same whatever paths are included or excluded. [#5967](https://github.com/microsoft/kiota/issues/5967)
 
 ## [1.35.0] - 2026-09-01
 
