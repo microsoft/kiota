@@ -1573,6 +1573,121 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return", result);
     }
     [Fact]
+    public void WritesInheritedModelFieldInitializers()
+    {
+        setup(true);
+        parentClass.Kind = CodeClassKind.Model;
+        method.IsAsync = false;
+        method.Kind = CodeMethodKind.Constructor;
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "additionalData",
+            Kind = CodePropertyKind.AdditionalData,
+            DefaultValue = "{}",
+            Type = new CodeType { Name = "Map<String, Object?>", IsNullable = false },
+        });
+        const string payload = "line'\"\n\r\t\\$value";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = $"\"{payload}\"",
+            Type = new CodeType { Name = "String", IsNullable = false },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("additionalData = {}", result);
+        Assert.Contains($"label = '{DartConventionService.SanitizeDartSingleQuoteLiteral(payload)}'", result);
+        Assert.DoesNotContain(payload, result);
+        Assert.Contains(", super()", result);
+        Assert.True(result.IndexOf("additionalData =", StringComparison.Ordinal) < result.IndexOf("super()", StringComparison.Ordinal));
+        Assert.DoesNotContain("super() {", result);
+        Assert.EndsWith(";", result.TrimEnd());
+    }
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void WritesRepeatedInheritedDefaultsAfterLocalInitializers(int repeatedCount)
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.IsAsync = false;
+        method.Kind = CodeMethodKind.Constructor;
+        var baseClass = root.AddClass(new CodeClass { Name = "BaseModel", Kind = CodeClassKind.Model }).First();
+        parentClass.StartBlock.Inherits = new CodeType { Name = baseClass.Name, TypeDefinition = baseClass };
+        for (var i = 0; i < repeatedCount; i++)
+        {
+            baseClass.AddProperty(new CodeProperty
+            {
+                Name = $"label{i}",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "String", IsNullable = false },
+            });
+            var repeated = new CodeProperty
+            {
+                Name = $"label{i}",
+                Kind = CodePropertyKind.Custom,
+                DefaultValue = "\"derived\"",
+                Type = new CodeType { Name = "String", IsNullable = false },
+            };
+            parentClass.AddProperty(repeated);
+            Assert.True(repeated.ExistsInBaseType);
+        }
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "localLabel",
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = "\"local\"",
+            Type = new CodeType { Name = "String", IsNullable = false },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("localLabel = 'local', super() {", result);
+        for (var i = 0; i < repeatedCount; i++)
+        {
+            Assert.Contains($"label{i} = 'derived';", result);
+            Assert.True(result.IndexOf($"label{i} =", StringComparison.Ordinal) > result.IndexOf("super()", StringComparison.Ordinal));
+        }
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritesInheritedBackingStoreDefaultsInConstructorBody(bool fromGrandparent)
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.IsAsync = false;
+        method.Kind = CodeMethodKind.Constructor;
+        var storeOwner = root.AddClass(new CodeClass { Name = "BaseModel", Kind = CodeClassKind.Model }).First();
+        parentClass.StartBlock.Inherits = new CodeType { Name = storeOwner.Name, TypeDefinition = storeOwner };
+        if (fromGrandparent)
+        {
+            var grandparent = root.AddClass(new CodeClass { Name = "Grandparent", Kind = CodeClassKind.Model }).First();
+            storeOwner.StartBlock.Inherits = new CodeType { Name = grandparent.Name, TypeDefinition = grandparent };
+            storeOwner = grandparent;
+        }
+        storeOwner.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "BackingStore" },
+        });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = "\"value\"",
+            Type = new CodeType { Name = "String", IsNullable = false },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("super() {", result);
+        Assert.Contains("label = 'value';", result);
+        Assert.True(result.IndexOf("super()", StringComparison.Ordinal) < result.IndexOf("label =", StringComparison.Ordinal));
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesConstructor()
     {
         setup();
