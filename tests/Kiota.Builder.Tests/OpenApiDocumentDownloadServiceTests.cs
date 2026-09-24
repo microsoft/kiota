@@ -229,6 +229,8 @@ components:
     // the wildcard must not cross the scheme or the port
     [InlineData("https://*.contoso.com/*", "http://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*.contoso.com/*", "https://zap.contoso.com:8443/schemas/pet.yaml")]
+    // the authority is delimited the same way whatever the case of the scheme
+    [InlineData("HTTPS://*.contoso.com/*", "https://evil.attacker.com/x/.contoso.com/y.json")]
     // a host pattern without a scheme is not a URI pattern and matches nothing
     [InlineData("*.contoso.com", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("*.contoso.com", "https://evil.attacker.com/x/.contoso.com")]
@@ -246,6 +248,7 @@ components:
     [Theory]
     [InlineData("https://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*.contoso.com/*", "https://zap.nested.contoso.com/schemas/pet.yaml")]
+    [InlineData("HTTPS://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*/schemas/*", "https://anything.example.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
