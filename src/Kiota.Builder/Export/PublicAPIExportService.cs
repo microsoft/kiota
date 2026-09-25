@@ -14,6 +14,7 @@ using Kiota.Builder.Writers.Java;
 using Kiota.Builder.Writers.Php;
 using Kiota.Builder.Writers.Python;
 using Kiota.Builder.Writers.Ruby;
+using Kiota.Builder.Writers.Rust;
 using Kiota.Builder.Writers.TypeScript;
 
 namespace Kiota.Builder.Export;
@@ -123,6 +124,7 @@ internal class PublicApiExportService
             GenerationLanguage.Go => new GoConventionService(),
             GenerationLanguage.Ruby => new RubyConventionService(),
             GenerationLanguage.Dart => new DartConventionService(),
+            GenerationLanguage.Rust => new RustConventionService(),
             _ => throw new ArgumentOutOfRangeException(nameof(generationConfiguration), generationConfiguration.Language, null)
         };
     }
