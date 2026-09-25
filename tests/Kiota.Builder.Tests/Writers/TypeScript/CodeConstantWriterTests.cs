@@ -713,4 +713,48 @@ public sealed class CodeConstantWriterTests : IDisposable
             Optional = true,
         });
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DoesNotUseDescendantNavigationMetadata(bool refined)
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
+        var targetNamespace = parentNamespace.AddNamespace($"{parentNamespace.Name}.foo");
+        var targetClass = targetNamespace.AddClass(new CodeClass
+        {
+            Name = "FooRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var targetInterface = CodeInterface.FromRequestBuilder(targetClass);
+        targetNamespace.TryAddCodeFile("fooRequestBuilder", targetInterface,
+            new CodeConstant
+            {
+                Name = "FooRequestBuilderRequestsMetadata",
+                Kind = CodeConstantKind.RequestsMetadata,
+            });
+        targetNamespace.AddNamespace($"{targetNamespace.Name}.foo").TryAddCodeFile("fooRequestBuilder",
+            new CodeConstant
+            {
+                Name = "FooRequestBuilderNavigationMetadata",
+                Kind = CodeConstantKind.NavigationMetadata,
+            });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "foo",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType
+            {
+                Name = targetClass.Name,
+                TypeDefinition = refined ? targetInterface : targetClass,
+            },
+        });
+        var parentInterface = CodeInterface.FromRequestBuilder(parentClass);
+        var constant = CodeConstant.FromRequestBuilderToNavigationMetadata(parentClass);
+        parentNamespace.TryAddCodeFile("parentClass", parentInterface, constant);
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("requestsMetadata: FooRequestBuilderRequestsMetadata", result);
+        Assert.DoesNotContain("navigationMetadata:", result);
+    }
 }
