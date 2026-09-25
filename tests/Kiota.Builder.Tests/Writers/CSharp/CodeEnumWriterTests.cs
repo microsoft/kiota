@@ -75,12 +75,14 @@ public sealed class CodeEnumWriterTests : IDisposable
     public void EscapesEnumMemberValue()
     {
         currentEnum.Flags = true;
-        var serializationName = "line1\"\nline2";
+        var serializationName = "line1\"\nline2\u2028line3\u2029line4";
         currentEnum.AddOption(Option);
         currentEnum.AddOption(new CodeEnumOption { Name = "InvalidName", SerializationName = serializationName });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains($"[EnumMember(Value = \"{serializationName.SanitizeDoubleQuote()}\")]", result);
+        Assert.Contains("[EnumMember(Value = \"line1\\\"\\nline2\\u2028line3\\u2029line4\")]", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
 
     [Fact]
