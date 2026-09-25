@@ -89,9 +89,11 @@ public sealed class CodeIndexerWriterTests : IDisposable
     [Fact]
     public void WritesIndexerWithEscapedPathParameterMapping()
     {
-        indexer.IndexParameter.SerializationName = "line1\"\nline2";
+        indexer.IndexParameter.SerializationName = "line1\"\nline2\u2028line3\u2029line4";
         writer.Write(indexer);
         var result = tw.ToString();
-        Assert.Contains($"urlTplParams.Add(\"{indexer.IndexParameter.SerializationName.SanitizeDoubleQuote()}\", position);", result);
+        Assert.Contains("urlTplParams.Add(\"line1\\\"\\nline2\\u2028line3\\u2029line4\", position);", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
 }
