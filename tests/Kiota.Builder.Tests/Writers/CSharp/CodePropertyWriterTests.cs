@@ -130,22 +130,26 @@ public sealed class CodePropertyWriterTests : IDisposable
     public void WritesEscapedSerializationAttribute()
     {
         property.Kind = CodePropertyKind.QueryParameter;
-        property.SerializationName = "line1\"\nline2";
+        property.SerializationName = "line1\"\nline2\u2028line3\u2029line4";
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"[QueryParameter(\"{property.SerializationName.SanitizeDoubleQuote()}\")", result);
+        Assert.Contains("[QueryParameter(\"line1\\\"\\nline2\\u2028line3\\u2029line4\")", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
     [Fact]
     public void MapsCustomPropertiesToBackingStoreWithEscapedKey()
     {
         parentClass.AddBackingStoreProperty();
         property.Kind = CodePropertyKind.Custom;
-        property.SerializationName = "line1\"\nline2";
+        property.SerializationName = "line1\"\nline2\u2028line3\u2029line4";
         writer.Write(property);
         var result = tw.ToString();
-        var sanitizedWireName = property.WireName.SanitizeDoubleQuote();
+        var sanitizedWireName = property.WireName.SanitizeCSharpDoubleQuote();
         Assert.Contains($"BackingStore?.Get<global::{rootNamespace.Name}.SomeCustomClass>(\"{sanitizedWireName}\")", result);
         Assert.Contains($"BackingStore?.Set(\"{sanitizedWireName}\", value);", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
     [Fact]
     public void DoesntWritePropertiesExistingInParentType()
@@ -316,4 +320,3 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("#pragma warning restore CS1591", result);
     }
 }
-

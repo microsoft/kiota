@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - TypeScript: preserve derived properties during discriminator-based serialization without duplicating inherited properties. [#6777](https://github.com/microsoft/kiota/issues/6777)
+- C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
 - Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
