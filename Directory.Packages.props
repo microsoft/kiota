@@ -4,7 +4,7 @@
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1507</WarningsNotAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="AsyncKeyedLock" Version="8.0.2" />
+    <PackageVersion Include="AsyncKeyedLock" Version="8.1.2" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.9.0" />
     <PackageVersion Include="coverlet.MTP" Version="10.0.1" />
     <PackageVersion Include="DotNet.Glob" Version="3.1.3" />
