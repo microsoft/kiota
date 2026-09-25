@@ -9,7 +9,7 @@ namespace Kiota.Builder.Writers.Ruby;
 
 public class RubyConventionService : CommonLanguageConventionService
 {
-    public override string StreamTypeName => "stdin";
+    public override string StreamTypeName => "StringIO";
     private const string InternalVoidTypeName = "nil";
     public override string VoidTypeName => InternalVoidTypeName;
     public override string DocCommentPrefix => "## ";
@@ -41,13 +41,22 @@ public class RubyConventionService : CommonLanguageConventionService
             _ => "private",
         };
     }
+    /// <summary>
+    /// The one place a parameter becomes a Ruby local. The signature and every site that refers to
+    /// a parameter read it from here, so the two cannot disagree.
+    /// </summary>
+    internal static string GetParameterName(CodeParameter parameter)
+    {
+        ArgumentNullException.ThrowIfNull(parameter);
+        return parameter.Name.ToSnakeCase();
+    }
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
             $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : SanitizeRubyDoubleQuoteLiteral(parameter.DefaultValue))}" :
             string.Empty;
-        return $"{parameter.Name}{defaultValue}";
+        return $"{GetParameterName(parameter)}{defaultValue}";
     }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
@@ -58,11 +67,54 @@ public class RubyConventionService : CommonLanguageConventionService
 
         throw new InvalidOperationException();
     }
+    /// <summary>
+    /// The single description of a Ruby primitive: the constant that names it, and the parse node
+    /// and serialization writer methods that read and write it. Everything that used to decide
+    /// those three separately, by matching rendered type names, now reads them from here.
+    /// </summary>
+    internal sealed record RubyPrimitive(string Constant, string Reader, string Writer);
+    private static readonly Dictionary<string, RubyPrimitive> PrimitiveTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "string", new("String", "get_string_value", "write_string_value") },
+        { "boolean", new("\"boolean\"", "get_boolean_value", "write_boolean_value") },
+        { "number", new("Integer", "get_number_value", "write_number_value") },
+        { "float", new("Float", "get_float_value", "write_float_value") },
+        { "Guid", new("UUIDTools::UUID", "get_guid_value", "write_guid_value") },
+        { "Date", new("Date", "get_date_value", "write_date_value") },
+        { "Time", new("Time", "get_time_value", "write_time_value") },
+        { "DateTime", new("DateTime", "get_date_time_value", "write_date_time_value") },
+        { DurationTypeName, new(DurationTypeName, "get_duration_value", "write_duration_value") },
+        // a binary value inside a payload is carried by JSON as a string, unlike a binary request
+        // or response body, which the refiner rewrites to the native stream type
+        { "binary", new("String", "get_string_value", "write_string_value") },
+    };
+    internal const string DurationTypeName = "MicrosoftKiotaAbstractions::ISODuration";
+    internal static bool IsPrimitiveType(string typeName) => PrimitiveTypes.ContainsKey(typeName ?? string.Empty);
+    internal static bool TryGetPrimitiveType(string typeName, out RubyPrimitive primitive) =>
+        PrimitiveTypes.TryGetValue(typeName ?? string.Empty, out primitive!);
+    /// <summary>
+    /// The constant a collection element or a primitive send method names, such as the Integer in
+    /// get_collection_of_primitive_values(Integer).
+    /// </summary>
+    internal static string GetPrimitiveConstant(string typeName) =>
+        TryGetPrimitiveType(typeName, out var primitive) ? primitive.Constant : typeName.ToFirstCharacterUpperCase();
     public override string TranslateType(CodeType type)
     {
+        // a resolved model or enum keeps the name the builder gave it, so the aliases below only
+        // rename types the builder never resolved
+        if (type?.TypeDefinition is not null)
+            return type.Name.ToFirstCharacterUpperCase();
         return type?.Name switch
         {
-            "integer" => "number",
+            "integer" or "int64" or "int8" or "uint8" or "sbyte" or "byte" => "number",
+            "double" or "decimal" => "float",
+            "binary" or "base64" or "base64url" => "binary",
+            // the refiner normally replaces these, but resolving the aliases here too keeps the
+            // rendered name the single key everything else looks up
+            "dateTimeOffset" => "DateTime",
+            "dateOnly" => "Date",
+            "timeOnly" => "Time",
+            "timeSpan" => DurationTypeName,
             "float" or "string" or "object" or "boolean" or "void" => type.Name, // little casing hack
             null => "object",
             _ => type.Name.ToFirstCharacterUpperCase() is string typeName && !string.IsNullOrEmpty(typeName) ? typeName : "object",
@@ -113,7 +165,7 @@ public class RubyConventionService : CommonLanguageConventionService
             parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProp)
         {
             var urlTemplateParams = string.IsNullOrEmpty(urlTemplateVarName) ? $"@{pathParametersProp.Name.ToSnakeCase()}" : urlTemplateVarName;
-            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(static x => x.Name.ToSnakeCase()))}";
+            var pathParametersSuffix = !(pathParameters?.Any() ?? false) ? string.Empty : $", {string.Join(", ", pathParameters.Select(GetParameterName))}";
             writer.WriteLine($"{prefix}{returnType}.new({urlTemplateParams}, @{requestAdapterProp.Name.ToSnakeCase()}{pathParametersSuffix})");
         }
     }

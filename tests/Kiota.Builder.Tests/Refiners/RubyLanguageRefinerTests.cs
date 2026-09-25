@@ -27,6 +27,32 @@ public class RubyLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task ReplacesBinaryByNativeTypeAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "binary" },
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType { Name = "binary" },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("StringIO", method.ReturnType.Name);
+        Assert.Equal("StringIO", method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type.Name);
+        Assert.Contains(model.StartBlock.Usings, static x => x.IsExternal && "stringio".Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
