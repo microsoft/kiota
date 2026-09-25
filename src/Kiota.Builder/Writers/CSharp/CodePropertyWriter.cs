@@ -54,7 +54,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 break;
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
-                var backingStoreKey = codeElement.WireName.SanitizeDoubleQuote();
+                var backingStoreKey = codeElement.WireName.SanitizeCSharpDoubleQuote();
                 var nullableOp = !codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? "?" : string.Empty;
                 var defaultPropertyValue = codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? new Dictionary<string, object>()" : string.Empty;
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()}");
@@ -70,7 +70,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                     writer.WriteLine($"public override {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()} {{ get => base.Message; }}");
                 break;
             case CodePropertyKind.QueryParameter when codeElement.IsNameEscaped:
-                writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName.SanitizeDoubleQuote()}\")]");
+                writer.WriteLine($"[QueryParameter(\"{codeElement.SerializationName.SanitizeCSharpDoubleQuote()}\")]");
                 goto default;
             case CodePropertyKind.QueryParameters:
                 defaultValue = $" = new {propertyType}();";
