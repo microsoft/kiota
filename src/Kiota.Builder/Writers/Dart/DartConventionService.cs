@@ -312,6 +312,7 @@ public class DartConventionService : CommonLanguageConventionService
         {
             correctedName = name.All(c => char.IsUpper(c) || char.IsAsciiDigit(c)) ? name.ToLowerInvariant() : name.ToFirstCharacterLowerCase();
         }
-        return correctedName;
+        // Generated enums use value for wire values; Dart also supplies a static values list.
+        return correctedName is "value" or "values" ? correctedName + Constants.EscapedSuffix : correctedName;
     }
 }
