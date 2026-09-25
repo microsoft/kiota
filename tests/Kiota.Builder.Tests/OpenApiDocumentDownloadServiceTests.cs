@@ -214,6 +214,64 @@ components:
         Assert.NotNull(stream);
     }
 
+    [Theory]
+    // a wildcard placed before the path must not consume the delimiters that end the authority, otherwise it
+    // completes the match with text taken from a later URI component and hosts outside the intended set are allowed.
+    [InlineData("https://*.contoso.com/*", "https://evil.attacker.com/x/.contoso.com/y.json")]
+    [InlineData("https://*.contoso.com/*", "https://evil.attacker.com/x/.contoso.com/")]
+    [InlineData("http://*.contoso.com/*", "http://127.0.0.1:8080/x/.contoso.com/y")]
+    [InlineData("http://*.contoso.com/*", "http://169.254.169.254/x/.contoso.com/")]
+    [InlineData("https://contoso.com/schemas/*", "https://evil.attacker.com/https://contoso.com/schemas/pet.yaml")]
+    // a wildcard scheme must not reach into the path either
+    [InlineData("*://contoso.com/*", "https://evil.attacker.com/x://contoso.com/y")]
+    // credentials in the authority must not disguise the real host
+    [InlineData("https://*.contoso.com/*", "https://zap.contoso.com@evil.attacker.com/schemas/pet.yaml")]
+    // the wildcard must not cross the scheme or the port
+    [InlineData("https://*.contoso.com/*", "http://zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com/*", "https://zap.contoso.com:8443/schemas/pet.yaml")]
+    // the authority is delimited the same way whatever the case of the scheme
+    [InlineData("HTTPS://*.contoso.com/*", "https://evil.attacker.com/x/.contoso.com/y.json")]
+    // a host pattern without a scheme is not a URI pattern and matches nothing
+    [InlineData("*.contoso.com", "https://zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("*.contoso.com", "https://evil.attacker.com/x/.contoso.com")]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsAuthorityBypass(string allowedOrigin, string externalReference)
+    {
+        using var httpClient = new HttpClient(new ResponseHandler());
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri(externalReference),
+            TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData("https://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com/*", "https://zap.nested.contoso.com/schemas/pet.yaml")]
+    [InlineData("HTTPS://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
+    [InlineData("https://*/schemas/*", "https://anything.example.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
+    [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
+    // wildcards from the path onwards keep matching any character, the destination is already pinned by then
+    [InlineData("https://*.contoso.com/schemas/pet.yaml?version=*", "https://zap.contoso.com/schemas/pet.yaml?version=2")]
+    // a query or a fragment can follow the authority without a path, and its wildcard is not bounded either
+    [InlineData("https://contoso.com?next=*", "https://contoso.com?next=schemas/pet.yaml")]
+    [InlineData("https://*.contoso.com#*", "https://zap.contoso.com#schemas/pet.yaml")]
+    [InlineData("https://user1@contoso.com/schemas/*", "https://user1@contoso.com/schemas/pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderAllowsMatchingOrigins(string allowedOrigin, string externalReference)
+    {
+        using var httpClient = new HttpClient(new ResponseHandler());
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri(externalReference),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+    }
+
     [Fact]
     public async Task AllowedExternalOriginsWildcardAllowsAnyExternalReference()
     {
@@ -242,6 +300,33 @@ components:
 
             await using var stream = await loader.LoadAsync(
                 new Uri(Path.Combine(tempDirectory, "openapi.yaml")),
+                new Uri(schemaPath),
+                TestContext.Current.CancellationToken);
+
+            Assert.NotNull(stream);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderAllowsWildcardFileUris()
+    {
+        var tempDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+        var schemaPath = Path.Join(tempDirectory, "schemas", "pet.yaml");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(schemaPath)!);
+            await File.WriteAllTextAsync(schemaPath, "type: object", TestContext.Current.CancellationToken);
+            using var httpClient = new HttpClient(new ResponseHandler());
+            var allowedOrigin = new Uri(Path.Join(tempDirectory, "schemas", "*")).AbsoluteUri;
+            var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+            await using var stream = await loader.LoadAsync(
+                new Uri(Path.Join(tempDirectory, "openapi.yaml")),
                 new Uri(schemaPath),
                 TestContext.Current.CancellationToken);
 
