@@ -483,6 +483,26 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void EscapesErrorMappingKeys()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var errorType = root.AddClass(new CodeClass
+        {
+            Name = "ErrorType",
+        }).First();
+        method.AddErrorMapping("4\"\n\u2028\u2029xx", new CodeType { Name = "ErrorType", TypeDefinition = errorType });
+        AddRequestBodyParameters();
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("{ \"4\\\"\\n\\u2028\\u2029XX\", ErrorType.CreateFromDiscriminatorValue },", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyWithUntypedReturnValue()
     {
         setup();
@@ -1215,12 +1235,12 @@ public sealed class CodeMethodWriterTests : IDisposable
             },
             IsStatic = true,
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel\u2028line\u2029end", new CodeType
         {
             Name = "childModel",
             TypeDefinition = childModel,
         });
-        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx\u2028line\u2029end";
         factoryMethod.AddParameter(new CodeParameter
         {
             Name = "parseNode",
@@ -1234,8 +1254,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(factoryMethod);
         var result = tw.ToString();
-        Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.ty\\\"pe\\nx\")?.GetStringValue()", result);
-        Assert.Contains("\"ns.chi\\\"ld\\nmodel\" => new ChildModel()", result);
+        Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.ty\\\"pe\\nx\\u2028line\\u2029end\")?.GetStringValue()", result);
+        Assert.Contains("\"ns.chi\\\"ld\\nmodel\\u2028line\\u2029end\" => new ChildModel()", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
     [Fact]
     public void DoesntWriteFactorySwitchOnMissingParameter()
@@ -1467,10 +1489,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         AddRequestBodyParameters(true);
         method.AcceptedResponseTypes.Add("application/json");
-        method.UrlTemplateOverride = "{baseurl+}/foo/\"bar\nbaz";
+        method.UrlTemplateOverride = "{baseurl+}/foo/\"bar\nbaz\u2028line\u2029end";
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, \"{baseurl+}/foo/\\\"bar\\nbaz\", PathParameters)", result);
+        Assert.Contains("var requestInfo = new RequestInformation(Method.GET, \"{baseurl+}/foo/\\\"bar\\nbaz\\u2028line\\u2029end\", PathParameters)", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
@@ -1731,17 +1755,21 @@ public sealed class CodeMethodWriterTests : IDisposable
     {
         setup();
         AddSerializationProperties();
-        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nline2";
+        parentClass.Properties.First(static x => x.Name.Equals("dummyProp", StringComparison.Ordinal)).SerializationName = "line1\"\nline2\u2028line3\u2029line4";
         method.Kind = CodeMethodKind.Serializer;
         method.IsAsync = false;
         writer.Write(method);
         var serializerResult = tw.ToString();
-        Assert.Contains("writer.WriteStringValue(\"line1\\\"\\nline2\", DummyProp);", serializerResult);
+        Assert.Contains("writer.WriteStringValue(\"line1\\\"\\nline2\\u2028line3\\u2029line4\", DummyProp);", serializerResult);
+        Assert.DoesNotContain('\u2028', serializerResult);
+        Assert.DoesNotContain('\u2029', serializerResult);
         tw.GetStringBuilder().Clear();
         method.Kind = CodeMethodKind.Deserializer;
         writer.Write(method);
         var deserializerResult = tw.ToString();
-        Assert.Contains("{ \"line1\\\"\\nline2\", n => { DummyProp = n.GetStringValue(); } },", deserializerResult);
+        Assert.Contains("{ \"line1\\\"\\nline2\\u2028line3\\u2029line4\", n => { DummyProp = n.GetStringValue(); } },", deserializerResult);
+        Assert.DoesNotContain('\u2028', deserializerResult);
+        Assert.DoesNotContain('\u2029', deserializerResult);
     }
     [Fact]
     public void WritesMethodAsyncDescription()
@@ -2443,7 +2471,7 @@ public sealed class CodeMethodWriterTests : IDisposable
     {
         setup();
         method.Kind = CodeMethodKind.ClientConstructor;
-        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath";
+        method.BaseUrl = "https://graph.microsoft.com/v1.0/\"evil\npath\u2028line\u2029end";
         parentClass.AddProperty(new CodeProperty
         {
             Name = "pathParameters",
@@ -2474,7 +2502,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.SerializerModules = new() { "com.microsoft.kiota.serialization.Serializer" };
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("BaseUrl = \"https://graph.microsoft.com/v1.0/\\\"evil\\npath\"", result);
+        Assert.Contains("BaseUrl = \"https://graph.microsoft.com/v1.0/\\\"evil\\npath\\u2028line\\u2029end\"", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()
@@ -2705,12 +2735,14 @@ public sealed class CodeMethodWriterTests : IDisposable
                 IsNullable = false
             },
             Optional = true,
-            DefaultValue = "\"line1\"\nline2\"",
+            DefaultValue = "\"line1\"\nline2\u2028line3\u2029line4\"",
         });
         parentClass.Kind = CodeClassKind.RequestBuilder;
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"string sampleParam = {"\"line1\"\nline2\"".SanitizeQuotedStringLiteral()}", result);
+        Assert.Contains("string sampleParam = \"line1\\\"\\nline2\\u2028line3\\u2029line4\"", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
     [Fact]
     public void WritesDeprecationInformation()
@@ -2729,11 +2761,12 @@ public sealed class CodeMethodWriterTests : IDisposable
     public void EscapesDeprecationInformationStringLiteral()
     {
         setup();
-        method.Deprecation = new("line1\"\nline2");
+        method.Deprecation = new("line1\"\nline2\u2028line3\u2029line4");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("line1\\\"\\nline2", result);
-        Assert.DoesNotContain("line1\"\nline2", result);
+        Assert.Contains("line1\\\"\\nline2\\u2028line3\\u2029line4", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
 
     [Fact]
@@ -2755,10 +2788,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.RequestGenerator;
         method.HttpMethod = HttpMethod.Get;
         AddRequestProperties();
-        method.AcceptedResponseTypes.Add("application/json; profile=\"CamelCase\"");
+        method.AcceptedResponseTypes.Add("application/json; profile=\"CamelCase\"\u2028line\u2029end");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json; profile=\\\"CamelCase\\\"\")", result);
+        Assert.Contains("requestInfo.Headers.TryAdd(\"Accept\", \"application/json; profile=\\\"CamelCase\\\"\\u2028line\\u2029end\")", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
 
     [Fact]
@@ -2769,9 +2804,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.HttpMethod = HttpMethod.Post;
         AddRequestProperties();
         AddRequestBodyParameters();
-        method.RequestBodyContentType = "application/json; profile=\"CamelCase\"";
+        method.RequestBodyContentType = "application/json; profile=\"CamelCase\"\u2028line\u2029end";
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
+        Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\\u2028line\\u2029end\"", result);
+        Assert.DoesNotContain('\u2028', result);
+        Assert.DoesNotContain('\u2029', result);
     }
 }

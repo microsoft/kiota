@@ -48,7 +48,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
 
             if (option.IsNameEscaped)
             {
-                writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName.SanitizeDoubleQuote()}\")]");
+                writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName.SanitizeCSharpDoubleQuote()}\")]");
             }
             if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
             writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
