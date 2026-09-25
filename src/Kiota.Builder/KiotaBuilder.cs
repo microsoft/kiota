@@ -2095,6 +2095,13 @@ public partial class KiotaBuilder
             return CreateModelDeclarationAndType(currentNode, mergedSchema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody, dynamicBindingSuffixContext: suffixForInlineSchema);
         }
 
+        if (schema.AllOf is { Count: 1 } && !schema.AllOf[0].IsReferencedSchema() && schema.AllOf[0].HasAnyProperty() &&
+            schema.MergeAllOfSchemaEntries() is IOpenApiSchema singleInlineSchema)
+        {
+            // A single inline object still contributes properties, even without an inheritance relationship.
+            return CreateModelDeclarationAndType(currentNode, singleInlineSchema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody, dynamicBindingSuffixContext: suffixForInlineSchema);
+        }
+
         if ((schema.IsInclusiveUnion() || schema.IsExclusiveUnion()) && string.IsNullOrEmpty(schema.Format)
             && !schema.IsODataPrimitiveType())
         { // OData types are oneOf string, type + format, enum
