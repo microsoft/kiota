@@ -16,9 +16,8 @@ public static partial class OpenApiUrlTreeNodeExtensions
     private static readonly Func<string, string> replaceSingleParameterSegmentByItem =
     static x => x.IsPathSegmentWithSingleSimpleParameter() ? "item" : (ReservedItemName.Equals(x, StringComparison.OrdinalIgnoreCase) ? ReservedItemNameEscaped : x);
     private static readonly char[] namespaceNameSplitCharacters = ['.', '-', '$']; //$ref from OData
-    private const string EscapedSuffix = "Escaped";
     internal const string ReservedItemName = "Item";
-    internal const string ReservedItemNameEscaped = $"{ReservedItemName}_{EscapedSuffix}";
+    internal const string ReservedItemNameEscaped = $"{ReservedItemName}_{Constants.EscapedSuffix}";
     internal static string GetNamespaceFromPath(this string currentPath, string prefix) =>
         prefix +
                 ((currentPath?.Contains(PathNameSeparator, StringComparison.OrdinalIgnoreCase) ?? false) ?
@@ -30,7 +29,7 @@ public static partial class OpenApiUrlTreeNodeExtensions
                                                     .Split(namespaceNameSplitCharacters, StringSplitOptions.RemoveEmptyEntries)
                                                     .Select(CleanupParametersFromPath)
                                                     .Select(static (y, idx) => idx == 0 ? y : y.ToFirstCharacterUpperCase())))
-                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}{EscapedSuffix}" : x)
+                            .Select(static x => SegmentsToSkipForClassNames.Contains(x) ? $"{x}{Constants.EscapedSuffix}" : x)
                             .Select(static x => x.CleanupSymbolName())
                             .Select(static x => GenerationConfiguration.ModelsNamespaceSegmentName.Equals(x, StringComparison.OrdinalIgnoreCase) ? $"{x}Requests" : x) //avoids projecting requests builders to models namespace
                             .Aggregate(string.Empty,
@@ -60,12 +59,12 @@ public static partial class OpenApiUrlTreeNodeExtensions
             if (!child.IsPathSegmentWithSingleSimpleParameter() && !child.IsComplexPathMultipleParameters() &&
                 (names.Contains(name) || namespaces.Contains(namespaceName)))
             {
-                var candidate = name + EscapedSuffix;
+                var candidate = name + Constants.EscapedSuffix;
                 var candidateNamespaceName = ("\\" + candidate).GetNamespaceFromPath(string.Empty);
                 var index = 1;
                 while (reservedNames.Contains(candidate) || reservedNamespaces.Contains(candidateNamespaceName) || names.Contains(candidate) || namespaces.Contains(candidateNamespaceName))
                 {
-                    candidate = name + EscapedSuffix + index++;
+                    candidate = name + Constants.EscapedSuffix + index++;
                     candidateNamespaceName = ("\\" + candidate).GetNamespaceFromPath(string.Empty);
                 }
                 child.AddDeduplicatedSegment(candidate);

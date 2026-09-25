@@ -12,6 +12,60 @@ namespace Kiota.Builder.Tests.Refiners;
 public class DartLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    [Theory]
+    [InlineData("value", false, 2)]
+    [InlineData("values", false, 2)]
+    [InlineData("value", true, 2)]
+    [InlineData("values", true, 2)]
+    [InlineData("value", false, 4)]
+    [InlineData("values", false, 4)]
+    [InlineData("value", true, 4)]
+    [InlineData("values", true, 4)]
+    public async Task ResolvesEnumCollisionsAndDefaultsByWireValueAsync(string name, bool reverse, int count)
+    {
+        var models = root.AddNamespace("models");
+        var model = models.AddClass(new CodeClass { Name = "Settings", Kind = CodeClassKind.Model }).First();
+        var labels = models.AddEnum(new CodeEnum { Name = "Labels" }).First();
+        var wireValues = new[] { name, name + "Escaped", name + "Escaped0", name + "Escaped1" }.Take(count).ToArray();
+        foreach (var wireValue in reverse ? wireValues.Reverse() : wireValues)
+            labels.AddOption(new CodeEnumOption { Name = wireValue, SerializationName = wireValue });
+        var properties = wireValues.Select((wireValue, index) => model.AddProperty(new CodeProperty
+        {
+            Name = $"label{index}",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = labels },
+            DefaultValue = $"\"{wireValue}\"",
+        }).First()).ToArray();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(wireValues.Length, labels.Options.Select(static x => x.Name).Distinct(StringComparer.Ordinal).Count());
+        for (var index = 0; index < wireValues.Length; index++)
+            Assert.Equal(labels.Options.Single(x => x.SerializationName == wireValues[index]).Name, properties[index].DefaultValue);
+    }
+    [Theory]
+    [InlineData("value", "valueEscaped")]
+    [InlineData("Value", "valueEscaped")]
+    [InlineData("VALUE", "valueEscaped")]
+    [InlineData("values", "valuesEscaped")]
+    [InlineData("label", "label")]
+    public async Task PreservesEnumWireValuesWhenEscapingMembersAsync(string wireValue, string expectedName)
+    {
+        var models = root.AddNamespace("models");
+        var labels = models.AddEnum(new CodeEnum { Name = "Labels" }).First();
+        var option = new CodeEnumOption { Name = wireValue, SerializationName = wireValue };
+        labels.AddOption(option);
+        var model = models.AddClass(new CodeClass { Name = "Settings", Kind = CodeClassKind.Model }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = labels },
+            DefaultValue = $"\"{wireValue}\"",
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(expectedName, option.Name);
+        Assert.Equal(wireValue, option.SerializationName);
+        Assert.Equal(expectedName, property.DefaultValue);
+    }
     [Fact]
     public async Task EscapesOverridePropertyAndPreservesWireName()
     {

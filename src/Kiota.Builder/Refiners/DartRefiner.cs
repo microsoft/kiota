@@ -63,6 +63,8 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by{x.ToPascalCase('_')}",
                 static x => x.ToCamelCase('_'),
                 GenerationLanguage.Dart);
+            var enumDefaults = new Dictionary<CodeProperty, CodeEnumOption>();
+            CollectEnumDefaults(generatedCode, enumDefaults);
             CorrectCommonNames(generatedCode);
             var reservedNamesProvider = new DartReservedNamesProvider();
             cancellationToken.ThrowIfCancellationRequested();
@@ -123,6 +125,8 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
 
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_");
+            foreach (var (property, option) in enumDefaults)
+                property.DefaultValue = option.Name;
             ReplaceReservedModelTypes(generatedCode, reservedNamesProvider, x => $"{x}Object");
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
@@ -199,7 +203,15 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, element => AddConstructorForErrorClass(element));
     }
 
-    /// <summary> 
+    private static void CollectEnumDefaults(CodeElement currentElement, Dictionary<CodeProperty, CodeEnumOption> defaults)
+    {
+        if (currentElement is CodeProperty { Type: CodeType { TypeDefinition: CodeEnum codeEnum } } property &&
+            !string.IsNullOrEmpty(property.DefaultValue) &&
+            codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(property.DefaultValue.Trim('"'), StringComparison.Ordinal)) is CodeEnumOption option)
+            defaults[property] = option;
+        CrawlTree(currentElement, element => CollectEnumDefaults(element, defaults));
+    }
+    /// <summary>
     /// Corrects common names so they can be used with Dart.
     /// This normally comes down to changing the first character to lower case.
     /// <example><code>GetFieldDeserializers</code> is corrected to <code>getFieldDeserializers</code>
@@ -224,13 +236,20 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 option.Name = DartConventionService.getCorrectedEnumName(option.Name);
                 option.SerializationName = option.SerializationName.Replace("'", "\\'", StringComparison.OrdinalIgnoreCase);
             }
-            ///ensure enum options with the same corrected name get a unique name
-            var nameGroups = options.Select((Option, index) => new { Option, index }).GroupBy(s => s.Option.Name).ToList();
-            foreach (var group in nameGroups.Where(g => g.Count() > 1))
+            // Reserve all normalized names before allocating suffixes, including names of later options.
+            var reservedNames = options.Select(static x => x.Name).ToHashSet(StringComparer.Ordinal);
+            var assignedNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var option in options)
             {
-                foreach (var entry in group.Skip(1).Select((g, i) => new { g, i }))
+                if (!assignedNames.Add(option.Name))
                 {
-                    options[entry.g.index].Name = options[entry.g.index].Name + entry.i;
+                    var originalName = option.Name;
+                    var suffix = 0;
+                    do
+                    {
+                        option.Name = originalName + suffix++;
+                    } while (!reservedNames.Add(option.Name));
+                    assignedNames.Add(option.Name);
                 }
             }
         }
