@@ -487,10 +487,25 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             throw new InvalidOperationException("Interface parameter not found for code interface");
 
         var serializingDerivedTypeParam = codeElement.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Kind is CodeParameterKind.SerializingDerivedType) ?? throw new InvalidOperationException("Serializing derived type parameter not found");
-        writer.WriteLine($"if (!{param.Name.ToFirstCharacterLowerCase()} || {serializingDerivedTypeParam.Name}) {{ return; }}");
+        writer.WriteLine($"if (!{param.Name.ToFirstCharacterLowerCase()}) {{ return; }}");
+        if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
+            FindDiscriminatorPropertyBySerializationName(codeInterface, codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName) is { } discriminatorProperty)
+        {
+            writer.StartBlock($"if (!{serializingDerivedTypeParam.Name}) {{");
+            writer.StartBlock($"switch ({param.Name.ToFirstCharacterLowerCase()}.{discriminatorProperty.Name.ToFirstCharacterLowerCase()}) {{");
+            foreach (var mapping in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings
+                .Where(x => x.Value.TypeDefinition != codeInterface && x.Value.TypeDefinition != codeElement.OriginalMethodParentClass))
+            {
+                writer.StartBlock($"case \"{mapping.Key.SanitizeDoubleQuote()}\":");
+                writer.WriteLine($"return {GetSerializerFunctionName(codeElement, mapping.Value)}(writer, {param.Name.ToFirstCharacterLowerCase()});");
+                writer.DecreaseIndent();
+            }
+            writer.CloseBlock();
+            writer.CloseBlock();
+        }
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
-            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}(writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
+            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}(writer, {param.Name.ToFirstCharacterLowerCase()}, true)");
         }
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
@@ -501,19 +516,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (codeInterface.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
             writer.WriteLine($"writer.writeAdditionalData({codeInterface.Name.ToFirstCharacterLowerCase()}.{additionalDataProperty.Name.ToFirstCharacterLowerCase()});");
 
-        if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation &&
-            FindDiscriminatorPropertyBySerializationName(codeInterface, codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorPropertyName) is { } discriminatorProperty)
-        {
-            writer.StartBlock($"switch ({param.Name.ToFirstCharacterLowerCase()}.{discriminatorProperty.Name.ToFirstCharacterLowerCase()}) {{");
-            foreach (var mapping in codeElement.OriginalMethodParentClass.DiscriminatorInformation.DiscriminatorMappings)
-            {
-                var mappedType = mapping.Value;
-                writer.StartBlock($"case \"{mapping.Key.SanitizeDoubleQuote()}\":");
-                writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType)}(writer, {param.Name.ToFirstCharacterLowerCase()}, true);");
-                writer.CloseBlock("break;");
-            }
-            writer.CloseBlock();
-        }
     }
     private static CodeProperty? FindDiscriminatorPropertyBySerializationName(CodeInterface codeInterface, string serializationName)
     {

@@ -665,7 +665,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var serializeFunction = root.FindChildByName<CodeFunction>($"Serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
         writer.Write(serializeFunction);
         var result = tw.ToString();
-        Assert.Contains($"serialize{inheritedClass.Name.ToFirstCharacterUpperCase()}(writer, parentClass, isSerializingDerivedType)", result);
+        Assert.Contains($"serialize{inheritedClass.Name.ToFirstCharacterUpperCase()}(writer, parentClass, true)", result);
         Assert.DoesNotContain("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
@@ -691,7 +691,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("serializeSomeComplexType", result);
         Assert.Contains("writeEnumValue", result);
         Assert.Contains("writer.writeAdditionalData", result);
-        Assert.Contains($"if (!{parentClass.Name.ToFirstCharacterLowerCase()} || isSerializingDerivedType) {{ return; }}", result);
+        Assert.Contains($"if (!{parentClass.Name.ToFirstCharacterLowerCase()}) {{ return; }}", result);
         Assert.Contains("definedInParent", result, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
@@ -725,6 +725,11 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
         parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.parentclass", new CodeType
+        {
+            Name = parentClass.Name,
+            TypeDefinition = parentClass,
+        });
         parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.childclass", new CodeType
         {
             Name = "childClass",
@@ -754,7 +759,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("switch (parentClass.odataType) {", result);
         Assert.Contains("case \"ns.childclass\":", result);
-        Assert.Contains("serializeChildClass(writer, parentClass, true);", result);
+        Assert.Contains("return serializeChildClass(writer, parentClass);", result);
+        Assert.Contains("if (!isSerializingDerivedType)", result);
+        Assert.DoesNotContain("return serializeParentClass(", result);
+        Assert.True(result.IndexOf("switch (", StringComparison.Ordinal) < result.IndexOf("writer.writeStringValue", StringComparison.Ordinal));
     }
     [Fact]
     public async Task EscapesSerializerBodyWithDiscriminatorAsync()
