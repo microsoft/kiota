@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
 - C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
 - External reference allowlist wildcards no longer cross the URI authority boundary, so a wildcard in the scheme or host cannot match text in the path, the user information or the port.
