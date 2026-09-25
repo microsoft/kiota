@@ -227,6 +227,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
     {
         return type?.Name switch
         {
+            // a resolved model keeps the name the builder gave it, so the aliases below only
+            // rename types that were never resolved
+            _ when type is CodeType { TypeDefinition: not null } resolved => GetCodeTypeName(resolved),
             TYPE_INTEGER or TYPE_INT or TYPE_INT64 or TYPE_FLOAT or TYPE_DOUBLE or TYPE_BYTE or TYPE_SBYTE or TYPE_DECIMAL => TYPE_NUMBER,
             TYPE_BINARY or TYPE_BASE64 or TYPE_BASE64URL => TYPE_ARRAYBUFFER,
             TYPE_STRING or TYPE_OBJECT or TYPE_BOOLEAN or TYPE_VOID or TYPE_LOWERCASE_STRING or TYPE_LOWERCASE_OBJECT or TYPE_LOWERCASE_BOOLEAN or TYPE_LOWERCASE_VOID => type.Name.ToFirstCharacterLowerCase(),

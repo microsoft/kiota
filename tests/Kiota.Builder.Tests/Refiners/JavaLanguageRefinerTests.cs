@@ -357,6 +357,29 @@ public class JavaLanguageRefinerTests
         Assert.NotEqual("binary", method.ReturnType.Name);
     }
     [Fact]
+    public async Task DoesNotReplaceAResolvedModelNamedBinaryAsync()
+    {
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "binary",
+            Kind = CodeClassKind.Model
+        }).First();
+        var requestBuilder = root.AddClass(new CodeClass
+        {
+            Name = "requestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var method = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "binary", TypeDefinition = model },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("Binary", model.Name);
+        Assert.Equal("Binary", method.ReturnType.Name);
+    }
+    [Fact]
     public async Task ReplacesIndexersByMethodsWithParameterAsync()
     {
         var model = root.AddClass(new CodeClass
