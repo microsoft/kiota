@@ -118,7 +118,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         writer.StartBlock();
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings)
         {
-            writer.WriteLine($"\"{mappedType.Key.SanitizeDoubleQuote()}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
+            writer.WriteLine($"\"{mappedType.Key.SanitizeCSharpDoubleQuote()}\" => new {conventions.GetTypeString(mappedType.Value.AllTypes.First(), codeElement)}(),");
         }
         writer.WriteLine($"_ => new {parentClass.GetFullName()}(),");
         writer.CloseBlock("};");
@@ -138,7 +138,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
                     if (!string.IsNullOrEmpty(mappedType.Key))
                     {
-                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key.SanitizeDoubleQuote()}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase))");
+                        writer.WriteLine($"{(includeElse ? "else " : string.Empty)}if(\"{mappedType.Key.SanitizeCSharpDoubleQuote()}\".Equals({DiscriminatorMappingVarName}, StringComparison.OrdinalIgnoreCase))");
                         writer.WriteBlock(lines: $"{ResultVarName}.{property.Name.ToFirstCharacterUpperCase()} = new {conventions.GetTypeString(propertyType, codeElement)}();");
                         includeElse = true;
                     }
@@ -205,7 +205,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
 
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
-            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")?.GetStringValue();");
+            writer.WriteLine($"var {DiscriminatorMappingVarName} = {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeCSharpDoubleQuote()}\")?.GetStringValue();");
 
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
@@ -231,7 +231,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         WriteSerializationRegistration(method.DeserializerModules, writer, "RegisterDefaultDeserializer");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
-            var sanitizedBaseUrl = method.BaseUrl.SanitizeDoubleQuote();
+            var sanitizedBaseUrl = method.BaseUrl.SanitizeCSharpDoubleQuote();
             writer.WriteLine($"if (string.IsNullOrEmpty({requestAdapterPropertyName}.BaseUrl))");
             writer.WriteBlock(lines: $"{requestAdapterPropertyName}.BaseUrl = \"{sanitizedBaseUrl}\";");
             if (pathParametersProperty != null)
@@ -305,7 +305,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 defaultValue = NullValueString;
             }
             else if (propWithDefault.Type is CodeType propertyType &&
-                TryGetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType, out var convertedDefaultValue))
+                TryGetDefaultValue(defaultValue.SanitizeCSharpQuotedStringLiteral(), propertyType, out var convertedDefaultValue))
             {
                 if (convertedDefaultValue is null)
                     continue;
@@ -313,7 +313,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             }
             else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
             {
-                defaultValue = defaultValue.SanitizeQuotedStringLiteral();
+                defaultValue = defaultValue.SanitizeCSharpQuotedStringLiteral();
             }
 
             writer.WriteLine($"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};");
@@ -398,7 +398,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .Where(static x => !x.ExistsInBaseType)
                                         .OrderBy(static x => x.Name, StringComparer.Ordinal))
         {
-            writer.WriteLine($"{{ \"{otherProp.WireName.SanitizeDoubleQuote()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
+            writer.WriteLine($"{{ \"{otherProp.WireName.SanitizeCSharpDoubleQuote()}\", n => {{ {otherProp.Name.ToFirstCharacterUpperCase()} = n.{GetDeserializationMethodName(otherProp.Type, codeElement)}; }} }},");
         }
         writer.CloseBlock("};");
     }
@@ -451,7 +451,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             writer.StartBlock();
             foreach (var errorMapping in codeElement.ErrorMappings.Where(errorMapping => errorMapping.Value.AllTypes.FirstOrDefault()?.TypeDefinition is CodeClass))
             {
-                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
+                writer.WriteLine($"{{ \"{errorMapping.Key.ToUpperInvariant().SanitizeCSharpDoubleQuote()}\", {conventions.GetTypeString(errorMapping.Value, codeElement, false)}.CreateFromDiscriminatorValue }},");
             }
             writer.CloseBlock("};");
         }
@@ -477,18 +477,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride.SanitizeDoubleQuote()}\"" : GetPropertyCall(urlTemplateProperty, "string.Empty");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"\"{codeElement.UrlTemplateOverride.SanitizeCSharpDoubleQuote()}\"" : GetPropertyCall(urlTemplateProperty, "string.Empty");
         writer.WriteLine($"var {RequestInfoVarName} = new RequestInformation(Method.{operationName?.ToUpperInvariant()}, {urlTemplateValue}, {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null)
             writer.WriteLine($"{RequestInfoVarName}.Configure({requestParams.requestConfiguration.Name});");
 
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeDoubleQuote()}\");");
+            writer.WriteLine($"{RequestInfoVarName}.Headers.TryAdd(\"Accept\", \"{codeElement.AcceptHeaderValue.SanitizeCSharpDoubleQuote()}\");");
         if (requestParams.requestBody != null)
         {
             var suffix = requestParams.requestBody.Type.IsCollection ? "Collection" : string.Empty;
-            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeDoubleQuote();
+            var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeCSharpDoubleQuote();
             if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
             {
                 if (requestParams.requestContentType is not null)
@@ -531,7 +531,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .OrderBy(static x => x.Name))
         {
             var serializationMethodName = GetSerializationMethodName(otherProp.Type, method);
-            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName.SanitizeDoubleQuote()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
+            writer.WriteLine($"writer.{serializationMethodName}(\"{otherProp.WireName.SanitizeCSharpDoubleQuote()}\", {otherProp.Name.ToFirstCharacterUpperCase()});");
         }
     }
     private void WriteSerializerBodyForUnionModel(CodeMethod method, CodeClass parentClass, LanguageWriter writer)
@@ -626,7 +626,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
             var statusCode = exception.Key.ToUpperInvariant() switch
             {
                 "XXX" => "4XX or 5XX",
-                _ => exception.Key,
+                _ => CSharpConventionService.RemoveInvalidDescriptionCharacters(exception.Key.CleanupXMLString()),
             };
             conventions.WriteAdditionalDescriptionItem($"<exception cref=\"{conventions.GetTypeString(exception.Value, element)}\">When receiving a {statusCode} status code</exception>", writer);
         }
@@ -645,15 +645,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 else if (currentMethod.Parameters.OfKind(CodeParameterKind.RawUrl) is CodeParameter rawUrlParameter)
                     thirdParameterName = $", {rawUrlParameter.Name}";
                 else if (parentClass.Properties.FirstOrDefaultOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty && !string.IsNullOrEmpty(pathParametersProperty.DefaultValue))
-                    thirdParameterName = $", {pathParametersProperty.DefaultValue.SanitizeQuotedStringLiteral()}";
+                    thirdParameterName = $", {pathParametersProperty.DefaultValue.SanitizeCSharpQuotedStringLiteral()}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
                 {
-                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
+                    return $" : base({requestAdapterParameter.Name.ToFirstCharacterLowerCase()}, {urlTemplateProperty.DefaultValue.SanitizeCSharpQuotedStringLiteral()}{thirdParameterName})";
                 }
                 else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
                     // CLI uses a different base class.
-                    return $" : base({urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
+                    return $" : base({urlTemplateProperty.DefaultValue.SanitizeCSharpQuotedStringLiteral()}{thirdParameterName})";
                 }
             }
             return " : base()";
