@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - TypeScript: import response enum objects for request builders reached through path parameters. [#6884](https://github.com/microsoft/kiota/issues/6884)
+- C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
 - Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
