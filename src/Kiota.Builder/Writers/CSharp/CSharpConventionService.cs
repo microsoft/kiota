@@ -140,7 +140,7 @@ public class CSharpConventionService : CommonLanguageConventionService
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }
-                return $"{nullCheck}{varName}.Add(\"{name.SanitizeDoubleQuote()}\", {identName});";
+                return $"{nullCheck}{varName}.Add(\"{name.SanitizeCSharpDoubleQuote()}\", {identName});";
             }).ToArray());
         }
     }
@@ -263,7 +263,7 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement);
-        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
+        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeCSharpQuotedStringLiteral();
         var defaultValue = parameter switch
         {
             _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {sanitizedDefaultValue}",
@@ -281,7 +281,7 @@ public class CSharpConventionService : CommonLanguageConventionService
         var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         var deprecationMessage = $"{element.Deprecation.GetDescription(type => GetTypeString(type, (element as CodeElement)!).Split('.', StringSplitOptions.TrimEntries)[^1])}{versionComment}{dateComment}{removalComment}";
-        return $"[Obsolete(\"{deprecationMessage.SanitizeDoubleQuote()}\")]";
+        return $"[Obsolete(\"{deprecationMessage.SanitizeCSharpDoubleQuote()}\")]";
     }
     internal void WriteDeprecationAttribute(IDeprecableElement element, LanguageWriter writer)
     {
