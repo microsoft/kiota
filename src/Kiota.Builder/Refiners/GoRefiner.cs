@@ -563,14 +563,20 @@ public class GoRefiner : CommonLanguageRefiner
             if (!packageRootNameSpace.Name.Equals(currentNamespace.Name, StringComparison.Ordinal) && modelNameSpace != null && !currentNamespace.IsChildOf(modelNameSpace))
             {
 
+                var composedName = GetComposedName(codeClass);
+                var candidateName = composedName;
+                var suffix = 1;
+                while (packageRootNameSpace.FindChildByName<CodeElement>(candidateName, false) is not null)
+                    candidateName = $"{composedName}{suffix++}";
                 currentNamespace.RemoveChildElement(codeClass);
-                codeClass.Name = GetComposedName(codeClass);
+                codeClass.Name = candidateName;
                 codeClass.Parent = packageRootNameSpace;
                 packageRootNameSpace.AddClass(codeClass);
             }
         }
 
-        CrawlTree(currentElement, FlattenNestedHierarchy);
+        foreach (var child in currentElement.GetChildElements(true).OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
+            FlattenNestedHierarchy(child);
     }
 
     private void FlattenParamsFileNames(CodeElement currentElement)
