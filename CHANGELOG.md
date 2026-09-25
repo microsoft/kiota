@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
+- Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
 - C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
+- External reference allowlist wildcards no longer cross the URI authority boundary, so a wildcard in the scheme or host cannot match text in the path, the user information or the port.
 - Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
