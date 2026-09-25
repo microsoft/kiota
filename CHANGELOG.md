@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Go: preserve distinct inline models when flattening nested namespaces would give them the same name, avoiding missing refinement and invalid response interfaces. Fixes [#7823](https://github.com/microsoft/kiota/issues/7823).
+- Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
 - C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
+- External reference allowlist wildcards no longer cross the URI authority boundary, so a wildcard in the scheme or host cannot match text in the path, the user information or the port.
 - Initialize inherited Dart model fields in constructor initializer lists.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
