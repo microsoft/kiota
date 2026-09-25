@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -8,7 +9,6 @@ namespace Kiota.Builder.Writers.Ruby;
 
 public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventionService>
 {
-    private const string RequireDirective = "require_relative";
     private readonly RubyPathSegmenter PathSegmenter;
     public CodeNamespaceWriter(RubyConventionService conventionService, RubyPathSegmenter pathSegmenter) : base(conventionService)
     {
@@ -19,9 +19,18 @@ public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventi
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
-        foreach (var childModel in codeElement.GetChildElements(true).OfType<CodeEnum>().OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
-            writer.WriteLine($"{RequireDirective} '{PathSegmenter.GetRelativeFileName(codeElement, childModel).ToSnakeCase()}'");
-        NamespaceClassNamesProvider.WriteClassesInOrderOfInheritance(codeElement, x => writer.WriteLine($"{RequireDirective} '{PathSegmenter.GetRelativeFileName(codeElement, x).ToSnakeCase()}'"));
+        // registering instead of requiring lets a class load its base on demand, in any order
+        var autoloaded = new List<CodeElement>(codeElement.GetChildElements(true).OfType<CodeEnum>()
+                                                        .Where(RubyConventionService.IsAutoloaded)
+                                                        .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase));
+        NamespaceClassNamesProvider.WriteClassesInOrderOfInheritance(codeElement, x =>
+        {
+            if (RubyConventionService.IsAutoloaded(x)) autoloaded.Add(x);
+        });
+        if (autoloaded.Count == 0) return;
+        conventions.WriteNamespaceModules(codeElement, writer);
+        foreach (var element in autoloaded)
+            writer.WriteLine($"autoload :{element.Name.ToFirstCharacterUpperCase()}, ::File.expand_path('{PathSegmenter.GetRelativeFileName(codeElement, element).ToSnakeCase()}', __dir__)");
+        conventions.WriteNamespaceClosing(codeElement, writer);
     }
-
 }

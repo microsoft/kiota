@@ -17,6 +17,13 @@ public class RubyConventionService : CommonLanguageConventionService
     internal string DocCommentStart = "## ";
     internal string DocCommentEnd = "## ";
     public override string TempDictionaryVarName => "url_tpl_params";
+    // a namespace barrel autoloads these, so their files are only ever loaded through it
+    internal static bool IsAutoloaded(CodeElement element) => element switch
+    {
+        CodeClass codeClass => codeClass.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeClass.IsOfKind(CodeClassKind.Model),
+        CodeEnum codeEnum => codeEnum.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeEnum.Options.Any(),
+        _ => false,
+    };
     internal static string SanitizeRubyDoubleQuoteLiteral(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;

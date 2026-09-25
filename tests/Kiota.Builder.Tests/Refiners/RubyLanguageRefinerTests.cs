@@ -27,6 +27,111 @@ public class RubyLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task DoesNotRequireItsOwnBarrelFromAnAutoloadedModelAsync()
+    {
+        var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
+        var model = modelsNS.AddClass(new CodeClass { Name = "animal", Kind = CodeClassKind.Model }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(model.Usings, x => x.Declaration?.TypeDefinition == modelsNS);
+        Assert.Contains(model.Usings, x => x.Declaration?.TypeDefinition == graphNS);
+    }
+    [Fact]
+    public async Task RequiresTheBarrelOfAModelUsedFromAnotherNamespaceAsync()
+    {
+        var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
+        var model = modelsNS.AddClass(new CodeClass { Name = "animal", Kind = CodeClassKind.Model }).First();
+        var animalsNS = graphNS.AddNamespace($"{graphNS.Name}.animals");
+        var requestBuilder = animalsNS.AddClass(new CodeClass { Name = "animalsRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "animal", TypeDefinition = model },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == model);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == modelsNS);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == animalsNS);
+    }
+    [Fact]
+    public async Task RequiresTheBarrelOfABaseClassInAnotherNamespaceAsync()
+    {
+        var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
+        var baseModel = modelsNS.AddClass(new CodeClass { Name = "repository", Kind = CodeClassKind.Model }).First();
+        var reposNS = graphNS.AddNamespace($"{graphNS.Name}.repos");
+        var derivedModel = reposNS.AddClass(new CodeClass { Name = "reposGetResponse", Kind = CodeClassKind.Model }).First();
+        derivedModel.StartBlock.Inherits = new CodeType { Name = "repository", TypeDefinition = baseModel };
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(derivedModel.Usings, x => x.Declaration?.TypeDefinition == baseModel);
+        Assert.Contains(derivedModel.Usings, x => x.Declaration?.TypeDefinition == modelsNS);
+        Assert.DoesNotContain(derivedModel.Usings, x => x.Declaration?.TypeDefinition == reposNS);
+    }
+    [Fact]
+    public async Task RequiresTheModelDirectlyWhenItsNamespaceHasNoBarrelAsync()
+    {
+        // a class named after its namespace takes the barrel's file, so there is nothing to autoload from
+        var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
+        modelsNS.AddClass(new CodeClass { Name = "models", Kind = CodeClassKind.Model });
+        var model = modelsNS.AddClass(new CodeClass { Name = "widget", Kind = CodeClassKind.Model }).First();
+        var widgetsNS = graphNS.AddNamespace($"{graphNS.Name}.widgets");
+        var requestBuilder = widgetsNS.AddClass(new CodeClass { Name = "widgetsRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "widget", TypeDefinition = model },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == model);
+    }
+    [Fact]
+    public async Task RequiresAModelNamedAfterItsNamespaceFromTheSameNamespaceAsync()
+    {
+        var keysNS = graphNS.AddNamespace($"{graphNS.Name}.keys");
+        var model = keysNS.AddClass(new CodeClass { Name = "keys", Kind = CodeClassKind.Model }).First();
+        var requestBuilder = keysNS.AddClass(new CodeClass { Name = "keysRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "keys", TypeDefinition = model },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == model);
+    }
+    [Fact]
+    public async Task RequiresAModelNamedAfterItsNamespaceFromAChildNamespaceAsync()
+    {
+        var vlansNS = graphNS.AddNamespace($"{graphNS.Name}.vlans");
+        var model = vlansNS.AddClass(new CodeClass { Name = "vlans", Kind = CodeClassKind.Model }).First();
+        var itemNS = vlansNS.AddNamespace($"{vlansNS.Name}.item");
+        var requestBuilder = itemNS.AddClass(new CodeClass { Name = "vlanItemRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "vlans", TypeDefinition = model },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == model);
+    }
+    [Fact]
+    public async Task RequiresARequestBuilderFromTheSameNamespaceAsync()
+    {
+        // a trailing slash in a path gives a sibling request builder, such as /oauth/token/
+        var tokenNS = graphNS.AddNamespace($"{graphNS.Name}.token");
+        var emptySegment = tokenNS.AddClass(new CodeClass { Name = "emptyPathSegmentRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        var requestBuilder = tokenNS.AddClass(new CodeClass { Name = "tokenRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        requestBuilder.AddProperty(new CodeProperty
+        {
+            Name = "emptyPathSegment",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { Name = "emptyPathSegmentRequestBuilder", TypeDefinition = emptySegment },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == emptySegment);
+    }
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass

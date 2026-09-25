@@ -11,4 +11,18 @@ RSpec.describe Integration_test do
     api = Integration_test::Client::ApiClient.new(MicrosoftKiotaFaraday::FaradayRequestAdapter.new(auth_provider))
     expect(api).to_not be nil
   end
+
+  # models are autoloaded, so a bad registration only fails when the constant is first used
+  it "resolves every constant the client registers" do
+    visit = lambda do |mod, seen|
+      next if seen.key?(mod)
+
+      seen[mod] = true
+      mod.constants(false).each do |name|
+        value = mod.const_get(name, false)
+        visit.call(value, seen) if value.instance_of?(Module)
+      end
+    end
+    expect { visit.call(Integration_test::Client, {}) }.not_to raise_error
+  end
 end
