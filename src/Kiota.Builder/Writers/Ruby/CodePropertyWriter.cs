@@ -29,6 +29,13 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
             case CodePropertyKind.Options:
                 writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
                 break;
+            case CodePropertyKind.Custom:
+            case CodePropertyKind.AdditionalData:
+            case CodePropertyKind.BackingStore:
+                // a model always has methods after its properties, so this never precedes the class end
+                writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
+                writer.WriteLine();
+                break;
             default:
                 writer.WriteLine($"@{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}");
                 break;

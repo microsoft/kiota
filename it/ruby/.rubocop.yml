@@ -35,9 +35,6 @@ Layout/EmptyLineBetweenDefs:
 Style/MutableConstant:
   Enabled: false
 
-Lint/Void:
-  Enabled: false
-
 Style/Documentation:
   Enabled: false
 
@@ -54,9 +51,6 @@ Style/MethodCallWithoutArgsParentheses:
   Enabled: false
 
 Style/TrailingCommaInHashLiteral:
-  Enabled: false
-
-Style/TrivialAccessors:
   Enabled: false
 
 Naming/ClassAndModuleCamelCase:
@@ -84,9 +78,6 @@ Lint/EmptyFile:
   Enabled: false
 
 Style/MixinGrouping:
-  Enabled: false
-
-Style/AccessorGrouping:
   Enabled: false
 
 Layout/SpaceInsideHashLiteralBraces:
@@ -134,8 +125,6 @@ Metrics/PerceivedComplexity:
 Lint/UselessMethodDefinition:
   Enabled: false
 
-# The cop matches by method name, so it flags the accessor for an API property called `inherited`
-# (the GitHub description has one). Ruby's inheritance hook is a class method, and an instance
-# method of the same name does not shadow it, so renaming the property would be the worse trade
-Lint/MissingSuper:
-  Enabled: false
+# one accessor per property, each with its own doc comment
+Style/AccessorGrouping:
+  EnforcedStyle: separated

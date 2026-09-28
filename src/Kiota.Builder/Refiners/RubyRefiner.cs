@@ -81,18 +81,6 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
-            AddGetterAndSetterMethods(generatedCode,
-                [
-                    CodePropertyKind.Custom,
-                    CodePropertyKind.AdditionalData,
-                    CodePropertyKind.BackingStore,
-                ],
-                static (_, s) => s.ToSnakeCase(),
-                _configuration.UsesBackingStore,
-                true,
-                string.Empty,
-                string.Empty,
-                string.Empty);
             AddConstructorsForDefaultValues(
                 generatedCode,
                 true,

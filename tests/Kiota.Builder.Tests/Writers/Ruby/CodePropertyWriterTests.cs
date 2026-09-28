@@ -134,6 +134,8 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"@{PropertyName.ToSnakeCase()}", result);
+        Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
+        // a bare instance variable in a class body declares nothing and warns under ruby -w
+        Assert.DoesNotContain($"@{PropertyName.ToSnakeCase()}", result);
     }
 }

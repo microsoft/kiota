@@ -132,6 +132,15 @@ public class RubyLanguageRefinerTests
         Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == emptySegment);
     }
     [Fact]
+    public async Task DoesNotAddAccessorMethodsForModelPropertiesAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass { Name = "animal", Kind = CodeClassKind.Model }).First();
+        model.AddProperty(new CodeProperty { Name = "name", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(model.Methods, static x => x.IsOfKind(CodeMethodKind.Getter, CodeMethodKind.Setter));
+        Assert.Contains(model.Properties, static x => x.IsOfKind(CodePropertyKind.Custom));
+    }
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
