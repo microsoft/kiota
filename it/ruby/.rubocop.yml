@@ -17,9 +17,6 @@ Style/RedundantReturn:
 Style/IfUnlessModifier:
   Enabled: false
 
-Layout/EmptyLineBetweenDefs:
-  Enabled: false
-
 Style/Documentation:
   Enabled: false
 

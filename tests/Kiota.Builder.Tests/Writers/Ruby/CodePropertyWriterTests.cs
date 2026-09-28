@@ -129,6 +129,19 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
     }
     [Fact]
+    public void SeparatesClassMembersWithOneBlankLineButNoneAtTheStartOfTheBody()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        writer.StartBlock("class Sample");
+        writer.Write(property);
+        writer.Write(property);
+        writer.CloseBlock("end");
+        var lines = tw.ToString().TrimEnd().Split(Environment.NewLine);
+        Assert.NotEqual(string.Empty, lines[1].Trim());
+        Assert.Single(lines, static x => x.Length == 0);
+        Assert.NotEqual(string.Empty, lines[^2].Trim());
+    }
+    [Fact]
     public void WritesCustomProperty()
     {
         property.Kind = CodePropertyKind.Custom;

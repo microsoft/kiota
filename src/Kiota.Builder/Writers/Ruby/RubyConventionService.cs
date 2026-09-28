@@ -22,6 +22,12 @@ public class RubyConventionService : CommonLanguageConventionService
         CodeEnum codeEnum => codeEnum.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeEnum.Options.Any(),
         _ => false,
     };
+    // one blank line between class members, none at the start of a block
+    internal static void WriteMemberSeparator(LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (!writer.IsAtBlockStart) writer.WriteLine();
+    }
     // a barrel is written, and required, only when it has something to autoload
     internal static bool HasAutoloadedMembers(CodeNamespace codeNamespace) =>
         codeNamespace.Classes.Any(IsAutoloaded) || codeNamespace.Enums.Any(IsAutoloaded);

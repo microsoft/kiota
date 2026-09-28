@@ -47,7 +47,10 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                         .Order(StringComparer.OrdinalIgnoreCase))
                 writer.WriteLine($"require_relative {RubyConventionService.ToRubyStringLiteral(relativePath.ToSnakeCase())}");
         }
-        writer.WriteLine();
+        if (codeElement.Parent?.Parent is CodeClass)
+            RubyConventionService.WriteMemberSeparator(writer);
+        else
+            writer.WriteLine();
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             conventions.WriteNamespaceModules(ns, writer);

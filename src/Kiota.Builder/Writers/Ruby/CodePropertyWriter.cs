@@ -12,6 +12,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
+        RubyConventionService.WriteMemberSeparator(writer);
         conventions.WriteShortDescription(codeElement, writer);
         if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         switch (codeElement.Kind)
@@ -27,14 +28,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
             case CodePropertyKind.QueryParameters:
             case CodePropertyKind.Headers:
             case CodePropertyKind.Options:
-                writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
-                break;
             case CodePropertyKind.Custom:
             case CodePropertyKind.AdditionalData:
             case CodePropertyKind.BackingStore:
-                // a model always has methods after its properties, so this never precedes the class end
                 writer.WriteLine($"attr_accessor :{codeElement.Name.ToSnakeCase()}");
-                writer.WriteLine();
                 break;
             default:
                 writer.WriteLine($"@{codeElement.NamePrefix}{codeElement.Name.ToSnakeCase()}");
