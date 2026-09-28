@@ -96,6 +96,9 @@ public partial class GoConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(type);
         if (type.Name.StartsWith("map[", StringComparison.Ordinal)) return type.Name; //casing hack
+        // a resolved model keeps the name the builder gave it, so the aliases below only rename
+        // types that were never resolved
+        if (type is CodeType { TypeDefinition: not null }) return type.Name.ToFirstCharacterUpperCase();
 
         return type.Name switch
         {
