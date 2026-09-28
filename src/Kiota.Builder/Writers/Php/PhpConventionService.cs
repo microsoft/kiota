@@ -69,6 +69,9 @@ public class PhpConventionService : CommonLanguageConventionService
     public override string TranslateType(CodeType type)
     {
         ArgumentNullException.ThrowIfNull(type);
+        // a resolved model keeps the name the builder gave it, so the aliases below only rename
+        // types that were never resolved
+        if (type.TypeDefinition is not null) return type.Name.ToFirstCharacterUpperCase();
         return type.Name.ToLowerInvariant() switch
         {
             "boolean" => "bool",
