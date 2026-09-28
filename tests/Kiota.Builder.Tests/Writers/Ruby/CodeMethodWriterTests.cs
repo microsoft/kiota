@@ -888,6 +888,24 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesYardDocumentationWithoutTrailingWhitespace()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = $"{MethodDescription}  ";
+        method.AddParameter(new CodeParameter
+        {
+            Documentation = new() { DescriptionTemplate = ParamDescription },
+            Name = ParamName,
+            Type = new CodeType { Name = "string" },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("##", result, StringComparison.Ordinal);
+        Assert.Contains($"# {MethodDescription}{Environment.NewLine}", result, StringComparison.Ordinal);
+        Assert.Contains($"# @param {ParamName.ToSnakeCase()} {ParamDescription}", result, StringComparison.Ordinal);
+        Assert.DoesNotContain(result.Split(Environment.NewLine), static x => x.Length != x.TrimEnd().Length);
+    }
+    [Fact]
     public void Defensive()
     {
         setup();

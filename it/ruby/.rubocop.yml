@@ -11,9 +11,6 @@ Style/StringLiteralsInInterpolation:
 Layout/LineLength:
   Enabled: false
 
-Layout/TrailingWhitespace:
-  Enabled: false
-
 Layout/FirstHashElementIndentation:
   Enabled: false
 

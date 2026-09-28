@@ -639,23 +639,22 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         if (code.Documentation.DescriptionAvailable || parametersWithDescription.Length != 0)
         {
-            writer.WriteLine(conventions.DocCommentStart);
             if (code.Documentation.DescriptionAvailable)
             {
                 var description = code.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: RubyConventionService.RemoveInvalidDescriptionCharacters);
-                writer.WriteLine($"{conventions.DocCommentPrefix}{description}");
+                if (!string.IsNullOrWhiteSpace(description))
+                    writer.WriteLine($"{conventions.DocCommentPrefix}{description}");
             }
             foreach (var paramWithDescription in parametersWithDescription)
             {
                 var description = paramWithDescription.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: RubyConventionService.RemoveInvalidDescriptionCharacters);
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {description}");
+                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {description}".TrimEnd());
             }
 
             if (code.IsAsync)
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a Fiber of {code.ReturnType.Name.ToSnakeCase()}");
             else
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name.ToSnakeCase()}");
-            writer.WriteLine(conventions.DocCommentEnd);
         }
     }
     private string GetDeserializationMethodName(CodeTypeBase propType)

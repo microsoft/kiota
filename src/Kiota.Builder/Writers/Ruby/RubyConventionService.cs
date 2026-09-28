@@ -12,10 +12,8 @@ public class RubyConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stdin";
     private const string InternalVoidTypeName = "nil";
     public override string VoidTypeName => InternalVoidTypeName;
-    public override string DocCommentPrefix => "## ";
+    public override string DocCommentPrefix => "# ";
     public override string ParseNodeInterfaceName => "parse_node";
-    internal string DocCommentStart = "## ";
-    internal string DocCommentEnd = "## ";
     public override string TempDictionaryVarName => "url_tpl_params";
     // a namespace barrel autoloads these, so their files are only ever loaded through it
     internal static bool IsAutoloaded(CodeElement element) => element switch
@@ -83,9 +81,8 @@ public class RubyConventionService : CommonLanguageConventionService
         if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
-        writer.WriteLine($"{DocCommentPrefix}");
-        writer.WriteLine($"# {description}");
-
+        if (string.IsNullOrWhiteSpace(description)) return false;
+        writer.WriteLine($"{DocCommentPrefix}{description}");
         return true;
     }
 #pragma warning disable CA1822 // Method should be static
@@ -112,7 +109,8 @@ public class RubyConventionService : CommonLanguageConventionService
         originalDescription.Replace("\\", "#", StringComparison.OrdinalIgnoreCase)
             .Replace("\r", string.Empty, StringComparison.Ordinal)
             .Replace("\n", string.Empty, StringComparison.Ordinal)
-            .Replace("\t", " ", StringComparison.Ordinal);
+            .Replace("\t", " ", StringComparison.Ordinal)
+            .Trim();
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {
