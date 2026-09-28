@@ -14,16 +14,10 @@ Layout/LineLength:
 Style/Documentation:
   Enabled: false
 
-Style/FrozenStringLiteralComment:
-  Enabled: false
-
 Naming/ClassAndModuleCamelCase:
   Enabled: false
 
 Naming/AccessorMethodName:
-  Enabled: false
-
-Lint/EmptyFile:
   Enabled: false
 
 Metrics/MethodLength:

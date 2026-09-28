@@ -22,6 +22,7 @@ public class RubyConventionService : CommonLanguageConventionService
         CodeEnum codeEnum => codeEnum.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeEnum.Options.Any(),
         _ => false,
     };
+    internal const string FrozenStringLiteralComment = "# frozen_string_literal: true";
     // one blank line between class members, none at the start of a block
     internal static void WriteMemberSeparator(LanguageWriter writer)
     {

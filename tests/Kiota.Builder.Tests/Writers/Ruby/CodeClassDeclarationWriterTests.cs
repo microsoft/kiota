@@ -80,6 +80,12 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.True(result.IndexOf("include Second", StringComparison.Ordinal) < result.IndexOf("include First", StringComparison.Ordinal));
     }
     [Fact]
+    public void StartsATopLevelClassFileWithTheFrozenStringLiteralComment()
+    {
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        Assert.StartsWith("# frozen_string_literal: true", tw.ToString(), StringComparison.Ordinal);
+    }
+    [Fact]
     public void WritesInheritance()
     {
         var declaration = parentClass.StartBlock;

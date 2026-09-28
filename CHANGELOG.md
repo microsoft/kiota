@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
+- Ruby: generated files start with `# frozen_string_literal: true`, so string default values handed to user code are frozen.
 - Ruby: generated string literals are double quoted, so a base URL, URL template or content type containing a newline or tab now keeps it instead of a literal backslash sequence.
 - Ruby: namespaces with nothing to autoload no longer get an empty barrel file, and generated files no longer require them (561 fewer files in a GitHub client).
 - Ruby: a client generated with a multi-segment `--namespace-name`, such as `integration_test.client`, failed to load because its root file was written one directory too deep.

@@ -13,8 +13,10 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
     {
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
+        writer.WriteLine(RubyConventionService.FrozenStringLiteralComment);
         if (!codeElement.Options.Any())
             return;
+        writer.WriteLine();
         if (codeElement.Parent is CodeNamespace ns)
             conventions.WriteNamespaceModules(ns, writer);
         conventions.WriteShortDescription(codeElement, writer);

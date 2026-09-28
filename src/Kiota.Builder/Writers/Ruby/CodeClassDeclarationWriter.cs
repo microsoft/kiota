@@ -27,16 +27,15 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         if (codeElement.Parent?.Parent is not CodeClass)
         {
-            foreach (var codeUsing in codeElement.Usings
+            var requires = codeElement.Usings
                                         .Where(static x => x.IsExternal)
                                         .Select(static x => x.Declaration?.Name?.ToSnakeCase())
                                         .Where(static x => !string.IsNullOrEmpty(x))
                                         .GroupBy(static x => x)
                                         .Select(static x => x.Key)
-                                        .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"require {RubyConventionService.ToRubyStringLiteral(codeUsing)}");
-
-            foreach (var relativePath in codeElement.Usings
+                                        .Order(StringComparer.OrdinalIgnoreCase)
+                                        .Select(static x => $"require {RubyConventionService.ToRubyStringLiteral(x)}")
+                                        .Concat(codeElement.Usings
                                         .Where(static x => !x.IsExternal)
                                         .DistinctBy(static x => $"{x.Name}{x.Declaration?.Name}", StringComparer.OrdinalIgnoreCase)
                                         .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ?
@@ -44,8 +43,15 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                             relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
                                         .Select(static x => x.Item3)
                                         .Distinct()
-                                        .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"require_relative {RubyConventionService.ToRubyStringLiteral(relativePath.ToSnakeCase())}");
+                                        .Order(StringComparer.OrdinalIgnoreCase)
+                                        .Select(static x => $"require_relative {RubyConventionService.ToRubyStringLiteral(x.ToSnakeCase())}"))
+                                        .ToArray();
+            writer.WriteLine(RubyConventionService.FrozenStringLiteralComment);
+            if (requires.Length != 0)
+            {
+                writer.WriteLine();
+                writer.WriteLines(requires);
+            }
         }
         if (codeElement.Parent?.Parent is CodeClass)
             RubyConventionService.WriteMemberSeparator(writer);

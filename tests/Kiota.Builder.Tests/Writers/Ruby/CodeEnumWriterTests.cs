@@ -51,11 +51,12 @@ public sealed class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void DoesntWriteAnythingOnNoOption()
+    public void WritesOnlyTheMagicCommentOnNoOption()
     {
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Empty(result);
+        // the file still has to exist and not be empty, but defines nothing
+        Assert.Equal("# frozen_string_literal: true", result.Trim());
     }
     [Fact]
     public void WritesModule()

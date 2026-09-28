@@ -28,6 +28,8 @@ public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventi
             if (RubyConventionService.IsAutoloaded(x)) autoloaded.Add(x);
         });
         if (autoloaded.Count == 0) return;
+        writer.WriteLine(RubyConventionService.FrozenStringLiteralComment);
+        writer.WriteLine();
         conventions.WriteNamespaceModules(codeElement, writer);
         foreach (var element in autoloaded)
             writer.WriteLine($"autoload :{element.Name.ToFirstCharacterUpperCase()}, ::File.expand_path({RubyConventionService.ToRubyStringLiteral(PathSegmenter.GetRelativeFileName(codeElement, element).ToSnakeCase())}, __dir__)");
