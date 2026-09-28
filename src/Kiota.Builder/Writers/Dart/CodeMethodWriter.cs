@@ -751,7 +751,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             else
                 return $"sendPrimitive<{returnTypeName}>";
         else if (returnType.IsCollection) return $"sendCollection<{returnTypeName}>";
-        else if (returnType.Name.EqualsIgnoreCase("binary")) return "sendPrimitiveCollection<int>";
+        // only an unresolved core binary type is a byte collection; a model that happens to be named
+        // binary is read by its factory
+        else if (returnType is CodeType { TypeDefinition: null } && returnType.Name.EqualsIgnoreCase("binary")) return "sendPrimitiveCollection<int>";
         else return $"send<{returnTypeName}>";
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
