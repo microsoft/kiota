@@ -2,6 +2,9 @@
   "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml": {
     "MockServerITFolder": "basic"
   },
+  "./tests/Kiota.Builder.IntegrationTests/InheritingThreeLevels.yaml": {
+    "MockServerITFolder": "inheritance"
+  },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
     "MockServerITFolder": "query-params"
   },

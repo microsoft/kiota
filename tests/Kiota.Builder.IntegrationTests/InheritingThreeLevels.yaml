@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: Animal Shelter API
+  version: 1.0.0
+paths:
+  /api/v1/animals:
+    get:
+      summary: Retrieves an animal
+      operationId: getAnimal
+      responses:
+        "200":
+          description: Example.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Animal"
+              example:
+                kind: kitten
+                name: Tom
+                lives: 9
+                age: 1
+components:
+  schemas:
+    Animal:
+      type: object
+      required:
+        - kind
+      discriminator:
+        propertyName: kind
+        mapping:
+          cat: "#/components/schemas/Cat"
+          kitten: "#/components/schemas/Kitten"
+      properties:
+        kind:
+          type: string
+        name:
+          type: string
+    Cat:
+      allOf:
+        - $ref: "#/components/schemas/Animal"
+        - type: object
+          properties:
+            lives:
+              type: integer
+    Kitten:
+      allOf:
+        - $ref: "#/components/schemas/Cat"
+        - type: object
+          properties:
+            age:
+              type: integer
