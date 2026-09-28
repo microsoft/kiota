@@ -16,4 +16,17 @@ RSpec.describe Integration_test do
   it "eager loads every constant the client registers" do
     expect { Integration_test::Client.eager_load! }.not_to raise_error
   end
+
+  it "resolves every constant the generated code names" do
+    names = Dir[File.expand_path("../lib/integration_test/client/**/*.rb", __dir__)].flat_map do |file|
+      File.read(file).scan(/Integration_test::Client(?:::[A-Z]\w*)+/)
+    end
+    unresolved = names.uniq.reject do |name|
+      Object.const_get(name)
+    rescue NameError
+      false
+    end
+
+    expect(unresolved).to be_empty
+  end
 end
