@@ -85,6 +85,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private static readonly HashSet<string> customSerializationWriters = new(StringComparer.OrdinalIgnoreCase) { "writeObjectValue", "writeCollectionOfObjectValues" };
     private const string FactoryMethodReturnType = "((instance?: Parsable) => Record<string, (node: ParseNode) => void>)";
+    // generic factories are partially applied with item factories, their return type carries the parse node parameter layer of ParsableFactory
+    private const string GenericFactoryMethodReturnType = "((parseNode?: ParseNode | undefined) => ((instance?: Parsable) => Record<string, (node: ParseNode) => void>))";
 
     public override void WriteCodeElement(CodeFunction codeElement, LanguageWriter writer)
     {
@@ -99,7 +101,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         var isComposedOfPrimitives = composedType is not null && composedType.IsComposedOfPrimitives(IsPrimitiveType);
 
         var returnType = codeMethod.Kind is CodeMethodKind.Factory && !isComposedOfPrimitives ?
-            FactoryMethodReturnType :
+            (codeElement.IsGeneric ? GenericFactoryMethodReturnType : FactoryMethodReturnType) :
             GetTypescriptTypeString(codeMethod.ReturnType, codeElement, inlineComposedTypeString: true);
         var isVoid = "void".EqualsIgnoreCase(returnType);
         var codeFile = codeElement.GetImmediateParentOfType<CodeFile>();
@@ -227,10 +229,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     /// <param name="codeElement">The function code element where serialization is performed.</param>
     /// <param name="writer">The language writer used to generate the code.</param>
     /// <remarks>
-    /// This method handles serialization for union types when the discriminator property is missing. 
-    /// In the absence of a discriminator, all possible types in the union are serialized. For example, 
-    /// a Pet union defined as Cat | Dog would result in the serialization of both Cat and Dog types. 
-    /// It delegates the task to the method responsible for intersection types, treating the union 
+    /// This method handles serialization for union types when the discriminator property is missing.
+    /// In the absence of a discriminator, all possible types in the union are serialized. For example,
+    /// a Pet union defined as Cat | Dog would result in the serialization of both Cat and Dog types.
+    /// It delegates the task to the method responsible for intersection types, treating the union
     /// similarly to an intersection in this context.
     /// </remarks>
     private void WriteBruteForceSerializationFunctionForCodeUnionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
@@ -388,7 +390,45 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     {
         var nameSpace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         var deserializationFunction = GetFunctionName(codeElement, returnType, CodeMethodKind.Deserializer, nameSpace);
+        var factoryParameterNames = GetTypeFactoryParameterNames(codeElement);
+        if (factoryParameterNames.Length != 0)
+        {// generic factories close over the item factories and defer the deserializer instantiation to invocation time
+            writer.WriteLine($"return (parseNode) => (instance) => {deserializationFunction.ToFirstCharacterLowerCase()}({string.Join(", ", factoryParameterNames)}, instance);");
+            return;
+        }
         writer.WriteLine($"return {deserializationFunction.ToFirstCharacterLowerCase()};");
+    }
+
+    private static string[] GetTypeFactoryParameterNames(CodeFunction codeFunction)
+    {
+        return codeFunction.TypeParameters.Select(GetFactoryParameterName).ToArray();
+    }
+
+    private static string? FindFactoryParameterName(CodeFunction codeFunction, string typeParameterName)
+    {
+        var parameterName = GetFactoryParameterName(new CodeTypeParameter { Name = typeParameterName });
+        return codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parameterName))?.Name.ToFirstCharacterLowerCase();
+    }
+
+    private static string? FindSerializerParameterName(CodeFunction codeFunction, string typeParameterName)
+    {
+        var parameterName = GetSerializerParameterName(new CodeTypeParameter { Name = typeParameterName });
+        return codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(x => x.Name.EqualsIgnoreCase(parameterName))?.Name.ToFirstCharacterLowerCase();
+    }
+
+    internal static string? GetFactoryOverrideForType(CodeFunction codeFunction, CodeType codeType)
+    {
+        if (codeType.TypeDefinition is CodeTypeParameter typeParameter)
+            return FindFactoryParameterName(codeFunction, typeParameter.Name) ?? throw new InvalidOperationException($"Factory parameter for type parameter {typeParameter.Name} not found in function {codeFunction.Name}");
+        if (codeType.TypeDefinition is CodeClass { IsGeneric: true } or CodeInterface { IsGeneric: true })
+        {// generic property types close over the factory arguments of their generic parameters at the usage site
+            var arguments = codeType.GenericTypeParameterValues
+                .OfType<CodeType>()
+                .Select(x => GetFactoryOverrideForType(codeFunction, x) ?? GetFactoryMethodName(x, codeFunction))
+                .ToArray();
+            return $"{GetFactoryMethodName(codeType, codeFunction)}({string.Join(", ", arguments)})";
+        }
+        return null;
     }
 
     private void WriteDiscriminatorInformation(CodeFunction codeElement, CodeParameter parseNodeParameter, LanguageWriter writer)
@@ -490,7 +530,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"if (!{param.Name.ToFirstCharacterLowerCase()} || {serializingDerivedTypeParam.Name}) {{ return; }}");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
-            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}(writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
+            var forwardedSerializers = inherits.GenericTypeParameterValues
+                .OfType<CodeType>()
+                .Select(x => GetSerializerOverrideForType(codeElement, x) ?? GetSerializerFunctionName(codeElement, x))
+                .ToArray();
+            var serializerPrefix = forwardedSerializers.Length == 0 ? string.Empty : $"{string.Join(", ", forwardedSerializers)}, ";
+            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}({serializerPrefix}writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
         }
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
@@ -544,7 +589,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (customSerializationWriters.Contains(serializationName) && codeProperty.Type is CodeType propType && propType.TypeDefinition is not null)
         {
-            var serializeName = GetSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
+            var serializeName = GetSerializerOverrideForType(codeFunction, propType) ?? GetSerializerAlias(propType, codeFunction, $"serialize{propType.TypeDefinition.Name}");
             if (GetOriginalComposedType(propType.TypeDefinition) is { } ct && (ct.IsComposedOfPrimitives(IsPrimitiveType) || ct.IsComposedOfObjectsAndPrimitives(IsPrimitiveType)))
                 WriteSerializationStatementForComposedTypeProperty(ct, modelParamName, codeFunction, writer, codeProperty, serializeName);
             else
@@ -697,7 +742,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             return;
         }
 
-        var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault();
+        var param = codeFunction.OriginalLocalMethod.Parameters.FirstOrDefault(static x => x.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface);
         if (param?.Type is CodeType codeType && codeType.TypeDefinition is CodeInterface codeInterface)
         {
             WriteDeserializerFunctionProperties(param, codeInterface, codeFunction, codeFile, writer);
@@ -715,13 +760,18 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.StartBlock("return {");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType type && type.TypeDefinition is CodeInterface inherits)
         {
-            writer.WriteLine($"...deserializeInto{inherits.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
+            var forwardedFactories = type.GenericTypeParameterValues
+                .OfType<CodeType>()
+                .Select(x => GetFactoryOverrideForType(codeFunction, x) ?? GetFactoryMethodName(x, codeFunction))
+                .ToArray();
+            var factoryPrefix = forwardedFactories.Length == 0 ? string.Empty : $"{string.Join(", ", forwardedFactories)}, ";
+            writer.WriteLine($"...deserializeInto{inherits.Name.ToFirstCharacterUpperCase()}({factoryPrefix}{param.Name.ToFirstCharacterLowerCase()}),");
         }
         var (primaryErrorMapping, primaryErrorMappingKey) = GetPrimaryErrorMapping(codeFunction, param);
 
         foreach (var otherProp in properties)
         {
-            WritePropertyDeserializationBlock(otherProp, param, primaryErrorMapping, primaryErrorMappingKey, codeFile, writer);
+            WritePropertyDeserializationBlock(otherProp, param, primaryErrorMapping, primaryErrorMappingKey, codeFile, codeFunction, writer);
         }
 
         writer.CloseBlock();
@@ -742,7 +792,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         return (primaryErrorMapping, primaryErrorMappingKey);
     }
 
-    private void WritePropertyDeserializationBlock(CodeProperty otherProp, CodeParameter param, string primaryErrorMapping, string primaryErrorMappingKey, CodeFile codeFile, LanguageWriter writer)
+    private void WritePropertyDeserializationBlock(CodeProperty otherProp, CodeParameter param, string primaryErrorMapping, string primaryErrorMappingKey, CodeFile codeFile, CodeFunction codeFunction, LanguageWriter writer)
     {
         var suffix = otherProp.Name.Equals(primaryErrorMappingKey, StringComparison.Ordinal) ? primaryErrorMapping : string.Empty;
         var paramName = param.Name.ToFirstCharacterLowerCase();
@@ -759,7 +809,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else
         {
-            var objectSerializationMethodName = conventions.GetDeserializationMethodName(otherProp.Type, codeFile);
+            var factoryOverride = otherProp.Type is CodeType overrideType ? GetFactoryOverrideForType(codeFunction, overrideType) : null;
+            var objectSerializationMethodName = conventions.GetDeserializationMethodName(otherProp.Type, codeFile, factoryArgument: factoryOverride);
             var defaultValueSuffix = GetDefaultValueSuffix(otherProp);
             writer.WriteLine($"\"{otherProp.WireName.SanitizeDoubleQuote()}\": n => {{ {paramName}.{propName} = n.{objectSerializationMethodName}{defaultValueSuffix};{suffix} }},");
         }
@@ -823,6 +874,27 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
             if (!"boolean".Equals(conventions.TranslateType(parameter.Type), StringComparison.OrdinalIgnoreCase))
                 writer.WriteLine($"if(!{parameterName}) throw new Error(\"{parameterName} cannot be undefined\");");
+        }
+    }
+
+    private string? GetSerializerOverrideForType(CodeFunction codeFunction, CodeType propType)
+    {
+        switch (propType.TypeDefinition)
+        {
+            case CodeTypeParameter typeParameter:
+                return FindSerializerParameterName(codeFunction, typeParameter.Name) ?? throw new InvalidOperationException($"Serializer parameter for type parameter {typeParameter.Name} not found in function {codeFunction.Name}");
+            case CodeClass { IsGeneric: true } or CodeInterface { IsGeneric: true }:
+                {// generic property types close over the serializer arguments of their generic parameters at the usage site
+                    var serializerArguments = propType.GenericTypeParameterValues
+                        .OfType<CodeType>()
+                        .Select(x => x.TypeDefinition is CodeTypeParameter nestedParameter
+                            ? FindSerializerParameterName(codeFunction, nestedParameter.Name) ?? throw new InvalidOperationException($"Serializer parameter for type parameter {nestedParameter.Name} not found in function {codeFunction.Name}")
+                            : GetSerializerFunctionName(codeFunction, x))
+                        .ToArray();
+                    return $"(w, v) => {GetSerializerFunctionName(codeFunction, propType)}({string.Join(", ", serializerArguments)}, w, v)";
+                }
+            default:
+                return null;
         }
     }
 

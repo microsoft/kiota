@@ -235,6 +235,9 @@ public class CSharpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(type);
 
+        if (type.TypeDefinition is CodeTypeParameter typeParameter)
+            return typeParameter.Name;
+
         if (type.TypeDefinition is ITypeDefinition typeDefinition)
             return typeDefinition.GetFullName();
 
@@ -288,5 +291,86 @@ public class CSharpConventionService : CommonLanguageConventionService
         var deprecationMessage = GetDeprecationInformation(element);
         if (!string.IsNullOrEmpty(deprecationMessage))
             writer.WriteLine(deprecationMessage);
+    }
+    internal static string GetFactoryParameterName(CodeTypeParameter typeParameter) => $"{typeParameter.Name[1..].ToFirstCharacterLowerCase()}Factory";
+    internal static string GetFactoryFieldName(CodeTypeParameter typeParameter) => $"_{GetFactoryParameterName(typeParameter)}";
+    private const string NullValueString = "null";
+    private static readonly HashSet<string> NumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "byte", "decimal", "double", "float", "int", "int64", "integer", "sbyte"
+    };
+    /// <summary>
+    /// Emits the property default assignments for model constructors (also used by the synthesized
+    /// constructors of generic model classes).
+    /// </summary>
+    internal IEnumerable<string> GetModelConstructorDefaultAssignments(CodeClass parentClass, CodeElement typeStringContext)
+    {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        foreach (var propWithDefault in parentClass
+                                        .Properties
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters))
+                                        // do not apply the default value if the type is composed as the default value may not necessarily which type to use
+                                        .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
+                                        .OrderByDescending(static x => x.Kind)
+                                        .ThenBy(static x => x.Name))
+        {
+            var defaultValue = propWithDefault.DefaultValue;
+            if (propWithDefault.Type is CodeType { TypeDefinition: CodeEnum })
+            {
+                defaultValue = $"{GetTypeString(propWithDefault.Type, typeStringContext).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+            }
+            else if (propWithDefault.Type.IsNullable &&
+                defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
+            { // avoid setting null as a string.
+                defaultValue = NullValueString;
+            }
+            else if (propWithDefault.Type is CodeType propertyType &&
+                TryGetDefaultValue(defaultValue.SanitizeQuotedStringLiteral(), propertyType, out var convertedDefaultValue))
+            {
+                if (convertedDefaultValue is null)
+                    continue;
+                defaultValue = convertedDefaultValue;
+            }
+            else if (defaultValue.StartsWith('"') && defaultValue.EndsWith('"'))
+            {
+                defaultValue = defaultValue.SanitizeQuotedStringLiteral();
+            }
+
+            yield return $"{propWithDefault.Name.ToFirstCharacterUpperCase()} = {defaultValue};";
+        }
+    }
+    private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
+    {
+        convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+        {
+            "date" => $"new Date(DateTimeOffset.Parse({defaultValue}).Date)",
+            "datetimeoffset" => $"DateTimeOffset.Parse({defaultValue})",
+            "time" => $"new Time(DateTimeOffset.Parse({defaultValue}).DateTime)",
+            "guid" => $"Guid.Parse({defaultValue})",
+            _ => null,
+        };
+        if (convertedDefaultValue is not null)
+            return true;
+        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
+        {
+            if (bool.TryParse(defaultValue.TrimQuotes(), out var booleanDefaultValue))
+                convertedDefaultValue = booleanDefaultValue ? "true" : "false";
+            return true;
+        }
+        if (NumericTypeNames.Contains(propertyType.Name))
+        {
+            if (PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue))
+            {
+                convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch
+                {
+                    "decimal" => $"{numericDefaultValue}m",
+                    "float" => $"{numericDefaultValue}f",
+                    "int64" => $"{numericDefaultValue}L",
+                    _ => numericDefaultValue,
+                };
+            }
+            return true;
+        }
+        return false;
     }
 }

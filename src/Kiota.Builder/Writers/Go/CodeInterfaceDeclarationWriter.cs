@@ -17,7 +17,7 @@ public class CodeInterfaceDeclarationWriter : CodeProprietableBlockDeclarationWr
         if (codeElement.Parent is CodeInterface currentInterface && currentInterface.OriginalClass is not null)
             conventions.WriteDeprecation(currentInterface.OriginalClass, writer);
         conventions.WriteLinkDescription(inter.Documentation, writer);
-        writer.WriteLine($"type {interName} interface {{");
+        writer.WriteLine($"type {interName}{conventions.GetTypeParametersDeclaration(codeElement.TypeParameters)} interface {{");
         writer.IncreaseIndent();
         foreach (var implement in codeElement.Implements)
         {

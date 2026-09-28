@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Kiota.Builder.Writers.TypeScript.Tests;
 
-public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
+public sealed class CodeInterfaceDeclarationWriterTests : IDisposable
 {
     private const string DefaultPath = "./";
     private const string DefaultName = "name";
@@ -14,7 +14,7 @@ public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
     private readonly LanguageWriter writer;
     private readonly CodeInterface parentInterface;
 
-    public CodeInterfaceDeclaraterWriterTests()
+    public CodeInterfaceDeclarationWriterTests()
     {
         writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.TypeScript, DefaultPath, DefaultName);
         tw = new StringWriter();
@@ -79,5 +79,29 @@ public sealed class CodeInterfaceDeclaraterWriterTests : IDisposable
         Assert.Contains("import", result);
         Assert.Contains("from", result);
         Assert.Contains("'util'", result);
+    }
+    [Fact]
+    public void WritesTypeParameters()
+    {
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TSecondType" });
+        writer.Write(parentInterface.StartBlock);
+        var result = tw.ToString();
+        Assert.Contains($"export interface Parent<TItemType, TSecondType> {{{Environment.NewLine}", result);
+    }
+    [Fact]
+    public void WritesTypeParametersWithInheritance()
+    {
+        parentInterface.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var parentTypeParameter = parentInterface.TypeParameters.First();
+        var baseInterfaceType = new CodeType()
+        {
+            Name = "someGenericInterface",
+        };
+        baseInterfaceType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = parentTypeParameter });
+        parentInterface.StartBlock.AddImplements(baseInterfaceType);
+        writer.Write(parentInterface.StartBlock);
+        var result = tw.ToString();
+        Assert.Contains("export interface Parent<TItemType> extends SomeGenericInterface<TItemType> {", result);
     }
 }

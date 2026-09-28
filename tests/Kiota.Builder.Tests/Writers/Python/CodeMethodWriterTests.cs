@@ -636,6 +636,77 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("raise Exception", result);
     }
     [Fact]
+    public void WritesRequestExecutorBodyForGenericErrorMapping()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        var userModel = root.AddClass(new CodeClass
+        {
+            Name = "User",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var errorTemplate = root.AddClass(new CodeClass
+        {
+            Name = "ErrorTemplate",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        var error5XX = root.AddClass(new CodeClass
+        {
+            Name = "Error5XX",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        parentClass.StartBlock.AddUsings(new()
+        {
+            Name = "ErrorTemplate",
+            Declaration = new()
+            {
+                Name = "ErrorTemplate",
+                TypeDefinition = errorTemplate,
+            }
+        },
+        new()
+        {
+            Name = "Error5XX",
+            Declaration = new()
+            {
+                Name = "Error5XX",
+                TypeDefinition = error5XX,
+            }
+        },
+        new()
+        {
+            Name = "User",
+            Declaration = new()
+            {
+                Name = "User",
+                TypeDefinition = userModel,
+            }
+        });
+        var genericErrorType = new CodeType
+        {
+            Name = "ErrorTemplate",
+            TypeDefinition = errorTemplate,
+        };
+        genericErrorType.AddGenericTypeParameterValue(new CodeType
+        {
+            Name = "User",
+            TypeDefinition = userModel,
+        });
+        method.AddErrorMapping("400", genericErrorType);
+        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("\"400\": ErrorTemplate[User],", result);
+        Assert.Contains("\"5XX\": Error5XX,", result);
+        Assert.Contains("from .error_template import ErrorTemplate", result);
+        Assert.Contains("from .user import User", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void DoesntCreateDictionaryOnEmptyErrorMapping()
     {
         setup();
@@ -1195,6 +1266,121 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("@staticmethod", result);
         Assert.DoesNotContain("self", result);
+    }
+    [Fact]
+    public void WritesGenericClassFactoryMethodAsClassmethod()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Factory;
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "parse_node",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+                TypeDefinition = new CodeClass
+                {
+                    Name = "ParseNode",
+                },
+                IsExternal = true,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("@classmethod", result);
+        Assert.DoesNotContain("@staticmethod", result);
+        Assert.Contains("def method_name(cls,parse_node: ParseNode)", result);
+        Assert.Contains("return cls()", result);
+        Assert.DoesNotContain("return ParentClass()", result);
+    }
+    [Fact]
+    public void WritesDeSerializerBodyForTypeParameterProperties()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                TypeDefinition = itemTypeParameter,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex,
+            },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("get_collection_of_object_values(type(self)._item_type)", result);
+        Assert.DoesNotContain("get_collection_of_object_values(TItemType)", result);
+    }
+    [Fact]
+    public void WritesDeSerializerBodyForRecursiveGenericClassReference()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var parentReference = new CodeType
+        {
+            Name = "ParentClass",
+            TypeDefinition = parentClass,
+        };
+        parentReference.AddGenericTypeParameterValue(new CodeType { TypeDefinition = itemTypeParameter });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "parent",
+            Kind = CodePropertyKind.Custom,
+            Type = parentReference,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("get_object_value(ParentClass[type(self)._item_type])", result);
+        Assert.DoesNotContain("get_object_value(ParentClass)", result);
+    }
+    [Fact]
+    public void WritesDeSerializerBodyForClosedGenericClassReference()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Deserializer;
+        method.IsAsync = false;
+        var templateClass = root.AddClass(new CodeClass
+        {
+            Name = "PageTemplate",
+            Kind = CodeClassKind.Model,
+        }).First();
+        templateClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var userClass = root.AddClass(new CodeClass
+        {
+            Name = "User",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var pageReference = new CodeType
+        {
+            Name = "PageTemplate",
+            TypeDefinition = templateClass,
+        };
+        pageReference.AddGenericTypeParameterValue(new CodeType { Name = "User", TypeDefinition = userClass });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "page",
+            Kind = CodePropertyKind.Custom,
+            Type = pageReference,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("get_object_value(PageTemplate[User])", result);
+        Assert.DoesNotContain("get_object_value(PageTemplate)", result);
     }
     [Fact]
     public void WritesModelFactoryBodyForInheritedModels()

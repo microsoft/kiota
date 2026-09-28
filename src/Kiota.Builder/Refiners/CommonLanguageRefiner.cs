@@ -608,7 +608,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
             });
         }
-        // Add the discriminator function to the wrapper as it will be referenced. 
+        // Add the discriminator function to the wrapper as it will be referenced.
         KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings, refineMethodName);
         return new CodeType
         {
@@ -803,7 +803,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
 
             var usingsToAdd = typesCollection
-                            .SelectMany(static x => x.AllTypes.Select(static y => (type: y, ns: y.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
+                            .SelectMany(static x => x.AllTypes.Where(static y => y.TypeDefinition is not CodeTypeParameter).Select(static y => (type: y, ns: y.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>())))
                             .Where(x => x.ns != null && (includeCurrentNamespace || x.ns != currentClassNamespace))
                             .Where(x => includeParentNamespaces || !currentClassNamespace.IsChildOf(x.ns!))
                             .Select(static x => new CodeUsing { Name = x.ns!.Name, Declaration = x.type })
@@ -821,6 +821,31 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
         CrawlTree(current, x => AddPropertiesAndMethodTypesImports(x, includeParentNamespaces, includeCurrentNamespace, compareOnDeclaration, codeTypeFilter, updateUsings));
+    }
+    /// <summary>
+    /// Adds usings for generic type arguments (e.g. <c>User</c> in <c>PaginatedTemplate&lt;User&gt;</c>) which
+    /// <see cref="CodeType.AllTypes"/> does not expand. <paramref name="keepSameNamespaceArguments"/> stays true for
+    /// languages importing sibling model files (Dart); false drops same-namespace arguments (Java).
+    /// </summary>
+    protected static void AddGenericTypeArgumentsImports(CodeClass currentClass, bool keepSameNamespaceArguments)
+    {
+        ArgumentNullException.ThrowIfNull(currentClass);
+        var currentClassNamespace = currentClass.GetImmediateParentOfType<CodeNamespace>();
+        var usingsToAdd = currentClass.Properties.Select(static x => x.Type)
+                                .Union(currentClass.Methods.Select(static x => x.ReturnType))
+                                .Union(currentClass.Methods.SelectMany(static x => x.Parameters.Select(static y => y.Type)))
+                                .Union(currentClass.Methods.Where(static x => x.IsOfKind(CodeMethodKind.RequestExecutor)).SelectMany(static x => x.ErrorMappings.Select(static y => y.Value)))
+                                .Union(currentClass.StartBlock.Inherits is not null ? new[] { currentClass.StartBlock.Inherits } : Enumerable.Empty<CodeTypeBase>())
+                                .OfType<CodeType>()
+                                .SelectMany(static x => x.GenericTypeParameterValues)
+                                .Where(static x => x.TypeDefinition is not null and not CodeTypeParameter)
+                                .Where(x => keepSameNamespaceArguments || !x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name.Equals(currentClassNamespace.Name, StringComparison.Ordinal))
+                                .Select(static x => new CodeUsing { Name = x.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name, Declaration = x })
+                                .GroupBy(static x => $"{x.Name}.{x.Declaration!.Name}", StringComparer.Ordinal)
+                                .Select(static x => x.First())
+                                .ToArray();
+        if (usingsToAdd.Length != 0)
+            (currentClass.Parent as CodeClass ?? currentClass).AddUsing(usingsToAdd); //nested classes do not support imports
     }
     protected static void CrawlTree(CodeElement currentElement, Action<CodeElement> function, bool innerOnly = true)
     {
@@ -1246,17 +1271,27 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         var inter = parentClass != null ?
                         parentClass.AddInnerInterface(insertValue).First() :
                         targetNS.AddInterface(insertValue).First();
+        // generic model classes carry their type parameters onto the interface (fresh instances, the class keeps owning its own)
+        foreach (var parameter in modelClass.TypeParameters)
+            inter.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = parameter.Name });
         var targetUsingBlock = parentClass != null ? (ProprietableBlockDeclaration)parentClass.StartBlock : inter.StartBlock;
         var usingsToRemove = new List<string>();
         var usingsToAdd = new List<CodeUsing>();
         if (modelClass.StartBlock.Inherits?.TypeDefinition is CodeClass baseClass)
         {
             var parentInterface = CopyClassAsInterface(baseClass, interfaceNamingCallback);
-            inter.StartBlock.AddImplements(new CodeType
+            var parentInterfaceType = new CodeType
             {
                 Name = parentInterface.Name,
                 TypeDefinition = parentInterface,
-            });
+            };
+            // close the interface implements over the interface's own parameters (Derived<T> : Base<T> -> Derivedable<T> : Baseable<T>)
+            var interfaceParametersByName = inter.TypeParameters.ToDictionary(static x => x.Name, StringComparer.OrdinalIgnoreCase);
+            foreach (var argument in modelClass.StartBlock.Inherits.GenericTypeParameterValues)
+                if (argument.TypeDefinition is CodeTypeParameter argumentParameter &&
+                    interfaceParametersByName.TryGetValue(argumentParameter.Name, out var interfaceParameter))
+                    parentInterfaceType.AddGenericTypeParameterValue(new CodeType { TypeDefinition = interfaceParameter });
+            inter.StartBlock.AddImplements(parentInterfaceType);
             var parentInterfaceNS = parentInterface.GetImmediateParentOfType<CodeNamespace>();
             if (parentInterfaceNS != targetNS)
                 usingsToAdd.Add(new CodeUsing
@@ -1587,7 +1622,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     if (sameNameProperty.Type.Name.Equals(type().Name, StringComparison.OrdinalIgnoreCase))
                     {
                         // As the type may not be settable by the serialization logic
-                        // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly. 
+                        // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly.
                         sameNameProperty.IsPrimaryErrorMessage = true;
                     }
                     if (string.IsNullOrEmpty(sameNameProperty.SerializationName))
