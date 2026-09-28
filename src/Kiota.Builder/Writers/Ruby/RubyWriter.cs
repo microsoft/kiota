@@ -4,7 +4,7 @@ namespace Kiota.Builder.Writers.Ruby;
 
 public class RubyWriter : LanguageWriter
 {
-    public RubyWriter(string rootPath, string clientNamespaceName)
+    public RubyWriter(string rootPath, string clientNamespaceName) : base(" ", 2)
     {
         PathSegmenter = new RubyPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new RubyConventionService();

@@ -17,9 +17,6 @@ Layout/TrailingWhitespace:
 Layout/FirstHashElementIndentation:
   Enabled: false
 
-Layout/IndentationWidth:
-  Enabled: false
-
 Layout/SpaceInsideBlockBraces:
   Enabled: false
 
