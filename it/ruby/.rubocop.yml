@@ -8,33 +8,43 @@ Style/StringLiteralsInInterpolation:
   Enabled: true
   EnforcedStyle: double_quotes
 
+# generated lines embed URL templates, qualified constants and API descriptions
 Layout/LineLength:
   Enabled: false
 
+# class docs come from optional API descriptions; filler comments would be noise
 Style/Documentation:
   Enabled: false
 
+# module and class names come from the namespace name and API names; renaming them is breaking
 Naming/ClassAndModuleCamelCase:
   Enabled: false
 
+# the runtime calls get_field_deserializers and get_query_parameter by name
 Naming/AccessorMethodName:
   Enabled: false
 
+# generated method size tracks the API surface, one line per property, mapping or error code
 Metrics/MethodLength:
   Enabled: false
 
+# generated method size tracks the API surface, one line per property, mapping or error code
 Metrics/AbcSize:
   Enabled: false
 
+# enums are CamelCase hash constants that users reference; renaming them is breaking
 Naming/ConstantName:
   Enabled: false
 
+# is_ and has_ names mirror the API's property names, as in every other Kiota language
 Naming/PredicatePrefix:
   Enabled: false
 
+# generated class size tracks the API surface
 Metrics/ClassLength:
   Enabled: false
 
+# generated module size tracks the API surface
 Metrics/ModuleLength:
   Enabled: false
 
