@@ -221,7 +221,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         {
             currentProperty.Type.IsNullable = true;
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
-                currentProperty.DefaultValue = "Hash.new";
+                currentProperty.DefaultValue = "{}";
         }
 
         CorrectCoreTypes(currentProperty.Parent as CodeClass, DateTypesReplacements, types: currentProperty.Type);

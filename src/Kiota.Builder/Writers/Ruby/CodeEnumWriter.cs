@@ -19,7 +19,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
             conventions.WriteNamespaceModules(ns, writer);
         conventions.WriteShortDescription(codeElement, writer);
         writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
-        codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()},"));
+        var options = codeElement.Options.Select(static x => $"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()}").ToArray();
+        for (var i = 0; i < options.Length; i++)
+            writer.WriteLine(i < options.Length - 1 ? $"{options[i]}," : options[i]);
         writer.CloseBlock("}.freeze");
         if (codeElement.Parent is CodeNamespace ns2)
             conventions.WriteNamespaceClosing(ns2, writer);

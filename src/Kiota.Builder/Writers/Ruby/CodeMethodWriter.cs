@@ -291,7 +291,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.PathParameters) is CodeParameter pathParametersParameter)
                     writer.WriteLine($"super({pathParametersParameter.Name.ToSnakeCase()}, {requestAdapterParameter.Name.ToSnakeCase()}, {sanitizedUrlTemplate})");
                 else
-                    writer.WriteLine($"super(Hash.new, {requestAdapterParameter.Name.ToSnakeCase()}, {sanitizedUrlTemplate})");
+                    writer.WriteLine($"super({{}}, {requestAdapterParameter.Name.ToSnakeCase()}, {sanitizedUrlTemplate})");
             }
             else
                 writer.WriteLine("super");
@@ -392,22 +392,23 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteDeserializerBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
     {
-        if (parentClass.StartBlock.Inherits != null)
-            writer.WriteLine("return super.merge({");
-        else
-            writer.WriteLine("return {");
-        writer.IncreaseIndent();
-        foreach (var otherProp in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                            .Where(static x => !x.ExistsInBaseType)
-                                            .OrderBy(static x => x.Name))
+        var inherits = parentClass.StartBlock.Inherits != null;
+        var entries = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
+                                .Where(static x => !x.ExistsInBaseType)
+                                .OrderBy(static x => x.Name)
+                                .Select(x => $"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(x.WireName)}\" => ->(n) {{ @{x.NamePrefix}{x.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(x.Type)} }}")
+                                .ToArray();
+        if (entries.Length == 0)
         {
-            writer.WriteLine($"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\" => lambda {{|n| @{otherProp.NamePrefix}{otherProp.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(otherProp.Type)} }},");
+            writer.WriteLine(inherits ? "return super" : "return {}");
+            return;
         }
+        writer.WriteLine(inherits ? "return super.merge(" : "return {");
+        writer.IncreaseIndent();
+        for (var i = 0; i < entries.Length; i++)
+            writer.WriteLine(i < entries.Length - 1 ? $"{entries[i]}," : entries[i]);
         writer.DecreaseIndent();
-        if (parentClass.StartBlock.Inherits != null)
-            writer.WriteLine("})");
-        else
-            writer.WriteLine("}");
+        writer.WriteLine(inherits ? ")" : "}");
     }
     private static void WriteDeserializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
     {
@@ -471,7 +472,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (codeElement.ErrorMappings.Any())
         {
             errorMappingVarName = "error_mapping";
-            writer.WriteLine($"{errorMappingVarName} = Hash.new");
+            writer.WriteLine($"{errorMappingVarName} = {{}}");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
                 writer.WriteLine($"{errorMappingVarName}[\"{errorMapping.Key.ToUpperInvariant()}\"] = {getDeserializationLambda(errorMapping.Value)}");
@@ -685,8 +686,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private string getDeserializationLambda(CodeTypeBase targetTypeBase)
     {
         if (targetTypeBase is not CodeType targetType)
-            return "lambda {|pn| nil }";
-        return $"lambda {{|pn| {conventions.GetQualifiedTypeName(targetType)}.create_from_discriminator_value(pn) }}";
+            return "->(_pn) { nil }";
+        return $"->(pn) {{ {conventions.GetQualifiedTypeName(targetType)}.create_from_discriminator_value(pn) }}";
     }
     private static string TranslateObjectType(string typeName)
     {

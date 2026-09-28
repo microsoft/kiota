@@ -11,15 +11,6 @@ Style/StringLiteralsInInterpolation:
 Layout/LineLength:
   Enabled: false
 
-Layout/FirstHashElementIndentation:
-  Enabled: false
-
-Layout/SpaceInsideBlockBraces:
-  Enabled: false
-
-Style/Lambda:
-  Enabled: false
-
 Style/DefWithParentheses:
   Enabled: false
 
@@ -38,16 +29,10 @@ Style/Documentation:
 Style/FrozenStringLiteralComment:
   Enabled: false
 
-Style/EmptyLiteral:
-  Enabled: false
-
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
 
 Style/MethodCallWithoutArgsParentheses:
-  Enabled: false
-
-Style/TrailingCommaInHashLiteral:
   Enabled: false
 
 Naming/ClassAndModuleCamelCase:
@@ -63,12 +48,6 @@ Style/RedundantSelf:
   Enabled: false
 
 Lint/EmptyFile:
-  Enabled: false
-
-Style/MixinGrouping:
-  Enabled: false
-
-Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
 
 Metrics/MethodLength:

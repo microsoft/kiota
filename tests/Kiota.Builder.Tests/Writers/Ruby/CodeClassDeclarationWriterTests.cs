@@ -69,6 +69,17 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("include", result);
     }
     [Fact]
+    public void WritesOneIncludePerMixinKeepingMethodLookupOrder()
+    {
+        var declaration = parentClass.StartBlock;
+        declaration.AddImplements(new CodeType { Name = "First" }, new CodeType { Name = "Second" });
+        codeElementWriter.WriteCodeElement(declaration, writer);
+        var result = tw.ToString();
+        // `include First, Second` looks methods up in First before Second, as does including Second then First
+        Assert.DoesNotContain(",", result.Split(Environment.NewLine).First(static x => x.Contains("include", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.True(result.IndexOf("include Second", StringComparison.Ordinal) < result.IndexOf("include First", StringComparison.Ordinal));
+    }
+    [Fact]
     public void WritesInheritance()
     {
         var declaration = parentClass.StartBlock;

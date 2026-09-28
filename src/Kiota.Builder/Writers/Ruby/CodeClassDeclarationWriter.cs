@@ -59,6 +59,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
         // writing an empty mixin line would leave a blank (indent-only) first line in the class body
         if (codeElement.Implements.Any())
-            writer.WriteLine($"include {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}");
+            // `include A, B` is `include B` then `include A`, so the order keeps method lookup unchanged
+            foreach (var mixin in codeElement.Implements.Select(static x => x.Name).Reverse())
+                writer.WriteLine($"include {mixin}");
     }
 }

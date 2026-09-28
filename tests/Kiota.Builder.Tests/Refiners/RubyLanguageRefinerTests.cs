@@ -232,7 +232,7 @@ public class RubyLanguageRefinerTests
             DefaultValue = "wrongDefaultValue"
         }).First();
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
-        Assert.Equal("Hash.new", property.DefaultValue);
+        Assert.Equal("{}", property.DefaultValue);
     }
     [Fact]
     public async Task EscapesReservedKeywordsAsync()

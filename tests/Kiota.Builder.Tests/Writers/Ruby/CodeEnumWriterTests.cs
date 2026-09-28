@@ -47,6 +47,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("= {", result);
         Assert.Contains(optionName, result);
         Assert.Contains("}.freeze", result);
+        Assert.DoesNotContain($"{optionName}: :{optionName},", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
