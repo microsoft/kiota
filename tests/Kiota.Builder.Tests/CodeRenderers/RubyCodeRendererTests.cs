@@ -18,6 +18,13 @@ public class RubyCodeRendererTests
         Assert.IsType<RubyCodeRenderer>(CodeRenderer.GetCodeRender(new GenerationConfiguration { Language = GenerationLanguage.Ruby }));
 
     [Fact]
+    public void AlwaysWritesTheClientNamespaceFile()
+    {
+        var ns = root.AddNamespace("graph");
+        ns.AddClass(new CodeClass { Name = "graphServiceClient", Kind = CodeClassKind.RequestBuilder });
+        Assert.True(renderer.ShouldRenderNamespaceFile(ns));
+    }
+    [Fact]
     public void SkipsTheBarrelOfANamespaceWithOnlyRequestBuilders()
     {
         var ns = root.AddNamespace("graph.users");

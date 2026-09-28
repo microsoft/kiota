@@ -51,6 +51,17 @@ public sealed class CodeNamespaceWriterTests : IDisposable
         Assert.Contains("autoload :Color, ::File.expand_path(\"color\", __dir__)", result, StringComparison.Ordinal);
     }
     [Fact]
+    public void WritesEagerLoadInTheClientNamespaceEvenWithNothingToAutoload()
+    {
+        var clientWriter = new CodeNamespaceWriter(new RubyConventionService(), new RubyPathSegmenter(Path.GetTempPath(), ClientNamespaceName), ClientNamespaceName);
+        var clientNamespace = modelsNamespace.Parent as CodeNamespace ?? throw new InvalidOperationException("models namespace has no parent");
+        clientWriter.WriteCodeElement(clientNamespace.FindNamespaceByName(ClientNamespaceName) ?? clientNamespace.AddNamespace(ClientNamespaceName), writer);
+        var result = tw.ToString();
+        Assert.Contains("def self.eager_load!", result, StringComparison.Ordinal);
+        Assert.Contains("instance_of?(::Module)", result, StringComparison.Ordinal);
+        Assert.Contains("module Graph", result, StringComparison.Ordinal);
+    }
+    [Fact]
     public void DoesNotRegisterAnEnumWithoutOptions()
     {
         // the enum writer emits nothing for it, so the constant would never be defined

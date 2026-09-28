@@ -11,7 +11,7 @@ public class RubyWriter : LanguageWriter
         var pathSegmenter = new RubyPathSegmenter(rootPath, clientNamespaceName);
         AddOrReplaceCodeElementWriter(new CodeClassDeclarationWriter(conventionService, clientNamespaceName, pathSegmenter));
         AddOrReplaceCodeElementWriter(new CodeBlockEndWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService, pathSegmenter));
+        AddOrReplaceCodeElementWriter(new CodeNamespaceWriter(conventionService, pathSegmenter, clientNamespaceName));
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));

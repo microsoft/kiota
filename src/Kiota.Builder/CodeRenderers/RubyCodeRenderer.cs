@@ -1,4 +1,5 @@
-﻿using Kiota.Builder.CodeDOM;
+﻿using System;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Writers.Ruby;
 
@@ -8,5 +9,6 @@ public class RubyCodeRenderer : CodeRenderer
 {
     public RubyCodeRenderer(GenerationConfiguration configuration) : base(configuration) { }
     public override bool ShouldRenderNamespaceFile(CodeNamespace codeNamespace) =>
-        codeNamespace is not null && base.ShouldRenderNamespaceFile(codeNamespace) && RubyConventionService.HasAutoloadedMembers(codeNamespace);
+        codeNamespace is not null && base.ShouldRenderNamespaceFile(codeNamespace) &&
+        (RubyConventionService.HasAutoloadedMembers(codeNamespace) || codeNamespace.Name.Equals(Configuration.ClientNamespaceName, StringComparison.OrdinalIgnoreCase));
 }

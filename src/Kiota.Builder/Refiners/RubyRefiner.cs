@@ -116,7 +116,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "ParseNode",
                 addUsings: true
             );
-            RequireBarrelsOfAutoloadedTypes(generatedCode);
+            RequireBarrelsOfAutoloadedTypes(generatedCode, _configuration.ClientNamespaceName);
         }, cancellationToken);
     }
     private static void ShortenLongNamespaceNames(CodeElement currentElement)
@@ -296,13 +296,16 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     };
     // an autoloaded file is only ever loaded through its barrel, so other files require the barrel
-    private static void RequireBarrelsOfAutoloadedTypes(CodeElement currentElement)
+    private static void RequireBarrelsOfAutoloadedTypes(CodeElement currentElement, string clientNamespaceName)
     {
         if (currentElement is CodeClass { Parent: CodeNamespace currentNamespace } currentClass)
         {
-            // a namespace with nothing to autoload gets no barrel file, so nothing may require one
+            // a namespace with nothing to autoload gets no barrel file, so nothing may require one;
+            // the client's root file always exists and only the client requires it, for eager_load!
+            var isClient = currentClass.Methods.Any(static x => x.IsOfKind(CodeMethodKind.ClientConstructor));
             currentClass.StartBlock.RemoveUsings(currentClass.Usings
-                                        .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition is CodeNamespace ns && !RubyConventionService.HasAutoloadedMembers(ns))
+                                        .Where(x => !x.IsExternal && x.Declaration?.TypeDefinition is CodeNamespace ns && !RubyConventionService.HasAutoloadedMembers(ns) &&
+                                                    !(isClient && ns.Name.Equals(clientNamespaceName, StringComparison.OrdinalIgnoreCase)))
                                         .ToArray());
             var typeUsings = currentClass.Usings
                                         .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition is CodeElement definition && RubyConventionService.IsAutoloaded(definition))
@@ -320,7 +323,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 currentClass.AddUsing(barrels);
             }
         }
-        CrawlTree(currentElement, RequireBarrelsOfAutoloadedTypes);
+        CrawlTree(currentElement, x => RequireBarrelsOfAutoloadedTypes(x, clientNamespaceName));
     }
     private static void CorrectImplements(ProprietableBlockDeclaration block)
     {

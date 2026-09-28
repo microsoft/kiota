@@ -165,6 +165,17 @@ public class RubyLanguageRefinerTests
         Assert.DoesNotContain(derivedModel.Methods, static x => x.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Deserializer));
     }
     [Fact]
+    public async Task RequiresTheClientRootFileOnlyFromTheClientAsync()
+    {
+        var client = graphNS.AddClass(new CodeClass { Name = "graphClient", Kind = CodeClassKind.RequestBuilder }).First();
+        client.AddMethod(new CodeMethod { Name = "constructor", Kind = CodeMethodKind.ClientConstructor, ReturnType = new CodeType { Name = "void" } });
+        var usersNS = graphNS.AddNamespace($"{graphNS.Name}.users");
+        var usersBuilder = usersNS.AddClass(new CodeClass { Name = "usersRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(client.Usings, x => x.Declaration?.TypeDefinition == graphNS);
+        Assert.DoesNotContain(usersBuilder.Usings, x => x.Declaration?.TypeDefinition == graphNS);
+    }
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
