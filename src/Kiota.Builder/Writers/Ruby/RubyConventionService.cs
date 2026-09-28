@@ -22,6 +22,9 @@ public class RubyConventionService : CommonLanguageConventionService
         CodeEnum codeEnum => codeEnum.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeEnum.Options.Any(),
         _ => false,
     };
+    // a barrel is written, and required, only when it has something to autoload
+    internal static bool HasAutoloadedMembers(CodeNamespace codeNamespace) =>
+        codeNamespace.Classes.Any(IsAutoloaded) || codeNamespace.Enums.Any(IsAutoloaded);
     internal static string SanitizeRubyDoubleQuoteLiteral(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;

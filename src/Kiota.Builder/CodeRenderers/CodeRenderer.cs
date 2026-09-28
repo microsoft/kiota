@@ -103,6 +103,7 @@ public class CodeRenderer
         return config.Language switch
         {
             GenerationLanguage.TypeScript => new TypeScriptCodeRenderer(config),
+            GenerationLanguage.Ruby => new RubyCodeRenderer(config),
             GenerationLanguage.Python => new CodeRenderer(config, new CodeElementOrderComparerPython()),
             GenerationLanguage.Go => new CodeRenderer(config, new CodeElementOrderComparerWithExternalMethods()),
             _ => new CodeRenderer(config),

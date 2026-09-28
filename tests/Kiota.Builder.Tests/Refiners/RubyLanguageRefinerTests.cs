@@ -33,7 +33,8 @@ public class RubyLanguageRefinerTests
         var model = modelsNS.AddClass(new CodeClass { Name = "animal", Kind = CodeClassKind.Model }).First();
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(model.Usings, x => x.Declaration?.TypeDefinition == modelsNS);
-        Assert.Contains(model.Usings, x => x.Declaration?.TypeDefinition == graphNS);
+        // the root namespace autoloads nothing here, so it gets no barrel to require
+        Assert.DoesNotContain(model.Usings, x => x.Declaration?.TypeDefinition == graphNS);
     }
     [Fact]
     public async Task RequiresTheBarrelOfAModelUsedFromAnotherNamespaceAsync()
@@ -51,7 +52,7 @@ public class RubyLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == model);
         Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == modelsNS);
-        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == animalsNS);
+        Assert.DoesNotContain(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == animalsNS);
     }
     [Fact]
     public async Task RequiresTheBarrelOfABaseClassInAnotherNamespaceAsync()
@@ -65,6 +66,15 @@ public class RubyLanguageRefinerTests
         Assert.DoesNotContain(derivedModel.Usings, x => x.Declaration?.TypeDefinition == baseModel);
         Assert.Contains(derivedModel.Usings, x => x.Declaration?.TypeDefinition == modelsNS);
         Assert.DoesNotContain(derivedModel.Usings, x => x.Declaration?.TypeDefinition == reposNS);
+    }
+    [Fact]
+    public async Task KeepsItsOwnBarrelWhenTheNamespaceAutoloadsSomethingAsync()
+    {
+        var animalsNS = graphNS.AddNamespace($"{graphNS.Name}.animals");
+        var requestBuilder = animalsNS.AddClass(new CodeClass { Name = "animalsRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        animalsNS.AddClass(new CodeClass { Name = "animalsGetResponse", Kind = CodeClassKind.Model });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(requestBuilder.Usings, x => x.Declaration?.TypeDefinition == animalsNS);
     }
     [Fact]
     public async Task RequiresTheModelDirectlyWhenItsNamespaceHasNoBarrelAsync()
@@ -442,7 +452,7 @@ public class RubyLanguageRefinerTests
         });
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Single(declaration.Usings, static x => "Message".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
-        Assert.Single(declaration.Usings, static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(declaration.Usings, static x => "graph".Equals(x.Declaration.Name, StringComparison.OrdinalIgnoreCase));
     }
     [Fact]
     public async Task ShortensLongNamespaceNamesAsync()

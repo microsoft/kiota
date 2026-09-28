@@ -287,6 +287,10 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass { Parent: CodeNamespace currentNamespace } currentClass)
         {
+            // a namespace with nothing to autoload gets no barrel file, so nothing may require one
+            currentClass.StartBlock.RemoveUsings(currentClass.Usings
+                                        .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition is CodeNamespace ns && !RubyConventionService.HasAutoloadedMembers(ns))
+                                        .ToArray());
             var typeUsings = currentClass.Usings
                                         .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition is CodeElement definition && RubyConventionService.IsAutoloaded(definition))
                                         .ToArray();
