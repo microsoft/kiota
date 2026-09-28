@@ -17,7 +17,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         switch (codeElement.Kind)
         {
             case CodePropertyKind.RequestBuilder:
-                writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}()");
+                writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}");
                 writer.IncreaseIndent();
                 conventions.AddRequestBuilderBody(parentClass, conventions.GetQualifiedTypeName(codeElement.Type), writer, prefix: "return ");
                 writer.DecreaseIndent();

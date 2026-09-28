@@ -11,9 +11,6 @@ Style/StringLiteralsInInterpolation:
 Layout/LineLength:
   Enabled: false
 
-Style/DefWithParentheses:
-  Enabled: false
-
 Style/RedundantReturn:
   Enabled: false
 
@@ -32,19 +29,10 @@ Style/FrozenStringLiteralComment:
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
 
-Style/MethodCallWithoutArgsParentheses:
-  Enabled: false
-
 Naming/ClassAndModuleCamelCase:
   Enabled: false
 
 Naming/AccessorMethodName:
-  Enabled: false
-
-Layout/SpaceAroundEqualsInParameterDefault:
-  Enabled: false
-
-Style/RedundantSelf:
   Enabled: false
 
 Lint/EmptyFile:

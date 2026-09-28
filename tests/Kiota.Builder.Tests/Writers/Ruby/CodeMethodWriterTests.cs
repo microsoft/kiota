@@ -631,7 +631,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestBodyParameters();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()", result);
+        Assert.Contains("request_info = MicrosoftKiotaAbstractions::RequestInformation.new", result);
+        Assert.DoesNotContain("RequestInformation.new()", result);
         Assert.Contains("request_info.path_parameters", result);
         Assert.Contains("request_info.url_template", result);
         Assert.Contains("http_method = :GET", result);
@@ -1122,7 +1123,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("def initialize(display_name=\"\\#{`id`}\")", result);
+        Assert.Contains("def initialize(display_name = \"\\#{`id`}\")", result);
     }
     [Fact]
     public void WritesConstructorWithDefaultValuesThatRequireParsing()
@@ -1298,7 +1299,8 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("initialize()", result);
+        Assert.Contains("def initialize", result);
+        Assert.DoesNotContain("initialize()", result);
         Assert.DoesNotContain(defaultValue, result);//ensure the composed type is not referenced
     }
     [Fact]
@@ -1905,7 +1907,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super", result);
-        Assert.Contains("@complex_type1_value.get_field_deserializers()", result);
+        Assert.Contains("@complex_type1_value.get_field_deserializers", result);
+        Assert.DoesNotContain("get_field_deserializers()", result);
         Assert.DoesNotContain("complex_type2_value", result);
         Assert.Contains("return {}", result);
         AssertBalancedBlocks(result);

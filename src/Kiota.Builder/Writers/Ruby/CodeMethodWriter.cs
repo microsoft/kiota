@@ -419,7 +419,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         foreach (var property in complexProperties)
         {
             writer.StartBlock($"unless @{property.Name.ToSnakeCase()}.nil?");
-            writer.WriteLine($"return @{property.Name.ToSnakeCase()}.get_field_deserializers()");
+            writer.WriteLine($"return @{property.Name.ToSnakeCase()}.get_field_deserializers");
             writer.CloseBlock("end");
         }
         writer.WriteLine("return {}");
@@ -454,18 +454,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .FirstOrDefault(x => x.IsOfKind(CodeMethodKind.RequestGenerator) && x.HttpMethod == codeElement.HttpMethod)
                                             ?.Name
                                             ?.ToSnakeCase();
-        writer.WriteLine($"request_info = self.{generatorMethodName}(");
         var requestInfoParameters = new CodeParameter?[] { requestParams.requestBody, requestParams.requestContentType, requestParams.requestConfiguration }
             .OfType<CodeParameter>()
             .Select(static x => x.Name.ToSnakeCase())
             .ToArray();
-        if (requestInfoParameters.Length != 0)
-        {
-            writer.IncreaseIndent();
-            writer.WriteLine(requestInfoParameters.Aggregate(static (x, y) => $"{x}, {y}"));
-            writer.DecreaseIndent();
-        }
-        writer.WriteLine(")");
+        writer.WriteLine(requestInfoParameters.Length == 0 ?
+            $"request_info = {generatorMethodName}" :
+            $"request_info = {generatorMethodName}({string.Join(", ", requestInfoParameters)})");
         var isStream = conventions.StreamTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
         var genericTypeForSendMethod = GetSendRequestMethodName(isStream);
         var errorMappingVarName = "nil";
@@ -485,7 +480,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     {
         if (codeElement.HttpMethod == null) throw new InvalidOperationException("http method cannot be null");
 
-        writer.WriteLine("request_info = MicrosoftKiotaAbstractions::RequestInformation.new()");
+        writer.WriteLine("request_info = MicrosoftKiotaAbstractions::RequestInformation.new");
         if (requestParams.requestConfiguration != null)
         {
             var queryString = requestParams.QueryParameters;
@@ -630,8 +625,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                                 .Select(p => conventions.GetParameterSignature(p, code).ToSnakeCase())
                                                 .ToList());
         var staticPrefix = code.IsStatic ? "self." : string.Empty;
-        var openParenthesis = code.IsOfKind(CodeMethodKind.Getter) ? string.Empty : "(";
-        var closeParenthesis = code.IsOfKind(CodeMethodKind.Getter) ? string.Empty : ")";
+        var openParenthesis = parameters.Length == 0 ? string.Empty : "(";
+        var closeParenthesis = parameters.Length == 0 ? string.Empty : ")";
         var equalsSign = code.IsOfKind(CodeMethodKind.Setter) ? "=" : string.Empty;
         writer.StartBlock($"def {staticPrefix}{methodName.ToSnakeCase()}{equalsSign}{openParenthesis}{parameters}{closeParenthesis}");
     }
@@ -674,12 +669,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         }
         return propertyType switch
         {
-            "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value()",
-            "binary" or "Binary" or "base64" or "base64url" => "get_string_value()", //TODO: add support for binary
-            "DateTimeOffset" or "DateTime" => "get_date_time_value()",
-            "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "get_duration_value()",
-            "DateOnly" or "Date" => "get_date_value()",
-            "TimeOnly" or "Time" => "get_time_value()",
+            "string" or "boolean" or "number" or "float" or "Guid" => $"get_{propertyType.ToSnakeCase()}_value",
+            "binary" or "Binary" or "base64" or "base64url" => "get_string_value", //TODO: add support for binary
+            "DateTimeOffset" or "DateTime" => "get_date_time_value",
+            "TimeSpan" or "MicrosoftKiotaAbstractions::ISODuration" => "get_duration_value",
+            "DateOnly" or "Date" => "get_date_value",
+            "TimeOnly" or "Time" => "get_time_value",
             _ => $"get_object_value({getDeserializationLambda(propType)})",
         };
     }
