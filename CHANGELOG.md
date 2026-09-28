@@ -14,10 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Preserve properties and referenced models inside a single inline `allOf` object.
+- Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
 - C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
 - External reference allowlist wildcards no longer cross the URI authority boundary, so a wildcard in the scheme or host cannot match text in the path, the user information or the port.
 - Initialize inherited Dart model fields in constructor initializer lists.
+- Replace only unresolved binary types with a native stream type, and translate a resolved model by its definition rather than its name, so a model whose schema is named `binary`, `base64` or `base64url` keeps its own name across every language instead of being rendered as the native binary type. Generation no longer fails for C# and Java.
 - Avoid redundant parsing branches for equivalent binary alternatives in Dart and PHP composed models.
 - Preserve imports for distinct types from the same namespace when inlining error model inheritance.
 - Dart: qualify model fields named `node` or `deserializerMap` during deserialization so local variables do not shadow them; escape `override` model members to preserve Dart annotations. Fixes [#7822](https://github.com/microsoft/kiota/issues/7822).
