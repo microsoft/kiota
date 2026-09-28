@@ -46,6 +46,7 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("= {", result);
         Assert.Contains(optionName, result);
+        Assert.Contains("}.freeze", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]

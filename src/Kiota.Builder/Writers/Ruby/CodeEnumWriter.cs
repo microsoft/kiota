@@ -20,7 +20,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
         conventions.WriteShortDescription(codeElement, writer);
         writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         codeElement.Options.ToList().ForEach(x => writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()},"));
-        writer.CloseBlock();
+        writer.CloseBlock("}.freeze");
         if (codeElement.Parent is CodeNamespace ns2)
             conventions.WriteNamespaceClosing(ns2, writer);
     }

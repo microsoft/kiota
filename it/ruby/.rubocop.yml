@@ -32,9 +32,6 @@ Style/IfUnlessModifier:
 Layout/EmptyLineBetweenDefs:
   Enabled: false
 
-Style/MutableConstant:
-  Enabled: false
-
 Style/Documentation:
   Enabled: false
 
