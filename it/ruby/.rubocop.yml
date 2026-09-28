@@ -56,19 +56,10 @@ Naming/ClassAndModuleCamelCase:
 Naming/AccessorMethodName:
   Enabled: false
 
-Layout/IndentationStyle:
-  Enabled: false
-
 Layout/SpaceAroundEqualsInParameterDefault:
   Enabled: false
 
 Style/RedundantSelf:
-  Enabled: false
-
-Layout/FirstArgumentIndentation:
-  Enabled: false
-
-Layout/ClosingParenthesisIndentation:
   Enabled: false
 
 Lint/EmptyFile:
@@ -78,9 +69,6 @@ Style/MixinGrouping:
   Enabled: false
 
 Layout/SpaceInsideHashLiteralBraces:
-  Enabled: false
-
-Layout/TrailingEmptyLines:
   Enabled: false
 
 Metrics/MethodLength:
@@ -125,3 +113,7 @@ Lint/UselessMethodDefinition:
 # one accessor per property, each with its own doc comment
 Style/AccessorGrouping:
   EnforcedStyle: separated
+
+# descriptions come from the API and may start with prose such as "Note:"
+Style/CommentAnnotation:
+  Enabled: false
