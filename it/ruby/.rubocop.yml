@@ -11,19 +11,10 @@ Style/StringLiteralsInInterpolation:
 Layout/LineLength:
   Enabled: false
 
-Style/RedundantReturn:
-  Enabled: false
-
-Style/IfUnlessModifier:
-  Enabled: false
-
 Style/Documentation:
   Enabled: false
 
 Style/FrozenStringLiteralComment:
-  Enabled: false
-
-Layout/EmptyLineAfterGuardClause:
   Enabled: false
 
 Naming/ClassAndModuleCamelCase:

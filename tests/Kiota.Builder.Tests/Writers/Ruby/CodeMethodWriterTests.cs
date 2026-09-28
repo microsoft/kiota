@@ -226,7 +226,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("return RootRequestBuilder.new", result);
+        Assert.Contains("RootRequestBuilder.new", result);
+        Assert.DoesNotContain("return RootRequestBuilder.new", result);
         Assert.DoesNotContain("::RootRequestBuilder", result);
     }
     [Fact]
@@ -416,7 +417,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("case mapping_value", result);
         Assert.Contains("when \"ns.childmodel\"", result);
         Assert.Contains("return ChildModel.new", result);
-        Assert.Contains("return ParentModel.new", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "ParentModel.new");
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -571,7 +572,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
-        Assert.Contains("return ParentModel.new", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "ParentModel.new");
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -617,7 +618,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("mapping_value = mapping_value_node.get_string_value", result);
         Assert.DoesNotContain("case mapping_value", result);
         Assert.DoesNotContain("when \"ns.childmodel\"", result);
-        Assert.Contains("return ParentModel.new", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "ParentModel.new");
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
@@ -641,7 +642,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("add_headers_from_raw_object", result);
         Assert.Contains("add_request_options", result);
         Assert.Contains("set_content_from_parsable", result);
-        Assert.Contains("return request_info", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "request_info");
     }
     [Fact]
     public void WritesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
@@ -975,7 +976,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_adapter", result);
         Assert.Contains("path_parameters", result);
         Assert.Contains("= id", result);
-        Assert.Contains("return Somecustomtype.new", result);
+        Assert.Contains("Somecustomtype.new", result);
+        Assert.DoesNotContain("return Somecustomtype.new", result);
     }
     [Fact]
     public void EscapesIndexerPathParameterName()
@@ -1026,7 +1028,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("path_parameters", result);
         Assert.Contains("path_param", result);
         Assert.DoesNotContain("pathParam", result);
-        Assert.Contains("return Somecustomtype.new", result);
+        Assert.Contains("Somecustomtype.new", result);
+        Assert.DoesNotContain("return Somecustomtype.new", result);
     }
     [Fact]
     public void WritesSetterToField()
@@ -1231,7 +1234,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         AddRequestProperties();
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains($"return {parentClass.Name.ToFirstCharacterUpperCase()}.new", result);
+        Assert.Contains($"{parentClass.Name.ToFirstCharacterUpperCase()}.new", result);
+        Assert.DoesNotContain("return ", result);
     }
     [Fact]
     public void WritesConstructorWithEnumValue()
@@ -1465,7 +1469,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("original_name", result);
         Assert.Contains("case", result);
         Assert.Contains("when \"select\"", result);
-        Assert.Contains("return \"%24select\"", result);
+        Assert.Contains("\"%24select\"", result);
+        Assert.DoesNotContain("return \"%24select\"", result);
         Assert.Contains("else", result);
     }
     [Fact]
@@ -1532,7 +1537,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("when \"filter\"", result);
-        Assert.Contains("return \"li\\\"ne\\#\\nbreak\"", result);
+        Assert.Contains("\"li\\\"ne\\#\\nbreak\"", result);
     }
     [Fact]
     public void DoesntWriteReadOnlyPropertiesInSerializerBody()
@@ -1691,7 +1696,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("result = ParentClass.new", result);
         Assert.Contains("mapping_value_node", result);
         Assert.Contains("ComplexType1.new", result);
-        Assert.Contains("return result", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "result");
         Assert.DoesNotContain("ComplexType2.new", result);
         AssertBalancedBlocks(result);
     }
@@ -1708,10 +1713,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("result = ParentClass.new", result);
+        Assert.DoesNotContain("result =", result);
         Assert.DoesNotContain("mapping_value_node", result);
         Assert.DoesNotContain("unless", result);
-        Assert.Contains("return result", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "ParentClass.new");
     }
     [Fact]
     public void WritesUnionFactoryBodySkipsDiscriminatorWithoutAPropertyName()
@@ -1731,7 +1736,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("get_child_node(\"\")", result);
         Assert.DoesNotContain("mapping_value_node", result);
         Assert.Contains("result.string_value = val", result);
-        Assert.Contains("return result", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "result");
         AssertBalancedBlocks(result);
     }
     [Fact]
@@ -1766,7 +1771,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("ComplexType1.new", result);
         Assert.Contains("ComplexType3.new", result);
         Assert.Contains("else", result);
-        Assert.Contains("return result", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "result");
     }
     [Fact]
     public void WritesIntersectionFactoryBodyOnlyComplex()
@@ -1922,7 +1927,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("@complex_type1_value.get_field_deserializers", result);
         Assert.DoesNotContain("get_field_deserializers()", result);
         Assert.DoesNotContain("complex_type2_value", result);
-        Assert.Contains("return {}", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "{}");
         AssertBalancedBlocks(result);
     }
     [Fact]
@@ -1935,7 +1940,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("super", result);
         Assert.Contains("merge_deserializers_for_intersection_wrapper(@complex_type1_value, @complex_type3_value)", result);
         Assert.DoesNotContain("complex_type2_value", result);
-        Assert.Contains("return {}", result);
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "{}");
         AssertBalancedBlocks(result);
     }
     [Fact]
