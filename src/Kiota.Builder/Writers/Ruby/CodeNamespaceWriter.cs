@@ -30,7 +30,7 @@ public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventi
         if (autoloaded.Count == 0) return;
         conventions.WriteNamespaceModules(codeElement, writer);
         foreach (var element in autoloaded)
-            writer.WriteLine($"autoload :{element.Name.ToFirstCharacterUpperCase()}, ::File.expand_path('{PathSegmenter.GetRelativeFileName(codeElement, element).ToSnakeCase()}', __dir__)");
+            writer.WriteLine($"autoload :{element.Name.ToFirstCharacterUpperCase()}, ::File.expand_path({RubyConventionService.ToRubyStringLiteral(PathSegmenter.GetRelativeFileName(codeElement, element).ToSnakeCase())}, __dir__)");
         conventions.WriteNamespaceClosing(codeElement, writer);
     }
 }

@@ -25,6 +25,9 @@ public class RubyConventionService : CommonLanguageConventionService
     // a barrel is written, and required, only when it has something to autoload
     internal static bool HasAutoloadedMembers(CodeNamespace codeNamespace) =>
         codeNamespace.Classes.Any(IsAutoloaded) || codeNamespace.Enums.Any(IsAutoloaded);
+    // double quotes are the only Ruby quoting in which the shared escapes such as \n and \t mean what they say
+    internal static string ToRubyStringLiteral(string? value) =>
+        $"\"{(value ?? string.Empty).SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal)}\"";
     internal static string SanitizeRubyDoubleQuoteLiteral(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
@@ -35,7 +38,7 @@ public class RubyConventionService : CommonLanguageConventionService
                 return $"\"{value[1..^1].SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal)}\"";
 
             if (value[0] == '\'' && value[^1] == '\'')
-                return $"'{value[1..^1].SanitizeSingleQuote().Replace("#", "\\#", StringComparison.Ordinal)}'";
+                return ToRubyStringLiteral(value[1..^1]);
         }
 
         return value.SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal);

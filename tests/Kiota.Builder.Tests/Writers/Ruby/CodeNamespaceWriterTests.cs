@@ -46,9 +46,9 @@ public sealed class CodeNamespaceWriterTests : IDisposable
         Assert.DoesNotContain("require", result, StringComparison.Ordinal);
         Assert.Contains("module Graph", result, StringComparison.Ordinal);
         Assert.Contains("module Models", result, StringComparison.Ordinal);
-        Assert.Contains("autoload :Animal, ::File.expand_path('animal', __dir__)", result, StringComparison.Ordinal);
-        Assert.Contains("autoload :Cat, ::File.expand_path('cat', __dir__)", result, StringComparison.Ordinal);
-        Assert.Contains("autoload :Color, ::File.expand_path('color', __dir__)", result, StringComparison.Ordinal);
+        Assert.Contains("autoload :Animal, ::File.expand_path(\"animal\", __dir__)", result, StringComparison.Ordinal);
+        Assert.Contains("autoload :Cat, ::File.expand_path(\"cat\", __dir__)", result, StringComparison.Ordinal);
+        Assert.Contains("autoload :Color, ::File.expand_path(\"color\", __dir__)", result, StringComparison.Ordinal);
     }
     [Fact]
     public void DoesNotRegisterAnEnumWithoutOptions()

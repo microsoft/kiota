@@ -2,7 +2,7 @@ AllCops:
   TargetRubyVersion: 3.2
 
 Style/StringLiterals:
-  Enabled: false
+  EnforcedStyle: double_quotes
 
 Style/StringLiteralsInInterpolation:
   Enabled: true

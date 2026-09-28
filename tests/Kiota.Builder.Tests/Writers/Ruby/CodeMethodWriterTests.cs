@@ -636,7 +636,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("request_info.path_parameters", result);
         Assert.Contains("request_info.url_template", result);
         Assert.Contains("http_method = :GET", result);
-        Assert.Contains("request_info.headers.try_add('Accept', 'application/json')", result);
+        Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json\")", result);
         Assert.Contains("set_query_string_parameters_from_raw_object", result);
         Assert.Contains("add_headers_from_raw_object", result);
         Assert.Contains("add_request_options", result);
@@ -655,7 +655,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.UrlTemplateOverride = "{baseurl+}/foo/bar";
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info.url_template = '{baseurl+}/foo/bar'", result);
+        Assert.Contains("request_info.url_template = \"{baseurl+}/foo/bar\"", result);
     }
     [Fact]
     public void EscapesRequestGeneratorBodyWhenUrlTemplateIsOverrode()
@@ -669,7 +669,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.UrlTemplateOverride = "{baseurl+}/foo/'bar\nbaz";
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info.url_template = '{baseurl+}/foo/\\'bar\\nbaz'", result);
+        Assert.Contains("request_info.url_template = \"{baseurl+}/foo/'bar\\nbaz\"", result);
     }
     [Fact]
     public void WritesRequestGeneratorBodyKnownRequestBodyType()
@@ -1338,8 +1338,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains(coreProp.Name, result);
-        Assert.Contains($"['baseurl'] = @core.get_base_url", result);
-        Assert.Contains($"set_base_url('{method.BaseUrl}')", result);
+        Assert.Contains($"[\"baseurl\"] = @core.get_base_url", result);
+        Assert.Contains($"set_base_url(\"{method.BaseUrl}\")", result);
     }
     [Fact]
     public void EscapesApiConstructorBaseUrl()
@@ -1375,7 +1375,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("set_base_url('https://graph.microsoft.com/v1.0/\\'evil\\npath')", result);
+        Assert.Contains("set_base_url(\"https://graph.microsoft.com/v1.0/'evil\\npath\")", result);
     }
     [Fact]
     public void WritesApiConstructorWithBackingStore()
@@ -1565,9 +1565,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AcceptedResponseTypes.Add("application/json; profile='CamelCase'");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("request_info.headers.try_add('Accept', 'application/json; profile=\\'CamelCase\\'')", result);
+        Assert.Contains("request_info.headers.try_add(\"Accept\", \"application/json; profile='CamelCase'\")", result);
     }
 
+    [Fact]
+    public void WritesLiteralsThatCannotInterpolate()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        method.AcceptedResponseTypes.Add("text/#{`id`}");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("try_add(\"Accept\", \"text/\\#{`id`}\")", result);
+    }
     [Fact]
     public void WritesRequestGeneratorContentTypeQuotes()
     {
@@ -1579,7 +1591,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.RequestBodyContentType = "application/json; profile='CamelCase'";
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("'application/json; profile=\\'CamelCase\\''", result);
+        Assert.Contains("\"application/json; profile='CamelCase'\"", result);
     }
     private void AddUnionTypeWrapper()
     {

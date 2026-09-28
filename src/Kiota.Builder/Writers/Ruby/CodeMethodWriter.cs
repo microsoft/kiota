@@ -227,7 +227,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                                 .Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.PathParameters, CodeParameterKind.RequestAdapter))
                                                 .Select(static x => x.Name.ToSnakeCase())
                                                 .OrderBy(static x => x))
-                writer.WriteLine($"raise StandardError, '{parameter} cannot be null' if {parameter}.nil?");
+                writer.WriteLine($"raise StandardError, {RubyConventionService.ToRubyStringLiteral($"{parameter} cannot be null")} if {parameter}.nil?");
     }
     private static void WriteQueryParametersMapper(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
@@ -238,7 +238,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var escapedProperties = parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.QueryParameter) && x.IsNameEscaped);
         foreach (var escapedProperty in escapedProperties)
         {
-            writer.StartBlock($"when \"{escapedProperty.Name}\"");
+            writer.StartBlock($"when {RubyConventionService.ToRubyStringLiteral(escapedProperty.Name)}");
             writer.WriteLine($"return \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(escapedProperty.SerializationName)}\"");
             writer.DecreaseIndent();
         }
@@ -262,10 +262,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.StartBlock($"if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
-            writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url('{method.BaseUrl.SanitizeSingleQuote()}')");
+            writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url({RubyConventionService.ToRubyStringLiteral(method.BaseUrl)})");
             writer.CloseBlock("end");
             if (pathParametersProperty != null)
-                writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}['baseurl'] = @{requestAdapterPropertyName}.get_base_url");
+                writer.WriteLine($"@{pathParametersProperty.Name.ToSnakeCase()}[\"baseurl\"] = @{requestAdapterPropertyName}.get_base_url");
         }
     }
     private static void WriteSerializationRegistration(CodeClass parentClass, HashSet<string> serializationClassNames, LanguageWriter writer, string methodName)
@@ -500,28 +500,28 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             if (requestParams.requestBody != null)
             {
-                var sanitizedRequestBodyContentType = codeElement.RequestBodyContentType.SanitizeSingleQuote();
+                var requestBodyContentType = RubyConventionService.ToRubyStringLiteral(codeElement.RequestBodyContentType);
                 if (requestParams.requestBody.Type.Name.Equals(conventions.StreamTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     if (requestParams.requestContentType is not null)
                         writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestParams.requestContentType.Name})");
-                    else if (!string.IsNullOrEmpty(sanitizedRequestBodyContentType))
-                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, '{sanitizedRequestBodyContentType}')");
+                    else if (!string.IsNullOrEmpty(codeElement.RequestBodyContentType))
+                        writer.WriteLine($"request_info.set_stream_content({requestParams.requestBody.Name}, {requestBodyContentType})");
                 }
                 else if (parentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, '{sanitizedRequestBodyContentType}', {requestParams.requestBody.Name})");
+                    writer.WriteLine($"request_info.set_content_from_parsable(@{requestAdapterProperty.Name.ToSnakeCase()}, {requestBodyContentType}, {requestParams.requestBody.Name})");
             }
         }
         if (parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty urlTemplateParamsProperty &&
             parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is CodeProperty urlTemplateProperty)
         {
-            var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{codeElement.UrlTemplateOverride.SanitizeSingleQuote()}'" : GetPropertyCall(urlTemplateProperty, "''");
+            var urlTemplateValue = codeElement.HasUrlTemplateOverride ? RubyConventionService.ToRubyStringLiteral(codeElement.UrlTemplateOverride) : GetPropertyCall(urlTemplateProperty, "\"\"");
             writer.WriteLines($"request_info.url_template = {urlTemplateValue}",
-                            $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "''")}");
+                            $"request_info.path_parameters = {GetPropertyCall(urlTemplateParamsProperty, "\"\"")}");
         }
         writer.WriteLine($"request_info.http_method = :{codeElement.HttpMethod.Value.ToString().ToUpperInvariant()}");
         if (codeElement.ShouldAddAcceptHeader)
-            writer.WriteLine($"request_info.headers.try_add('Accept', '{codeElement.AcceptHeaderValue.SanitizeSingleQuote()}')");
+            writer.WriteLine($"request_info.headers.try_add(\"Accept\", {RubyConventionService.ToRubyStringLiteral(codeElement.AcceptHeaderValue)})");
         writer.WriteLine("return request_info");
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";

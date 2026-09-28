@@ -4,7 +4,7 @@ RSpec.describe Integration_test do
   it "does something useful" do
     auth_provider = MicrosoftKiotaAbstractions::AnonymousAuthenticationProvider.new
     request_adapter = MicrosoftKiotaFaraday::FaradayRequestAdapter.new(auth_provider)
-    request_adapter.set_base_url('http://127.0.0.1:1080')
+    request_adapter.set_base_url("http://127.0.0.1:1080")
     client = Integration_test::Client::ApiClient.new(request_adapter)
     expect(client).to_not be nil
 

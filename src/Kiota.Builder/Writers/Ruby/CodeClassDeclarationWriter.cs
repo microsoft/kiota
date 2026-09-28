@@ -34,7 +34,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                         .GroupBy(static x => x)
                                         .Select(static x => x.Key)
                                         .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"require '{codeUsing}'");
+                writer.WriteLine($"require {RubyConventionService.ToRubyStringLiteral(codeUsing)}");
 
             foreach (var relativePath in codeElement.Usings
                                         .Where(static x => !x.IsExternal)
@@ -45,7 +45,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                         .Select(static x => x.Item3)
                                         .Distinct()
                                         .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
+                writer.WriteLine($"require_relative {RubyConventionService.ToRubyStringLiteral(relativePath.ToSnakeCase())}");
         }
         writer.WriteLine();
         if (codeElement.Parent?.Parent is CodeNamespace ns)
