@@ -81,11 +81,13 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
+            // Ruby inherits initialize, so a subclass needs one only for defaults of its own
             AddConstructorsForDefaultValues(
                 generatedCode,
-                true,
+                false,
                 false,
                 [CodeClassKind.RequestConfiguration]);
+            RemoveDeserializersThatOnlyCallSuper(generatedCode);
             ShortenLongNamespaceNames(generatedCode);
             if (generatedCode.FindNamespaceByName(_configuration.ClientNamespaceName)?.Parent is CodeNamespace parentOfClientNS)
                 AddNamespaceModuleImports(parentOfClientNS, generatedCode);
@@ -250,6 +252,17 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
+    // a subclass with no fields of its own inherits the deserializer map unchanged
+    private static void RemoveDeserializersThatOnlyCallSuper(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass &&
+            currentClass.IsOfKind(CodeClassKind.Model) &&
+            currentClass.StartBlock.Inherits is not null &&
+            currentClass.OriginalComposedType is null &&
+            !currentClass.Properties.Any(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType))
+            currentClass.RemoveMethodByKinds(CodeMethodKind.Deserializer);
+        CrawlTree(currentElement, RemoveDeserializersThatOnlyCallSuper);
+    }
     private static void AddNamespaceModuleImports(CodeNamespace clientNamespaceParent, CodeElement current)
     {
         if (current is CodeClass currentClass)

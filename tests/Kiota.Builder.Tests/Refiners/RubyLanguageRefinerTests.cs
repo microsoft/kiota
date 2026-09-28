@@ -151,6 +151,20 @@ public class RubyLanguageRefinerTests
         Assert.Contains(model.Properties, static x => x.IsOfKind(CodePropertyKind.Custom));
     }
     [Fact]
+    public async Task LetsASubclassWithNothingOfItsOwnInheritInitializeAndTheDeserializerAsync()
+    {
+        var baseModel = graphNS.AddClass(new CodeClass { Name = "animal", Kind = CodeClassKind.Model }).First();
+        baseModel.AddProperty(new CodeProperty { Name = "additionalData", Kind = CodePropertyKind.AdditionalData, Type = new CodeType { Name = "IDictionary<string, object>" }, DefaultValue = "{}" });
+        baseModel.AddMethod(new CodeMethod { Name = "getFieldDeserializers", Kind = CodeMethodKind.Deserializer, ReturnType = new CodeType { Name = "IDictionary<string, Action<IParseNode>>" } });
+        var derivedModel = graphNS.AddClass(new CodeClass { Name = "cat", Kind = CodeClassKind.Model }).First();
+        derivedModel.StartBlock.Inherits = new CodeType { Name = "animal", TypeDefinition = baseModel };
+        derivedModel.AddMethod(new CodeMethod { Name = "getFieldDeserializers", Kind = CodeMethodKind.Deserializer, ReturnType = new CodeType { Name = "IDictionary<string, Action<IParseNode>>" } });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains(baseModel.Methods, static x => x.IsOfKind(CodeMethodKind.Constructor));
+        Assert.Contains(baseModel.Methods, static x => x.IsOfKind(CodeMethodKind.Deserializer));
+        Assert.DoesNotContain(derivedModel.Methods, static x => x.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.Deserializer));
+    }
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass

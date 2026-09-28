@@ -55,10 +55,6 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Enabled: false
 
-# Generated factory methods may just delegate to super
-Lint/UselessMethodDefinition:
-  Enabled: false
-
 # one accessor per property, each with its own doc comment
 Style/AccessorGrouping:
   EnforcedStyle: separated
