@@ -1147,6 +1147,34 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestExecutorBodyForAResolvedModelNamedBinary()
+    {
+        setup();
+        var model = root.AddClass(new CodeClass { Name = "binary", Kind = CodeClassKind.Model }).First();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType { Name = "binary", TypeDefinition = model };
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("send<Binary>", result);
+        Assert.DoesNotContain("sendPrimitiveCollection", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void WritesRequestExecutorBodyForAnUnresolvedBinary()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        method.ReturnType = new CodeType { Name = "binary" };
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("sendPrimitiveCollection<int>", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesRequestExecutorBodyForCollections()
     {
         setup();
