@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
+- Ruby: a client generated with a multi-segment `--namespace-name`, such as `integration_test.client`, failed to load because its root file was written one directory too deep.
 - Ruby: namespace barrels register their models and enums with `autoload` instead of requiring them, so a subclass no longer fails to load when its base class file is required first. Other files require the barrel rather than an individual model file, and models now load on first use. [#7956](https://github.com/microsoft/kiota/issues/7956)
 - C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
 - External reference allowlist wildcards no longer cross the URI authority boundary, so a wildcard in the scheme or host cannot match text in the path, the user information or the port.
