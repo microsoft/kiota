@@ -1214,6 +1214,197 @@ components:
     }
 
     [Fact]
+    public async Task EnumBoundAnchorFallsBackToConcreteSpecializationAsync()
+    { // enums cannot satisfy the Parsable constraint on generic template parameters: the binding stays concrete
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Status'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    Status:
+      type: string
+      enum:
+        - active
+        - inactive
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        value:
+          $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the concrete specialization keeps the enum typing, no generic is emitted
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateStatus", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+        Assert.Empty(concrete.TypeParameters);
+        var valueType = Assert.IsType<CodeType>(concrete.Properties.First(static x => x.Name == "value").Type);
+        var statusEnum = Assert.IsType<CodeEnum>(valueType.TypeDefinition);
+        Assert.Equal("Status", statusEnum.Name);
+        // executor return closes over the concrete class, never an open generic or UntypedNode
+        var executor = codeModel.FindNamespaceByName("ApiSdk.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.Same(concrete, returnType.TypeDefinition);
+        Assert.Empty(returnType.GenericTypeParameterValues);
+    }
+
+    [Fact]
+    public async Task PrimitiveBoundAnchorFallsBackToConcreteSpecializationAsync()
+    { // primitives cannot satisfy the Parsable constraint on generic template parameters: the binding stays concrete
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/DisplayName'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    DisplayName:
+      type: string
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        value:
+          $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the concrete specialization keeps the primitive typing, no generic is emitted
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateDisplayName", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+        Assert.Empty(concrete.TypeParameters);
+        var valueType = Assert.IsType<CodeType>(concrete.Properties.First(static x => x.Name == "value").Type);
+        Assert.Equal("string", valueType.Name);
+        Assert.Null(valueType.TypeDefinition);
+        // executor return closes over the concrete class, never an open generic or UntypedNode
+        var executor = codeModel.FindNamespaceByName("ApiSdk.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.Same(concrete, returnType.TypeDefinition);
+        Assert.Empty(returnType.GenericTypeParameterValues);
+    }
+
+    [Fact]
+    public async Task CollectionBoundAnchorFallsBackToConcreteSpecializationAsync()
+    { // collections cannot satisfy the Parsable constraint on generic template parameters: the binding stays concrete
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, """
+openapi: 3.1.0
+info:
+  title: T
+  version: 0.1.0
+servers:
+  - url: https://localhost
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $defs:
+                  itemType:
+                    $dynamicAnchor: itemType
+                    $ref: '#/components/schemas/Tags'
+                $ref: '#/components/schemas/PaginatedTemplate'
+components:
+  schemas:
+    Tags:
+      type: array
+      items:
+        type: string
+    PaginatedTemplate:
+      $dynamicAnchor: itemType
+      type: object
+      properties:
+        value:
+          $dynamicRef: '#itemType'
+""", cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "ApiSdk", OpenAPIFilePath = tempFilePath }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document!));
+
+        var modelsNamespace = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNamespace);
+        // the concrete specialization keeps the collection typing, no generic is emitted
+        var concrete = modelsNamespace!.FindChildByName<CodeClass>("PaginatedTemplateTags", true);
+        Assert.NotNull(concrete);
+        Assert.False(concrete!.IsGeneric);
+        Assert.Empty(concrete.TypeParameters);
+        var valueType = Assert.IsType<CodeType>(concrete.Properties.First(static x => x.Name == "value").Type);
+        Assert.Equal("string", valueType.Name);
+        Assert.NotEqual(CodeTypeBase.CodeTypeCollectionKind.None, valueType.CollectionKind);
+        // executor return closes over the concrete class, never an open generic or UntypedNode
+        var executor = codeModel.FindNamespaceByName("ApiSdk.users")!.FindChildByName<CodeClass>("UsersRequestBuilder", true)!.Methods
+            .First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && x.HttpMethod == HttpMethod.Get);
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.Same(concrete, returnType.TypeDefinition);
+        Assert.Empty(returnType.GenericTypeParameterValues);
+    }
+
+    [Fact]
     public async Task PromotesNestedInlineModelsInsideGenericTemplatesAsync()
     {
         var tempFilePath = Path.GetTempFileName();

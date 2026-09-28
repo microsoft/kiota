@@ -2487,4 +2487,62 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("export function serializePaginatedTemplate<TItemType extends Parsable>(itemTypeSerializer: ModelSerializerFunction<TItemType>, writer: SerializationWriter, paginatedTemplate: Partial<PaginatedTemplate<TItemType>> | undefined | null = {}, isSerializingDerivedType: boolean = false)", result); Assert.Contains("writer.writeCollectionOfObjectValues<TItemType>(\"items\", paginatedTemplate.items, itemTypeSerializer)", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+
+    private static CodeClass CreateGenericDerivedModelClass(CodeNamespace root, string className, string baseClassName)
+    {
+        var baseClass = CreateGenericModelClass(root, baseClassName);
+        var derivedClass = TestHelper.CreateModelClass(root, className);
+        derivedClass.StartBlock.AddTypeParameter(new CodeTypeParameter { Name = "TItemType" });
+        var itemTypeParameter = derivedClass.TypeParameters.First();
+        derivedClass.StartBlock.Inherits = new CodeType
+        {
+            Name = baseClass.Name,
+            TypeDefinition = baseClass,
+        };
+        derivedClass.StartBlock.Inherits.AddGenericTypeParameterValue(new CodeType
+        {
+            Name = itemTypeParameter.Name,
+            TypeDefinition = itemTypeParameter,
+        });
+        derivedClass.Methods.First(static x => x.IsOfKind(CodeMethodKind.Serializer)).AddParameter(new CodeParameter
+        {
+            Name = "writer",
+            Kind = CodeParameterKind.Serializer,
+            Type = new CodeType { Name = "SerializationWriter", IsExternal = true, IsNullable = false },
+            Optional = false,
+        });
+        return derivedClass;
+    }
+
+    [Fact]
+    public async Task WritesInheritedSerializerBodyWithGenericBaseAsync()
+    {
+        var derivedClass = CreateGenericDerivedModelClass(root, "derivedPaginatedTemplate", "paginatedTemplateBase");
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"serialize{derivedClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+        writer.Write(serializeFunction);
+        var result = tw.ToString();
+        Assert.Contains("serializePaginatedTemplateBase(itemTypeSerializer, writer, derivedPaginatedTemplate, isSerializingDerivedType)", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task WritesInheritedDeSerializerBodyWithGenericBaseAsync()
+    {
+        var derivedClass = CreateGenericDerivedModelClass(root, "derivedPaginatedTemplate", "paginatedTemplateBase");
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"deserializeInto{derivedClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+        Assert.Contains("...deserializeIntoPaginatedTemplateBase(itemTypeFactory, derivedPaginatedTemplate),", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
 }

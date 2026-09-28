@@ -136,6 +136,23 @@ public partial class JavaConventionService : CommonLanguageConventionService
             yield return $"this.{setterName}({defaultValue});";
         }
     }
+    /// <summary>
+    /// Emits the direct field assignments for properties with defaults that must not rely on accessors in
+    /// constructors (backing store, request builder, path parameters). Also used by the synthesized
+    /// constructors of generic model classes so the backing store is initialized before any accessor
+    /// based default assignment.
+    /// </summary>
+    internal static void WriteConstructorFieldDefaultAssignments(CodeClass parentClass, LanguageWriter writer)
+    {
+        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
+                                                                        CodePropertyKind.RequestBuilder,
+                                                                        CodePropertyKind.PathParameters)
+                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
+                                        .OrderBy(static x => x.Name))
+        {
+            writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
+        }
+    }
     private static bool TryGetDefaultValue(string defaultValue, CodeType propertyType, out string? convertedDefaultValue)
     {
         convertedDefaultValue = propertyType.Name.ToLowerInvariant() switch

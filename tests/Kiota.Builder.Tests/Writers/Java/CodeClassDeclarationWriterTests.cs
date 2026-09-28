@@ -1,7 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Java;
 
@@ -184,5 +187,40 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("this._itemTypeFactory = itemTypeFactory;", result);
         Assert.Contains("this.setPageSize(10);", result);
+    }
+    [Fact]
+    public async Task WritesBackingStoreInitializationAndFactoryFieldWithBackingStoreRefinementAsync()
+    {
+        parentClass.Kind = CodeClassKind.Model;
+        var itemTypeParameter = new CodeTypeParameter { Name = "TItemType" };
+        parentClass.StartBlock.AddTypeParameter(itemTypeParameter);
+        var itemsType = new CodeType { TypeDefinition = itemTypeParameter, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex };
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "items",
+            Kind = CodePropertyKind.Custom,
+            Type = itemsType,
+        });
+        // mirrors KiotaBuilder.AddSerializationMembers when backing store is enabled
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "BackingStore",
+            Kind = CodePropertyKind.BackingStore,
+            DefaultValue = "BackingStoreFactorySingleton.Instance.CreateBackingStore()",
+            ReadOnly = true,
+            Type = new CodeType { Name = "IBackingStore", IsExternal = true, IsNullable = false },
+        });
+        parentClass.StartBlock.AddImplements(new CodeType { Name = "IBackedModel", IsExternal = true });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Java, UsesBackingStore = true }, (CodeNamespace)parentClass.Parent, cancellationToken: TestContext.Current.CancellationToken);
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var result = tw.ToString();
+        // the refined class no longer holds the items property, only accessors pointing at it
+        Assert.Contains("private final ParsableFactory<TItemType> _itemTypeFactory;", result);
+        Assert.Contains("this._itemTypeFactory = itemTypeFactory;", result);
+        var backingStoreInitialization = result.IndexOf("this.backingStore = BackingStoreFactorySingleton.instance.createBackingStore();", StringComparison.Ordinal);
+        Assert.True(backingStoreInitialization >= 0, "backing store initialization missing from synthesized constructor");
+        var factoryAssignment = result.IndexOf("this._itemTypeFactory = itemTypeFactory;", StringComparison.Ordinal);
+        Assert.True(factoryAssignment >= 0, "factory field assignment missing from synthesized constructor");
+        Assert.True(backingStoreInitialization < factoryAssignment, "backing store must be initialized before the factory assignment");
     }
 }

@@ -520,6 +520,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private void WriteDeserializerBody(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer, bool inherits)
     {
         _codeUsingWriter.WriteInternalImports(parentClass, writer);
+        // concrete generic arguments (PageTemplate[User]) are only type-checking imports at module level,
+        // the runtime subscription needs a deferred import before the field deserializers run
+        foreach (var propertyType in parentClass.GetPropertiesOfKind(CodePropertyKind.Custom).Select(static x => x.Type).OfType<CodeType>())
+            foreach (var genericArgument in propertyType.GenericTypeParameterValues.Where(static x => x.TypeDefinition is not null and not CodeTypeParameter))
+                _codeUsingWriter.WriteDeferredImport(parentClass, genericArgument.Name, writer);
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteDeserializerBodyForUnionModel(codeElement, parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
@@ -614,11 +619,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         if (codeElement.ErrorMappings.Any())
         {
             _codeUsingWriter.WriteInternalErrorMappingImports(parentClass, writer);
+            foreach (var genericArgument in codeElement.ErrorMappings.Select(static x => x.Value).OfType<CodeType>().SelectMany(static t => t.GenericTypeParameterValues))
+                _codeUsingWriter.WriteDeferredImport(parentClass, genericArgument.Name, writer);
             errorMappingVarName = "error_mapping";
             writer.StartBlock($"{errorMappingVarName}: dict[str, type[ParsableFactory]] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name},");
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {conventions.GetTypeString(errorMapping.Value, codeElement)},");
             }
             writer.CloseBlock();
         }
@@ -851,10 +858,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
         var argumentNames = new string[arguments.Length];
         for (var i = 0; i < arguments.Length; i++)
         {
-            if (arguments[i].TypeDefinition is not CodeTypeParameter argumentParameter ||
-                currentClass.TypeParameters.All(x => !x.Name.Equals(argumentParameter.Name, StringComparison.OrdinalIgnoreCase)))
+            if (arguments[i].TypeDefinition is CodeTypeParameter argumentParameter &&
+                currentClass.TypeParameters.Any(x => x.Name.Equals(argumentParameter.Name, StringComparison.OrdinalIgnoreCase)))
+                argumentNames[i] = $"type(self).{CodeClassDeclarationWriter.GetTypeParameterSlotName(argumentParameter)}";
+            else if (arguments[i].TypeDefinition is not null and not CodeTypeParameter)
+                argumentNames[i] = arguments[i].Name; // concrete closed argument: PageTemplate[User], runtime import emitted by the deserializer body
+            else
                 return false;
-            argumentNames[i] = $"type(self).{CodeClassDeclarationWriter.GetTypeParameterSlotName(argumentParameter)}";
         }
         subscription = $"{genericClass.Name}[{string.Join(", ", argumentNames)}]";
         return true;

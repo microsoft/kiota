@@ -608,7 +608,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 },
             });
         }
-        // Add the discriminator function to the wrapper as it will be referenced. 
+        // Add the discriminator function to the wrapper as it will be referenced.
         KiotaBuilder.AddDiscriminatorMethod(newClass, codeComposedType.DiscriminatorInformation.DiscriminatorPropertyName, codeComposedType.DiscriminatorInformation.DiscriminatorMappings, refineMethodName);
         return new CodeType
         {
@@ -1622,7 +1622,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                     if (sameNameProperty.Type.Name.Equals(type().Name, StringComparison.OrdinalIgnoreCase))
                     {
                         // As the type may not be settable by the serialization logic
-                        // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly. 
+                        // set this as the primary error message as it matches the type so that the deserialization logic can map this correctly.
                         sameNameProperty.IsPrimaryErrorMessage = true;
                     }
                     if (string.IsNullOrEmpty(sameNameProperty.SerializationName))

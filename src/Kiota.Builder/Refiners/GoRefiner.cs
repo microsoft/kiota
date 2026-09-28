@@ -452,6 +452,8 @@ public class GoRefiner : CommonLanguageRefiner
             ReplaceGenericTypeArguments(currentMethod.ReturnType, parentClass);
             foreach (var parameter in currentMethod.Parameters)
                 ReplaceGenericTypeArguments(parameter.Type, parentClass);
+            foreach (var errorMapping in currentMethod.ErrorMappings)
+                ReplaceGenericTypeArguments(errorMapping.Value, parentClass);
         }
         else if (currentElement is CodeProperty currentProperty && currentProperty.Parent is CodeClass propertyParentClass)
             ReplaceGenericTypeArguments(currentProperty.Type, propertyParentClass);

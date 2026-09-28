@@ -1153,6 +1153,75 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void WritesRequestExecutorBodyForGenericErrorMapping()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestBodyParameters();
+        parentClass.AddUsing(new CodeUsing
+        {
+            Name = "Parsable",
+            Declaration = new CodeType
+            {
+                Name = "github.com/microsoft/kiota-abstractions-go/serialization",
+                IsExternal = true,
+            },
+        });
+        var userModel = root.AddClass(new CodeClass
+        {
+            Name = "user",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var userable = root.AddInterface(new CodeInterface
+        {
+            Name = "Userable",
+            Kind = CodeInterfaceKind.Model,
+            OriginalClass = userModel,
+        }).First();
+        userModel.AssociatedInterface = userable;
+        var errorTemplateClass = root.AddClass(new CodeClass
+        {
+            Name = "ErrorTemplate",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var error5XX = root.AddClass(new CodeClass
+        {
+            Name = "Error5XX",
+        }).First();
+        var genericErrorType = new CodeType
+        {
+            Name = "errorTemplate",
+            TypeDefinition = errorTemplateClass,
+        };
+        genericErrorType.AddGenericTypeParameterValue(new CodeType
+        {
+            Name = "userable",
+            TypeDefinition = userable,
+        });
+        method.AddErrorMapping("400", genericErrorType);
+        method.AddErrorMapping("5XX", new CodeType { Name = "Error5XX", TypeDefinition = error5XX });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "ctx",
+            Kind = CodeParameterKind.Cancellation,
+            Type = new CodeType
+            {
+                Name = "context.Context",
+                IsExternal = true,
+                IsNullable = false,
+            },
+            Optional = false,
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains($"\"400\": func(parseNode {SerializationPackageHash}.ParseNode) ({SerializationPackageHash}.Parsable, error) {{", result);
+        Assert.Contains("return NewErrorTemplate[Userable](CreateUserFromDiscriminatorValue), nil", result);
+        Assert.Contains("\"5XX\": CreateError5XXFromDiscriminatorValue,", result);
+        Assert.Contains("Send(ctx, requestInfo, CreateSomecustomtypeFromDiscriminatorValue, errorMapping)", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void WritesSerializerAndDeserializerBodiesForGenericModel()
     {
         setup();

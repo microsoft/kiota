@@ -1929,9 +1929,9 @@ public partial class KiotaBuilder
             {
                 ResolveGenericBoundArguments(currentNode, schema, operation, codeNamespace, frame, response, isRequestBody);
                 if (frame.BoundArgumentsByParameterName.Count != frame.TypeParametersByAnchor.Count)
-                { // a bound anchor that does not resolve to a single type (e.g. $ref to a oneOf/anyOf component)
+                { // a bound anchor that does not resolve to a non-collection model type (e.g. $ref to a oneOf/anyOf component, an enum, a primitive or a collection)
                   // would produce a wrong-arity closed generic at usage sites: fall back to the concrete specialization
-                    logger.LogWarning("Binding for template {ClassName} falls back to a concrete specialization: an anchor did not resolve to a single type.", className);
+                    logger.LogWarning("Binding for template {ClassName} falls back to a concrete specialization: an anchor did not resolve to a non-collection model type.", className);
                     genericMode = false;
                     frame = RestartFrameAsConcreteBinding(schema, bindingSuffix, frame);
                     className = $"{className}{bindingSuffix}";
@@ -2004,7 +2004,9 @@ public partial class KiotaBuilder
         foreach (var (anchor, parameter) in frame.TypeParametersByAnchor)
         {
             var boundSchema = schema.Definitions.Values.FirstOrDefault(x => string.Equals(x.DynamicAnchor, anchor, StringComparison.Ordinal));
-            if (boundSchema is null || CreateModelDeclarations(currentNode, boundSchema, operation, codeNamespace, string.Empty, response, string.Empty, isRequestBody) is not CodeType argument) continue;
+            // generic templates constrain their parameters to Parsable models (factory methods at usage sites):
+            // enums, primitives and collections cannot satisfy that, so they stay unbound and fall back to concrete
+            if (boundSchema is null || CreateModelDeclarations(currentNode, boundSchema, operation, codeNamespace, string.Empty, response, string.Empty, isRequestBody) is not CodeType { TypeDefinition: CodeClass, CollectionKind: CodeTypeBase.CodeTypeCollectionKind.None } argument) continue;
             frame.BoundArgumentsByParameterName.TryAdd(parameter.Name, argument);
         }
     }
@@ -2084,8 +2086,8 @@ public partial class KiotaBuilder
             {
                 ResolveGenericBoundArguments(currentNode, schema, operation, codeNamespace, frame, response, isRequestBody);
                 if (frame.BoundArgumentsByParameterName.Count != frame.TypeParametersByAnchor.Count)
-                { // same fallback as the direct path: an anchor bound to a composed type stays concrete
-                    logger.LogWarning("Binding for inherited template {TemplateName} falls back to a concrete specialization: an anchor did not resolve to a single type.", frame.TemplateClassName);
+                { // same fallback as the direct path: an anchor bound to a composed, enum, primitive or collection type stays concrete
+                    logger.LogWarning("Binding for inherited template {TemplateName} falls back to a concrete specialization: an anchor did not resolve to a non-collection model type.", frame.TemplateClassName);
                     genericMode = false;
                     frame = RestartFrameAsConcreteBinding(schema, bindingSuffix, frame);
                 }

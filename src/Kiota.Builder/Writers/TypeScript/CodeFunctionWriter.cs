@@ -229,10 +229,10 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     /// <param name="codeElement">The function code element where serialization is performed.</param>
     /// <param name="writer">The language writer used to generate the code.</param>
     /// <remarks>
-    /// This method handles serialization for union types when the discriminator property is missing. 
-    /// In the absence of a discriminator, all possible types in the union are serialized. For example, 
-    /// a Pet union defined as Cat | Dog would result in the serialization of both Cat and Dog types. 
-    /// It delegates the task to the method responsible for intersection types, treating the union 
+    /// This method handles serialization for union types when the discriminator property is missing.
+    /// In the absence of a discriminator, all possible types in the union are serialized. For example,
+    /// a Pet union defined as Cat | Dog would result in the serialization of both Cat and Dog types.
+    /// It delegates the task to the method responsible for intersection types, treating the union
     /// similarly to an intersection in this context.
     /// </remarks>
     private void WriteBruteForceSerializationFunctionForCodeUnionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
@@ -530,7 +530,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"if (!{param.Name.ToFirstCharacterLowerCase()} || {serializingDerivedTypeParam.Name}) {{ return; }}");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType inherits)
         {
-            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}(writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
+            var forwardedSerializers = inherits.GenericTypeParameterValues
+                .OfType<CodeType>()
+                .Select(x => GetSerializerOverrideForType(codeElement, x) ?? GetSerializerFunctionName(codeElement, x))
+                .ToArray();
+            var serializerPrefix = forwardedSerializers.Length == 0 ? string.Empty : $"{string.Join(", ", forwardedSerializers)}, ";
+            writer.WriteLine($"{GetSerializerFunctionName(codeElement, inherits)}({serializerPrefix}writer, {param.Name.ToFirstCharacterLowerCase()}, {serializingDerivedTypeParam.Name})");
         }
 
         foreach (var otherProp in codeInterface.Properties.Where(static x => x.IsOfKind(CodePropertyKind.Custom) && !x.ExistsInBaseType && !x.ReadOnly))
@@ -755,7 +760,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.StartBlock("return {");
         if (codeInterface.StartBlock.Implements.FirstOrDefault(static x => x.TypeDefinition is CodeInterface) is CodeType type && type.TypeDefinition is CodeInterface inherits)
         {
-            writer.WriteLine($"...deserializeInto{inherits.Name.ToFirstCharacterUpperCase()}({param.Name.ToFirstCharacterLowerCase()}),");
+            var forwardedFactories = type.GenericTypeParameterValues
+                .OfType<CodeType>()
+                .Select(x => GetFactoryOverrideForType(codeFunction, x) ?? GetFactoryMethodName(x, codeFunction))
+                .ToArray();
+            var factoryPrefix = forwardedFactories.Length == 0 ? string.Empty : $"{string.Join(", ", forwardedFactories)}, ";
+            writer.WriteLine($"...deserializeInto{inherits.Name.ToFirstCharacterUpperCase()}({factoryPrefix}{param.Name.ToFirstCharacterLowerCase()}),");
         }
         var (primaryErrorMapping, primaryErrorMappingKey) = GetPrimaryErrorMapping(codeFunction, param);
 

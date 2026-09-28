@@ -966,7 +966,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.IncreaseIndent();
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {conventions.GetImportedStaticMethodName(errorMapping.Value, parentClass, "Create", "FromDiscriminatorValue", "able")},");
+                writer.Write($"\"{errorMapping.Key.ToUpperInvariant()}\": ");
+                if (errorMapping.Value is CodeType { } errorMappingType && errorMappingType.GenericTypeParameterValues.Any())
+                { // generic error mappings construct through a factory closure, which gofmt always splits over multiple lines
+                    writer.WriteLine($"func(parseNode {conventions.SerializationHash}.ParseNode) {GetParsableFactoryReturnType()} {{", includeIndent: false);
+                    writer.IncreaseIndent();
+                    writer.WriteLine($"return {GetTypeConstructorCall(errorMappingType, parentClass, false)}, nil");
+                    writer.DecreaseIndent();
+                    writer.WriteLine("},");
+                }
+                else
+                    writer.WriteLine($"{conventions.GetImportedStaticMethodName(errorMapping.Value, parentClass, "Create", "FromDiscriminatorValue", "able")},", includeIndent: false);
             }
             writer.CloseBlock();
         }

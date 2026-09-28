@@ -346,14 +346,7 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             }
             else
                 writer.WriteLine("super();");
-        foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
-                                                                        CodePropertyKind.RequestBuilder,
-                                                                        CodePropertyKind.PathParameters)
-                                        .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))
-                                        .OrderBy(static x => x.Name))
-        {
-            writer.WriteLine($"this.{propWithDefault.NamePrefix}{propWithDefault.Name} = {propWithDefault.DefaultValue.SanitizeQuotedStringLiteral()};");
-        }
+        JavaConventionService.WriteConstructorFieldDefaultAssignments(parentClass, writer);
         foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass))
             writer.WriteLine(assignment);
         if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&

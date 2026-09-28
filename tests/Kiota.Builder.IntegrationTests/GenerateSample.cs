@@ -1103,34 +1103,115 @@ public sealed class GenerateSample : IDisposable
         Assert.DoesNotContain("class MixedTemplate:", allModelText, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task SpecializesInheritedComponentDynamicRefBindingsAsync()
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [Theory]
+    public async Task SpecializesInheritedComponentDynamicRefBindingsAsync(GenerationLanguage language)
     {
         var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
         var configuration = new GenerationConfiguration
         {
-            Language = GenerationLanguage.CSharp,
+            Language = language,
             OpenAPIFilePath = GetAbsolutePath("inherited-component-binding.yaml"),
-            OutputPath = Path.Combine(".", "Generated", "InheritedComponentBinding", "CSharp"),
+            OutputPath = Path.Combine(".", "Generated", "InheritedComponentBinding", language.ToString()),
             CleanOutput = true,
         };
         await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
 
-        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "InheritedComponentBinding", "CSharp"));
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "InheritedComponentBinding", language.ToString()));
         Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
-        // the base resolves items through the active binding so it goes generic; the derived class closes over the base argument
-        Assert.Contains("class BasePage<TItemType>", allModelText, StringComparison.Ordinal);
-        Assert.Contains("class DerivedPage<TItemType> : global::ApiSdk.Models.BasePage<TItemType>", allModelText, StringComparison.Ordinal);
-        Assert.Contains("public DerivedPage(ParsableFactory<TItemType> itemTypeFactory) : base(itemTypeFactory)", allModelText, StringComparison.Ordinal);
-        Assert.Contains("SendAsync<global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.User>>", allModelText, StringComparison.Ordinal);
-        Assert.Contains("SendAsync<global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.Group>>", allModelText, StringComparison.Ordinal);
-        Assert.Contains("new global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.User>(global::ApiSdk.Models.User.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
-        Assert.Contains("new global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.Group>(global::ApiSdk.Models.Group.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
-        Assert.Contains("GetCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class BasePageUser", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class BasePageGroup", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class DerivedPageUser", allModelText, StringComparison.Ordinal);
-        Assert.DoesNotContain("class DerivedPageGroup", allModelText, StringComparison.Ordinal);
+        switch (language)
+        {
+            case GenerationLanguage.CSharp:
+                // the base resolves items through the active binding so it goes generic; the derived class closes over the base argument
+                Assert.Contains("class BasePage<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("class DerivedPage<TItemType> : global::ApiSdk.Models.BasePage<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("public DerivedPage(ParsableFactory<TItemType> itemTypeFactory) : base(itemTypeFactory)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("SendAsync<global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.User>>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("SendAsync<global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.Group>>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("new global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.User>(global::ApiSdk.Models.User.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("new global::ApiSdk.Models.DerivedPage<global::ApiSdk.Models.Group>(global::ApiSdk.Models.Group.CreateFromDiscriminatorValue)", allModelText, StringComparison.Ordinal);
+                Assert.Contains("GetCollectionOfObjectValues<TItemType>(_itemTypeFactory)", allModelText, StringComparison.Ordinal);
+                Assert.DoesNotContain("class BasePageUser", allModelText, StringComparison.Ordinal);
+                Assert.DoesNotContain("class BasePageGroup", allModelText, StringComparison.Ordinal);
+                Assert.DoesNotContain("class DerivedPageUser", allModelText, StringComparison.Ordinal);
+                Assert.DoesNotContain("class DerivedPageGroup", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.TypeScript:
+                // the derived serialize/deserialize functions must forward the base's generic
+                // serializer/factory arguments before their own arguments
+                Assert.Contains("export function deserializeIntoDerivedPage<TItemType extends Parsable>(itemTypeFactory: ParsableFactory<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("...deserializeIntoBasePage(itemTypeFactory, derivedPage),", allModelText, StringComparison.Ordinal);
+                Assert.Contains("serializeBasePage(itemTypeSerializer, writer, derivedPage, isSerializingDerivedType)", allModelText, StringComparison.Ordinal);
+                Assert.DoesNotContain("serializeBasePage(writer, derivedPage", allModelText, StringComparison.Ordinal);
+                Assert.DoesNotContain("deserializeIntoBasePage(derivedPage)", allModelText, StringComparison.Ordinal);
+                break;
+            default:
+                throw new Exception($"Please implement a test-case for {language}");
+        }
+    }
+
+    [InlineData(GenerationLanguage.CSharp)]
+    [InlineData(GenerationLanguage.Java)]
+    [InlineData(GenerationLanguage.Dart)]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Go)]
+    [InlineData(GenerationLanguage.Python)]
+    [Theory]
+    public async Task ClosesGenericErrorMappingBindingsAsync(GenerationLanguage language)
+    {
+        // error mappings bound to a generic template must close over the bound item type
+        // instead of passing the open/bare template to the error factory
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var configuration = new GenerationConfiguration
+        {
+            Language = language,
+            OpenAPIFilePath = GetAbsolutePath("generic-error-mapping.yaml"),
+            OutputPath = Path.Combine(".", "Generated", "GenericErrorMapping", language.ToString()),
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var allModelText = ReadGeneratedModelText(Path.Combine(Directory.GetCurrentDirectory(), "Generated", "GenericErrorMapping", language.ToString()));
+        Assert.DoesNotContain("UntypedNode", allModelText, StringComparison.Ordinal);
+        switch (language)
+        {
+            case GenerationLanguage.CSharp:
+                Assert.Contains("class ErrorTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("{ \"400\", n => new global::ApiSdk.Models.ErrorTemplate<global::ApiSdk.Models.User>(global::ApiSdk.Models.User.CreateFromDiscriminatorValue) }", allModelText, StringComparison.Ordinal);
+                Assert.Contains("{ \"404\", n => new global::ApiSdk.Models.ErrorTemplate<global::ApiSdk.Models.Group>(global::ApiSdk.Models.Group.CreateFromDiscriminatorValue) }", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Java:
+                Assert.Contains("class ErrorTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("errorMapping.put(\"400\", (n1) -> new ErrorTemplate<>(User::createFromDiscriminatorValue));", allModelText, StringComparison.Ordinal);
+                Assert.Contains("errorMapping.put(\"404\", (n1) -> new ErrorTemplate<>(Group::createFromDiscriminatorValue));", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Dart:
+                Assert.Contains("class ErrorTemplate<TItemType extends Parsable>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("'400' :  (n) => ErrorTemplate<User>(User.createFromDiscriminatorValue),", allModelText, StringComparison.Ordinal);
+                Assert.Contains("'404' :  (n) => ErrorTemplate<Group>(Group.createFromDiscriminatorValue),", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.TypeScript:
+                Assert.Contains("export interface ErrorTemplate<TItemType>", allModelText, StringComparison.Ordinal);
+                Assert.Contains("400: createErrorTemplateFromDiscriminatorValue(createUserFromDiscriminatorValue) as ParsableFactory<Parsable>,", allModelText, StringComparison.Ordinal);
+                Assert.Contains("404: createErrorTemplateFromDiscriminatorValue(createGroupFromDiscriminatorValue) as ParsableFactory<Parsable>,", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Go:
+                Assert.Contains("type ErrorTemplate[TItemType ", allModelText, StringComparison.Ordinal);
+                Assert.Contains("NewErrorTemplate[", allModelText, StringComparison.Ordinal);
+                Assert.Contains("Userable](", allModelText, StringComparison.Ordinal);
+                Assert.Contains("CreateUserFromDiscriminatorValue), nil", allModelText, StringComparison.Ordinal);
+                Assert.Contains("Groupable](", allModelText, StringComparison.Ordinal);
+                Assert.Contains("CreateGroupFromDiscriminatorValue), nil", allModelText, StringComparison.Ordinal);
+                break;
+            case GenerationLanguage.Python:
+                Assert.Contains("class ErrorTemplate(APIError, AdditionalDataHolder, Parsable, Generic[TItemType]):", allModelText, StringComparison.Ordinal);
+                Assert.Contains("\"400\": ErrorTemplate[User],", allModelText, StringComparison.Ordinal);
+                Assert.Contains("\"404\": ErrorTemplate[Group],", allModelText, StringComparison.Ordinal);
+                break;
+            default:
+                throw new Exception($"Please implement a test-case for {language}");
+        }
     }
 
     [Fact]

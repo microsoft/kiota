@@ -46,8 +46,12 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
         if (typeParameters.Length != 0)
         {
             // only the parameters this class's own deserializers consume own a factory field; parameters
-            // only needed by a generic base are accepted by the constructor and forwarded to it
-            var ownedParameters = typeParameters.Where(parameter => parentClass.Properties.Any(property => ReferencesTypeParameter(property.Type, parameter))).ToArray();
+            // only needed by a generic base are accepted by the constructor and forwarded to it.
+            // With backing store enabled the refiner removes custom properties in favor of accessors,
+            // so the accessor methods' accessed properties are unioned back in (same instances).
+            var ownedParameters = typeParameters.Where(parameter => parentClass.Properties
+                .Union(parentClass.Methods.Select(static x => x.AccessedProperty).OfType<CodeProperty>())
+                .Any(property => ReferencesTypeParameter(property.Type, parameter))).ToArray();
             foreach (var typeParameter in ownedParameters)
                 writer.WriteLine($"private final ParsableFactory<{typeParameter.Name}> {JavaConventionService.GetFactoryFieldName(typeParameter)};");
             var forwardedParameterNames = (codeElement.Inherits?.GenericTypeParameterValues ?? Enumerable.Empty<CodeType>())
@@ -59,6 +63,7 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ja
             writer.IncreaseIndent();
             if (forwardedParameterNames.Length != 0)
                 writer.WriteLine($"super({string.Join(", ", forwardedParameterNames)});");
+            JavaConventionService.WriteConstructorFieldDefaultAssignments(parentClass, writer);
             foreach (var typeParameter in ownedParameters)
                 writer.WriteLine($"this.{JavaConventionService.GetFactoryFieldName(typeParameter)} = {JavaConventionService.GetFactoryParameterName(typeParameter)};");
             foreach (var assignment in conventions.GetModelConstructorDefaultAssignments(parentClass))
