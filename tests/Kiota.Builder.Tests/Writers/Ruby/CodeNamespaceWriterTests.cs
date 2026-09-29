@@ -59,6 +59,7 @@ public sealed class CodeNamespaceWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("def self.eager_load!", result, StringComparison.Ordinal);
         Assert.Contains("instance_of?(::Module)", result, StringComparison.Ordinal);
+        Assert.Contains("break unless loaded", result, StringComparison.Ordinal);
         Assert.Contains("module Graph", result, StringComparison.Ordinal);
     }
     [Fact]

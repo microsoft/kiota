@@ -14,7 +14,20 @@ RSpec.describe Integration_test do
 
   # models are autoloaded, so a bad registration only fails when the constant is first used
   it "eager loads every constant the client registers" do
-    expect { Integration_test::Client.eager_load! }.not_to raise_error
+    Integration_test::Client.eager_load!
+    unloaded = []
+    pending = [Integration_test::Client]
+    until pending.empty?
+      mod = pending.pop
+      mod.constants(false).each do |name|
+        next unloaded << "#{mod}::#{name}" if mod.autoload?(name, false)
+
+        value = mod.const_get(name, false)
+        pending << value if value.instance_of?(Module)
+      end
+    end
+
+    expect(unloaded).to be_empty
   end
 
   it "resolves every constant the generated code names" do

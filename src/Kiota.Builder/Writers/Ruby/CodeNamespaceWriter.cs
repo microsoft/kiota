@@ -45,14 +45,18 @@ public class CodeNamespaceWriter : BaseElementWriter<CodeNamespace, RubyConventi
         RubyConventionService.WriteMemberSeparator(writer);
         writer.WriteLine("# Loads every model and enum registered for autoload, for example before a server forks.");
         writer.StartBlock("def self.eager_load!");
-        writer.WriteLines("pending = [self]", "seen = {}");
+        // a loaded file can register autoloads in a module already walked, so walk again until nothing loads
+        writer.StartBlock("loop do");
+        writer.WriteLines("loaded = false", "pending = [self]", "seen = {}");
         writer.StartBlock("until pending.empty?");
         writer.WriteLines("mod = pending.pop", "next if seen.key?(mod)");
         writer.WriteLine();
         writer.WriteLine("seen[mod] = true");
         writer.StartBlock("mod.constants(false).each do |name|");
-        writer.WriteLines("value = mod.const_get(name, false)", "pending << value if value.instance_of?(::Module)");
+        writer.WriteLines("loaded = true if mod.autoload?(name, false)", "value = mod.const_get(name, false)", "pending << value if value.instance_of?(::Module)");
         writer.CloseBlock("end");
+        writer.CloseBlock("end");
+        writer.WriteLine("break unless loaded");
         writer.CloseBlock("end");
         writer.CloseBlock("end");
     }
