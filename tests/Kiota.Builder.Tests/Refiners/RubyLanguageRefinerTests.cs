@@ -27,6 +27,54 @@ public class RubyLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task ReplacesBinaryByNativeTypeAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "model",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var method = model.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "binary" },
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType { Name = "binary" },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("StringIO", method.ReturnType.Name);
+        Assert.Equal("StringIO", method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type.Name);
+        Assert.Contains(model.StartBlock.Usings, static x => x.IsExternal && "stringio".Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase));
+    }
+    [Fact]
+    public async Task DoesNotReplaceAResolvedModelNamedBinaryAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass { Name = "binary", Kind = CodeClassKind.Model }).First();
+        var requestBuilder = graphNS.AddClass(new CodeClass { Name = "requestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        var method = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "post",
+            Kind = CodeMethodKind.RequestExecutor,
+            ReturnType = new CodeType { Name = "binary", TypeDefinition = model },
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "body",
+            Kind = CodeParameterKind.RequestBody,
+            Type = new CodeType { Name = "binary", TypeDefinition = model },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Same(model, (method.ReturnType as CodeType)?.TypeDefinition);
+        Assert.Same(model, (method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type as CodeType)?.TypeDefinition);
+        Assert.NotEqual("StringIO", method.ReturnType.Name);
+        Assert.DoesNotContain(requestBuilder.StartBlock.Usings, static x => x.IsExternal && "stringio".Equals(x.Declaration?.Name, StringComparison.OrdinalIgnoreCase));
+    }
+    [Fact]
     public async Task DoesNotRequireItsOwnBarrelFromAnAutoloadedModelAsync()
     {
         var modelsNS = graphNS.AddNamespace($"{graphNS.Name}.models");
