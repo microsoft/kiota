@@ -423,6 +423,21 @@ public sealed class CodeMethodWriterTests : IDisposable
         // the runtime has no collection reader for a stream
         Assert.Contains("send_collection_of_primitive_async(request_info, String,", result);
     }
+    [Fact]
+    public void WritesStreamRequestExecutorWithThePrimitiveSendMethod()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestExecutor;
+        method.HttpMethod = HttpMethod.Get;
+        // the refiner replaces a binary type with StringIO
+        method.ReturnType = new CodeType { Name = "StringIO" };
+        AddRequestProperties();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("send_primitive_async(request_info, StringIO,", result);
+        Assert.DoesNotContain("send_async", result);
+        Assert.DoesNotContain("send_collection_of_primitive_async", result);
+    }
     [Theory]
     [InlineData("binary")]
     [InlineData("base64")]
