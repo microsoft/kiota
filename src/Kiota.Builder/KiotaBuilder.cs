@@ -592,11 +592,11 @@ public partial class KiotaBuilder
             stopwatch.Start();
             root.DisambiguateStaticSegments(config.StructuredMimeTypes);
             CreateRequestBuilderClass(codeNamespace, root, root);
-            // Check for subclass properties that are not properly linked to base class properties
-            FixInheritedProperties(codeNamespace);
             StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
             stopwatch.Start();
             CreateWebhookModels();
+            // Check for subclass properties that are not properly linked to base class properties
+            FixInheritedProperties(codeNamespace);
             StopLogAndReset(stopwatch, nameof(CreateWebhookModels));
             stopwatch.Start();
             UnmarkDerivedErrorDefinitions();
@@ -3106,11 +3106,13 @@ public partial class KiotaBuilder
             {
                 foreach (CodeProperty property in codeClass.Properties)
                 {
-                    //Check only properties that are not already linked to a base class property:
-                    if (property.OriginalPropertyFromBaseType == null)
+                    // Check only properties that are not already linked to a base class property.
+                    // "GetOriginalPropertyDefinedFromBaseType" ignores two types of properties, so do the same here.
+                    if (property.OriginalPropertyFromBaseType == null && property.Kind is not (CodePropertyKind.AdditionalData or CodePropertyKind.BackingStore))
                     {
                         // Is this property also contained in any base class?
-                        CodeProperty? propertyInBaseClass = FindPropertyInBaseClass(codeClass.BaseClass, property);
+                        CodeProperty? propertyInBaseClass = codeClass.GetOriginalPropertyDefinedFromBaseType(property.WireName);
+
                         if (propertyInBaseClass != null)
                         {
                             property.OriginalPropertyFromBaseType = propertyInBaseClass;
@@ -3120,33 +3122,6 @@ public partial class KiotaBuilder
             }
         }
     }
-
-    /// <summary>
-    /// Searches a property of a sub class in a base class. Recurses into the full class hierarchy.
-    /// </summary>
-    /// <param name="baseClass"></param>
-    /// <param name="propertyToSearch"></param>
-    /// <returns>Found parent class property or null.</returns>
-    private static CodeProperty? FindPropertyInBaseClass(CodeClass baseClass, CodeProperty propertyToSearch)
-    {
-        // Check properties of current class:
-        foreach (CodeProperty propertyOfBaseClass in baseClass.Properties)
-        {
-            if (propertyOfBaseClass.Name == propertyToSearch.Name)
-            {
-                return propertyOfBaseClass;
-            }
-        }
-
-        // Not found: check base class:
-        if (baseClass.BaseClass != null)
-        {
-            return FindPropertyInBaseClass(baseClass.BaseClass, propertyToSearch);
-        }
-
-        return null;
-    }
-
 
     private void CleanUpInternalState()
     {
