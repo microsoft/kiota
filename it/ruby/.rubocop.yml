@@ -2,120 +2,49 @@ AllCops:
   TargetRubyVersion: 3.2
 
 Style/StringLiterals:
-  Enabled: false
+  EnforcedStyle: double_quotes
 
 Style/StringLiteralsInInterpolation:
   Enabled: true
   EnforcedStyle: double_quotes
 
+# generated lines embed URL templates, qualified constants and API descriptions
 Layout/LineLength:
   Enabled: false
 
-Layout/TrailingWhitespace:
-  Enabled: false
-
-Layout/FirstHashElementIndentation:
-  Enabled: false
-
-Layout/IndentationWidth:
-  Enabled: false
-
-Layout/SpaceInsideBlockBraces:
-  Enabled: false
-
-Style/Lambda:
-  Enabled: false
-
-Style/DefWithParentheses:
-  Enabled: false
-
-Style/RedundantReturn:
-  Enabled: false
-
-Style/IfUnlessModifier:
-  Enabled: false
-
-Layout/EmptyLineBetweenDefs:
-  Enabled: false
-
-Style/MutableConstant:
-  Enabled: false
-
-Lint/Void:
-  Enabled: false
-
+# class docs come from optional API descriptions; filler comments would be noise
 Style/Documentation:
   Enabled: false
 
-Style/FrozenStringLiteralComment:
-  Enabled: false
-
-Style/EmptyLiteral:
-  Enabled: false
-
-Layout/EmptyLineAfterGuardClause:
-  Enabled: false
-
-Style/MethodCallWithoutArgsParentheses:
-  Enabled: false
-
-Style/TrailingCommaInHashLiteral:
-  Enabled: false
-
-Style/TrivialAccessors:
-  Enabled: false
-
+# module and class names come from the namespace name and API names; renaming them is breaking
 Naming/ClassAndModuleCamelCase:
   Enabled: false
 
+# the runtime calls get_field_deserializers and get_query_parameter by name
 Naming/AccessorMethodName:
   Enabled: false
 
-Layout/IndentationStyle:
-  Enabled: false
-
-Layout/SpaceAroundEqualsInParameterDefault:
-  Enabled: false
-
-Style/RedundantSelf:
-  Enabled: false
-
-Layout/FirstArgumentIndentation:
-  Enabled: false
-
-Layout/ClosingParenthesisIndentation:
-  Enabled: false
-
-Lint/EmptyFile:
-  Enabled: false
-
-Style/MixinGrouping:
-  Enabled: false
-
-Style/AccessorGrouping:
-  Enabled: false
-
-Layout/SpaceInsideHashLiteralBraces:
-  Enabled: false
-
-Layout/TrailingEmptyLines:
-  Enabled: false
-
+# generated method size tracks the API surface, one line per property, mapping or error code
 Metrics/MethodLength:
   Enabled: false
 
+# generated method size tracks the API surface, one line per property, mapping or error code
 Metrics/AbcSize:
   Enabled: false
 
+# enums are CamelCase hash constants that users reference; renaming them is breaking
 Naming/ConstantName:
   Enabled: false
 
+# is_ and has_ names mirror the API's property names, as in every other Kiota language
 Naming/PredicatePrefix:
   Enabled: false
 
+# generated class size tracks the API surface
 Metrics/ClassLength:
   Enabled: false
 
+# generated module size tracks the API surface
 Metrics/ModuleLength:
   Enabled: false
 
@@ -136,12 +65,10 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Enabled: false
 
-# Generated factory methods may just delegate to super
-Lint/UselessMethodDefinition:
-  Enabled: false
+# one accessor per property, each with its own doc comment
+Style/AccessorGrouping:
+  EnforcedStyle: separated
 
-# The cop matches by method name, so it flags the accessor for an API property called `inherited`
-# (the GitHub description has one). Ruby's inheritance hook is a class method, and an instance
-# method of the same name does not shadow it, so renaming the property would be the worse trade
-Lint/MissingSuper:
+# descriptions come from the API and may start with prose such as "Note:"
+Style/CommentAnnotation:
   Enabled: false

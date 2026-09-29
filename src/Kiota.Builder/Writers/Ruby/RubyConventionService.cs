@@ -12,11 +12,29 @@ public class RubyConventionService : CommonLanguageConventionService
     public override string StreamTypeName => "stdin";
     private const string InternalVoidTypeName = "nil";
     public override string VoidTypeName => InternalVoidTypeName;
-    public override string DocCommentPrefix => "## ";
+    public override string DocCommentPrefix => "# ";
     public override string ParseNodeInterfaceName => "parse_node";
-    internal string DocCommentStart = "## ";
-    internal string DocCommentEnd = "## ";
     public override string TempDictionaryVarName => "url_tpl_params";
+    // a namespace barrel autoloads these, so their files are only ever loaded through it
+    internal static bool IsAutoloaded(CodeElement element) => element switch
+    {
+        CodeClass codeClass => codeClass.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeClass.IsOfKind(CodeClassKind.Model),
+        CodeEnum codeEnum => codeEnum.Parent is CodeNamespace ns && !ns.HasClassNamedAfterItself() && codeEnum.Options.Any(),
+        _ => false,
+    };
+    internal const string FrozenStringLiteralComment = "# frozen_string_literal: true";
+    // one blank line between class members, none at the start of a block
+    internal static void WriteMemberSeparator(LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (!writer.IsAtBlockStart) writer.WriteLine();
+    }
+    // a barrel is written, and required, only when it has something to autoload
+    internal static bool HasAutoloadedMembers(CodeNamespace codeNamespace) =>
+        codeNamespace.Classes.Any(IsAutoloaded) || codeNamespace.Enums.Any(IsAutoloaded);
+    // double quotes are the only Ruby quoting in which the shared escapes such as \n and \t mean what they say
+    internal static string ToRubyStringLiteral(string? value) =>
+        $"\"{(value ?? string.Empty).SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal)}\"";
     internal static string SanitizeRubyDoubleQuoteLiteral(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
@@ -27,7 +45,7 @@ public class RubyConventionService : CommonLanguageConventionService
                 return $"\"{value[1..^1].SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal)}\"";
 
             if (value[0] == '\'' && value[^1] == '\'')
-                return $"'{value[1..^1].SanitizeSingleQuote().Replace("#", "\\#", StringComparison.Ordinal)}'";
+                return ToRubyStringLiteral(value[1..^1]);
         }
 
         return value.SanitizeDoubleQuote().Replace("#", "\\#", StringComparison.Ordinal);
@@ -45,7 +63,7 @@ public class RubyConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var defaultValue = parameter.Optional && (targetElement is not CodeMethod currentMethod || !currentMethod.IsOfKind(CodeMethodKind.Setter)) ?
-            $"={(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : SanitizeRubyDoubleQuoteLiteral(parameter.DefaultValue))}" :
+            $" = {(string.IsNullOrEmpty(parameter.DefaultValue) ? "nil" : SanitizeRubyDoubleQuoteLiteral(parameter.DefaultValue))}" :
             string.Empty;
         return $"{parameter.Name}{defaultValue}";
     }
@@ -76,9 +94,8 @@ public class RubyConventionService : CommonLanguageConventionService
         if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
-        writer.WriteLine($"{DocCommentPrefix}");
-        writer.WriteLine($"# {description}");
-
+        if (string.IsNullOrWhiteSpace(description)) return false;
+        writer.WriteLine($"{DocCommentPrefix}{description}");
         return true;
     }
 #pragma warning disable CA1822 // Method should be static
@@ -105,7 +122,8 @@ public class RubyConventionService : CommonLanguageConventionService
         originalDescription.Replace("\\", "#", StringComparison.OrdinalIgnoreCase)
             .Replace("\r", string.Empty, StringComparison.Ordinal)
             .Replace("\n", string.Empty, StringComparison.Ordinal)
-            .Replace("\t", " ", StringComparison.Ordinal);
+            .Replace("\t", " ", StringComparison.Ordinal)
+            .Trim();
 #pragma warning disable CA1822 // Method should be static
     internal void AddRequestBuilderBody(CodeClass parentClass, string returnType, LanguageWriter writer, string? urlTemplateVarName = default, string? prefix = default, IEnumerable<CodeParameter>? pathParameters = default)
     {

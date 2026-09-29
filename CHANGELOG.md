@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
+- Ruby: the client's root module has an `eager_load!` method that loads every autoloaded model, for servers that preload before forking.
+- Ruby: generated files start with `# frozen_string_literal: true`, so string default values handed to user code are frozen.
+- Ruby: generated string literals are double quoted, the StandardRB convention.
+- Ruby: namespaces with nothing to autoload no longer get an empty barrel file, and generated files no longer require them (561 fewer files in a GitHub client).
+- Ruby: a client generated with a multi-segment `--namespace-name`, such as `integration_test.client`, failed to load because its root file was written one directory too deep.
+- Ruby: namespace barrels register their models and enums with `autoload` instead of requiring them, so a subclass no longer fails to load when its base class file is required first. Other files require the barrel rather than an individual model file, and models now load on first use. A type no barrel autoloads, such as a model named after its namespace, is now required directly: 1,315 constants referenced by a Meraki client never loaded, and a client generated from the current GitHub description failed to load because it required a file that is never written. [#7956](https://github.com/microsoft/kiota/issues/7956)
+- Ruby: model properties are declared with `attr_accessor`, which removes the thousands of "possibly useless use of a variable" warnings `ruby -w` printed while loading a client.
+- Ruby: enum hashes are frozen. [kiota-ruby#68](https://github.com/microsoft/kiota-ruby/issues/68)
 - C#: escape Unicode line and paragraph separators in generated string literals so generated clients remain valid C# source.
 - External reference allowlist wildcards no longer cross the URI authority boundary, so a wildcard in the scheme or host cannot match text in the path, the user information or the port.
 - Initialize inherited Dart model fields in constructor initializer lists.
