@@ -27,16 +27,15 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         var currentNamespace = codeElement.GetImmediateParentOfType<CodeNamespace>();
         if (codeElement.Parent?.Parent is not CodeClass)
         {
-            foreach (var codeUsing in codeElement.Usings
+            var requires = codeElement.Usings
                                         .Where(static x => x.IsExternal)
                                         .Select(static x => x.Declaration?.Name?.ToSnakeCase())
                                         .Where(static x => !string.IsNullOrEmpty(x))
                                         .GroupBy(static x => x)
                                         .Select(static x => x.Key)
-                                        .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"require '{codeUsing}'");
-
-            foreach (var relativePath in codeElement.Usings
+                                        .Order(StringComparer.OrdinalIgnoreCase)
+                                        .Select(static x => $"require {RubyConventionService.ToRubyStringLiteral(x)}")
+                                        .Concat(codeElement.Usings
                                         .Where(static x => !x.IsExternal)
                                         .DistinctBy(static x => $"{x.Name}{x.Declaration?.Name}", StringComparer.OrdinalIgnoreCase)
                                         .Select(x => x.Declaration?.Name?.StartsWith('.') ?? false ?
@@ -44,10 +43,20 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
                                             relativeImportManager.GetRelativeImportPathForUsing(x, currentNamespace))
                                         .Select(static x => x.Item3)
                                         .Distinct()
-                                        .Order(StringComparer.OrdinalIgnoreCase))
-                writer.WriteLine($"require_relative '{relativePath.ToSnakeCase()}'");
+                                        .Order(StringComparer.OrdinalIgnoreCase)
+                                        .Select(static x => $"require_relative {RubyConventionService.ToRubyStringLiteral(x.ToSnakeCase())}"))
+                                        .ToArray();
+            writer.WriteLine(RubyConventionService.FrozenStringLiteralComment);
+            if (requires.Length != 0)
+            {
+                writer.WriteLine();
+                writer.WriteLines(requires);
+            }
         }
-        writer.WriteLine();
+        if (codeElement.Parent?.Parent is CodeClass)
+            RubyConventionService.WriteMemberSeparator(writer);
+        else
+            writer.WriteLine();
         if (codeElement.Parent?.Parent is CodeNamespace ns)
         {
             conventions.WriteNamespaceModules(ns, writer);
@@ -59,6 +68,8 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
         // writing an empty mixin line would leave a blank (indent-only) first line in the class body
         if (codeElement.Implements.Any())
-            writer.WriteLine($"include {codeElement.Implements.Select(static x => x.Name).Aggregate(static (x, y) => x + ", " + y)}");
+            // `include A, B` is `include B` then `include A`, so the order keeps method lookup unchanged
+            foreach (var mixin in codeElement.Implements.Select(static x => x.Name).Reverse())
+                writer.WriteLine($"include {mixin}");
     }
 }

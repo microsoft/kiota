@@ -10,8 +10,5 @@
 # rspec failure tracking
 .rspec_status
 
-Gemfile.lock
-
-
 #generated api code if integration test is run locally
 lib/integration_test/client/
