@@ -232,15 +232,12 @@ elseif ($language -eq "typescript") {
     } -ErrorAction Stop
 }
 elseif ($language -eq "ruby") {
-    $clientRb = Join-Path -Path $testPath -ChildPath "client.rb"
-    $dest = Join-Path -Path $testPath -ChildPath "lib" -AdditionalChildPath "integration_test", "client"
-    Copy-Item -Path $clientRb -Destination $dest
-    # Mock server tests are places in a subdir in "spec". So execute them.
+    # Mock server tests are places in a subdir in "spec". So execute them, with the default test.
     if ($mockServerTest) {
         Invoke-call -ScriptBlock {
             git init
             bundle install
-            bundle exec rake SPEC=spec/$mockSeverITFolder/*.rb
+            bundle exec rake "SPEC=spec/{$mockSeverITFolder/*,integration_test_spec}.rb"
         }
     }
     else {

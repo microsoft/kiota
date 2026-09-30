@@ -44,6 +44,9 @@ public class CodeNamespace : CodeBlock<BlockDeclaration, BlockEnd>
         return file;
     }
 
+    // such a class takes the file the namespace's barrel would be written to
+    public bool HasClassNamedAfterItself() =>
+        !string.IsNullOrEmpty(Name) && FindChildByName<CodeClass>(Name.Split('.')[^1], false) is not null;
     public bool IsParentOf(CodeNamespace childNamespace)
     {
         ArgumentNullException.ThrowIfNull(childNamespace);

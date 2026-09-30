@@ -76,6 +76,15 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
     internal void WriteLine(string line, bool includeIndent = true)
     {
         writer?.WriteLine(includeIndent ? GetIndent() + line : line);
+        IsAtBlockStart = false;
+    }
+    /// <summary>
+    /// Whether nothing has been written since the last block was opened, so a writer can separate
+    /// sibling members without putting a blank line at the start of a block.
+    /// </summary>
+    internal bool IsAtBlockStart
+    {
+        get; private set;
     }
     internal void WriteLines(IEnumerable<string> lines)
     {
@@ -97,6 +106,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
         WriteLine(symbol);
         if (increaseIndent)
             IncreaseIndent();
+        IsAtBlockStart = true;
     }
     internal void CloseBlock(string symbol = "}", bool decreaseIndent = true)
     {
@@ -115,6 +125,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
     internal void Write(string text, bool includeIndent = true)
     {
         writer?.Write(includeIndent ? GetIndent() + text : text);
+        IsAtBlockStart = false;
     }
     /// <summary>
     /// Runs <paramref name="write"/> against a temporary buffer and returns the lines it produced
@@ -127,6 +138,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
     {
         ArgumentNullException.ThrowIfNull(write);
         var previousWriter = writer;
+        var previousIsAtBlockStart = IsAtBlockStart;
         using var buffer = new StringWriter();
         writer = buffer;
         try
@@ -136,6 +148,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
         finally
         {
             writer = previousWriter;
+            IsAtBlockStart = previousIsAtBlockStart;
         }
         var lines = buffer.GetStringBuilder().ToString().Split(buffer.NewLine);
         // WriteLine terminates every line, so a trailing separator is not an extra empty line
