@@ -65,6 +65,21 @@ public class GoLanguageRefinerTests
         Assert.Equal("TokenPostResponse3", models[1].Name);
         Assert.NotSame(models[0].AssociatedInterface, models[1].AssociatedInterface);
     }
+    [Theory]
+    [InlineData("switch")]
+    [InlineData("type")]
+    [InlineData("vendor")]
+    public async Task KeepsEscapedNamespaceSegmentsLowercaseAsync(string segment)
+    {
+        var ns = root.AddNamespace($"ApiSdk.devices.{segment}.routing");
+        ns.AddEnum(new CodeEnum { Name = "Mode" });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration
+        {
+            ClientNamespaceName = "ApiSdk",
+            Language = GenerationLanguage.Go,
+        }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal($"ApiSdk.devices.{segment}escaped.routing", ns.Name);
+    }
     #region CommonLangRefinerTests
     [Fact]
     public async Task AddsInnerClassesAsync()

@@ -11,4 +11,35 @@ RSpec.describe Integration_test do
     api = Integration_test::Client::ApiClient.new(MicrosoftKiotaFaraday::FaradayRequestAdapter.new(auth_provider))
     expect(api).to_not be nil
   end
+
+  # models are autoloaded, so a bad registration only fails when the constant is first used
+  it "eager loads every constant the client registers" do
+    Integration_test::Client.eager_load!
+    unloaded = []
+    pending = [Integration_test::Client]
+    until pending.empty?
+      mod = pending.pop
+      mod.constants(false).each do |name|
+        next unloaded << "#{mod}::#{name}" if mod.autoload?(name, false)
+
+        value = mod.const_get(name, false)
+        pending << value if value.instance_of?(Module)
+      end
+    end
+
+    expect(unloaded).to be_empty
+  end
+
+  it "resolves every constant the generated code names" do
+    names = Dir[File.expand_path("../lib/integration_test/client/**/*.rb", __dir__)].flat_map do |file|
+      File.read(file).scan(/Integration_test::Client(?:::[A-Z]\w*)+/)
+    end
+    unresolved = names.uniq.reject do |name|
+      Object.const_get(name)
+    rescue NameError
+      false
+    end
+
+    expect(unresolved).to be_empty
+  end
 end
