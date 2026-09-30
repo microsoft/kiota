@@ -129,11 +129,26 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
     }
     [Fact]
+    public void SeparatesClassMembersWithOneBlankLineButNoneAtTheStartOfTheBody()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        writer.StartBlock("class Sample");
+        writer.Write(property);
+        writer.Write(property);
+        writer.CloseBlock("end");
+        var lines = tw.ToString().TrimEnd().Split(Environment.NewLine);
+        Assert.NotEqual(string.Empty, lines[1].Trim());
+        Assert.Single(lines, static x => x.Length == 0);
+        Assert.NotEqual(string.Empty, lines[^2].Trim());
+    }
+    [Fact]
     public void WritesCustomProperty()
     {
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"@{PropertyName.ToSnakeCase()}", result);
+        Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
+        // a bare instance variable in a class body declares nothing and warns under ruby -w
+        Assert.DoesNotContain($"@{PropertyName.ToSnakeCase()}", result);
     }
 }

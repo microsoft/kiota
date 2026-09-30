@@ -46,14 +46,17 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("= {", result);
         Assert.Contains(optionName, result);
+        Assert.Contains("}.freeze", result);
+        Assert.DoesNotContain($"{optionName}: :{optionName},", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
-    public void DoesntWriteAnythingOnNoOption()
+    public void WritesOnlyTheMagicCommentOnNoOption()
     {
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Empty(result);
+        // the file still has to exist and not be empty, but defines nothing
+        Assert.Equal("# frozen_string_literal: true", result.Trim());
     }
     [Fact]
     public void WritesModule()

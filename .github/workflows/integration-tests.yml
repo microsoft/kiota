@@ -88,6 +88,7 @@ jobs:
           - dart
         description:
           - "./tests/Kiota.Builder.IntegrationTests/InheritingErrors.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/InheritingThreeLevels.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/EnumHandling.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/NoUnderscoresInModel.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
