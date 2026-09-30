@@ -20,6 +20,9 @@ public class RubyPathSegmenter : CommonPathSegmenter
         };
     }
     public override string FileSuffix => ".rb";
+    // the client barrel belongs at the output root, where every file requires it
+    public override string GetPath(CodeNamespace currentNamespace, CodeElement currentElement, bool shouldNormalizePath = true) =>
+        base.GetPath(currentElement is CodeNamespace ns && ClientNamespaceName.Equals(ns.Name, StringComparison.OrdinalIgnoreCase) ? ns : currentNamespace, currentElement, shouldNormalizePath);
     private readonly ConcurrentDictionary<CodeNamespace, Dictionary<string, CodeElement[]>> collidingFileNames = new();
     /// <summary>
     /// Snake casing is lossy: names that differ only in where a separator falls, such as
