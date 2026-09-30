@@ -81,6 +81,11 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 "MicrosoftKiotaAbstractions",
                 true
             );
+            AddPrimaryErrorMessage(generatedCode,
+                "message",
+                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true },
+                true
+            );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             // Ruby inherits initialize, so a subclass needs one only for defaults of its own
             AddConstructorsForDefaultValues(

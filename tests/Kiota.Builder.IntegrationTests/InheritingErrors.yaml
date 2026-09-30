@@ -14,8 +14,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/partitions:
+    get:
+      summary: Retrieves a list of partitions
+      operationId: getPartitions
+      responses:
+        "500":
+          description: Example.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
 components:
   schemas:
+    ServiceError:
+      type: object
+      properties:
+        error:
+          $ref: "#/components/schemas/ServiceErrorDetail"
+    ServiceErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          example: brokerUnavailable
+        message:
+          type: string
+          x-ms-primary-error-message: true
+          example: The broker is not available.
     Error:
       allOf:
         - $ref: "#/components/schemas/ObjectReference"
