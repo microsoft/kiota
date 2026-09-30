@@ -14,6 +14,27 @@ namespace Kiota.Builder.Tests.PathSegmenters
         }
 
         [Fact]
+        public void WritesTheClientBarrelWhereFilesRequireItForAMultiSegmentNamespace()
+        {
+            var multiSegment = new RubyPathSegmenter("/tmp/kiota-sample", "integration_test.client");
+            var rootNamespace = CodeNamespace.InitRootNamespace();
+            var parent = rootNamespace.AddNamespace("integration_test");
+            var client = parent.AddNamespace("integration_test.client");
+            var models = client.AddNamespace("integration_test.client.models");
+            // the renderer passes the parent namespace, whose name is only a prefix of the client's
+            Assert.Equal(System.IO.Path.Combine("/tmp/kiota-sample", "client.rb"), multiSegment.GetPath(parent, client));
+            Assert.Equal(System.IO.Path.Combine("/tmp/kiota-sample", "models", "models.rb"), multiSegment.GetPath(client, models));
+        }
+
+        [Fact]
+        public void WritesTheClientBarrelAtTheRootForASingleSegmentNamespace()
+        {
+            var rootNamespace = CodeNamespace.InitRootNamespace();
+            var client = rootNamespace.AddNamespace("client");
+            Assert.Equal(System.IO.Path.Combine("/tmp/kiota-sample", "client.rb"), segmenter.GetPath(rootNamespace, client));
+        }
+
+        [Fact]
         public void RubyPathSegmenterGeneratesCorrectFileName()
         {
             var rootNamespace = CodeNamespace.InitRootNamespace();
