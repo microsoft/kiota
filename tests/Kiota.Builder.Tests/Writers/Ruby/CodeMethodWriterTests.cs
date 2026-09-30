@@ -2207,10 +2207,33 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("result = ParentClass.new", result);
-        Assert.Contains("mapping_value_node", result);
+        Assert.Contains("mapping_value = parse_node.get_child_node(\"@odata.type\")&.get_string_value", result);
+        Assert.Contains("elsif !val_string_value.nil?", result);
+        // an unknown discriminator value falls back to every object member
+        Assert.Contains(result.Split('\n'), static x => x.Trim() == "else");
         Assert.Contains("ComplexType1.new", result);
         Assert.Contains(result.Split('\n'), static x => x.Trim() == "result");
         Assert.DoesNotContain("ComplexType2.new", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
+    public void WritesUnionFactoryBodyCreatingEveryObjectMemberWithoutADiscriminator()
+    {
+        setup();
+        var pending = root.AddClass(new CodeClass { Name = "PendingGrant", Kind = CodeClassKind.Model }).First();
+        var approved = root.AddClass(new CodeClass { Name = "ApprovedGrant", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "pendingGrant", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "PendingGrant", TypeDefinition = pending } },
+                                new CodeProperty { Name = "approvedGrant", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ApprovedGrant", TypeDefinition = approved } });
+        method.Kind = CodeMethodKind.Factory;
+        method.IsStatic = true;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("result.pending_grant = PendingGrant.new", result);
+        Assert.Contains("result.approved_grant = ApprovedGrant.new", result);
+        Assert.DoesNotContain("if ", result.Replace("if parse_node.nil?", string.Empty, StringComparison.Ordinal));
         AssertBalancedBlocks(result);
     }
     [Fact]
@@ -2226,10 +2249,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parseNode", Type = new CodeType { Name = "ParseNode" } });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("result =", result);
-        Assert.DoesNotContain("mapping_value_node", result);
+        Assert.DoesNotContain("mapping_value", result);
         Assert.DoesNotContain("unless", result);
-        Assert.Contains(result.Split('\n'), static x => x.Trim() == "ParentClass.new");
+        Assert.Contains("result.complex_type1_value = ComplexType1.new", result);
     }
     [Fact]
     public void WritesUnionFactoryBodySkipsDiscriminatorWithoutAPropertyName()
@@ -2437,7 +2459,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("super", result);
-        Assert.Contains("@complex_type1_value.get_field_deserializers", result);
+        Assert.Contains("merge_deserializers_for_intersection_wrapper(@complex_type1_value) if @complex_type1_value", result);
         Assert.DoesNotContain("get_field_deserializers()", result);
         Assert.DoesNotContain("complex_type2_value", result);
         Assert.Contains(result.Split('\n'), static x => x.Trim() == "{}");
