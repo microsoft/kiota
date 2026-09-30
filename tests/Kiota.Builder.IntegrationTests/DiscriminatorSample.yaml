@@ -20,6 +20,18 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Component"
+  /grants:
+    post:
+      description: Return a grant that is either pending or approved, without a discriminator
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PendingGrant"
+                  - $ref: "#/components/schemas/ApprovedGrant"
 components:
   schemas:
     Component:
@@ -48,4 +60,24 @@ components:
         objectType:
           type: string
         two:
+          type: string
+    PendingGrant:
+      type: object
+      required:
+        - interact
+        - continue
+      properties:
+        interact:
+          type: string
+        continue:
+          type: string
+    ApprovedGrant:
+      type: object
+      required:
+        - accessToken
+        - continue
+      properties:
+        accessToken:
+          type: string
+        continue:
           type: string
