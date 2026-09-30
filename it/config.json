@@ -5,6 +5,9 @@
   "./tests/Kiota.Builder.IntegrationTests/InheritingThreeLevels.yaml": {
     "MockServerITFolder": "inheritance"
   },
+  "./tests/Kiota.Builder.IntegrationTests/EnumHandling.yaml": {
+    "MockServerITFolder": "enums"
+  },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
     "MockServerITFolder": "query-params"
   },
