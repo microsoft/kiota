@@ -133,54 +133,56 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                           .OrderBy(static x => x, new CodePropertyTypeComparer())
                                           .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
                                           .ToArray();
-        var complexPropertiesWithMappings = customProperties
-            .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
-            .Select(p => (property: p, mappedKey: parentClass.DiscriminatorInformation.DiscriminatorMappings
-                .FirstOrDefault(x => x.Value.Name.Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase)).Key))
-            .Where(static x => !string.IsNullOrEmpty(x.mappedKey))
-            .ToArray();
-        var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
-        var nonComplexProperties = customProperties.Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass || propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
-        var writesMappings = complexPropertiesWithMappings.Length > 0 && !string.IsNullOrEmpty(discriminatorPropertyName);
-        if (!writesMappings && nonComplexProperties.Length == 0)
+        if (customProperties.Length == 0)
         {
             writer.WriteLine($"{parentClass.Name.ToFirstCharacterUpperCase()}.new");
             return;
         }
+        var complexProperties = customProperties.Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None).ToArray();
+        var nonComplexProperties = customProperties.Except(complexProperties).ToArray();
+        var discriminatorPropertyName = parentClass.DiscriminatorInformation.DiscriminatorPropertyName;
+        var complexPropertiesWithMappings = string.IsNullOrEmpty(discriminatorPropertyName) ? [] : complexProperties
+            .Select(p => (property: p, mappedKey: parentClass.DiscriminatorInformation.DiscriminatorMappings
+                .FirstOrDefault(x => x.Value.Name.Equals(p.Type.Name, StringComparison.OrdinalIgnoreCase)).Key))
+            .Where(static x => !string.IsNullOrEmpty(x.mappedKey))
+            .ToArray();
         writer.WriteLine($"result = {parentClass.Name.ToFirstCharacterUpperCase()}.new");
-        if (writesMappings)
-        {
-            writer.WriteLine($"{NodeVarName} = {parseNodeParameterName}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(discriminatorPropertyName)}\")");
-            writer.StartBlock($"unless {NodeVarName}.nil?");
-            writer.WriteLine($"{DiscriminatorMappingVarName} = {NodeVarName}.get_string_value");
-            // safe navigation: a ParseNode may yield a nil discriminator value, and the
-            // inherited factory's `case` path tolerates that, so this one must too
-            static string MappingCondition(string mappedKey) => $"{DiscriminatorMappingVarName}&.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(mappedKey)}\".downcase";
-            if (complexPropertiesWithMappings.Length == 1)
-            {
-                var (property, mappedKey) = complexPropertiesWithMappings[0];
-                writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {conventions.GetQualifiedTypeName(property.Type)}.new if {MappingCondition(mappedKey)}");
-            }
-            else
-            {
-                var elseIfPrefix = string.Empty;
-                foreach (var (property, mappedKey) in complexPropertiesWithMappings)
-                {
-                    writer.StartBlock($"{elseIfPrefix}if {MappingCondition(mappedKey)}");
-                    writer.WriteLine($"result.{property.Name.ToSnakeCase()} = {conventions.GetQualifiedTypeName(property.Type)}.new");
-                    writer.DecreaseIndent();
-                    elseIfPrefix = "els";
-                }
-                // the loop already restored the indent, so the chain's `end` must not decrease it again
-                writer.CloseBlock("end", false);
-            }
-            writer.CloseBlock("end");
-        }
+        // safe navigation: the payload may not carry the discriminator, or carry it as null
+        if (complexPropertiesWithMappings.Length > 0)
+            writer.WriteLine($"{DiscriminatorMappingVarName} = {parseNodeParameterName}.get_child_node(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(discriminatorPropertyName)}\")&.get_string_value");
         foreach (var property in nonComplexProperties)
+            writer.WriteLine($"{GetIntersectionValueVarName(property)} = {parseNodeParameterName}.{GetDeserializationMethodName(property.Type)}");
+        string NewMember(CodeProperty property) => $"result.{property.Name.ToSnakeCase()} = {conventions.GetQualifiedTypeName(property.Type)}.new";
+        var branches = complexPropertiesWithMappings
+            .Select(x => (condition: $"{DiscriminatorMappingVarName}&.downcase == \"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(x.mappedKey)}\".downcase", body: NewMember(x.property)))
+            .Concat(nonComplexProperties.Select(x => (condition: $"!{GetIntersectionValueVarName(x)}.nil?", body: $"result.{x.Name.ToSnakeCase()} = {GetIntersectionValueVarName(x)}")))
+            .ToArray();
+        // when nothing picked a member, every object member reads the payload, as TypeScript does
+        var fallback = complexProperties.Select(NewMember).ToArray();
+        if (branches.Length == 0)
+            writer.WriteLines(fallback);
+        else if (branches.Length == 1 && fallback.Length == 0)
+            writer.WriteLine(branches[0].condition.StartsWith('!') ?
+                $"{branches[0].body} unless {branches[0].condition[1..].Replace(".nil?", string.Empty, StringComparison.Ordinal)}.nil?" :
+                $"{branches[0].body} if {branches[0].condition}");
+        else
         {
-            var methodName = GetDeserializationMethodName(property.Type);
-            writer.WriteLine($"val = {parseNodeParameterName}.{methodName}");
-            writer.WriteLine($"result.{property.Name.ToSnakeCase()} = val unless val.nil?");
+            var elseIfPrefix = string.Empty;
+            foreach (var (condition, body) in branches)
+            {
+                writer.StartBlock($"{elseIfPrefix}if {condition}");
+                writer.WriteLine(body);
+                writer.DecreaseIndent();
+                elseIfPrefix = "els";
+            }
+            if (fallback.Length > 0)
+            {
+                writer.StartBlock("else");
+                writer.WriteLines(fallback);
+                writer.DecreaseIndent();
+            }
+            // the branches already restored the indent, so the chain's `end` must not decrease it again
+            writer.CloseBlock("end", false);
         }
         writer.WriteLine("result");
     }
@@ -441,18 +443,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         writer.DecreaseIndent();
         writer.WriteLine(inherits ? ")" : "}");
     }
-    private static void WriteDeserializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
-    {
-        var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                           .Where(static x => x.Type is CodeType propType && propType.TypeDefinition is CodeClass && propType.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
-                                           .OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                           .ToArray();
-        foreach (var property in complexProperties)
-            writer.WriteLine($"return @{property.Name.ToSnakeCase()}.get_field_deserializers unless @{property.Name.ToSnakeCase()}.nil?");
-        if (complexProperties.Length != 0)
-            writer.WriteLine();
-        writer.WriteLine("{}");
-    }
+    // a union may hold several members when no discriminator picked one, so merge them like an intersection
+    private static void WriteDeserializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer) =>
+        WriteDeserializerBodyForIntersectionModel(parentClass, writer);
     private static void WriteDeserializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
         var complexProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
@@ -585,31 +578,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         if (additionalDataProperty != null)
             writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");
     }
-    private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer)
-    {
-        var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
-                                          .OrderBy(static x => x, new CodePropertyTypeComparer())
-                                          .ThenBy(static x => x.Name, StringComparer.OrdinalIgnoreCase)
-                                          .ToArray();
-        // a lone member is a guard clause rather than a conditional wrapping the whole body, which
-        // is what RuboCop's Style/GuardClause and Style/NegatedIf both ask for
-        if (customProperties.Length == 1)
-        {
-            WriteComposedTypeGuardedSerialization(customProperties[0], writer);
-            return;
-        }
-        var elseIfPrefix = string.Empty;
-        foreach (var property in customProperties)
-        {
-            writer.StartBlock($"{elseIfPrefix}if !@{property.Name.ToSnakeCase()}.nil?");
-            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{property.Name.ToSnakeCase()})");
-            writer.DecreaseIndent();
-            elseIfPrefix = "els";
-        }
-        // the loop already restored the indent, so the chain's `end` must not decrease it again
-        if (customProperties.Length > 0)
-            writer.CloseBlock("end", false);
-    }
+    private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer) =>
+        WriteSerializerBodyForIntersectionModel(parentClass, writer);
     private void WriteSerializerBodyForIntersectionModel(CodeClass parentClass, LanguageWriter writer)
     {
         var customProperties = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)

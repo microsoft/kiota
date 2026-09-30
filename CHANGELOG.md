@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed a stack overflow when generating API plugins from descriptions with cyclic `allOf` schemas.
+- Ruby: a union of object types that no discriminator decides, such as a oneOf without a discriminator, now reads the payload into every object member, as TypeScript does, instead of returning an empty wrapper. A union whose discriminator matched no member does the same, and its array member is only read when no other member was picked.
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
