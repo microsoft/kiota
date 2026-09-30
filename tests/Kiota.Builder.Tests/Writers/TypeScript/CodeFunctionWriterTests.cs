@@ -2329,6 +2329,135 @@ public sealed class CodeFunctionWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task WritesUnionOfPrimitiveCollectionsPropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "integer", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array });
+
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => typeof item === \"number\")) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<number>(\"tags\", parentClass.tags as number[]);", result);
+        Assert.Contains("else if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => typeof item === \"string\")) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<string>(\"tags\", parentClass.tags as string[]);", result);
+        Assert.DoesNotContain("writeObjectValue", result);
+    }
+
+    [Fact]
+    public async Task WritesPrimitiveCollectionMemberOfMixedUnionPropertySerializerAsync()
+    {
+        var modelNameSpace = root.AddNamespace($"{root.Name}.models");
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "string" },
+            new CodeType { Name = "string", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "ArrayOfObjects", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array, TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "ArrayOfObjects") },
+            new CodeType { Name = "SingleObject", TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "SingleObject") });
+
+        Assert.Contains("writer.writeStringValue(\"tags\", parentClass.tags as string);", result);
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => typeof item === \"string\")) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<string>(\"tags\", parentClass.tags as string[]);", result);
+        Assert.Contains("writer.writeCollectionOfObjectValues<ArrayOfObjects>(\"tags\", parentClass.tags as ArrayOfObjects[] | undefined | null", result);
+        Assert.Contains("writer.writeObjectValue<SingleObject>(\"tags\", parentClass.tags as SingleObject | undefined | null", result);
+        Assert.DoesNotContain("ArrayOfObjects | string", result);
+    }
+
+    [Theory]
+    [InlineData("binary")]
+    [InlineData("base64")]
+    [InlineData("base64url")]
+    public async Task KeepsByteArrayCollectionMemberOfUnionPropertyOutOfPrimitiveCollectionsAsync(string byteArrayTypeName)
+    {
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = byteArrayTypeName, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "string" });
+
+        // the parse node has no reader for a collection of byte arrays and the deserializer reads this member with the scalar
+        // getByteArrayValue(), so the serializer does not write it as a primitive collection and it stays in the object branch
+        Assert.DoesNotContain("writeCollectionOfPrimitiveValues<ArrayBuffer>", result);
+        Assert.DoesNotContain("item instanceof ArrayBuffer", result);
+        Assert.Contains("if (typeof parentClass.tags === \"string\" ) {", result);
+        Assert.Contains("writer.writeStringValue(\"tags\", parentClass.tags as string);", result);
+        Assert.Contains("writer.writeCollectionOfObjectValues<ArrayBuffer>(\"tags\", parentClass.tags as ArrayBuffer[] | undefined | null", result);
+    }
+
+    [Fact]
+    public async Task WritesDateOnlyCollectionMemberOfUnionPropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyAsync(
+            new CodeType { Name = "DateOnly", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "string" });
+
+        Assert.Contains("if (Array.isArray(parentClass.tags) && (parentClass.tags).every(item => item instanceof DateOnly)) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<DateOnly>(\"tags\", parentClass.tags as DateOnly[]);", result);
+        Assert.DoesNotContain("writeCollectionOfObjectValues<DateOnly>", result);
+    }
+
+    [Fact]
+    public async Task WritesUnionOfPrimitiveCollectionsWithDefaultValuePropertySerializerAsync()
+    {
+        var result = await WriteSerializerForUnionPropertyWithDefaultAsync(
+            "\"2024-01-01\"",
+            new CodeType { Name = "DateOnly", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+            new CodeType { Name = "string" });
+
+        // the checks and the casts read one local holding the default, so an unset property still sends its default as a string
+        Assert.Contains("const tagsOrDefault = parentClass.tags ?? \"2024-01-01\";", result);
+        Assert.Contains("if (Array.isArray(tagsOrDefault) && (tagsOrDefault).every(item => item instanceof DateOnly)) {", result);
+        Assert.Contains("writer.writeCollectionOfPrimitiveValues<DateOnly>(\"tags\", tagsOrDefault as DateOnly[]);", result);
+        Assert.Contains("else if (typeof tagsOrDefault === \"string\" ) {", result);
+        Assert.Contains("writer.writeStringValue(\"tags\", tagsOrDefault as string);", result);
+        // "a ?? b as T" parses as "a ?? (b as T)", which would cast the string literal to DateOnly[]
+        Assert.DoesNotContain("\"2024-01-01\" as DateOnly[]", result);
+        Assert.DoesNotContain("Array.isArray(parentClass.tags)", result);
+    }
+
+    [Fact]
+    public async Task WritesMixedUnionWithDefaultValuePropertySerializerAsync()
+    {
+        var modelNameSpace = root.AddNamespace($"{root.Name}.models");
+        var result = await WriteSerializerForUnionPropertyWithDefaultAsync(
+            "\"none\"",
+            new CodeType { Name = "string" },
+            new CodeType { Name = "SingleObject", TypeDefinition = TestHelper.CreateModelClass(modelNameSpace, "SingleObject") });
+
+        // an unset property takes the string branch with its default instead of falling through to writeObjectValue
+        Assert.Contains("const tagsOrDefault = parentClass.tags ?? \"none\";", result);
+        Assert.Contains("if (typeof tagsOrDefault === \"string\" ) {", result);
+        Assert.Contains("writer.writeStringValue(\"tags\", tagsOrDefault as string);", result);
+        Assert.Contains("writer.writeObjectValue<SingleObject>(\"tags\", tagsOrDefault as SingleObject | undefined | null", result);
+        Assert.DoesNotContain("\"none\" as SingleObject", result);
+    }
+
+    private Task<string> WriteSerializerForUnionPropertyAsync(params CodeType[] memberTypes) =>
+        WriteSerializerForUnionPropertyWithDefaultAsync(string.Empty, memberTypes);
+
+    private async Task<string> WriteSerializerForUnionPropertyWithDefaultAsync(string defaultValue, params CodeType[] memberTypes)
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(generationConfiguration, root, "parentClass");
+        var composedType = new CodeUnionType { Name = "tags" };
+        composedType.AddType(memberTypes);
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "tags",
+            SerializationName = "tags",
+            Type = composedType,
+            Kind = CodePropertyKind.Custom,
+            DefaultValue = defaultValue,
+        });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+        var serializeFunction = root.FindChildByName<CodeFunction>($"serialize{parentClass.Name.ToFirstCharacterUpperCase()}");
+        Assert.NotNull(serializeFunction);
+        var parentNS = serializeFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", serializeFunction);
+
+        writer.Write(serializeFunction);
+        return tw.ToString();
+    }
+
+    [Fact]
     public async Task WritesOneOfWithInheritanceDeserializationAsync()
     {
         // Create base class "Device"
