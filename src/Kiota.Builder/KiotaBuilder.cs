@@ -725,9 +725,9 @@ public partial class KiotaBuilder
             !string.IsNullOrEmpty(property.DefaultValue) && !conventions.TryGetPropertyDefaultValue(property, property, out _))
             LogInvalidDefaultValue(property.Name, property.Type.Name);
         if (element is CodeMethod method)
-            foreach (var parameter in method.Parameters.Where(static x => !string.IsNullOrEmpty(x.DefaultValue)))
-                if (!conventions.TryGetDefaultValue(parameter.Type, parameter.DefaultValue, method, out _, constantOnly: true))
-                    LogInvalidDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
+            foreach (var parameter in method.Parameters.Where(x => !string.IsNullOrEmpty(x.DefaultValue) &&
+                                                                   !conventions.TryGetDefaultValue(x.Type, x.DefaultValue, method, out _, constantOnly: true)))
+                LogInvalidDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
         foreach (var child in element.GetChildElements(true))
             WarnInvalidDartDefaults(child, conventions);
     }
