@@ -1904,6 +1904,189 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains($"{timePropName} = TimeOnly.fromDateTimeString('{defaultValueTime.TrimQuotes()}'),", result);
     }
     [Fact]
+    public void DoesNotWriteUnknownEnumDartDefault()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var codeEnum = root.AddEnum(new CodeEnum { Name = "Status" }).First();
+        codeEnum.AddOption(new CodeEnumOption { Name = "valid" });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "status",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = codeEnum },
+            DefaultValue = "valid; injectedCall()",
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("status =", result);
+        Assert.EndsWith(";", result.TrimEnd());
+    }
+    [Theory]
+    [InlineData("Object", false, false)]
+    [InlineData("UnknownModel", false, false)]
+    [InlineData("String", true, false)]
+    [InlineData("String", false, true)]
+    public void DoesNotWriteUnsupportedDartDefaults(string typeName, bool collection, bool resolvedModel)
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var type = new CodeType { Name = typeName };
+        if (collection)
+            type.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
+        if (resolvedModel)
+            type.TypeDefinition = root.AddClass(new CodeClass { Name = typeName, Kind = CodeClassKind.Model }).First();
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostile",
+            Kind = CodePropertyKind.Custom,
+            Type = type,
+            DefaultValue = "\"injectedCall()\"",
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("hostile =", result);
+        Assert.DoesNotContain(") : ", result);
+        Assert.EndsWith(";", result.TrimEnd());
+    }
+    [Fact]
+    public void WritesMultipleBackingStoreDartDefaultsAsBodyAssignments()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        parentClass.AddBackingStoreProperty();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        foreach (var name in new[] { "first", "second" })
+            parentClass.AddProperty(new CodeProperty
+            {
+                Name = name,
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "String" },
+                DefaultValue = "\"value\"",
+            });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("first = 'value';", result);
+        Assert.Contains("second = 'value';", result);
+        Assert.DoesNotContain(") : ", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public void WritesConsistentDartDefaultConstructorLayout(bool inherits, bool backingStore, bool acceptedDefault)
+    {
+        setup(inherits);
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        if (backingStore)
+        {
+            if (inherits)
+                ((CodeClass)parentClass.StartBlock.Inherits.TypeDefinition).AddBackingStoreProperty();
+            else
+                parentClass.AddBackingStoreProperty();
+        }
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "hostile",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "Object" },
+            DefaultValue = "\"injectedCall()\"",
+        });
+        if (acceptedDefault)
+            parentClass.AddProperty(new CodeProperty
+            {
+                Name = "safe",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "String" },
+                DefaultValue = "\"value\"",
+            });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("hostile =", result);
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain(" : ;", result);
+        if (inherits)
+            Assert.Contains("super()", result);
+        if (acceptedDefault)
+            Assert.Contains("safe = 'value'", result);
+        if (backingStore)
+        {
+            Assert.EndsWith("}", result.TrimEnd());
+            if (acceptedDefault)
+                Assert.Contains("safe = 'value';", result);
+        }
+        else
+            Assert.EndsWith(";", result.TrimEnd());
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
+    public void GroupsMultipleDartDefaultParametersInOneNamedBlock()
+    {
+        setup();
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        method.AddParameter(
+            new CodeParameter { Name = "a", Type = new CodeType { Name = "String", IsNullable = false }, DefaultValue = "\"$value\"" },
+            new CodeParameter { Name = "b", Type = new CodeType { Name = "Object", IsNullable = false }, DefaultValue = "injectedCall()" });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("ParentClass({String a = \"\\$value\", Object? b})", result);
+        Assert.DoesNotContain("injectedCall", result);
+    }
+    [Fact]
+    public void DoesNotPassRawDartParameterDefaultsToClone()
+    {
+        setup();
+        method.Name = "clone";
+        method.Kind = CodeMethodKind.Custom;
+        method.IsAsync = false;
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        var constructor = parentClass.AddMethod(new CodeMethod { Name = "constructor", Kind = CodeMethodKind.Constructor, ReturnType = new CodeType { Name = "void" } }).First();
+        constructor.AddParameter(
+            new CodeParameter { Name = "requestAdapter", Kind = CodeParameterKind.RequestAdapter, Type = new CodeType { Name = "RequestAdapter" } },
+            new CodeParameter { Name = "pathParameters", Kind = CodeParameterKind.PathParameters, Type = new CodeType { Name = "Map<String, Object>" } },
+            new CodeParameter { Name = "extra", Kind = CodeParameterKind.Path, Type = new CodeType { Name = "Object" }, Optional = true, DefaultValue = "injectedCall()" });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("return ParentClass(pathParameters, requestAdapter);", result);
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("extra", result);
+    }
+    [Fact]
+    public void ReconstructsGeneratedDartInfrastructureInitializers()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        parentClass.AddProperty(
+            new CodeProperty { Name = "additionalData", Kind = CodePropertyKind.AdditionalData, Type = new CodeType { Name = "Map<String, Object>" }, DefaultValue = "injectedCall()" },
+            new CodeProperty { Name = "options", Kind = CodePropertyKind.Options, Type = new CodeType { Name = "List<RequestOption>" }, DefaultValue = "injectedCall()" },
+            new CodeProperty { Name = "headers", Kind = CodePropertyKind.Headers, Type = new CodeType { Name = "HttpHeaders" }, DefaultValue = "injectedCall()" });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("additionalData = {}", result);
+        Assert.Contains("options = <RequestOption>[]", result);
+        Assert.Contains("headers = HttpHeaders()", result);
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.EndsWith(";", result.TrimEnd());
+    }
+    [Fact]
     public void WritesWithUrl()
     {
         setup();

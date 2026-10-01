@@ -37,8 +37,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            //Initializer list is created if "AdditionalData" is present or any custom property contains a default value.
-            if (isConstructor && !inherits && parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.AdditionalData || (x.Kind is CodePropertyKind.Custom && !string.IsNullOrEmpty(x.DefaultValue))).Any() && !parentClass.IsErrorDefinition && !parentClass.Properties.Where(static x => x.Kind is CodePropertyKind.BackingStore).Any())
+            if (isConstructor && UsesLocalModelInitializers(parentClass) && GetConstructorDefaults(parentClass, codeElement).Length > 0)
             {
                 writer.DecreaseIndent();
             }
@@ -74,10 +73,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         {
             return UsesInheritedModelInitializers(parentClass, codeElement)
                 ? !GetConstructorDefaults(parentClass, codeElement).Any(static x => x.Property.ExistsInBaseType)
-                : parentClass.Properties.All(prop => string.IsNullOrEmpty(prop.DefaultValue));
+                : parentClass.GetBackingStoreProperty() is null && GetConstructorDefaults(parentClass, codeElement).Length == 0;
         }
         var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
-        return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
+        return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) &&
+            GetConstructorDefaults(parentClass, codeElement).Length == 0 && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
     }
     private static string SanitizeDartSingleQuoteLiteral(string? value) =>
         string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeSingleQuote().Replace("$", "\\$", StringComparison.Ordinal);
@@ -315,65 +315,6 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}({serializationClassName}.new);");
     }
-    private static string? GetDefaultValue(string defaultValue, CodeType propertyType)
-    {
-        return propertyType.Name.ToLowerInvariant() switch
-        {
-            "string" => $"'{defaultValue}'",
-            "dateonly" => $"DateOnly.fromDateTimeString('{defaultValue}')",
-            "datetime" => $"DateTime.parse('{defaultValue}')",
-            "timeonly" => $"TimeOnly.fromDateTimeString('{defaultValue}')",
-            "uuidvalue" => $"UuidValue.fromString('{defaultValue}')",
-            _ => null,
-        };
-    }
-    private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
-    {
-        if (propertyType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase))
-        {
-            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(defaultValue, out var booleanDefaultValue) ?
-                booleanDefaultValue :
-                null;
-            return true;
-        }
-        if (PrimitiveDefaultValueUtils.IsNumericType(propertyType.Name))
-        {
-            normalizedDefaultValue = PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(defaultValue.TrimQuotes(), propertyType.Name, out var numericDefaultValue) ?
-                numericDefaultValue :
-                null;
-            return true;
-        }
-        normalizedDefaultValue = null;
-        return false;
-    }
-    private bool TryGetConstructorDefaultValue(CodeProperty property, CodeMethod currentMethod, out string defaultValue)
-    {
-        defaultValue = property.DefaultValue;
-        if (property.Type is CodeType { TypeDefinition: CodeEnum })
-        {
-            defaultValue = $"{conventions.GetTypeString(property.Type, currentMethod).TrimEnd('?')}.{defaultValue}";
-            return true;
-        }
-        if (property.Type is not CodeType propertyType)
-            return true;
-        if (propertyType.IsNullable && defaultValue.TrimQuotes().Equals("null", StringComparison.OrdinalIgnoreCase))
-        {
-            defaultValue = "null";
-            return true;
-        }
-        if (TryNormalizePrimitiveDefaultValue(defaultValue, propertyType, out var normalizedDefaultValue))
-        {
-            defaultValue = normalizedDefaultValue ?? string.Empty;
-            return normalizedDefaultValue is not null;
-        }
-        defaultValue = defaultValue.Trim('"');
-        if (defaultValue.StartsWith('\'') && defaultValue.EndsWith('\'') && defaultValue.Length > 1)
-            defaultValue = defaultValue[1..^1];
-        defaultValue = SanitizeDartSingleQuoteLiteral(defaultValue);
-        if (GetDefaultValue(defaultValue, propertyType) is string convertedDefaultValue)
-            defaultValue = convertedDefaultValue;
-        return true;
-    }
     private (CodeProperty Property, bool IsValid, string Value)[] GetConstructorDefaults(CodeClass parentClass, CodeMethod currentMethod)
     {
         return parentClass.Properties
@@ -382,7 +323,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name)
-                                        .Select(x => (Property: x, IsValid: TryGetConstructorDefaultValue(x, currentMethod, out var value), Value: value))
+                                        .Select(x => (Property: x, IsValid: conventions.TryGetPropertyDefaultValue(x, currentMethod, out var value), Value: value))
                                         .Where(static x => x.IsValid)
                                         .ToArray();
     }
@@ -390,6 +331,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         parentClass.IsOfKind(CodeClassKind.Model) && method.IsOfKind(CodeMethodKind.Constructor) &&
         parentClass.StartBlock.Inherits is not null && !parentClass.IsErrorDefinition &&
         parentClass.GetBackingStoreProperty() is null;
+
+    private static bool UsesLocalModelInitializers(CodeClass parentClass) =>
+        parentClass.StartBlock.Inherits is null && !parentClass.IsErrorDefinition && parentClass.GetBackingStoreProperty() is null;
 
     private void WriteConstructorBody(CodeClass parentClass, CodeMethod currentMethod, LanguageWriter writer)
     {
@@ -405,17 +349,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
         else
         {
-            var separator = ',';
             var propWithDefaults = GetConstructorDefaults(parentClass, currentMethod);
             var lastOption = propWithDefaults.LastOrDefault();
 
             foreach (var propWithDefault in propWithDefaults)
             {
                 var defaultValue = propWithDefault.Value;
-                if (propWithDefault.Equals(lastOption))
-                {
-                    separator = ';';
-                }
+                var separator = UsesLocalModelInitializers(parentClass) && !propWithDefault.Equals(lastOption) ? ',' : ';';
                 writer.WriteLine($"{propWithDefault.Property.Name} = {defaultValue}{separator}");
             }
             if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
@@ -800,11 +740,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
-        else if (isConstructor &&
-            parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.AdditionalData) || (x.IsOfKind(CodePropertyKind.Custom) && !string.IsNullOrEmpty(x.DefaultValue)))
-                .Any(x => TryGetConstructorDefaultValue(x, currentMethod, out _)) &&
-            !parentClass.IsErrorDefinition &&
-            !parentClass.Properties.Where(static x => x.IsOfKind(CodePropertyKind.BackingStore)).Any())
+        else if (isConstructor && UsesLocalModelInitializers(parentClass) && GetConstructorDefaults(parentClass, currentMethod).Length > 0)
         {
             //Initializer list is created if "AdditionalData" is present or any custom property contains a default value.
             return " : ";
@@ -832,7 +768,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var completeReturnType = isConstructor ?
             string.Empty : voidCorrectedTaskReturnType + " ";
         var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code);
-        var parameters = string.Join(", ", code.Parameters.OrderBy(static x => x, parameterOrderComparer).Select(p => conventions.GetParameterSignature(p, code)).ToList());
+        var parameters = GetParameterList(code);
         var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
@@ -846,11 +782,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (includeNullableReferenceType)
         {
             var completeReturnTypeWithNullable = isConstructor || string.IsNullOrEmpty(genericTypeSuffix) ? completeReturnType : $"{completeReturnType[..^2].TrimEnd('?')}?{genericTypeSuffix} ";
-            var nullableParameters = string.Join(", ", code.Parameters.Order(parameterOrderComparer)
-                                                          .Select(p => p.IsOfKind(CodeParameterKind.RequestConfiguration) ?
-                                                                                        $"[{GetParameterSignatureWithNullableRefType(p, code)}]" :
-                                                                                        conventions.GetParameterSignature(p, code))
-                                                          .ToList());
+            var nullableParameters = GetParameterList(code, true);
             writer.WriteLine($"{staticModifier}{completeReturnTypeWithNullable}{conventions.GetAccessModifier(code.Access)}{methodName}({nullableParameters}){baseSuffix}{async} {{");
         }
         else if (parentClass.IsOfKind(CodeClassKind.Model) && code.IsOfKind(CodeMethodKind.Custom) && code.Name.EqualsIgnoreCase("copyWith"))
@@ -870,6 +802,26 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
     private string getSuffix(CodeProperty property)
     {
         return property.Type.CollectionKind == CodeTypeCollectionKind.Complex ? ">" : string.Empty;
+    }
+
+    private string GetParameterList(CodeMethod method, bool nullableRequestConfiguration = false)
+    {
+        var positional = new List<string>();
+        var named = new List<string>();
+        var hasNamedParameters = method.Parameters.Any(p => conventions.IsNamedParameter(p, method));
+        foreach (var parameter in method.Parameters.Order(parameterOrderComparer))
+        {
+            var isRequestConfiguration = nullableRequestConfiguration && parameter.IsOfKind(CodeParameterKind.RequestConfiguration);
+            var signature = isRequestConfiguration ? GetParameterSignatureWithNullableRefType(parameter, method) :
+                conventions.GetParameterSignature(parameter, method, false);
+            if (conventions.IsNamedParameter(parameter, method) || isRequestConfiguration && hasNamedParameters)
+                named.Add(signature);
+            else
+                positional.Add(isRequestConfiguration ? $"[{signature}]" : signature);
+        }
+        if (named.Count > 0)
+            positional.Add($"{{{string.Join(", ", named)}}}");
+        return string.Join(", ", positional);
     }
 
     private string GetPrefix(CodeProperty property)
@@ -939,12 +891,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (codeElement.Name.Equals("clone", StringComparison.OrdinalIgnoreCase))
         {
             var constructor = parentClass.GetMethodsOffKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor).Where(static x => x.Parameters.Any()).FirstOrDefault();
-            var argumentList = constructor?.Parameters.OrderBy(static x => x, new BaseCodeParameterOrderComparer())
-            .Select(static x => x.Type.Parent is CodeParameter param && param.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters)
-                    ? x.Name :
-                    x.Optional ? "null" : x.DefaultValue)
-            .Aggregate(static (x, y) => $"{x}, {y}");
-            writer.WriteLine($"return {parentClass.Name}({argumentList});");
+            var arguments = constructor is null ? string.Empty : string.Join(", ", constructor.Parameters
+                .Where(x => !conventions.IsNamedParameter(x, constructor))
+                .OrderBy(static x => x, new BaseCodeParameterOrderComparer())
+                .Select(static x => x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters) ? x.Name : "null"));
+            writer.WriteLine($"return {parentClass.Name}({arguments});");
         }
         if (codeElement.Name.Equals("copyWith", StringComparison.Ordinal))
         {

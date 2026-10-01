@@ -706,13 +706,30 @@ public partial class KiotaBuilder
     /// <param name="token"></param>
     public async Task ApplyLanguageRefinementAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
     {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(generatedCode);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
         await ILanguageRefiner.RefineAsync(config, generatedCode, token).ConfigureAwait(false);
+        if (config.Language == GenerationLanguage.Dart)
+            WarnInvalidDartDefaults(generatedCode, new Writers.Dart.DartConventionService());
 
         stopwatch.Stop();
         LogLanguageRefinementApplied(stopwatch.ElapsedMilliseconds);
+    }
+
+    private void WarnInvalidDartDefaults(CodeElement element, Writers.Dart.DartConventionService conventions)
+    {
+        if (element is CodeProperty property && property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
+            !string.IsNullOrEmpty(property.DefaultValue) && !conventions.TryGetPropertyDefaultValue(property, property, out _))
+            LogInvalidDefaultValue(property.Name, property.Type.Name);
+        if (element is CodeMethod method)
+            foreach (var parameter in method.Parameters.Where(static x => !string.IsNullOrEmpty(x.DefaultValue)))
+                if (!conventions.TryGetDefaultValue(parameter.Type, parameter.DefaultValue, method, out _, constantOnly: true))
+                    LogInvalidDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
+        foreach (var child in element.GetChildElements(true))
+            WarnInvalidDartDefaults(child, conventions);
     }
 
     /// <summary>

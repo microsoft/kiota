@@ -89,6 +89,21 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("return backingStore.get<Somecustomtype?>('propertyName');", result);
         Assert.Contains("backingStore.set('propertyName', value);", result);
     }
+    [Theory]
+    [InlineData("Somecustomtype")]
+    [InlineData("String")]
+    public void DoesNotAddDartDefaultFallbackToNullableCustomGetter(string typeName)
+    {
+        parentClass.AddBackingStoreProperty();
+        property.Kind = CodePropertyKind.Custom;
+        property.Type.Name = typeName;
+        property.DefaultValue = "\"injectedCall()\"";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"return backingStore.get<{typeName}?>('propertyName');", result);
+        Assert.DoesNotContain("injectedCall", result);
+        Assert.DoesNotContain("??", result);
+    }
     [Fact]
     public void MapsAdditionalDataPropertiesToBackingStore()
     {

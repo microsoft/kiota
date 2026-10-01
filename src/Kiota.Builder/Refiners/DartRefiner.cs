@@ -38,7 +38,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             AbstractionsNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-            AbstractionsNamespaceName, "RequestHeaders"),
+            AbstractionsNamespaceName, "HttpHeaders"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
+            AbstractionsNamespaceName, "RequestOption"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
             AbstractionsNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
@@ -207,7 +209,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeProperty { Type: CodeType { TypeDefinition: CodeEnum codeEnum } } property &&
             !string.IsNullOrEmpty(property.DefaultValue) &&
-            codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(property.DefaultValue.Trim('"'), StringComparison.Ordinal)) is CodeEnumOption option)
+            codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(DartConventionService.UnquoteDefaultValue(property.DefaultValue), StringComparison.Ordinal)) is CodeEnumOption option)
             defaults[property] = option;
         CrawlTree(currentElement, element => CollectEnumDefaults(element, defaults));
     }
@@ -253,14 +255,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             }
         }
-        else if (currentElement is CodeProperty p && p.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum && !string.IsNullOrEmpty(p.DefaultValue))
-        {
-            p.DefaultValue = DartConventionService.getCorrectedEnumName(p.DefaultValue.Trim('"').CleanupSymbolName());
-            if (new DartReservedNamesProvider().ReservedNames.Contains(p.DefaultValue))
-            {
-                p.DefaultValue += "_";
-            }
-        }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 
@@ -298,9 +292,12 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         ArgumentNullException.ThrowIfNull(currentProperty);
 
         if (currentProperty.IsOfKind(CodePropertyKind.Options))
-            currentProperty.DefaultValue = "List<RequestOption>()";
+            currentProperty.DefaultValue = "<RequestOption>[]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterLowerCase()}()";
+        {
+            currentProperty.Type.Name = "HttpHeaders";
+            currentProperty.DefaultValue = "HttpHeaders()";
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
         {
             currentProperty.Type.Name = "RequestAdapter";
@@ -311,10 +308,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
             currentProperty.SerializationName = currentProperty.Name;
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
-        }
-        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
-        {
-            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
@@ -490,7 +483,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 property.SerializationName = property.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
             }
-            if (property.DefaultValue.Contains('$', StringComparison.Ordinal))
+            if (property.IsOfKind(CodePropertyKind.UrlTemplate) && property.DefaultValue.Contains('$', StringComparison.Ordinal))
             {
                 property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
             }
