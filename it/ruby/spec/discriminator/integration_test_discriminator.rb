@@ -71,5 +71,17 @@ RSpec.describe Integration_test do
 
       expect(serialize(result)).to eq("accessToken" => "token", "continue" => "https://auth/continue")
     end
+
+    it "writes every member that is set" do
+      result = grant.new
+      result.pending_grant = Integration_test::Client::Models::PendingGrant.new
+      result.pending_grant.interact = "https://auth/interact"
+      result.approved_grant = Integration_test::Client::Models::ApprovedGrant.new
+      result.approved_grant.access_token = "token"
+      result.approved_grant.continue = "https://auth/continue"
+
+      expect(serialize(result)).to eq("interact" => "https://auth/interact", "accessToken" => "token",
+                                      "continue" => "https://auth/continue")
+    end
   end
 end

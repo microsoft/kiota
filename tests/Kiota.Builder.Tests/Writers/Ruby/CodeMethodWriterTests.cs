@@ -2343,6 +2343,24 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertBalancedBlocks(result);
     }
     [Fact]
+    public void WritesUnionSerializerBodyWritingEveryObjectMember()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        var complexType3 = root.AddClass(new CodeClass { Name = "ComplexType3", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.AddProperty(new CodeProperty { Name = "complexType1Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "complexType3Value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType3", TypeDefinition = complexType3 } });
+        method.Kind = CodeMethodKind.Serializer;
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.Serializer, Name = "writer", Type = new CodeType { Name = "SerializationWriter" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("composed_values = [@complex_type1_value, @complex_type3_value].compact", result);
+        Assert.Contains("writer.write_object_value(nil, *composed_values) unless composed_values.empty?", result);
+        Assert.DoesNotContain("elsif", result);
+        AssertBalancedBlocks(result);
+    }
+    [Fact]
     public void WritesUnionSerializerBodyForSingleMemberAsGuardClause()
     {
         // a single member has no elsif to chain to, so `if !x.nil?` wrapping the whole body trips
