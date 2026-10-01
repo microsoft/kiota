@@ -661,9 +661,22 @@ public partial class PluginsGenerationService
 
         private static IEnumerable<KeyValuePair<string, IOpenApiSchema>> GetAllProperties(IOpenApiSchema schema)
         {
-            return schema.AllOf is not null ?
-                schema.AllOf.SelectMany(static x => GetAllProperties(x)).Union(schema.Properties ?? new Dictionary<string, IOpenApiSchema>(0)) :
-                (schema.Properties ?? new Dictionary<string, IOpenApiSchema>(0));
+            var result = new List<KeyValuePair<string, IOpenApiSchema>>();
+            CollectAllProperties(schema, new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance), result);
+            return result.Distinct();
+        }
+
+        private static void CollectAllProperties(IOpenApiSchema schema, HashSet<IOpenApiSchema> visitedSchemas, List<KeyValuePair<string, IOpenApiSchema>> result)
+        {
+            // track resolved targets so cyclic allOf graphs (A allOf B, B allOf A) terminate instead of overflowing the stack
+            var resolvedSchema = schema is OpenApiSchemaReference schemaReference ? schemaReference.RecursiveTarget ?? schema : schema;
+            if (!visitedSchemas.Add(resolvedSchema))
+                return;
+            if (schema.AllOf is not null)
+                foreach (var allOfEntry in schema.AllOf)
+                    CollectAllProperties(allOfEntry, visitedSchemas, result);
+            if (schema.Properties is not null)
+                result.AddRange(schema.Properties);
         }
     }
 
