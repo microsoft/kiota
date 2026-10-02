@@ -79,6 +79,19 @@ public sealed class CodePropertyWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains($"{TypeName}? {PropertyName}", result);
     }
+    [Theory]
+    [InlineData("String", "\"\"", " = ''")]
+    [InlineData("String", "\"quote'\"line\n\r\t\\$value\"", " = 'quote\\'\"line\\n\\r\\t\\\\\\$value'")]
+    [InlineData("Object", "injectedCall()", "")]
+    public void WritesOnlyValidatedQueryParameterDefaults(string typeName, string input, string expected)
+    {
+        property.Kind = CodePropertyKind.QueryParameter;
+        property.Type.Name = typeName;
+        property.DefaultValue = input;
+        writer.Write(property);
+        Assert.Contains($"{typeName}? {PropertyName}{expected};", tw.ToString());
+        Assert.DoesNotContain("injectedCall", tw.ToString());
+    }
     [Fact]
     public void MapsCustomPropertiesToBackingStore()
     {

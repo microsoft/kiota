@@ -35,7 +35,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             throw new InvalidOperationException("The parent of a property should be a class");
 
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
-        var defaultValue = string.Empty;
+        var defaultValue = codeElement.IsOfKind(CodePropertyKind.QueryParameter) &&
+                           conventions.TryGetPropertyDefaultValue(codeElement, codeElement, out var queryDefault)
+            ? $" = {queryDefault}"
+            : string.Empty;
         var getterModifier = string.Empty;
 
         var propertyName = codeElement.Name;

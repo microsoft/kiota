@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Refiners;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -48,9 +49,7 @@ public sealed partial class KiotaBuilderTests
         constructor.AddParameter(new CodeParameter { Name = "date", Type = new CodeType { Name = "DateTime", IsExternal = true }, DefaultValue = "\"2026-01-01\"" });
         var logger = new kiota.Rpc.FakeLogger<KiotaBuilder>();
         var configuration = new GenerationConfiguration { Language = GenerationLanguage.Dart };
-        var builder = new KiotaBuilder(logger, configuration, _httpClient);
-
-        await builder.ApplyLanguageRefinementAsync(configuration, root, TestContext.Current.CancellationToken);
+        await new DartRefiner(configuration, logger).RefineAsync(root, TestContext.Current.CancellationToken);
 
         var warnings = logger.LogEntries.Where(static x => x.level == LogLevel.Warning).ToArray();
         Assert.Equal(2, warnings.Length);

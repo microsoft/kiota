@@ -7,12 +7,15 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Dart;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 
 namespace Kiota.Builder.Refiners;
 
-public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
+public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
+    private readonly ILogger logger;
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "microsoft_kiota_abstractions/microsoft_kiota_abstractions";
     private const string SerializationNamespaceName = "microsoft_kiota_serialization";
@@ -48,7 +51,11 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
     };
 
 
-    public DartRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public DartRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public DartRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration)
+    {
+        this.logger = logger ?? NullLogger.Instance;
+    }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -173,8 +180,25 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddCustomMethods(generatedCode);
             EscapeStringValues(generatedCode);
             AliasUsingWithSameSymbol(generatedCode);
+            WarnInvalidDefaults(generatedCode, new DartConventionService());
         }, cancellationToken);
     }
+
+    private void WarnInvalidDefaults(CodeElement element, DartConventionService conventions)
+    {
+        if (element is CodeProperty property && property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
+            !string.IsNullOrEmpty(property.DefaultValue) && !conventions.TryGetPropertyDefaultValue(property, property, out _))
+            LogInvalidDefaultValue(property.Name, property.Type.Name);
+        if (element is CodeMethod method)
+            foreach (var parameter in method.Parameters.Where(x => !string.IsNullOrEmpty(x.DefaultValue) &&
+                                                                   !conventions.TryGetDefaultValue(x.Type, x.DefaultValue, method, out _, constantOnly: true)))
+                LogInvalidDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
+        foreach (var child in element.GetChildElements(true))
+            WarnInvalidDefaults(child, conventions);
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for property {PropertyName} because it is incompatible with type {TypeName}.")]
+    private partial void LogInvalidDefaultValue(string propertyName, string typeName);
 
     ///error classes should always have a constructor for the copyWith method
     private void AddConstructorForErrorClass(CodeElement currentElement)
