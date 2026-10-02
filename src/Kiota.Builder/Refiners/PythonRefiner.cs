@@ -70,6 +70,7 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             CorrectCoreTypesForBackingStore(generatedCode, "field(default_factory=BackingStoreFactorySingleton(backing_store_factory=None).backing_store_factory.create_backing_store, repr=False)");
+            SnakeCaseNamespaceNames(generatedCode);
             ShortenOversizedNamespaceSegments(generatedCode);
             AddPropertiesAndMethodTypesImports(generatedCode, true, true, true, codeTypeFilter);
             AddParsableImplementsForModelClasses(generatedCode, "Parsable");
@@ -156,6 +157,29 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true
             );
         }, cancellationToken);
+    }
+
+    private static void SnakeCaseNamespaceNames(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace codeNamespace &&
+            !string.IsNullOrEmpty(codeNamespace.Name))
+        {
+            var normalizedName = string.Join('.',
+                codeNamespace.Name
+                    .Split('.', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(static x => x.ToSnakeCase()));
+            if (!codeNamespace.Name.Equals(normalizedName, StringComparison.Ordinal))
+            {
+                if (codeNamespace.Parent is CodeNamespace parentNamespace)
+                {
+                    if (parentNamespace.FindChildByName<CodeNamespace>(normalizedName, false) is null)
+                        parentNamespace.RenameChildElement(codeNamespace.Name, normalizedName);
+                }
+                else
+                    codeNamespace.Name = normalizedName;
+            }
+        }
+        CrawlTree(currentElement, SnakeCaseNamespaceNames);
     }
 
     private const string MultipartBodyClassName = "MultipartBody";
