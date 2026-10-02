@@ -35,6 +35,43 @@ public class CSharpLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task DoesNotMoveClassesForPartialNamespaceSuffixesAsync()
+    {
+        var models = root.AddNamespace("graph.models");
+        root.AddNamespace("graph.models.SpecialResourceType");
+        var model = models.AddClass(new CodeClass { Name = "ResourceType", Kind = CodeClassKind.Model }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Same(models, model.Parent);
+        Assert.Same(model, models.FindChildByName<CodeClass>("ResourceType", false));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesComposedWrappersWhenDestinationContainsSameNameAsync(bool intersection)
+    {
+        var models = root.AddNamespace("graph.models");
+        var nested = root.AddNamespace("graph.models.ResourceType");
+        var existing = nested.AddClass(new CodeClass { Name = "ResourceType", Kind = CodeClassKind.Model }).First();
+        nested.AddClass(new CodeClass { Name = "ResourceType1", Kind = CodeClassKind.Model });
+        var container = models.AddClass(new CodeClass { Name = "Container", Kind = CodeClassKind.Model }).First();
+        CodeComposedTypeBase composed = intersection ? new CodeIntersectionType() : new CodeUnionType();
+        composed.Name = "ResourceType";
+        composed.TargetNamespace = models;
+        composed.AddType(new CodeType { Name = "string", IsExternal = true }, new CodeType { Name = "integer", IsExternal = true });
+        var property = container.AddProperty(new CodeProperty { Name = "resource", Kind = CodePropertyKind.Custom, Type = composed }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        var wrapper = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(property.Type).TypeDefinition);
+        Assert.Equal("ResourceType2", wrapper.Name);
+        Assert.Same(nested, wrapper.Parent);
+        Assert.Same(wrapper, nested.FindChildByName<CodeClass>(wrapper.Name, false));
+        Assert.Same(existing, nested.FindChildByName<CodeClass>("ResourceType", false));
+        Assert.NotNull(wrapper.OriginalComposedType);
+    }
+    [Fact]
     public async Task EnumHasEscapedOption_UsesEnumMemberAttributeAsync()
     {
         var model = root.AddEnum(new CodeEnum
