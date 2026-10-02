@@ -14,8 +14,10 @@ namespace Kiota.Builder;
 
 internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStreamLoader, IStreamLoader
 {
+    private readonly HttpClient httpClient;
     private readonly HashSet<string> allowedExternalOrigins;
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
+    private const int MaxRedirectCount = 10;
     private const string SchemeSeparator = "://";
     // the delimiters that separate the scheme, the user information, the host and the port from the rest of the URI.
     private const string AuthorityWildcardExpression = "[^/\\\\@:?#]*";
@@ -25,6 +27,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(allowedExternalOrigins);
+        this.httpClient = httpClient;
         this.allowedExternalOrigins = allowedExternalOrigins
             .Select(static x => x.TrimQuotes())
             .Where(static x => !string.IsNullOrWhiteSpace(x))
@@ -36,13 +39,117 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         return await LoadAsync(baseUrl, uri, cancellationToken).ConfigureAwait(false);
     }
 
-    public new Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
+    public new async Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uri);
         var targetUri = uri.IsAbsoluteUri || baseUrl is null ? uri : new Uri(baseUrl, uri);
         if (!IsAllowed(targetUri, uri))
             throw new InvalidOperationException($"The external reference {targetUri} is not allowed. Add it to --allowed-external-origins to load it.");
-        return base.LoadAsync(baseUrl!, uri, cancellationToken);
+        if (!IsHttpUri(targetUri))
+            return await base.LoadAsync(baseUrl!, uri, cancellationToken).ConfigureAwait(false);
+
+        return await LoadHttpAsync(targetUri, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<Stream> LoadHttpAsync(Uri targetUri, CancellationToken cancellationToken)
+    {
+        var currentUri = targetUri;
+        for (var redirectCount = 0; ; redirectCount++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, currentUri);
+            var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            if (IsRedirect(response.StatusCode))
+            {
+                var location = response.Headers.Location;
+                response.Dispose();
+                if (location is null)
+                    throw new HttpRequestException($"The external reference {currentUri} returned a redirect without a Location header.");
+                if (redirectCount >= MaxRedirectCount)
+                    throw new HttpRequestException($"The external reference {targetUri} exceeded the maximum redirect count of {MaxRedirectCount}.");
+
+                var redirectLocation = location.ToString();
+                var redirectUri = Uri.TryCreate(redirectLocation, UriKind.Absolute, out var absoluteRedirectUri)
+                    ? absoluteRedirectUri
+                    : new Uri(currentUri, redirectLocation);
+                if (!IsHttpUri(redirectUri) || !IsAllowed(redirectUri, redirectUri))
+                    throw new InvalidOperationException($"The external reference redirect to {redirectUri} is not allowed. Add it to --allowed-external-origins to load it.");
+                currentUri = redirectUri;
+                continue;
+            }
+
+            try
+            {
+                response.EnsureSuccessStatusCode();
+                var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                return new ResponseOwnedStream(contentStream, response);
+            }
+            catch
+            {
+                response.Dispose();
+                throw;
+            }
+        }
+    }
+
+    private static bool IsRedirect(System.Net.HttpStatusCode statusCode)
+    {
+        return statusCode is System.Net.HttpStatusCode.MovedPermanently or
+            System.Net.HttpStatusCode.Redirect or
+            System.Net.HttpStatusCode.SeeOther or
+            System.Net.HttpStatusCode.TemporaryRedirect or
+            System.Net.HttpStatusCode.PermanentRedirect;
+    }
+
+    private static bool IsHttpUri(Uri uri)
+    {
+        return uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+            uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed class ResponseOwnedStream(Stream innerStream, HttpResponseMessage response) : Stream
+    {
+        public override bool CanRead => innerStream.CanRead;
+        public override bool CanSeek => innerStream.CanSeek;
+        public override bool CanWrite => innerStream.CanWrite;
+        public override long Length => innerStream.Length;
+        public override long Position { get => innerStream.Position; set => innerStream.Position = value; }
+        public override void Flush() => innerStream.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => innerStream.Read(buffer, offset, count);
+        public override int Read(Span<byte> buffer) => innerStream.Read(buffer);
+        public override long Seek(long offset, SeekOrigin origin) => innerStream.Seek(offset, origin);
+        public override void SetLength(long value) => innerStream.SetLength(value);
+        public override void Write(byte[] buffer, int offset, int count) => innerStream.Write(buffer, offset, count);
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => innerStream.ReadAsync(buffer, cancellationToken);
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try
+                {
+                    innerStream.Dispose();
+                }
+                finally
+                {
+                    response.Dispose();
+                }
+            }
+            base.Dispose(disposing);
+        }
+
+        public override async ValueTask DisposeAsync()
+        {
+            try
+            {
+                await innerStream.DisposeAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                response.Dispose();
+                await base.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 
     private bool IsAllowed(Uri targetUri, Uri originalUri)

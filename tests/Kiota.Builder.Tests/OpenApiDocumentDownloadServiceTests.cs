@@ -194,7 +194,7 @@ components:
       $ref: 'https://contoso.com/schemas/pet.yaml#/components/schemas/Pet'
 """);
         using var httpClient = new HttpClient(new ResponseHandler());
-        var documentDownloadService = new OpenApiDocumentDownloadService(httpClient, fakeLogger);
+        var documentDownloadService = new OpenApiDocumentDownloadService(httpClient, fakeLogger, httpClient);
 
         var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -212,6 +212,54 @@ components:
             new Uri("https://contoso.com/schemas/pet.yaml"),
             TestContext.Current.CancellationToken);
         Assert.NotNull(stream);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsRedirectOutsideAllowedOrigins()
+    {
+        var requestedUris = new System.Collections.Generic.List<Uri>();
+        using var httpClient = new HttpClient(new RedirectResponseHandler(request =>
+        {
+            requestedUris.Add(request.RequestUri!);
+            return new HttpResponseMessage(HttpStatusCode.Redirect)
+            {
+                Headers = { Location = new Uri("http://169.254.169.254/latest/meta-data/") },
+            };
+        }));
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal([new Uri("https://contoso.com/schemas/pet.yaml")], requestedUris);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderFollowsAllowedRedirects()
+    {
+        var requestedUris = new System.Collections.Generic.List<Uri>();
+        using var httpClient = new HttpClient(new RedirectResponseHandler(request =>
+        {
+            requestedUris.Add(request.RequestUri!);
+            return requestedUris.Count == 1
+                ? new HttpResponseMessage(HttpStatusCode.Redirect)
+                {
+                    Headers = { Location = new Uri("https://api.contoso.com/schemas/pet.yaml") },
+                }
+                : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("type: object") };
+        }));
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*", "https://*.contoso.com/schemas/*"]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            [new Uri("https://contoso.com/schemas/pet.yaml"), new Uri("https://api.contoso.com/schemas/pet.yaml")],
+            requestedUris);
     }
 
     [Theory]
@@ -417,6 +465,14 @@ components:
       type: object
 """),
             });
+        }
+    }
+
+    private sealed class RedirectResponseHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(responseFactory(request));
         }
     }
 }

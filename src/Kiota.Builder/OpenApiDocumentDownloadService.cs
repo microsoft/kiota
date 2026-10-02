@@ -21,13 +21,34 @@ namespace Kiota.Builder;
 
 internal partial class OpenApiDocumentDownloadService
 {
+    private static readonly Lazy<HttpClient> DefaultExternalReferenceHttpClient = new(() => new HttpClient(new HttpClientHandler
+    {
+        AllowAutoRedirect = false,
+        CheckCertificateRevocationList = true,
+        UseCookies = false,
+    }));
+    private static readonly Lazy<HttpClient> InsecureExternalReferenceHttpClient = new(() => new HttpClient(new HttpClientHandler
+    {
+        AllowAutoRedirect = false,
+        CheckCertificateRevocationList = true,
+        UseCookies = false,
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+    }));
     private readonly ILogger Logger;
     private readonly HttpClient HttpClient;
-    public OpenApiDocumentDownloadService(HttpClient httpClient, ILogger logger)
+    private readonly HttpClient? ExternalReferenceHttpClient;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenApiDocumentDownloadService"/> class.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used to load the primary OpenAPI document.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="externalReferenceHttpClient">Optional HTTP client override for tests; production callers should use the safe default.</param>
+    public OpenApiDocumentDownloadService(HttpClient httpClient, ILogger logger, HttpClient? externalReferenceHttpClient = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
         HttpClient = httpClient;
+        ExternalReferenceHttpClient = externalReferenceHttpClient;
         Logger = logger;
     }
     private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
@@ -120,7 +141,9 @@ internal partial class OpenApiDocumentDownloadService
             LeaveStreamOpen = true,
         };
         if (!config.AllowedExternalOrigins.Contains("*"))
-            settings.CustomExternalLoader = new AllowedExternalOriginsStreamLoader(HttpClient, config.AllowedExternalOrigins);
+            settings.CustomExternalLoader = new AllowedExternalOriginsStreamLoader(
+                ExternalReferenceHttpClient ?? (config.DisableSSLValidation ? InsecureExternalReferenceHttpClient : DefaultExternalReferenceHttpClient).Value,
+                config.AllowedExternalOrigins);
 
         // Add all extensions for generation
         settings.AddGenerationExtensions();
