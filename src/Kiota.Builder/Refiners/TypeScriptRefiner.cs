@@ -1419,7 +1419,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     }
     protected static void AddEnumObjectUsings(CodeElement currentElement)
     {
-        if (currentElement is CodeProperty codeProperty && codeProperty.Kind is CodePropertyKind.RequestBuilder && codeProperty.Type is CodeType codeType && codeType.TypeDefinition is CodeClass codeClass)
+        if (currentElement is CodeClass codeClass && codeClass.Kind is CodeClassKind.RequestBuilder)
         {
             foreach (var propertyMethod in codeClass.Methods)
             {
