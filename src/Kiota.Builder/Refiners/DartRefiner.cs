@@ -196,8 +196,7 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             foreach (var parameter in method.Parameters.Where(x => !string.IsNullOrEmpty(x.DefaultValue) &&
                                                                    !conventions.TryGetDefaultValue(x.Type, x.DefaultValue, method, out _, constantOnly: true)))
                 LogInvalidParameterDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
-        foreach (var child in element.GetChildElements(true))
-            WarnInvalidDefaults(child, conventions);
+        CrawlTree(element, child => WarnInvalidDefaults(child, conventions));
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for property {PropertyName} because it is incompatible with type {TypeName}.")]

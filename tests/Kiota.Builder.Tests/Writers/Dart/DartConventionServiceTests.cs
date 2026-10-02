@@ -1,9 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
+using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Dart;
 using Xunit;
 
@@ -219,6 +221,48 @@ public class DartConventionServiceTests
         Assert.Equal(defaultValue, parameter.DefaultValue);
         Assert.Equal("Status status", conventions.GetParameterSignature(parameter, method));
         Assert.DoesNotContain(logger.LogEntries, static x => x.level == Microsoft.Extensions.Logging.LogLevel.Warning);
+    }
+
+    [Theory]
+    [InlineData("int", true)]
+    [InlineData("int", false)]
+    [InlineData("UuidValue", true)]
+    [InlineData("UuidValue", false)]
+    [InlineData("String", true)]
+    [InlineData("String", false)]
+    public void GuardsNullablePathCollectionsWithoutChangingKeysOrSkippingEmptyCollections(string typeName, bool nullable)
+    {
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, ".", "client");
+        using var output = new StringWriter();
+        writer.SetTextWriter(output);
+        var type = new CodeType { Name = typeName, IsNullable = nullable, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array };
+
+        conventions.AddParametersAssignment(writer, new CodeType { Name = "Map<String, dynamic>" }, "pathParameters", "pathParameters",
+            (type, "quote\"'\\\n\r\t$value", "ids"));
+
+        var expectedGuard = nullable ? "if (ids != null) " : string.Empty;
+        Assert.Equal($"{expectedGuard}pathParameters[\"quote\\\"'\\\\\\n\\r\\t\\$value\"]=ids;{Environment.NewLine}", output.ToString());
+        Assert.DoesNotContain("isNotEmpty", output.ToString());
+    }
+
+    [Theory]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.Constructor, true, true, "UuidValue? parameter")]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.ClientConstructor, true, true, "UuidValue? parameter")]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.RawUrlConstructor, true, true, "UuidValue? parameter")]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.Constructor, false, true, "UuidValue parameter")]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.Constructor, true, false, "UuidValue parameter")]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.RequestBuilderWithParameters, true, true, "UuidValue parameter")]
+    [InlineData(CodeClassKind.RequestBuilder, CodeMethodKind.RequestExecutor, true, true, "UuidValue parameter")]
+    [InlineData(CodeClassKind.Model, CodeMethodKind.Constructor, true, true, "UuidValue parameter")]
+    public void ScopesOptionalConstructorNullabilityToRequestBuilders(CodeClassKind classKind, CodeMethodKind methodKind, bool optional, bool nullable, string expected)
+    {
+        var parentClass = new CodeClass { Name = "Parent", Kind = classKind };
+        var method = parentClass.AddMethod(new CodeMethod { Name = "method", Kind = methodKind, ReturnType = new CodeType { Name = "void" } }).First();
+        var parameter = new CodeParameter { Name = "parameter", Optional = optional, Type = new CodeType { Name = "UuidValue", IsNullable = nullable } };
+        method.AddParameter(parameter);
+
+        Assert.Equal(expected, conventions.GetParameterSignature(parameter, method));
+        Assert.False(conventions.IsNamedParameter(parameter, method));
     }
 
     [Theory]

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -16,6 +17,72 @@ namespace Kiota.Builder.Tests.Writers.Dart;
 
 public class DartDefaultRenderingTests
 {
+    [Theory]
+    [InlineData("{\"type\":\"integer\"}", "int? id")]
+    [InlineData("{\"type\":\"string\",\"format\":\"uuid\"}", "UuidValue? id")]
+    [InlineData("{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}", "List<int>? id")]
+    [InlineData("{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}}", "List<UuidValue>? id")]
+    [InlineData("{\"type\":\"string\"}", "String? id")]
+    public async Task PreservesPathParametersWhenCloningSchemaGeneratedRequestBuilders(string schema, string expectedSignature)
+    {
+        var description = $$"""
+openapi: 3.0.3
+info:
+  title: Clone path parameters
+  version: 1.0.0
+servers:
+  - url: https://example.com
+paths:
+  /items(id={id}):
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {{schema}}
+    get:
+      responses:
+        '204':
+          description: No content
+""";
+        var configuration = new GenerationConfiguration { Language = GenerationLanguage.Dart, ClientNamespaceName = "client" };
+        using var client = new HttpClient();
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, client);
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(description));
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var root = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await builder.ApplyLanguageRefinementAsync(configuration, root, TestContext.Current.CancellationToken);
+        var requestBuilder = GetDescendants(root).OfType<CodeClass>().Single(c => c.IsOfKind(CodeClassKind.RequestBuilder) &&
+            c.Methods.Any(m => m.IsOfKind(CodeMethodKind.Constructor) && m.Parameters.Any(p => p.IsOfKind(CodeParameterKind.Path))));
+        var constructor = requestBuilder.Methods.Single(m => m.IsOfKind(CodeMethodKind.Constructor));
+        var parameter = constructor.Parameters.Single(p => p.IsOfKind(CodeParameterKind.Path));
+        Assert.True(parameter.Optional);
+        Assert.True(parameter.Type.IsNullable);
+
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, ".", "client");
+        using var output = new StringWriter();
+        writer.SetTextWriter(output);
+        writer.Write(constructor);
+        var result = output.ToString();
+        Assert.Contains($"(Map<String, dynamic> pathParameters, RequestAdapter requestAdapter, {expectedSignature})", result);
+        var nullGuard = expectedSignature == "String? id" ? "if (id!= null && id.isNotEmpty)" : "if (id != null)";
+        Assert.Contains($"{nullGuard} pathParameters[\"id\"]=id;", result);
+        Assert.DoesNotContain("List<int?>", result);
+        output.GetStringBuilder().Clear();
+
+        writer.Write(requestBuilder.Methods.Single(m => m.Name == "clone"));
+        Assert.Contains($"return {requestBuilder.Name}(pathParameters, requestAdapter, null);", output.ToString());
+    }
+
+    private static IEnumerable<CodeElement> GetDescendants(CodeElement element)
+    {
+        foreach (var child in element.GetChildElements(true))
+        {
+            yield return child;
+            foreach (var descendant in GetDescendants(child))
+                yield return descendant;
+        }
+    }
+
     [Theory]
     [InlineData(GenerationLanguage.Dart, "string", "\"\"", "''")]
     [InlineData(GenerationLanguage.Dart, "string", "\"quote'\\\"line\\n\\r\\t\\\\$value\"", "'quote\\'\"line\\n\\r\\t\\\\\\$value'")]

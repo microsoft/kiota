@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a stack overflow when generating API plugins from descriptions with cyclic `allOf` schemas.
 - Dart: omit unsupported schema defaults with a generation warning, preserve supported literal and enum property and parameter defaults (including empty strings), initialize query parameters from schema defaults, and keep constructor initialization valid with or without backing stores.
+- Dart: preserve nullable optional request-builder constructor parameters, including UUIDs and collections, so cloning accepts null arguments without overwriting existing path parameters.
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)

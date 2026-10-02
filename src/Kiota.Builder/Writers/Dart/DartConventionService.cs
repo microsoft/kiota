@@ -165,9 +165,9 @@ public class DartConventionService : CommonLanguageConventionService
             {
                 var (ct, name, identName) = p;
                 string nullCheck = string.Empty;
-                if (ct.CollectionKind == CodeTypeCollectionKind.None && ct.IsNullable)
+                if (ct.IsNullable)
                 {
-                    if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
+                    if (ct.CollectionKind == CodeTypeCollectionKind.None && nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
                         nullCheck = $"if ({identName}!= null && {identName}.isNotEmpty) ";
                     else
                         nullCheck = $"if ({identName} != null) ";
@@ -342,6 +342,11 @@ public class DartConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement, true, parameter.Optional);
+        if (parameter.Optional && parameter.Type.IsNullable &&
+            targetElement is CodeMethod { Parent: CodeClass { Kind: CodeClassKind.RequestBuilder } } method &&
+            method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor) &&
+            !parameterType.EndsWith('?'))
+            parameterType += "?";
         var hasDefault = !string.IsNullOrEmpty(parameter.DefaultValue);
         var defaultValue = string.Empty;
         if (hasDefault)
