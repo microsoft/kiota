@@ -3,13 +3,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public interface ILanguageRefiner
 {
     Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken);
-    public static async Task RefineAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken cancellationToken = default)
+    public static Task RefineAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken cancellationToken = default) =>
+        RefineAsync(config, generatedCode, null, cancellationToken);
+    public static async Task RefineAsync(GenerationConfiguration config, CodeNamespace generatedCode, ILogger? logger, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(config);
         switch (config.Language)
@@ -39,7 +42,7 @@ public interface ILanguageRefiner
                 await new PythonRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Dart:
-                await new DartRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new DartRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
         }
     }

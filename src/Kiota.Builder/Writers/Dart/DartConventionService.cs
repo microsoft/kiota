@@ -165,9 +165,9 @@ public class DartConventionService : CommonLanguageConventionService
             {
                 var (ct, name, identName) = p;
                 string nullCheck = string.Empty;
-                if (ct.CollectionKind == CodeTypeCollectionKind.None && ct.IsNullable)
+                if (ct.IsNullable)
                 {
-                    if (nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
+                    if (ct.CollectionKind == CodeTypeCollectionKind.None && nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
                         nullCheck = $"if ({identName}!= null && {identName}.isNotEmpty) ";
                     else
                         nullCheck = $"if ({identName} != null) ";
@@ -242,11 +242,12 @@ public class DartConventionService : CommonLanguageConventionService
         if (type.TypeDefinition is not null) return type.Name.ToFirstCharacterUpperCase();
         return type.Name.ToLowerInvariant() switch
         {
-            "integer" or "sbyte" or "byte" or "int64" => "int",
-            "boolean" => "bool",
+            "integer" or "int" or "sbyte" or "byte" or "int64" or "long" => "int",
+            "boolean" or "bool" => "bool",
             "string" => "String",
-            "double" or "float" or "decimal" => "double",
-            "object" or "void" => type.Name.ToLowerInvariant(),// little casing hack
+            "double" or "float" or "decimal" or "number" => "double",
+            "object" => "Object",
+            "void" => "void",
             "binary" or "base64" or "base64url" => "Iterable<int>",
             string s when s.Contains("RequestConfiguration", StringComparison.OrdinalIgnoreCase) => "RequestConfiguration",
             "iparsenode" => "ParseNode",
@@ -266,19 +267,104 @@ public class DartConventionService : CommonLanguageConventionService
             _ => false,
         };
     }
+    internal bool TryGetPropertyDefaultValue(CodeProperty property, CodeElement context, out string value)
+    {
+        // These property kinds are generated infrastructure, not schema-provided expressions.
+        value = property.Kind switch
+        {
+            CodePropertyKind.AdditionalData => "{}",
+            CodePropertyKind.Options => "<RequestOption>[]",
+            CodePropertyKind.Headers => "HttpHeaders()",
+            _ => string.Empty,
+        };
+        return !string.IsNullOrEmpty(value) ||
+            TryGetDefaultValue(property.Type, property.DefaultValue, context, out value);
+    }
+
+    internal bool TryGetDefaultValue(CodeTypeBase type, string defaultValue, CodeElement context, out string value, bool constantOnly = false, bool doubleQuoted = false)
+    {
+        value = string.Empty;
+        if (string.IsNullOrEmpty(defaultValue) || type is not CodeType codeType)
+            return false;
+        var unquotedValue = UnquoteDefaultValue(defaultValue);
+        if (defaultValue.Equals("null", StringComparison.OrdinalIgnoreCase) ||
+            codeType.TypeDefinition is null &&
+            (PrimitiveDefaultValueUtils.IsNumericType(codeType.Name) || codeType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase) || codeType.Name.Equals("bool", StringComparison.OrdinalIgnoreCase)) &&
+            unquotedValue.Equals("null", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!type.IsNullable)
+                return false;
+            value = "null";
+            return true;
+        }
+        if (type.CollectionKind != CodeTypeCollectionKind.None || type.ActionOf)
+            return false;
+        if (codeType.TypeDefinition is CodeEnum codeEnum)
+        {
+            var option = codeEnum.Options.FirstOrDefault(x => x.Name.Equals(defaultValue, StringComparison.Ordinal));
+            if (option is null)
+                return false;
+            value = $"{GetTypeString(type, context).TrimEnd('?')}.{option.Name}";
+            return true;
+        }
+        if (codeType.TypeDefinition is not null)
+            return false;
+        if (codeType.Name.Equals("boolean", StringComparison.OrdinalIgnoreCase) || codeType.Name.Equals("bool", StringComparison.OrdinalIgnoreCase))
+            return !unquotedValue.Contains('"', StringComparison.Ordinal) && !unquotedValue.Contains('\'', StringComparison.Ordinal) &&
+                PrimitiveDefaultValueUtils.TryNormalizeBooleanLiteral(unquotedValue, out value);
+        if (PrimitiveDefaultValueUtils.IsNumericType(codeType.Name))
+            return PrimitiveDefaultValueUtils.TryNormalizeNumericLiteral(unquotedValue, codeType.Name, out value);
+
+        var literal = doubleQuoted ? $"\"{SanitizeDartDoubleQuoteLiteral(unquotedValue)}\"" : $"'{SanitizeDartSingleQuoteLiteral(unquotedValue)}'";
+        value = codeType.Name.ToLowerInvariant() switch
+        {
+            "string" => literal,
+            "dateonly" when !constantOnly => $"DateOnly.fromDateTimeString({literal})",
+            "datetime" when !constantOnly => $"DateTime.parse({literal})",
+            "timeonly" when !constantOnly => $"TimeOnly.fromDateTimeString({literal})",
+            "uuidvalue" when !constantOnly => $"UuidValue.fromString({literal})",
+            _ => string.Empty,
+        };
+        return !string.IsNullOrEmpty(value);
+    }
+
+    internal static string UnquoteDefaultValue(string value) =>
+        value.Length >= 2 && value[0] == value[^1] && value[0] is '"' or '\'' ? value[1..^1] : value;
+
     public override string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, LanguageWriter? writer = null)
+        => GetParameterSignature(parameter, targetElement, true);
+
+    internal bool IsNamedParameter(CodeParameter parameter, CodeElement targetElement) =>
+        !string.IsNullOrEmpty(parameter.DefaultValue) ||
+        parameter.Optional && GetTypeString(parameter.Type, targetElement, true, parameter.Optional).Equals(nameof(String), StringComparison.OrdinalIgnoreCase);
+
+    internal string GetParameterSignature(CodeParameter parameter, CodeElement targetElement, bool includeNamedWrapper)
     {
         ArgumentNullException.ThrowIfNull(parameter);
         var parameterType = GetTypeString(parameter.Type, targetElement, true, parameter.Optional);
-        var sanitizedDefaultValue = parameter.DefaultValue.SanitizeQuotedStringLiteral();
-        var defaultValue = parameter switch
+        if (parameter.Optional && parameter.Type.IsNullable &&
+            targetElement is CodeMethod { Parent: CodeClass { Kind: CodeClassKind.RequestBuilder } } method &&
+            method.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor) &&
+            !parameterType.EndsWith('?'))
+            parameterType += "?";
+        var hasDefault = !string.IsNullOrEmpty(parameter.DefaultValue);
+        var defaultValue = string.Empty;
+        if (hasDefault)
         {
-            _ when !string.IsNullOrEmpty(parameter.DefaultValue) => $" = {sanitizedDefaultValue}",
-            _ when nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional => " = \"\"",
-            _ => string.Empty,
-        };
-        var open = !string.IsNullOrEmpty(defaultValue) ? "{" : "";
-        var close = !string.IsNullOrEmpty(defaultValue) ? "}" : "";
+            if (TryGetDefaultValue(parameter.Type, parameter.DefaultValue, targetElement, out var value, constantOnly: true, doubleQuoted: !parameter.DefaultValue.StartsWith('\'')))
+            {
+                defaultValue = $" = {value}";
+                if (value.Equals("null", StringComparison.Ordinal) && !parameterType.EndsWith('?'))
+                    parameterType += "?";
+            }
+            else if (!parameterType.EndsWith('?'))
+                parameterType += "?";
+        }
+        else if (nameof(String).Equals(parameterType, StringComparison.OrdinalIgnoreCase) && parameter.Optional)
+            defaultValue = " = \"\"";
+        var isNamed = includeNamedWrapper && IsNamedParameter(parameter, targetElement);
+        var open = isNamed ? "{" : "";
+        var close = isNamed ? "}" : "";
         return $"{GetDeprecationInformation(parameter)}{open}{parameterType} {parameter.Name.ToFirstCharacterLowerCase()}{defaultValue}{close}";
     }
     private string GetDeprecationInformation(IDeprecableElement element)

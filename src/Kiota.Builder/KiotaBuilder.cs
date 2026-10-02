@@ -706,10 +706,12 @@ public partial class KiotaBuilder
     /// <param name="token"></param>
     public async Task ApplyLanguageRefinementAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
     {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(generatedCode);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        await ILanguageRefiner.RefineAsync(config, generatedCode, token).ConfigureAwait(false);
+        await ILanguageRefiner.RefineAsync(config, generatedCode, logger, token).ConfigureAwait(false);
 
         stopwatch.Stop();
         LogLanguageRefinementApplied(stopwatch.ElapsedMilliseconds);
@@ -1269,26 +1271,7 @@ public partial class KiotaBuilder
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
             prop.SerializationName = childIdentifier;
-        if (kind == CodePropertyKind.Custom &&
-            propertySchema?.Default is JsonValue stringDefaultJsonValue &&
-            !stringDefaultJsonValue.IsJsonNullSentinel() &&
-            stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
-            !string.IsNullOrEmpty(stringDefaultValue) &&
-            !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
-        {
-            if (TryNormalizeStringDefaultValue(resultType, stringDefaultValue, out var normalizedDefaultValue))
-                prop.DefaultValue = normalizedDefaultValue;
-            else
-                LogInvalidDefaultValue(propertyName, resultType.Name);
-        }
-        else if (kind == CodePropertyKind.Custom &&
-            propertySchema?.Default is JsonValue stringDefaultJsonValue2 &&
-            !stringDefaultJsonValue2.IsJsonNullSentinel() &&
-            (stringDefaultJsonValue2.GetValueKind() == JsonValueKind.Number || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.True || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.False))
-        {
-            //Values not placed in quotes (number and boolean): just forward the value.
-            prop.DefaultValue = stringDefaultJsonValue2.ToString();
-        }
+        SetPropertyDefaultValue(prop, propertySchema);
 
         if (existingType == null)
         {
@@ -1296,6 +1279,30 @@ public partial class KiotaBuilder
             LogCreatingProperty(prop.Name, prop.Type.Name);
         }
         return prop;
+    }
+    private void SetPropertyDefaultValue(CodeProperty prop, IOpenApiSchema? propertySchema)
+    {
+        if (!prop.IsOfKind(CodePropertyKind.Custom) &&
+            !(config.Language == GenerationLanguage.Dart && prop.IsOfKind(CodePropertyKind.QueryParameter)))
+            return;
+        if (propertySchema?.Default is JsonValue stringDefaultJsonValue &&
+            !stringDefaultJsonValue.IsJsonNullSentinel() &&
+            stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
+            (config.Language == GenerationLanguage.Dart || !string.IsNullOrEmpty(stringDefaultValue)) &&
+            !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
+        {
+            if (TryNormalizeStringDefaultValue(prop.Type, stringDefaultValue, out var normalizedDefaultValue))
+                prop.DefaultValue = normalizedDefaultValue;
+            else
+                LogInvalidDefaultValue(prop.Name, prop.Type.Name);
+        }
+        else if (propertySchema?.Default is JsonValue stringDefaultJsonValue2 &&
+            !stringDefaultJsonValue2.IsJsonNullSentinel() &&
+            (stringDefaultJsonValue2.GetValueKind() == JsonValueKind.Number || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.True || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.False))
+        {
+            //Values not placed in quotes (number and boolean): just forward the value.
+            prop.DefaultValue = stringDefaultJsonValue2.ToString();
+        }
     }
     private static readonly HashSet<string> primitiveNumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -3007,6 +3014,7 @@ public partial class KiotaBuilder
             Type = resultType,
             Deprecation = parameter.GetDeprecationInformation(),
         };
+        SetPropertyDefaultValue(prop, parameter.Schema);
 
         if (!parameter.Name.Equals(prop.Name, StringComparison.OrdinalIgnoreCase))
         {
