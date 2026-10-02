@@ -649,11 +649,17 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
         {
             var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
                                                             .OfType<CodeNamespace>()
-                                                            .FirstOrDefault(x => x.Name
-                                                                                .EndsWith(currentClass.Name, StringComparison.OrdinalIgnoreCase));
+                                                            .FirstOrDefault(x => x.Name.Split('.')[^1]
+                                                                                .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
             if (childNamespaceWithClassName != null)
             {
+                var originalName = currentClass.Name;
+                var candidateName = originalName;
+                var suffix = 1;
+                while (childNamespaceWithClassName.FindChildByName<CodeElement>(candidateName, false) is not null)
+                    candidateName = $"{originalName}{suffix++}";
                 parentNamespace.RemoveChildElement(currentClass);
+                currentClass.Name = candidateName;
                 childNamespaceWithClassName.AddClass(currentClass);
             }
         }
