@@ -24,20 +24,21 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         var returnType = conventions.GetTypeString(codeElement.ReturnType, codeElement);
         var inherits = parentClass.StartBlock.Inherits != null && !parentClass.IsErrorDefinition;
         var isVoid = conventions.VoidTypeName.Equals(returnType, StringComparison.OrdinalIgnoreCase);
+        var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
+        var constructorDefaults = isConstructor ? GetConstructorDefaults(parentClass, codeElement) : [];
+        var hasEmptyConstructorBody = HasEmptyConstructorBody(codeElement, parentClass, isConstructor, constructorDefaults);
         WriteMethodDocumentation(codeElement, writer);
-        WriteMethodPrototype(codeElement, parentClass, writer, returnType, inherits, isVoid);
+        WriteMethodPrototype(codeElement, parentClass, writer, returnType, inherits, isVoid, constructorDefaults, hasEmptyConstructorBody);
         writer.IncreaseIndent();
 
         HandleMethodKind(codeElement, writer, inherits, parentClass, isVoid);
-        var isConstructor = codeElement.IsOfKind(CodeMethodKind.Constructor, CodeMethodKind.ClientConstructor, CodeMethodKind.RawUrlConstructor);
-
-        if (HasEmptyConstructorBody(codeElement, parentClass, isConstructor))
+        if (hasEmptyConstructorBody)
         {
             writer.DecreaseIndent();
         }
         else
         {
-            if (isConstructor && UsesLocalModelInitializers(parentClass) && GetConstructorDefaults(parentClass, codeElement).Length > 0)
+            if (isConstructor && UsesLocalModelInitializers(parentClass) && constructorDefaults.Length > 0)
             {
                 writer.DecreaseIndent();
             }
@@ -67,17 +68,17 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor)
+    private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor, (CodeProperty Property, bool IsValid, string Value)[] constructorDefaults)
     {
         if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor) && !parentClass.IsErrorDefinition)
         {
             return UsesInheritedModelInitializers(parentClass, codeElement)
-                ? !GetConstructorDefaults(parentClass, codeElement).Any(static x => x.Property.ExistsInBaseType)
-                : parentClass.GetBackingStoreProperty() is null && GetConstructorDefaults(parentClass, codeElement).Length == 0;
+                ? !constructorDefaults.Any(static x => x.Property.ExistsInBaseType)
+                : parentClass.GetBackingStoreProperty() is null && constructorDefaults.Length == 0;
         }
         var hasBody = codeElement.Parameters.Any(p => !p.IsOfKind(CodeParameterKind.RequestAdapter) && !p.IsOfKind(CodeParameterKind.PathParameters));
         return isConstructor && parentClass.IsOfKind(CodeClassKind.RequestBuilder) && !codeElement.IsOfKind(CodeMethodKind.ClientConstructor) &&
-            GetConstructorDefaults(parentClass, codeElement).Length == 0 && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
+            constructorDefaults.Length == 0 && (!hasBody || codeElement.IsOfKind(CodeMethodKind.RawUrlConstructor));
     }
     private static string SanitizeDartSingleQuoteLiteral(string? value) =>
         string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeSingleQuote().Replace("$", "\\$", StringComparison.Ordinal);
@@ -706,11 +707,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         conventions.WriteDeprecationAttribute(code, writer);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
-    private string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod)
+    private static string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod, (CodeProperty Property, bool IsValid, string Value)[] constructorDefaults)
     {
         if (isConstructor && UsesInheritedModelInitializers(parentClass, currentMethod))
         {
-            var initializers = GetConstructorDefaults(parentClass, currentMethod)
+            var initializers = constructorDefaults
                 .Where(static x => !x.Property.ExistsInBaseType)
                 .Select(static x => $"{x.Property.Name} = {x.Value}")
                 .Append("super()");
@@ -740,7 +741,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             }
             return " : super()";
         }
-        else if (isConstructor && UsesLocalModelInitializers(parentClass) && GetConstructorDefaults(parentClass, currentMethod).Length > 0)
+        else if (isConstructor && UsesLocalModelInitializers(parentClass) && constructorDefaults.Length > 0)
         {
             //Initializer list is created if "AdditionalData" is present or any custom property contains a default value.
             return " : ";
@@ -748,7 +749,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
         return string.Empty;
     }
-    private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid)
+    private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid, (CodeProperty Property, bool IsValid, string Value)[] constructorDefaults, bool hasEmptyConstructorBody)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
         if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || code.IsOfKind(CodeMethodKind.Custom))
@@ -767,14 +768,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         // TODO: Task type should be moved into the refiner
         var completeReturnType = isConstructor ?
             string.Empty : voidCorrectedTaskReturnType + " ";
-        var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code);
+        var baseSuffix = GetBaseSuffix(isConstructor, inherits, parentClass, code, constructorDefaults);
         var parameters = GetParameterList(code);
         var methodName = GetMethodName(code, parentClass, isConstructor);
         var includeNullableReferenceType = code.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator);
         var openingBracket = baseSuffix.Equals(" : ", StringComparison.Ordinal) ? "" : "{";
         var closingparenthesis = (isConstructor && parentClass.IsErrorDefinition) ? string.Empty : ")";
         // Constuctors (except for ClientConstructor) don't need a body but a closing statement
-        if (HasEmptyConstructorBody(code, parentClass, isConstructor))
+        if (hasEmptyConstructorBody)
         {
             openingBracket = ";";
         }

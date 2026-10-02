@@ -2035,6 +2035,41 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result);
     }
     [Fact]
+    public void RecomputesConstructorDefaultsForEachWrite()
+    {
+        setup();
+        parentClass.Kind = CodeClassKind.Model;
+        method.Kind = CodeMethodKind.Constructor;
+        method.IsAsync = false;
+        var property = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "value",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "String" },
+            DefaultValue = "\"first\"",
+        }).First();
+
+        writer.Write(method);
+        Assert.Contains("value = 'first';", tw.ToString());
+        tw.GetStringBuilder().Clear();
+        property.DefaultValue = "\"quote'\\\r\n\t$value\"";
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("value = 'quote\\'\\\\\\r\\n\\t\\$value';", result);
+        Assert.DoesNotContain("'first'", result);
+        AssertExtensions.CurlyBracesAreClosed(result);
+        tw.GetStringBuilder().Clear();
+        property.Type.Name = "Object";
+
+        writer.Write(method);
+        result = tw.ToString();
+        Assert.DoesNotContain("value =", result);
+        Assert.DoesNotContain(" : ", result);
+        Assert.EndsWith(";", result.TrimEnd());
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Fact]
     public void GroupsMultipleDartDefaultParametersInOneNamedBlock()
     {
         setup();
