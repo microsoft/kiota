@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a stack overflow when generating API plugins from descriptions with cyclic `allOf` schemas.
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
+- TypeScript: preserve request builders and inline models for trailing-slash paths by grouping files that share an output path and retaining each builder's URI template.
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
 - Ruby: the client's root module has an `eager_load!` method that loads every autoloaded model, for servers that preload before forking.

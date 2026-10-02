@@ -172,6 +172,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             var modelsNamespace = generatedCode.FindOrAddNamespace(_configuration.ModelsNamespaceName); // ensuring we have a models namespace in case we don't have any reusable model
             GenerateReusableModelsCodeFiles(modelsNamespace);
             GenerateRequestBuilderCodeFiles(modelsNamespace);
+            GroupRequestBuilderFiles(generatedCode);
             GroupReusableModelsInSingleFile(modelsNamespace);
             RemoveSelfReferencingUsings(generatedCode);
             AddAliasToCodeFileUsings(generatedCode);
@@ -324,6 +325,30 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
             GenerateModelCodeFile(codeInterface, parentNamespace, namespaceFunctions);
 
         GenerateReusableModelsCodeFiles(currentElement);
+    }
+    private static void GroupRequestBuilderFiles(CodeElement currentElement)
+    {
+        if (currentElement is CodeNamespace codeNamespace)
+        {
+            var files = codeNamespace.Files
+                .Where(static file => file.Interfaces.Any(static x => x.Kind is CodeInterfaceKind.RequestBuilder &&
+                    x.OriginalClass is not null && !x.OriginalClass.Methods.Any(static m => m.Kind is CodeMethodKind.ClientConstructor)))
+                .OrderBy(static file => file.Name, StringComparer.Ordinal)
+                .ToArray();
+            if (files.Length > 1)
+            {
+                var targetFile = files[0];
+                foreach (var otherFile in files.Skip(1))
+                {
+                    targetFile.AddUsing(otherFile.Usings.ToArray());
+                    targetFile.AddElements(otherFile.GetChildElements(true).ToArray());
+                    codeNamespace.RemoveChildElement(otherFile);
+                }
+                var childElements = targetFile.GetChildElements(true).ToArray();
+                AliasCollidingSymbols(childElements.SelectMany(GetUsingsFromCodeElement).Distinct(), childElements.Select(static x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase));
+            }
+        }
+        CrawlTree(currentElement, GroupRequestBuilderFiles);
     }
     private static void GenerateRequestBuilderCodeFiles(CodeNamespace modelsNamespace)
     {
