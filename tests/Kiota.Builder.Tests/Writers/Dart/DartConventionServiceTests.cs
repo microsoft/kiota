@@ -200,6 +200,28 @@ public class DartConventionServiceTests
     }
 
     [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task RefinesEnumParametersWithoutDefaults(string defaultValue)
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var models = root.AddNamespace("models");
+        models.AddClass(model);
+        var codeEnum = models.AddEnum(new CodeEnum { Name = "Status" }).First();
+        codeEnum.AddOption(new CodeEnumOption { Name = "none", SerializationName = "null" });
+        var method = model.AddMethod(new CodeMethod { Name = "constructor", Kind = CodeMethodKind.Constructor, ReturnType = new CodeType { Name = "void" }, IsAsync = false }).First();
+        var parameter = new CodeParameter { Name = "status", Type = new CodeType { TypeDefinition = codeEnum, IsNullable = false }, DefaultValue = defaultValue };
+        method.AddParameter(parameter);
+        var logger = new kiota.Rpc.FakeLogger<KiotaBuilder>();
+
+        await new DartRefiner(new GenerationConfiguration { Language = GenerationLanguage.Dart }, logger).RefineAsync(root, TestContext.Current.CancellationToken);
+
+        Assert.Equal(defaultValue, parameter.DefaultValue);
+        Assert.Equal("Status status", conventions.GetParameterSignature(parameter, method));
+        Assert.DoesNotContain(logger.LogEntries, static x => x.level == Microsoft.Extensions.Logging.LogLevel.Warning);
+    }
+
+    [Theory]
     [InlineData(CodePropertyKind.AdditionalData, "{}")]
     [InlineData(CodePropertyKind.Options, "<RequestOption>[]")]
     [InlineData(CodePropertyKind.Headers, "HttpHeaders()")]

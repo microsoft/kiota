@@ -246,7 +246,7 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             defaults[property] = option;
         if (currentElement is CodeMethod method)
             foreach (var parameter in method.Parameters)
-                if (!parameter.DefaultValue.Equals("null", StringComparison.OrdinalIgnoreCase) &&
+                if (!string.Equals(parameter.DefaultValue, "null", StringComparison.OrdinalIgnoreCase) &&
                     FindEnumDefaultOption(parameter.Type, parameter.DefaultValue) is CodeEnumOption parameterOption)
                     defaults[parameter] = parameterOption;
         CrawlTree(currentElement, element => CollectEnumDefaults(element, defaults));

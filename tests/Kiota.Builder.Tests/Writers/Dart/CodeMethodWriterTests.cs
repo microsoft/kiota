@@ -674,6 +674,57 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("Future<void>", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
+    [Theory]
+    [InlineData(CodeMethodKind.RequestExecutor)]
+    [InlineData(CodeMethodKind.RequestGenerator)]
+    public void KeepsRequestConfigurationOptionalPositionalWithoutNamedParameters(CodeMethodKind methodKind)
+    {
+        setup();
+        method.Kind = methodKind;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+
+        writer.Write(method);
+        var result = tw.ToString();
+        var signature = result.Split(Environment.NewLine).First(line => line.Contains($"{MethodName}(", StringComparison.Ordinal));
+        Assert.Contains($"{MethodName}(String b, [void Function(RequestConfig<DefaultQueryParameters>)? c])", signature);
+        Assert.Equal(1, signature.Count(static c => c == '['));
+        Assert.Equal(1, signature.Count(static c => c == ']'));
+        Assert.DoesNotContain("{void Function", signature);
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
+    [Theory]
+    [InlineData(CodeMethodKind.RequestExecutor, false)]
+    [InlineData(CodeMethodKind.RequestExecutor, true)]
+    [InlineData(CodeMethodKind.RequestGenerator, false)]
+    [InlineData(CodeMethodKind.RequestGenerator, true)]
+    public void GroupsRequestConfigurationWithNamedParameters(CodeMethodKind methodKind, bool hasExplicitDefault)
+    {
+        setup();
+        method.Kind = methodKind;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "label",
+            Kind = CodeParameterKind.Custom,
+            Type = new CodeType { Name = "String", IsNullable = false },
+            Optional = true,
+            DefaultValue = hasExplicitDefault ? "\"quote\"'\\\r\n\t$value\"" : string.Empty,
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        var signature = result.Split(Environment.NewLine).First(line => line.Contains($"{MethodName}(", StringComparison.Ordinal));
+        var expectedDefault = hasExplicitDefault ? "\"quote\\\"'\\\\\\r\\n\\t\\$value\"" : "\"\"";
+        Assert.Contains($"{MethodName}(String b, {{void Function(RequestConfig<DefaultQueryParameters>)? c, String label = {expectedDefault}}})", signature);
+        Assert.DoesNotContain("[", signature);
+        Assert.DoesNotContain("]", signature);
+        Assert.Equal(1, signature.Count(static c => c == '}'));
+        AssertExtensions.CurlyBracesAreClosed(result);
+    }
     [Fact]
     public void WritesRequestBuilder()
     {
