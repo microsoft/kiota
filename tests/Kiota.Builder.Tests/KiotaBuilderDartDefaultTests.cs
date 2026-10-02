@@ -54,7 +54,7 @@ public sealed partial class KiotaBuilderTests
         var warnings = logger.LogEntries.Where(static x => x.level == LogLevel.Warning).ToArray();
         Assert.Equal(2, warnings.Length);
         Assert.Contains(warnings, static x => x.message.Contains("property invalid", System.StringComparison.Ordinal));
-        Assert.Contains(warnings, static x => x.message.Contains(".date", System.StringComparison.Ordinal));
+        Assert.Contains(warnings, static x => x.message.Contains("for parameter", System.StringComparison.Ordinal) && x.message.Contains(".date", System.StringComparison.Ordinal));
         Assert.DoesNotContain(warnings, static x => x.message.Contains("2026-01-01", System.StringComparison.Ordinal));
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers.Dart;
 using Xunit;
 
@@ -20,6 +23,8 @@ public class DartConventionServiceTests
     [InlineData("bool", "false", "false")]
     [InlineData("int", "-123", "-123")]
     [InlineData("int64", "9223372036854775807", "9223372036854775807")]
+    [InlineData("long", "9223372036854775807", "9223372036854775807")]
+    [InlineData("number", "1.25e2", "1.25e2")]
     [InlineData("double", "1.25e2", "1.25e2")]
     [InlineData("DateTime", "\"2026-01-01T00:00:00Z\"", "DateTime.parse('2026-01-01T00:00:00Z')")]
     [InlineData("DateOnly", "\"2026-01-01\"", "DateOnly.fromDateTimeString('2026-01-01')")]
@@ -37,6 +42,8 @@ public class DartConventionServiceTests
     [InlineData("int", "1.5")]
     [InlineData("byte", "256")]
     [InlineData("int64", "9223372036854775808")]
+    [InlineData("long", "9223372036854775808")]
+    [InlineData("number", "1e400")]
     [InlineData("float", "1e100")]
     [InlineData("double", "NaN")]
     [InlineData("double", "Infinity")]
@@ -120,6 +127,76 @@ public class DartConventionServiceTests
         Assert.Equal("other.Status.valid", value);
         Assert.False(conventions.TryGetDefaultValue(type, "\"valid\"", property, out _));
         Assert.False(conventions.TryGetDefaultValue(type, "valid; injectedCall()", property, out _));
+    }
+
+    [Theory]
+    [InlineData("VALID", "\"VALID\"", true)]
+    [InlineData("VALID", "'VALID'", true)]
+    [InlineData("VALID", "VALID", true)]
+    [InlineData("VALID", "\"valid\"", false)]
+    [InlineData("VALID", "\"VALID; injectedCall()\"", false)]
+    [InlineData("null", "\"null\"", true)]
+    [InlineData("quote'\"line\n\r\t\\$value", "\"quote'\"line\n\r\t\\$value\"", true)]
+    public async Task RefinesEnumParameterWireDefaultsBeforeWritingCanonicalMembers(string wireName, string input, bool accepted)
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var models = root.AddNamespace("models");
+        models.AddClass(model);
+        var codeEnum = models.AddEnum(new CodeEnum { Name = "Status" }).First();
+        var option = new CodeEnumOption { Name = "valid", SerializationName = wireName };
+        codeEnum.AddOption(option);
+        var method = model.AddMethod(new CodeMethod { Name = "constructor", Kind = CodeMethodKind.Constructor, ReturnType = new CodeType { Name = "void" }, IsAsync = false }).First();
+        var parameter = new CodeParameter { Name = "status", Type = new CodeType { TypeDefinition = codeEnum, IsNullable = false }, DefaultValue = input };
+        method.AddParameter(parameter);
+        var logger = new kiota.Rpc.FakeLogger<KiotaBuilder>();
+
+        await new DartRefiner(new GenerationConfiguration { Language = GenerationLanguage.Dart }, logger).RefineAsync(root, TestContext.Current.CancellationToken);
+
+        Assert.Equal(accepted ? option.Name : input, parameter.DefaultValue);
+        Assert.Equal(accepted ? $"{{Status status = Status.{option.Name}}}" : "{Status? status}", conventions.GetParameterSignature(parameter, method));
+        Assert.Equal(accepted ? 0 : 1, logger.LogEntries.Count(static x => x.level == Microsoft.Extensions.Logging.LogLevel.Warning));
+        Assert.DoesNotContain(logger.LogEntries, static x => x.message.Contains("injectedCall", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ResolvesCollidingEnumParameterWireNamesWithoutRemappingPropertyDefaults()
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var models = root.AddNamespace("models");
+        models.AddClass(model);
+        var codeEnum = models.AddEnum(new CodeEnum { Name = "Status" }).First();
+        var first = new CodeEnumOption { Name = "value", SerializationName = "value" };
+        var second = new CodeEnumOption { Name = "valueEscaped", SerializationName = "valueEscaped" };
+        codeEnum.AddOption(first, second);
+        var property = model.AddProperty(new CodeProperty { Name = "status", Kind = CodePropertyKind.Custom, Type = new CodeType { TypeDefinition = codeEnum }, DefaultValue = "\"value\"" }).First();
+        var method = model.AddMethod(new CodeMethod { Name = "constructor", Kind = CodeMethodKind.Constructor, ReturnType = new CodeType { Name = "void" }, IsAsync = false }).First();
+        var parameter = new CodeParameter { Name = "status", Type = new CodeType { TypeDefinition = codeEnum, IsNullable = false }, DefaultValue = "\"valueEscaped\"" };
+        method.AddParameter(parameter);
+
+        await new DartRefiner(new GenerationConfiguration { Language = GenerationLanguage.Dart }).RefineAsync(root, TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(first.Name, second.Name);
+        Assert.True(conventions.TryGetPropertyDefaultValue(property, method, out var propertyDefault));
+        Assert.Equal($"Status.{first.Name}", propertyDefault);
+        Assert.Equal($"{{Status status = Status.{second.Name}}}", conventions.GetParameterSignature(parameter, method));
+    }
+
+    [Fact]
+    public async Task PreservesNullableEnumParameterNullInsteadOfMatchingItsWireName()
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var models = root.AddNamespace("models");
+        models.AddClass(model);
+        var codeEnum = models.AddEnum(new CodeEnum { Name = "Status" }).First();
+        codeEnum.AddOption(new CodeEnumOption { Name = "none", SerializationName = "null" });
+        var method = model.AddMethod(new CodeMethod { Name = "constructor", Kind = CodeMethodKind.Constructor, ReturnType = new CodeType { Name = "void" }, IsAsync = false }).First();
+        var parameter = new CodeParameter { Name = "status", Type = new CodeType { TypeDefinition = codeEnum, IsNullable = true }, DefaultValue = "null" };
+        method.AddParameter(parameter);
+
+        await new DartRefiner(new GenerationConfiguration { Language = GenerationLanguage.Dart }).RefineAsync(root, TestContext.Current.CancellationToken);
+
+        Assert.Equal("null", parameter.DefaultValue);
+        Assert.Equal("{Status? status = null}", conventions.GetParameterSignature(parameter, method));
     }
 
     [Theory]

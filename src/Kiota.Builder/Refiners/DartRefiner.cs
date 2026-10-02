@@ -72,7 +72,7 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by{x.ToPascalCase('_')}",
                 static x => x.ToCamelCase('_'),
                 GenerationLanguage.Dart);
-            var enumDefaults = new Dictionary<CodeProperty, CodeEnumOption>();
+            var enumDefaults = new Dictionary<CodeElement, CodeEnumOption>();
             CollectEnumDefaults(generatedCode, enumDefaults);
             CorrectCommonNames(generatedCode);
             var reservedNamesProvider = new DartReservedNamesProvider();
@@ -134,8 +134,11 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
 
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_");
-            foreach (var (property, option) in enumDefaults)
-                property.DefaultValue = option.Name;
+            foreach (var (element, option) in enumDefaults)
+                if (element is CodeProperty property)
+                    property.DefaultValue = option.Name;
+                else if (element is CodeParameter parameter)
+                    parameter.DefaultValue = option.Name;
             ReplaceReservedModelTypes(generatedCode, reservedNamesProvider, x => $"{x}Object");
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
@@ -192,13 +195,15 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         if (element is CodeMethod method)
             foreach (var parameter in method.Parameters.Where(x => !string.IsNullOrEmpty(x.DefaultValue) &&
                                                                    !conventions.TryGetDefaultValue(x.Type, x.DefaultValue, method, out _, constantOnly: true)))
-                LogInvalidDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
+                LogInvalidParameterDefaultValue($"{method.Name}.{parameter.Name}", parameter.Type.Name);
         foreach (var child in element.GetChildElements(true))
             WarnInvalidDefaults(child, conventions);
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for property {PropertyName} because it is incompatible with type {TypeName}.")]
     private partial void LogInvalidDefaultValue(string propertyName, string typeName);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for parameter {ParameterName} because it is incompatible with type {TypeName}.")]
+    private partial void LogInvalidParameterDefaultValue(string parameterName, string typeName);
 
     ///error classes should always have a constructor for the copyWith method
     private void AddConstructorForErrorClass(CodeElement currentElement)
@@ -229,12 +234,21 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, element => AddConstructorForErrorClass(element));
     }
 
-    private static void CollectEnumDefaults(CodeElement currentElement, Dictionary<CodeProperty, CodeEnumOption> defaults)
+    private static CodeEnumOption? FindEnumDefaultOption(CodeTypeBase type, string defaultValue) =>
+        type is CodeType { TypeDefinition: CodeEnum codeEnum } && !string.IsNullOrEmpty(defaultValue)
+            ? codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(DartConventionService.UnquoteDefaultValue(defaultValue), StringComparison.Ordinal))
+            : null;
+
+    private static void CollectEnumDefaults(CodeElement currentElement, Dictionary<CodeElement, CodeEnumOption> defaults)
     {
-        if (currentElement is CodeProperty { Type: CodeType { TypeDefinition: CodeEnum codeEnum } } property &&
-            !string.IsNullOrEmpty(property.DefaultValue) &&
-            codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(DartConventionService.UnquoteDefaultValue(property.DefaultValue), StringComparison.Ordinal)) is CodeEnumOption option)
+        if (currentElement is CodeProperty property &&
+            FindEnumDefaultOption(property.Type, property.DefaultValue) is CodeEnumOption option)
             defaults[property] = option;
+        if (currentElement is CodeMethod method)
+            foreach (var parameter in method.Parameters)
+                if (!parameter.DefaultValue.Equals("null", StringComparison.OrdinalIgnoreCase) &&
+                    FindEnumDefaultOption(parameter.Type, parameter.DefaultValue) is CodeEnumOption parameterOption)
+                    defaults[parameter] = parameterOption;
         CrawlTree(currentElement, element => CollectEnumDefaults(element, defaults));
     }
     /// <summary>
