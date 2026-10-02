@@ -982,6 +982,45 @@ components:
 
         Assert.Empty(subANamespace.GetChildElements(true));
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesCollidingModelsWhenMigratingCircularDependenciesAsync(bool reverseInsertion)
+    {
+        var models = root.AddNamespace("ApiSdk.models");
+        var existing = models.AddClass(new CodeClass { Name = "SubaModelA", Kind = CodeClassKind.Model }).First();
+        models.AddClass(new CodeClass { Name = "SubaModelA1", Kind = CodeClassKind.Model });
+        var existingEnum = models.AddEnum(new CodeEnum { Name = "SubaModelAEnum" }).First();
+        var namespaces = new[] { "suba", "subb" };
+        foreach (var name in reverseInsertion ? namespaces.Reverse() : namespaces)
+            models.AddNamespace($"{models.Name}.{name}");
+        var suba = models.FindNamespaceByName("ApiSdk.models.suba");
+        var subb = models.FindNamespaceByName("ApiSdk.models.subb");
+        var first = suba.AddClass(new CodeClass { Name = "ModelA", Kind = CodeClassKind.Model }).First();
+        var second = subb.AddClass(new CodeClass { Name = "ModelB", Kind = CodeClassKind.Model }).First();
+        var migratedEnum = suba.AddEnum(new CodeEnum { Name = "ModelAEnum" }).First();
+        first.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = subb.Name,
+            Declaration = new CodeType { Name = second.Name, TypeDefinition = second },
+        });
+        second.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = suba.Name,
+            Declaration = new CodeType { Name = first.Name, TypeDefinition = first },
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("SubaModelA2", first.Name);
+        Assert.Same(existing, models.FindChildByName<CodeClass>("SubaModelA", true));
+        Assert.Same(first, models.FindChildByName<CodeClass>("SubaModelA2", true));
+        Assert.NotNull(first.AssociatedInterface);
+        Assert.NotSame(existing.AssociatedInterface, first.AssociatedInterface);
+        Assert.Equal("SubaModelAEnum1", migratedEnum.Name);
+        Assert.Same(existingEnum, models.FindChildByName<CodeEnum>("SubaModelAEnum", true));
+        Assert.Same(migratedEnum, models.FindChildByName<CodeEnum>("SubaModelAEnum1", true));
+    }
     #endregion
 
     #region GoRefinerTests
