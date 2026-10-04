@@ -131,12 +131,13 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is not null
             && schema.IsInclusiveUnion(0)
-            && schema.AnyOf.OnlyOneOrDefault() is { Properties: not null, AllOf: not null } subSchema
+            && schema.AnyOf.OnlyOneOrDefault() is { AllOf: not null } subSchema
             && (subSchema.IsInherited() || subSchema.IsIntersection()))
         {
             var result = schema.GetSchemaOrTargetShallowCopy();
             result.AnyOf?.Clear();
-            result.TryAddProperties(subSchema.Properties);
+            if (subSchema.Properties is not null)
+                result.TryAddProperties(subSchema.Properties);
             result.AllOf ??= [];
             result.AllOf.AddRange(subSchema.AllOf);
             schema.AddOriginalReferenceIdExtension(result);
@@ -150,12 +151,13 @@ public static class OpenApiSchemaExtensions
     {
         if (schema is not null
             && schema.IsExclusiveUnion(0)
-            && schema.OneOf.OnlyOneOrDefault() is { Properties: not null, AllOf: not null } subSchema
+            && schema.OneOf.OnlyOneOrDefault() is { AllOf: not null } subSchema
             && (subSchema.IsInherited() || subSchema.IsIntersection()))
         {
             var result = schema.GetSchemaOrTargetShallowCopy();
             result.OneOf?.Clear();
-            result.TryAddProperties(subSchema.Properties);
+            if (subSchema.Properties is not null)
+                result.TryAddProperties(subSchema.Properties);
             result.AllOf ??= [];
             result.AllOf.AddRange(subSchema.AllOf);
             schema.AddOriginalReferenceIdExtension(result);
