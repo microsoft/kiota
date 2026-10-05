@@ -168,7 +168,7 @@ public class DartConventionService : CommonLanguageConventionService
                 if (ct.IsNullable)
                 {
                     if (ct.CollectionKind == CodeTypeCollectionKind.None && nameof(String).Equals(ct.Name, StringComparison.OrdinalIgnoreCase))
-                        nullCheck = $"if ({identName}!= null && {identName}.isNotEmpty) ";
+                        nullCheck = $"if ({identName} != null && {identName}.isNotEmpty) ";
                     else
                         nullCheck = $"if ({identName} != null) ";
                 }

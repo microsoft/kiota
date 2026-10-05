@@ -224,6 +224,23 @@ public class DartConventionServiceTests
     }
 
     [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void GuardsNullablePathStringsWithConsistentSpacingAndEscapedKeys(bool nullable)
+    {
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, ".", "client");
+        using var output = new StringWriter();
+        writer.SetTextWriter(output);
+        var type = new CodeType { Name = "String", IsNullable = nullable };
+
+        conventions.AddParametersAssignment(writer, new CodeType { Name = "Map<String, dynamic>" }, "pathParameters", "pathParameters",
+            (type, "quote\"'\\\n\r\t$value", "id"));
+
+        var expectedGuard = nullable ? "if (id != null && id.isNotEmpty) " : string.Empty;
+        Assert.Equal($"{expectedGuard}pathParameters[\"quote\\\"'\\\\\\n\\r\\t\\$value\"]=id;{Environment.NewLine}", output.ToString());
+    }
+
+    [Theory]
     [InlineData("int", true)]
     [InlineData("int", false)]
     [InlineData("UuidValue", true)]

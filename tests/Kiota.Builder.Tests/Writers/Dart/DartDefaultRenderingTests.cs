@@ -64,7 +64,7 @@ paths:
         writer.Write(constructor);
         var result = output.ToString();
         Assert.Contains($"(Map<String, dynamic> pathParameters, RequestAdapter requestAdapter, {expectedSignature})", result);
-        var nullGuard = expectedSignature == "String? id" ? "if (id!= null && id.isNotEmpty)" : "if (id != null)";
+        var nullGuard = expectedSignature == "String? id" ? "if (id != null && id.isNotEmpty)" : "if (id != null)";
         Assert.Contains($"{nullGuard} pathParameters[\"id\"]=id;", result);
         Assert.DoesNotContain("List<int?>", result);
         output.GetStringBuilder().Clear();

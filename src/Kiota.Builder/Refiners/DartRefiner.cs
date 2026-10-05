@@ -244,10 +244,11 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             FindEnumDefaultOption(property.Type, property.DefaultValue) is CodeEnumOption option)
             defaults[property] = option;
         if (currentElement is CodeMethod method)
-            foreach (var parameter in method.Parameters)
-                if (!string.Equals(parameter.DefaultValue, "null", StringComparison.OrdinalIgnoreCase) &&
-                    FindEnumDefaultOption(parameter.Type, parameter.DefaultValue) is CodeEnumOption parameterOption)
-                    defaults[parameter] = parameterOption;
+            foreach (var entry in method.Parameters
+                .Where(static parameter => !string.Equals(parameter.DefaultValue, "null", StringComparison.OrdinalIgnoreCase))
+                .Select(static parameter => (Parameter: parameter, Option: FindEnumDefaultOption(parameter.Type, parameter.DefaultValue)))
+                .Where(static entry => entry.Option is not null))
+                defaults[entry.Parameter] = entry.Option!;
         CrawlTree(currentElement, element => CollectEnumDefaults(element, defaults));
     }
     /// <summary>

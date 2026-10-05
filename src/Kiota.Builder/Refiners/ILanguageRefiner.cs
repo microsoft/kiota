@@ -15,6 +15,7 @@ public interface ILanguageRefiner
     public static async Task RefineAsync(GenerationConfiguration config, CodeNamespace generatedCode, ILogger? logger, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(generatedCode);
         switch (config.Language)
         {
             case GenerationLanguage.CSharp:
