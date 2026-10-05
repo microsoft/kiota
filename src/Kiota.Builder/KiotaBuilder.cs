@@ -3041,11 +3041,11 @@ public partial class KiotaBuilder
 
     private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema)
     {
+        if (schema is null) return null;
         var visited = new HashSet<IOpenApiSchema>();
-        while (schema is { AllOf.Count: 1 } && schema.AnyOf is not { Count: > 0 } && schema.OneOf is not { Count: > 0 } &&
-               !schema.IsSemanticallyMeaningful() && visited.Add(schema))
-            schema = schema.AllOf[0];
-        return schema;
+        return new[] { schema }.FlattenEmptyEntries(x =>
+            x is { AllOf.Count: 1 } && x.AnyOf is not { Count: > 0 } && x.OneOf is not { Count: > 0 } &&
+            !x.IsSemanticallyMeaningful() && visited.Add(x) ? x.AllOf : null).Single();
     }
     private static CodeType GetDefaultQueryParameterType()
     {
