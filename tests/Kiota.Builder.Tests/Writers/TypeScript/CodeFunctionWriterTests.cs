@@ -764,6 +764,72 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("return serializeParentClass(", result);
         Assert.True(result.IndexOf("switch (", StringComparison.Ordinal) < result.IndexOf("writer.writeStringValue", StringComparison.Ordinal));
     }
+    [Theory]
+    [InlineData(2, false)]
+    [InlineData(2, true)]
+    [InlineData(3, false)]
+    [InlineData(3, true)]
+    public async Task WritesSerializationAcrossInheritanceLevelsAsync(int levels, bool refinedSelfMapping)
+    {
+        var configuration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var models = Enumerable.Range(0, levels)
+            .Select(i => TestHelper.CreateModelClassInModelsNamespace(configuration, root, $"Model{i}"))
+            .ToArray();
+        for (var i = 0; i < levels; i++)
+        {
+            if (i > 0)
+                models[i].StartBlock.Inherits = new CodeType { TypeDefinition = models[i - 1] };
+            models[i].AddProperty(new CodeProperty
+            {
+                Name = $"value{i}",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { Name = "string", IsExternal = true },
+            });
+            models[i].DiscriminatorInformation.DiscriminatorPropertyName = "kind";
+            foreach (var mapping in models.Skip(i))
+                models[i].DiscriminatorInformation.AddDiscriminatorMapping(mapping.Name, new CodeType { TypeDefinition = mapping });
+        }
+        models[0].AddProperty(new CodeProperty
+        {
+            Name = "kind",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        });
+
+        await ILanguageRefiner.RefineAsync(configuration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        for (var i = 0; i < levels; i++)
+        {
+            var function = root.FindChildByName<CodeFunction>($"serializeModel{i}");
+            Assert.NotNull(function);
+            var modelInterface = Assert.IsType<CodeInterface>(Assert.IsType<CodeType>(
+                function.OriginalLocalMethod.Parameters.Single(static p => p.Type is CodeType { TypeDefinition: CodeInterface }).Type).TypeDefinition);
+            var selfMapping = Assert.IsType<CodeType>(models[i].DiscriminatorInformation.GetDiscriminatorMappingValue(models[i].Name));
+            selfMapping.TypeDefinition = refinedSelfMapping ? modelInterface : models[i];
+            tw.GetStringBuilder().Clear();
+            writer.Write(function);
+            var result = tw.ToString();
+
+            // A direct call writes this level; a call from a derived serializer still writes it.
+            Assert.Contains($"if (!model{i}) {{ return; }}", result);
+            Assert.DoesNotContain($"if (!model{i} || isSerializingDerivedType)", result);
+            Assert.Contains($"writer.writeStringValue(\"value{i}\", model{i}.value{i})", result);
+            Assert.DoesNotContain($"case \"Model{i}\":", result);
+            Assert.DoesNotContain($"return serializeModel{i}(", result);
+            if (i > 0)
+            {
+                Assert.Contains($"serializeModel{i - 1}(writer, model{i}, true)", result);
+                Assert.DoesNotContain($"writer.writeStringValue(\"value{i - 1}\"", result);
+            }
+            if (i + 1 < levels)
+            {
+                Assert.Contains("if (!isSerializingDerivedType)", result);
+                foreach (var child in Enumerable.Range(i + 1, levels - i - 1))
+                    Assert.Contains($"return serializeModel{child}(writer, model{i});", result);
+                Assert.True(result.IndexOf("switch (", StringComparison.Ordinal) < result.IndexOf("writer.writeStringValue", StringComparison.Ordinal));
+            }
+        }
+    }
     [Fact]
     public async Task EscapesSerializerBodyWithDiscriminatorAsync()
     {
