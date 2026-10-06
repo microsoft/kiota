@@ -2976,6 +2976,7 @@ public partial class KiotaBuilder
             isNullable = true;
             schema = members.First(static x => x.Type != JsonSchemaType.Null);
         }
+        isNullable |= (schema?.Type & JsonSchemaType.Null) == JsonSchemaType.Null;
         return schema;
     }
     private void AddPropertyForQueryParameter(OpenApiUrlTreeNode node, NetHttpMethod operationType, IOpenApiParameter parameter, CodeClass parameterClass)

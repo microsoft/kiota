@@ -75,12 +75,15 @@ public sealed partial class KiotaBuilderTests
             Assert.Equal("string", type.Name);
     }
 
-    [Fact]
-    public async Task PreservesNonNullableEnumArrayQueryParameterAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesEnumArrayQueryParameterNullabilityAsync(bool nullable)
     {
-        var type = await GetQueryParameterTypeAsync("""{"type":"array","items":{"type":"string","enum":["active","inactive"]}}""");
+        var schemaType = nullable ? """["array","null"]""" : "\"array\"";
+        var type = await GetQueryParameterTypeAsync("""{"type":TYPE,"items":{"type":"string","enum":["active","inactive"]}}""".Replace("TYPE", schemaType));
         Assert.True(type.IsArray);
-        Assert.False(type.IsNullable);
+        Assert.Equal(nullable, type.IsNullable);
         Assert.IsType<CodeEnum>(type.TypeDefinition);
     }
 
