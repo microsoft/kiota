@@ -1773,6 +1773,7 @@ paths:
     [InlineData("C:\\Windows\\System32\\drivers\\etc\\hosts")]
     [InlineData("http://attacker.example/exfil")]
     [InlineData("file:///etc/passwd")]
+    [InlineData("..%20/pwned_outside_package.json")]
     public async Task DoesNotEmitUnsafeStaticTemplateFileFromAdaptiveCardExtensionAsync(string maliciousFile)
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
@@ -1844,6 +1845,7 @@ paths:
     [InlineData("C:\\Windows\\System32\\drivers\\etc\\hosts")]
     [InlineData("http://attacker.example/exfil")]
     [InlineData("file:///etc/passwd")]
+    [InlineData("..%20/pwned_outside_package.json")]
     public async Task DoesNotEmitUnsafeStaticTemplateFileFromCapabilitiesExtensionAsync(string maliciousFile)
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
@@ -1970,6 +1972,7 @@ paths:
     [InlineData("%252e%252e%252fcard.json")]
     [InlineData("card%00.json")]
     [InlineData("\uFF0E\uFF0E/oauthCard.json")]
+    [InlineData("..%20/pwned_outside_package.json")]
     public async Task DoesNotEmitUnsafeOAuthCardPathFromCapabilitiesExtensionAsync(string maliciousFile)
     {
         var simpleDescriptionContent = @"openapi: 3.0.0

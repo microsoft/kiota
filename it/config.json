@@ -5,11 +5,17 @@
   "./tests/Kiota.Builder.IntegrationTests/InheritingThreeLevels.yaml": {
     "MockServerITFolder": "inheritance"
   },
+  "./tests/Kiota.Builder.IntegrationTests/EnumHandling.yaml": {
+    "MockServerITFolder": "enums"
+  },
   "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml": {
     "MockServerITFolder": "query-params"
   },
   "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
     "MockServerITFolder": "discriminator"
+  },
+  "./tests/Kiota.Builder.IntegrationTests/UnionWithoutDiscriminator.yaml": {
+    "MockServerITFolder": "union"
   },
   "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json": {
     "MockServerITFolder": "defaultvalues"
