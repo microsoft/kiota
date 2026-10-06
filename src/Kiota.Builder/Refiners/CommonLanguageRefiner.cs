@@ -15,7 +15,10 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
     private static readonly CodeUsingDeclarationNameComparer usingDeclarationNameComparer = new();
     protected static readonly char[] UnderscoreArray = new[] { '_' };
-    protected ILogger Logger { get; }
+    protected ILogger Logger
+    {
+        get;
+    }
     protected CommonLanguageRefiner(GenerationConfiguration configuration, ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
