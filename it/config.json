@@ -14,6 +14,9 @@
   "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml": {
     "MockServerITFolder": "discriminator"
   },
+  "./tests/Kiota.Builder.IntegrationTests/UnionWithoutDiscriminator.yaml": {
+    "MockServerITFolder": "union"
+  },
   "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json": {
     "MockServerITFolder": "defaultvalues"
   },
