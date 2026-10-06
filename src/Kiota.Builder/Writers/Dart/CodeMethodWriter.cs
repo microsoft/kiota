@@ -10,6 +10,8 @@ namespace Kiota.Builder.Writers.Dart;
 
 public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionService>
 {
+    private sealed record ConstructorDefault(CodeProperty Property, string Value);
+
     public CodeMethodWriter(DartConventionService conventionService) : base(conventionService)
     {
 
@@ -68,7 +70,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         }
     }
 
-    private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor, (CodeProperty Property, bool IsValid, string Value)[] constructorDefaults)
+    private static bool HasEmptyConstructorBody(CodeMethod codeElement, CodeClass parentClass, bool isConstructor, ConstructorDefault[] constructorDefaults)
     {
         if (parentClass.IsOfKind(CodeClassKind.Model) && codeElement.IsOfKind(CodeMethodKind.Constructor) && !parentClass.IsErrorDefinition)
         {
@@ -316,7 +318,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
             foreach (var serializationClassName in serializationClassNames)
                 writer.WriteLine($"ApiClientBuilder.{methodName}({serializationClassName}.new);");
     }
-    private (CodeProperty Property, bool IsValid, string Value)[] GetConstructorDefaults(CodeClass parentClass, CodeMethod currentMethod)
+    private ConstructorDefault[] GetConstructorDefaults(CodeClass parentClass, CodeMethod currentMethod)
     {
         return parentClass.Properties
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue) && !x.IsOfKind(CodePropertyKind.UrlTemplate, CodePropertyKind.PathParameters, CodePropertyKind.BackingStore))
@@ -324,8 +326,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                                         .Where(static x => x.Type is not CodeType propType || propType.TypeDefinition is not CodeClass propertyClass || propertyClass.OriginalComposedType is null)
                                         .OrderByDescending(static x => x.Kind)
                                         .ThenBy(static x => x.Name)
-                                        .Select(x => (Property: x, IsValid: conventions.TryGetPropertyDefaultValue(x, currentMethod, out var value), Value: value))
-                                        .Where(static x => x.IsValid)
+                                        .Select(x => conventions.TryGetPropertyDefaultValue(x, currentMethod, out var value) ? new ConstructorDefault(x, value) : null)
+                                        .OfType<ConstructorDefault>()
                                         .ToArray();
     }
     private static bool UsesInheritedModelInitializers(CodeClass parentClass, CodeMethod method) =>
@@ -707,7 +709,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         conventions.WriteDeprecationAttribute(code, writer);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
-    private static string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod, (CodeProperty Property, bool IsValid, string Value)[] constructorDefaults)
+    private static string GetBaseSuffix(bool isConstructor, bool inherits, CodeClass parentClass, CodeMethod currentMethod, ConstructorDefault[] constructorDefaults)
     {
         if (isConstructor && UsesInheritedModelInitializers(parentClass, currentMethod))
         {
@@ -749,7 +751,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
 
         return string.Empty;
     }
-    private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid, (CodeProperty Property, bool IsValid, string Value)[] constructorDefaults, bool hasEmptyConstructorBody)
+    private void WriteMethodPrototype(CodeMethod code, CodeClass parentClass, LanguageWriter writer, string returnType, bool inherits, bool isVoid, ConstructorDefault[] constructorDefaults, bool hasEmptyConstructorBody)
     {
         var staticModifier = code.IsStatic ? "static " : string.Empty;
         if (code.IsOfKind(CodeMethodKind.Serializer, CodeMethodKind.Deserializer, CodeMethodKind.QueryParametersMapper) || code.IsOfKind(CodeMethodKind.Custom))
