@@ -462,10 +462,12 @@ public class ExtensionResponseSemanticsStaticTemplate
             return false;
         }
 
-        // Reject any parent-directory traversal segment.
+        // Reject parent-directory traversal segments, including aliases produced when Win32 strips trailing spaces
+        // and dots from path components.
         foreach (var segment in normalized.Split('/'))
         {
-            if (segment == "..")
+            if (segment.StartsWith("..", StringComparison.Ordinal) &&
+                segment.AsSpan(2).IndexOfAnyExcept(' ', '.') < 0)
             {
                 return false;
             }
@@ -513,5 +515,4 @@ public class ExtensionSecurityInfo
 #pragma warning restore CA2227 // Collection properties should be read only
 #pragma warning restore CA1002 // Do not expose generic lists
 }
-
 

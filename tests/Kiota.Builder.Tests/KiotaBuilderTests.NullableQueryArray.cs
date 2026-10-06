@@ -87,6 +87,43 @@ public sealed partial class KiotaBuilderTests
         Assert.IsType<CodeEnum>(type.TypeDefinition);
     }
 
+    [Theory]
+    [InlineData("anyOf", 0)]
+    [InlineData("oneOf", 0)]
+    [InlineData("anyOf", 1)]
+    [InlineData("oneOf", 1)]
+    [InlineData("anyOf", 2)]
+    [InlineData("oneOf", 2)]
+    public async Task PreservesNullableQueryArraysWithAllOfWrappersAsync(string keyword, int wrapperOrder)
+    {
+        var array = """{"type":"array","items":{"allOf":[{"allOf":[{"$ref":"#/components/schemas/State"}]}]}}""";
+        var nullableArray = """{"KEYWORD":[ARRAY,{"type":"null"}]}""".Replace("KEYWORD", keyword).Replace("ARRAY", array);
+        var schema = wrapperOrder switch
+        {
+            0 => """{"allOf":[NULLABLE]}""".Replace("NULLABLE", nullableArray),
+            1 => """{"KEYWORD":[{"allOf":[ARRAY]},{"type":"null"}]}""".Replace("KEYWORD", keyword).Replace("ARRAY", array),
+            _ => """{"allOf":[{"KEYWORD":[{"allOf":[NULLABLE]},{"type":"null"}]}]}""".Replace("KEYWORD", keyword).Replace("NULLABLE", nullableArray),
+        };
+        var type = await GetQueryParameterTypeAsync(schema, """{"State":{"type":"string","enum":["active","inactive"]}}""");
+        Assert.True(type.IsArray);
+        Assert.True(type.IsNullable);
+        var definition = Assert.IsType<CodeEnum>(type.TypeDefinition);
+        Assert.Equal("State", definition.Name);
+        Assert.Equal(new[] { "active", "inactive" }, definition.Options.Select(static x => x.Name));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesWrappedEnumArrayQueryParameterNullabilityAsync(bool nullable)
+    {
+        var schemaType = nullable ? """["array","null"]""" : "\"array\"";
+        var type = await GetQueryParameterTypeAsync("""{"type":TYPE,"items":{"allOf":[{"type":"string","enum":["active","inactive"]}]}}""".Replace("TYPE", schemaType));
+        Assert.True(type.IsArray);
+        Assert.Equal(nullable, type.IsNullable);
+        Assert.IsType<CodeEnum>(type.TypeDefinition);
+    }
+
     private async Task<CodeType> GetQueryParameterTypeAsync(string schema, string components = "{}")
     {
         var description = """

@@ -2966,6 +2966,7 @@ public partial class KiotaBuilder
         var visited = new HashSet<IOpenApiSchema>();
         while (schema is not null && visited.Add(schema))
         {
+            schema = UnwrapQueryParameterSchema(schema);
             var candidate = schema is OpenApiSchemaReference schemaReference ? schemaReference.Target : schema;
             if (candidate is null || candidate.IsSemanticallyMeaningful() || candidate.AllOf is { Count: > 0 })
                 break;
@@ -2984,10 +2985,12 @@ public partial class KiotaBuilder
         var parameterSchema = UnwrapNullableQueryParameterSchema(parameter.Schema, out var isNullable);
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-
-        if (parameterSchema is not null && (parameterSchema.IsEnum() || (parameterSchema.IsArray() && parameterSchema.Items.IsEnum())))
+        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items);
+        var isArray = parameterSchema.IsArray() ||
+            parameterSchema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && itemSchema.IsEnum();
+        var enumSchema = isArray ? itemSchema : parameterSchema;
+        if (enumSchema is not null && enumSchema.IsEnum())
         {
-            var enumSchema = parameterSchema.IsArray() ? parameterSchema.Items! : parameterSchema;
             var codeNamespace = enumSchema.IsReferencedSchema() switch
             {
                 true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
@@ -3002,7 +3005,7 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = isNullable || !parameterSchema.IsArray()
+                    IsNullable = isNullable || !isArray
                 };
                 addBackwardCompatibleParameter = true;
             }
@@ -3014,7 +3017,7 @@ public partial class KiotaBuilder
             Name = "string",
             IsExternal = true,
         };
-        resultType.CollectionKind = parameterSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        resultType.CollectionKind = isArray ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         if (parameter.Name?.SanitizeParameterNameForCodeSymbols() is not string propName) return;
         var prop = new CodeProperty
         {
@@ -3056,6 +3059,14 @@ public partial class KiotaBuilder
         }
     }
 
+    private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema)
+    {
+        if (schema is null) return null;
+        var visited = new HashSet<IOpenApiSchema>();
+        return new[] { schema }.FlattenEmptyEntries(x =>
+            x is { AllOf.Count: 1 } && x.AnyOf is not { Count: > 0 } && x.OneOf is not { Count: > 0 } &&
+            !x.IsSemanticallyMeaningful() && visited.Add(x) ? x.AllOf : null).Single();
+    }
     private static CodeType GetDefaultQueryParameterType()
     {
         return new()
