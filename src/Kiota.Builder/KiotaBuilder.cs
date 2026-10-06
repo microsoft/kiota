@@ -1961,14 +1961,14 @@ public partial class KiotaBuilder
         {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
-            // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
+            // Route allOf inheritance/intersection schemas and single inline objects through
             // CreateModelDeclarations so the allOf entries get merged. Calling AddModelDeclarationIfDoesntExist
             // directly with the raw schema would only set the base class (from the single allOf $ref) but drop
             // the inline allOf member's properties, producing an empty model that then wins the name-based dedup.
-            if ((targetSchema.IsInherited() || targetSchema.IsIntersection()) &&
-                CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType inheritedType)
+            if ((targetSchema.IsInherited() || targetSchema.IsIntersection() || HasSingleInlineAllOfObject(targetSchema)) &&
+                CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType normalizedType)
             {
-                return inheritedType;
+                return normalizedType;
             }
             return new CodeType
             {
@@ -2054,6 +2054,9 @@ public partial class KiotaBuilder
                 codeComposedTypeBase.AddType(primitiveType);
         }
     }
+    private static bool HasSingleInlineAllOfObject(IOpenApiSchema schema) =>
+        schema.AllOf is { Count: 1 } && !schema.AllOf[0].IsReferencedSchema() && schema.AllOf[0].HasAnyProperty();
+
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false)
     {
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
@@ -2096,7 +2099,7 @@ public partial class KiotaBuilder
             return CreateModelDeclarationAndType(currentNode, mergedSchema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody, dynamicBindingSuffixContext: suffixForInlineSchema);
         }
 
-        if (schema.AllOf is { Count: 1 } && !schema.AllOf[0].IsReferencedSchema() && schema.AllOf[0].HasAnyProperty() &&
+        if (HasSingleInlineAllOfObject(schema) &&
             schema.MergeAllOfSchemaEntries() is IOpenApiSchema singleInlineSchema)
         {
             // A single inline object still contributes properties, even without an inheritance relationship.
