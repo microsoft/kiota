@@ -161,7 +161,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 else if (propertyType.TypeDefinition is CodeClass && propertyType.IsCollection || propertyType.TypeDefinition is null || propertyType.TypeDefinition is CodeEnum)
                 {
                     var valueVarName = $"{property.Name}_value";
-                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {valueVarName} := {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}:");
+                    writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if ({valueVarName} := {parseNodeParameter.Name}.{GetDeserializationMethodName(propertyType, codeElement, parentClass)}) is not {NoneKeyword}:");
                     writer.WriteLine($"{ResultVarName}.{property.Name} = {valueVarName}");
                     writer.DecreaseIndent();
                     includeElse = true;
@@ -690,7 +690,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                                         .OrderBy(static x => x, CodePropertyTypeForwardComparer)
                                         .ThenBy(static x => x.Name))
         {
-            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if self.{otherProp.Name}:");
+            writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if self.{otherProp.Name} is not {NoneKeyword}:");
             writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}({NoneKeyword}, self.{otherProp.Name})");
             writer.DecreaseIndent();
             if (!includeElse)
