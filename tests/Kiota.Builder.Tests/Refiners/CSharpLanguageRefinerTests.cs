@@ -34,6 +34,22 @@ public class CSharpLanguageRefinerTests
         Assert.NotNull(wrapper.OriginalComposedType);
     }
     #region CommonLanguageRefinerTests
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OnlyMovesClassesToImmediateChildNamespacesAsync(bool hasDirectCollision)
+    {
+        var models = root.AddNamespace("graph.models");
+        var unrelated = root.AddNamespace("graph.models.Other.ResourceType");
+        var destination = hasDirectCollision ? root.AddNamespace("graph.models.ResourceType") : models;
+        var model = models.AddClass(new CodeClass { Name = "ResourceType", Kind = CodeClassKind.Model }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Same(destination, model.Parent);
+        Assert.Same(model, destination.FindChildByName<CodeClass>("ResourceType", false));
+        Assert.Empty(unrelated.Classes);
+    }
     [Fact]
     public async Task DoesNotMoveClassesForPartialNamespaceSuffixesAsync()
     {
@@ -66,6 +82,8 @@ public class CSharpLanguageRefinerTests
 
         var wrapper = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(property.Type).TypeDefinition);
         Assert.Equal("ResourceType2", wrapper.Name);
+        Assert.Equal("ResourceType2", property.Type.Name);
+        Assert.EndsWith(".ResourceType.ResourceType2", new Kiota.Builder.Writers.CSharp.CSharpConventionService().GetTypeString(property.Type, property, false, false));
         Assert.Same(nested, wrapper.Parent);
         Assert.Same(wrapper, nested.FindChildByName<CodeClass>(wrapper.Name, false));
         Assert.Same(existing, nested.FindChildByName<CodeClass>("ResourceType", false));

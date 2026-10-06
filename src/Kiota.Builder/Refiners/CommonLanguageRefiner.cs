@@ -647,8 +647,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             !string.IsNullOrEmpty(currentClass.Name) &&
             currentClass.Parent is CodeNamespace parentNamespace)
         {
-            var childNamespaceWithClassName = parentNamespace.GetChildElements(true)
-                                                            .OfType<CodeNamespace>()
+            var childNamespaceWithClassName = parentNamespace.Namespaces
                                                             .FirstOrDefault(x => x.Name.Split('.')[^1]
                                                                                 .Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase));
             if (childNamespaceWithClassName != null)
