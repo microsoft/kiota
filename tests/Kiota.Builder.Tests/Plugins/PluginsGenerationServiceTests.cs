@@ -324,6 +324,75 @@ components:
     }
 
     [Fact]
+    public async Task GeneratesManifestWithCyclicAllOfSchemasAsync()
+    {
+        var cyclicDescriptionContent = @"openapi: 3.0.3
+info:
+  title: test
+  version: 1.0
+servers:
+  - url: http://localhost/
+paths:
+  /items:
+    get:
+      operationId: getItems
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/A'
+components:
+  schemas:
+    A:
+      allOf:
+        - $ref: '#/components/schemas/B'
+      properties:
+        aProp:
+          type: string
+    B:
+      allOf:
+        - $ref: '#/components/schemas/A'
+      properties:
+        bProp:
+          type: string";
+        var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var descriptionPath = Path.Combine(workingDirectory) + "description.yaml";
+        await File.WriteAllTextAsync(descriptionPath, cyclicDescriptionContent, cancellationToken: TestContext.Current.CancellationToken);
+        var openAPIDocumentDS = new OpenApiDocumentDownloadService(_httpClient, _logger);
+        var outputDirectory = Path.Combine(workingDirectory, "output");
+        var generationConfiguration = new GenerationConfiguration
+        {
+            OutputPath = outputDirectory,
+            OpenAPIFilePath = descriptionPath,
+            PluginTypes = [PluginType.APIPlugin],
+            ClientClassName = "client",
+            ApiRootUrl = "http://localhost/",
+        };
+        var (openAPIDocumentStream, _) = await openAPIDocumentDS.LoadStreamAsync(descriptionPath, generationConfiguration, null, false, cancellationToken: TestContext.Current.CancellationToken);
+        var openApiDocument = await openAPIDocumentDS.GetDocumentFromStreamAsync(openAPIDocumentStream, generationConfiguration, cancellationToken: TestContext.Current.CancellationToken);
+        var urlTreeNode = OpenApiUrlTreeNode.Create(openApiDocument, Constants.DefaultOpenApiLabel);
+
+        var pluginsGenerationService = new PluginsGenerationService(openApiDocument, urlTreeNode, generationConfiguration, workingDirectory, _logger);
+        await pluginsGenerationService.GenerateManifestAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.True(File.Exists(Path.Combine(outputDirectory, ManifestFileName)));
+        Assert.True(File.Exists(Path.Combine(outputDirectory, OpenApiFileName)));
+
+        using var resultOpenApiFile = File.OpenRead(Path.Combine(outputDirectory, OpenApiFileName));
+        var settings = new OpenApiReaderSettings();
+        settings.AddYamlReader();
+        var resultResult = await OpenApiDocument.LoadAsync(resultOpenApiFile, "yaml", settings, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Empty(resultResult.Diagnostic.Errors);
+        var responseSchema = resultResult.Document.Paths["/items"].Operations[HttpMethod.Get].Responses["200"].Content["application/json"].Schema;
+        Assert.Null(responseSchema.AllOf); // allOf were merged
+        Assert.Contains("aProp", responseSchema.Properties.Keys);
+        Assert.Contains("bProp", responseSchema.Properties.Keys);
+    }
+
+    [Fact]
     public async Task GeneratesManifestWithAdaptiveCardExtensionAsync()
     {
         var simpleDescriptionContent = @"openapi: 3.0.0
