@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
-public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration)
+public class HttpRefiner(GenerationConfiguration configuration, ILogger? logger = null) : CommonLanguageRefiner(configuration, logger)
 {
     private const string BaseUrl = "BaseUrl";
     private const string BaseUrlName = "string";

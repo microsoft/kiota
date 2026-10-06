@@ -19,28 +19,28 @@ public interface ILanguageRefiner
         switch (config.Language)
         {
             case GenerationLanguage.CSharp:
-                await new CSharpRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new CSharpRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.TypeScript:
-                await new TypeScriptRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new TypeScriptRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Java:
-                await new JavaRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new JavaRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Ruby:
-                await new RubyRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new RubyRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.PHP:
-                await new PhpRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new PhpRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Go:
-                await new GoRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new GoRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.HTTP:
-                await new HttpRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new HttpRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Python:
-                await new PythonRefiner(config).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
+                await new PythonRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);
                 break;
             case GenerationLanguage.Dart:
                 await new DartRefiner(config, logger).RefineAsync(generatedCode, cancellationToken).ConfigureAwait(false);

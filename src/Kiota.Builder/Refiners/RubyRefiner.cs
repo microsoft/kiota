@@ -9,12 +9,13 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.PathSegmenters;
 using Kiota.Builder.Writers.Ruby;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public RubyRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public RubyRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>

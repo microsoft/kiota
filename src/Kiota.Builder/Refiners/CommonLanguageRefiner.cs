@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kiota.Builder.Refiners;
 
@@ -13,10 +15,12 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
 {
     private static readonly CodeUsingDeclarationNameComparer usingDeclarationNameComparer = new();
     protected static readonly char[] UnderscoreArray = new[] { '_' };
-    protected CommonLanguageRefiner(GenerationConfiguration configuration)
+    protected ILogger Logger { get; }
+    protected CommonLanguageRefiner(GenerationConfiguration configuration, ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         _configuration = configuration;
+        Logger = logger ?? NullLogger.Instance;
     }
     public abstract Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken);
     /// <summary>

@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public CSharpRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>

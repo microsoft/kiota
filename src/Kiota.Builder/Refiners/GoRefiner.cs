@@ -7,12 +7,13 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Go;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public class GoRefiner : CommonLanguageRefiner
 {
-    public GoRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public GoRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         _configuration.NamespaceNameSeparator = "/";

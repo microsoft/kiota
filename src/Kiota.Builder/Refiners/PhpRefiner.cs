@@ -7,13 +7,14 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public class PhpRefiner : CommonLanguageRefiner
 {
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
-    public PhpRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public PhpRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
 
     private const string AbstractionsNamespaceName = @"Microsoft\Kiota\Abstractions";
 

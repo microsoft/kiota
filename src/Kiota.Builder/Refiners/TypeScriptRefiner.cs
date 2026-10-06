@@ -7,6 +7,7 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.TypeScript;
+using Microsoft.Extensions.Logging;
 using static Kiota.Builder.Writers.TypeScript.TypeScriptConventionService;
 
 namespace Kiota.Builder.Refiners;
@@ -15,7 +16,7 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
 
-    public TypeScriptRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    public TypeScriptRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
