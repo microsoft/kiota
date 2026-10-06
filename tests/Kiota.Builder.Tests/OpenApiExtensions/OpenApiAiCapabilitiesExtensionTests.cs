@@ -259,6 +259,13 @@ components:
     [InlineData("../../../../etc/passwd", false)]
     [InlineData("..\\..\\windows\\system32\\config\\sam", false)]
     [InlineData("adaptiveCards/../../secret.json", false)]
+    // Win32 strips trailing spaces and dots from path components before resolving parent-directory segments.
+    [InlineData(".. /card.json", false)]
+    [InlineData("..%20/card.json", false)]
+    [InlineData("..%20%2Fcard.json", false)]
+    [InlineData(".. ./card.json", false)]
+    [InlineData("..%2E/card.json", false)]
+    [InlineData("..;/card.json", true)]
     // Rooted POSIX / UNC paths.
     [InlineData("/etc/passwd", false)]
     [InlineData("//server/share/card.json", false)]
