@@ -39,10 +39,6 @@
       {
         "Language": "dart",
         "Rationale": "Compilation fails with api from 2026-06-18 - https://github.com/microsoft/kiota/issues/7807"
-      },
-      {
-        "Language": "go",
-        "Rationale": "Compilation fails with api from 2026-06-18 - https://github.com/microsoft/kiota/issues/7808"
       }
     ],
     "IdempotencySuppressions": [
