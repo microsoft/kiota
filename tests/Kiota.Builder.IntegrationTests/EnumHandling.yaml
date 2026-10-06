@@ -17,6 +17,22 @@ paths:
                 "$ref": "#/components/schemas/MoveType"
           description: A move
       description: "Play a move"
+  "/games/latest":
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Game"
+              example:
+                opening: rock-crushes
+                moves:
+                  - paper-wraps
+                  - scissors-cut
+                result: draw
+          description: The latest game
+      description: "Get the latest game"
 components:
   schemas:
     MoveType:
@@ -27,3 +43,25 @@ components:
         - SCISSORS
       type: string
       example: ROCK
+    Game:
+      type: object
+      properties:
+        opening:
+          "$ref": "#/components/schemas/MoveName"
+        moves:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MoveName"
+        result:
+          type: string
+          enum:
+            - win
+            - loss
+            - draw
+    MoveName:
+      description: Wire values that are not valid identifiers
+      type: string
+      enum:
+        - rock-crushes
+        - paper-wraps
+        - scissors-cut

@@ -353,7 +353,7 @@ public static class OpenApiSchemaExtensions
 
         return [];
     }
-    private static IEnumerable<IOpenApiSchema> FlattenEmptyEntries(this IEnumerable<IOpenApiSchema> schemas, Func<IOpenApiSchema, IList<IOpenApiSchema>?> subsequentGetter, int? maxDepth = default)
+    internal static IEnumerable<IOpenApiSchema> FlattenEmptyEntries(this IEnumerable<IOpenApiSchema> schemas, Func<IOpenApiSchema, IList<IOpenApiSchema>?> subsequentGetter, int? maxDepth = default)
     {
         if (schemas == null) return [];
         ArgumentNullException.ThrowIfNull(subsequentGetter);
