@@ -356,6 +356,105 @@ components:
     }
 
     [Theory]
+    [InlineData(GenerationLanguage.Dart, """{"type":"string","default":"ready"}""", "\"ready\"", "'ready'")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":"ready"}]}""", "\"ready\"", "'ready'")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"allOf":[{"type":"boolean","default":true}]}]}""", "true", "true")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"integer","default":42}]}""", "42", "42")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"integer","default":"42"}]}""", "42", "42")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":"quote'\"line\n\r\t\\$value"}]}""", "\"quote'\"line\n\r\t\\$value\"", "'quote\\'\"line\\n\\r\\t\\\\\\$value'")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":""}]}""", "\"\"", "''")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":"null"}]}""", "\"null\"", "'null'")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":"NULL"}]}""", "\"NULL\"", "'NULL'")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","enum":["null","ready"],"default":"null"}]}""", "\"null\"", null)]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"$ref":"#/components/schemas/Status"}]}""", "\"null\"", null)]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"allOf":[{"$ref":"#/components/schemas/Status"}]}]}""", "\"null\"", null)]
+    [InlineData(GenerationLanguage.Dart, """{"default":"ready","allOf":[{"$ref":"#/components/schemas/Status"}]}""", "\"ready\"", null)]
+    [InlineData(GenerationLanguage.Dart, """{"default":"outer","allOf":[{"type":"string","default":"inner"}]}""", "\"outer\"", "'outer'")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"default":"middle","allOf":[{"type":"string","default":"inner"}]}]}""", "\"middle\"", "'middle'")]
+    [InlineData(GenerationLanguage.Dart, """{"default":"","allOf":[{"type":"string","default":"inner"}]}""", "\"\"", "''")]
+    [InlineData(GenerationLanguage.Dart, """{"default":null,"allOf":[{"type":"string","default":"inner"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"default":null,"allOf":[{"type":"string","default":"inner"}]}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":null}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","enum":["null","ready"],"default":null}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"default":null,"allOf":[{"$ref":"#/components/schemas/Status"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"default":"invalid","allOf":[{"type":"boolean","default":true}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"type":"string","allOf":[{"type":"string","default":"inner"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"string","default":"first"},{"type":"string","default":"second"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"anyOf":[{"type":"string"}],"allOf":[{"type":"string","default":"inner"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"oneOf":[{"type":"string"}],"allOf":[{"type":"string","default":"inner"}]}""", "", "")]
+    [InlineData(GenerationLanguage.Dart, """{"allOf":[{"type":"array","items":{"allOf":[{"$ref":"#/components/schemas/Status"}]}}]}""", "", "")]
+    [InlineData(GenerationLanguage.CSharp, """{"allOf":[{"type":"string","default":"ready"}]}""", "", "")]
+    [InlineData(GenerationLanguage.CSharp, """{"default":"outer","allOf":[{"type":"string","default":"inner"}]}""", "", "")]
+    [InlineData(GenerationLanguage.CSharp, """{"allOf":[{"$ref":"#/components/schemas/Status"}]}""", "", "")]
+    public async Task PreservesDefaultsAlongSingleAllOfQuerySchemaChain(GenerationLanguage language, string schema, string expectedDefault, string expectedLiteral)
+    {
+        var description = $$"""
+openapi: 3.0.3
+info:
+  title: Wrapped query defaults
+  version: 1.0.0
+servers:
+  - url: https://example.com
+paths:
+  /settings:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          schema: {{schema}}
+      responses:
+        '204':
+          description: No content
+components:
+  schemas:
+    Status:
+      type: string
+      enum: ["null", ready]
+      default: "null"
+""";
+        var configuration = new GenerationConfiguration { Language = language, ClientNamespaceName = "client", ExcludeBackwardCompatible = true };
+        using var client = new HttpClient();
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, client);
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(description));
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var root = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var query = root.FindChildByName<CodeProperty>("filter", true);
+        Assert.NotNull(query);
+        Assert.Equal(expectedDefault, query.DefaultValue);
+        if (language != GenerationLanguage.Dart)
+            return;
+
+        await builder.ApplyLanguageRefinementAsync(configuration, root, TestContext.Current.CancellationToken);
+        if (expectedLiteral is null)
+        {
+            var codeEnum = Assert.IsType<CodeEnum>(Assert.IsType<CodeType>(query.Type).TypeDefinition);
+            var wireValue = JsonSerializer.Deserialize<string>(expectedDefault);
+            var option = codeEnum.Options.Single(x => x.WireName == wireValue);
+            Assert.Equal(option.Name, query.DefaultValue);
+            expectedLiteral = $"{codeEnum.Name}.{option.Name}";
+        }
+        else
+            Assert.Equal(expectedDefault, query.DefaultValue);
+
+        var path = Path.GetTempFileName();
+        try
+        {
+            var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, Path.GetDirectoryName(path), "client");
+            await CodeRenderer.GetCodeRender(configuration).RenderCodeNamespaceToSingleFileAsync(writer, Assert.IsType<CodeClass>(query.Parent), path, TestContext.Current.CancellationToken);
+            var result = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
+            if (string.IsNullOrEmpty(expectedLiteral))
+                Assert.DoesNotContain("filter =", result);
+            else
+                Assert.Contains($"filter = {expectedLiteral};", result);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]
     [InlineData(true, false)]

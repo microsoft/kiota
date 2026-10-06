@@ -2971,8 +2971,8 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema);
-        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items);
+        var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema, out var defaultValueSchema);
+        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items, out _);
         var isArray = parameterSchema.IsArray() ||
             parameterSchema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && itemSchema.IsEnum();
         var enumSchema = isArray ? itemSchema : parameterSchema;
@@ -3017,7 +3017,7 @@ public partial class KiotaBuilder
             Type = resultType,
             Deprecation = parameter.GetDeprecationInformation(),
         };
-        SetPropertyDefaultValue(prop, parameter.Schema);
+        SetPropertyDefaultValue(prop, defaultValueSchema);
 
         if (!parameter.Name.Equals(prop.Name, StringComparison.OrdinalIgnoreCase))
         {
@@ -3047,13 +3047,21 @@ public partial class KiotaBuilder
         }
     }
 
-    private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema)
+    private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema, out IOpenApiSchema? defaultValueSchema)
     {
-        if (schema is null) return null;
+        defaultValueSchema = null;
         var visited = new HashSet<IOpenApiSchema>();
-        return new[] { schema }.FlattenEmptyEntries(x =>
-            x is { AllOf.Count: 1 } && x.AnyOf is not { Count: > 0 } && x.OneOf is not { Count: > 0 } &&
-            !x.IsSemanticallyMeaningful() && visited.Add(x) ? x.AllOf : null).Single();
+        while (schema is not null)
+        {
+            if (defaultValueSchema is null && schema.Default is not null)
+                defaultValueSchema = schema;
+            if (schema is { AllOf.Count: 1 } && schema.AnyOf is not { Count: > 0 } && schema.OneOf is not { Count: > 0 } &&
+                !schema.IsSemanticallyMeaningful() && visited.Add(schema))
+                schema = schema.AllOf[0];
+            else
+                break;
+        }
+        return schema;
     }
     private static CodeType GetDefaultQueryParameterType()
     {
