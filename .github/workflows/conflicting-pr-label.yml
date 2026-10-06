@@ -61,10 +61,14 @@ jobs:
                 .slice(1);
 
               for (const comment of previousComments) {
-                await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: comment.id,
-                });
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: comment.id,
+                  });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                }
               }
             }
