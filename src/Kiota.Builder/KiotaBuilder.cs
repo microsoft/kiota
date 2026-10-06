@@ -1964,8 +1964,13 @@ public partial class KiotaBuilder
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
                                                         !x.IsReferencedSchema()) ?? false) &&
-            unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+            unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName()) || (x.IsReferencedSchema() && MapsToPrimitiveType(x))) is { } targetSchema)
         {
+            // A nullable reference to a component that is not a model, such as a string, an integer, a date-time,
+            // a numeric enum or an array of primitives, maps the same way a direct $ref to it does.
+            // Declaring a model for it would generate an empty class that drops the value.
+            if (MapsToPrimitiveType(targetSchema))
+                return CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
             // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
@@ -2048,6 +2053,16 @@ public partial class KiotaBuilder
         }
         return unionType;
     }
+    /// <summary>
+    /// Whether the schema maps to a primitive type or a collection of primitives instead of a model or an enum.
+    /// A union whose members include an object or a reference keeps mapping to a model.
+    /// </summary>
+    private static bool MapsToPrimitiveType(IOpenApiSchema schema) =>
+        !schema.IsObjectType() &&
+        !schema.HasAnyProperty() &&
+        !schema.IsEnum() &&
+        !(schema.AnyOf ?? []).Union(schema.OneOf ?? []).Union(schema.AllOf ?? []).Any(static x => x.IsReferencedSchema() || x.IsObjectType() || x.HasAnyProperty()) &&
+        GetPrimitiveType(schema) is not null;
     private void AddTypeArrayMemberToComposedType(IOpenApiSchema schema, JsonSchemaType typeToScan, CodeComposedTypeBase codeComposedTypeBase)
     {
         if (!schema.Type.HasValue || (schema.Type.Value & typeToScan) != typeToScan) return;
