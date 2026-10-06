@@ -68,6 +68,28 @@ public sealed class CodeEnumWriterTests : IDisposable
         writer.Write(currentEnum);
         var result = tw.ToString();
         Assert.Contains("module TestModule", result);
-        Assert.Contains(":Option2", result);
+        Assert.Contains("Option2: \"Option2\"", result);
+    }
+    [Fact]
+    public void WritesTheWireValueAsTheMemberValue()
+    {
+        currentEnum.AddOption(new CodeEnumOption { Name = "incomingPayment", SerializationName = "incoming-payment" },
+                              new CodeEnumOption { Name = "read" },
+                              new CodeEnumOption { Name = "Two", SerializationName = "2.0" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("IncomingPayment: \"incoming-payment\",", result);
+        Assert.Contains("Read: \"read\",", result);
+        Assert.Contains("Two: \"2.0\"", result);
+    }
+    [Fact]
+    public void EscapesAWireValueThatCouldBreakOutOfItsLiteral()
+    {
+        currentEnum.AddOption(new CodeEnumOption { Name = "hostile", SerializationName = "a\"b'c\nd\re\tf\\g#{system(\"x\")}$h" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("Hostile: \"a\\\"b'c\\nd\\re\\tf\\\\g\\#{system(\\\"x\\\")}$h\"", result);
+        Assert.DoesNotContain("c\nd", result);
+        Assert.DoesNotContain("g#{", result);
     }
 }
