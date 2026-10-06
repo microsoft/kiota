@@ -66,14 +66,13 @@ components:
       properties:
         label: {{schema}}
 """;
-        foreach (var usesBackingStore in new[] { false, true })
+        foreach (var configuration in new[] { false, true }.Select(usesBackingStore => new GenerationConfiguration
         {
-            var configuration = new GenerationConfiguration
-            {
-                Language = GenerationLanguage.Dart,
-                ClientNamespaceName = "client",
-                UsesBackingStore = usesBackingStore,
-            };
+            Language = GenerationLanguage.Dart,
+            ClientNamespaceName = "client",
+            UsesBackingStore = usesBackingStore,
+        }))
+        {
             var logger = new FakeLogger<KiotaBuilder>();
             using var client = new HttpClient();
             var builder = new KiotaBuilder(logger, configuration, client);
