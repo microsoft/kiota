@@ -1289,7 +1289,7 @@ public partial class KiotaBuilder
             !stringDefaultJsonValue.IsJsonNullSentinel() &&
             stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
             (config.Language == GenerationLanguage.Dart || !string.IsNullOrEmpty(stringDefaultValue)) &&
-            !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
+            (config.Language == GenerationLanguage.Dart || !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase)))
         {
             if (TryNormalizeStringDefaultValue(prop.Type, stringDefaultValue, out var normalizedDefaultValue))
                 prop.DefaultValue = normalizedDefaultValue;

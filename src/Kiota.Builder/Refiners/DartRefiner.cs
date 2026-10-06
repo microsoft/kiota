@@ -521,14 +521,6 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 property.SerializationName = property.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
             }
-            if (property.IsOfKind(CodePropertyKind.UrlTemplate) && property.DefaultValue.Contains('$', StringComparison.Ordinal))
-            {
-                property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
-            }
-        }
-        else if (currentElement is CodeMethod method && method.HasUrlTemplateOverride)
-        {
-            method.UrlTemplateOverride = method.UrlTemplateOverride.Replace("$", "\\$", StringComparison.Ordinal);
         }
         CrawlTree(currentElement, EscapeStringValues);
     }

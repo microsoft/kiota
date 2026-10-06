@@ -547,7 +547,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
         if (currentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate) is not CodeProperty urlTemplateProperty) throw new InvalidOperationException("url template property cannot be null");
 
         var operationName = codeElement.HttpMethod.ToString();
-        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{SanitizeDartSingleQuoteLiteral(codeElement.UrlTemplateOverride)}'" : GetPropertyCall(urlTemplateProperty, "''");
+        var urlTemplateValue = codeElement.HasUrlTemplateOverride ? $"'{DartConventionService.SanitizeDartSingleQuoteLiteral(codeElement.UrlTemplateOverride)}'" : GetPropertyCall(urlTemplateProperty, "''");
         writer.WriteLine($"var {RequestInfoVarName} = RequestInformation(httpMethod : HttpMethod.{operationName?.ToLowerInvariant()}, {urlTemplateProperty.Name} : {urlTemplateValue}, {urlTemplateParamsProperty.Name} :  {GetPropertyCall(urlTemplateParamsProperty, "string.Empty")});");
 
         if (requestParams.requestConfiguration != null && requestParams.requestConfiguration.Type is CodeType paramType)
@@ -731,12 +731,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, DartConventionServ
                     thirdParameterName = $", {pathParametersProperty.DefaultValue.SanitizeQuotedStringLiteral()}";
                 if (currentMethod.Parameters.OfKind(CodeParameterKind.RequestAdapter) is CodeParameter requestAdapterParameter)
                 {
-                    return $" : super({requestAdapterParameter.Name}, {urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
+                    return $" : super({requestAdapterParameter.Name}, {DartConventionService.SanitizeDartQuotedStringLiteral(urlTemplateProperty.DefaultValue)}{thirdParameterName})";
                 }
                 else if (parentClass.StartBlock?.Inherits?.Name?.Contains("CliRequestBuilder", StringComparison.Ordinal) == true)
                 {
                     // CLI uses a different base class.
-                    return $" : super({urlTemplateProperty.DefaultValue.SanitizeQuotedStringLiteral()}{thirdParameterName})";
+                    return $" : super({DartConventionService.SanitizeDartQuotedStringLiteral(urlTemplateProperty.DefaultValue)}{thirdParameterName})";
                 }
             }
             return " : super()";

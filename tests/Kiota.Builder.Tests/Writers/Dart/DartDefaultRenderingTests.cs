@@ -18,6 +18,104 @@ namespace Kiota.Builder.Tests.Writers.Dart;
 public class DartDefaultRenderingTests
 {
     [Theory]
+    [InlineData(false, false, "{+baseurl}/plain", "{+baseurl}/plain")]
+    [InlineData(false, false, "{+baseurl}/quote\"'line\n\r\t\\$value", "{+baseurl}/quote\\\"'line\\n\\r\\t\\\\\\$value")]
+    [InlineData(false, true, "{+baseurl}/plain", "{+baseurl}/plain")]
+    [InlineData(false, true, "{+baseurl}/quote\"'line\n\r\t\\$value", "{+baseurl}/quote\"\\'line\\n\\r\\t\\\\\\$value")]
+    [InlineData(true, false, "{+baseurl}/plain", "{+baseurl}/plain")]
+    [InlineData(true, false, "{+baseurl}/quote\"'line\n\r\t\\$value", "{+baseurl}/quote\\\"'line\\n\\r\\t\\\\\\$value")]
+    [InlineData(true, true, "{+baseurl}/plain", "{+baseurl}/plain")]
+    [InlineData(true, true, "{+baseurl}/quote\"'line\n\r\t\\$value", "{+baseurl}/quote\"\\'line\\n\\r\\t\\\\\\$value")]
+    [InlineData(false, false, "null", "null")]
+    [InlineData(false, true, "null", "null")]
+    [InlineData(true, false, "null", "null")]
+    [InlineData(true, true, "null", "null")]
+    public async Task RefinesAndRendersUrlTemplateConstructorDefaultsOnce(bool cli, bool singleQuoted, string template, string expectedContent)
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var requestBuilder = AddRequestBuilder(root);
+        if (cli)
+            requestBuilder.StartBlock.Inherits = new CodeType { Name = "CliRequestBuilder", IsExternal = true };
+        var quote = singleQuoted ? "'" : "\"";
+        var property = requestBuilder.Properties.Single(p => p.IsOfKind(CodePropertyKind.UrlTemplate));
+        property.DefaultValue = $"{quote}{template}{quote}";
+        var constructor = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void" },
+            IsAsync = false,
+        }).First();
+        constructor.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Optional = false,
+            Type = new CodeType { Name = "Dictionary<string, object>", IsNullable = false },
+        });
+        if (!cli)
+            constructor.AddParameter(new CodeParameter
+            {
+                Name = "requestAdapter",
+                Kind = CodeParameterKind.RequestAdapter,
+                Optional = false,
+                Type = new CodeType { Name = "IRequestAdapter", IsNullable = false },
+            });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, TestContext.Current.CancellationToken);
+
+        Assert.Equal($"{quote}{template}{quote}", property.DefaultValue);
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, ".", "client");
+        using var output = new StringWriter();
+        writer.SetTextWriter(output);
+        writer.Write(constructor);
+
+        var adapterArgument = cli ? string.Empty : "requestAdapter, ";
+        Assert.Contains($" : super({adapterArgument}{quote}{expectedContent}{quote}, pathParameters)", output.ToString());
+    }
+
+    [Theory]
+    [InlineData("{+baseurl}/plain", "{+baseurl}/plain")]
+    [InlineData("null", "null")]
+    [InlineData("NULL", "NULL")]
+    [InlineData("{+baseurl}/$count", "{+baseurl}/\\$count")]
+    [InlineData("{+baseurl}/quote\"'line\n\r\t\\$value", "{+baseurl}/quote\"\\'line\\n\\r\\t\\\\\\$value")]
+    public async Task RefinesAndRendersUrlTemplateOverridesOnce(string template, string expectedContent)
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var requestBuilder = AddRequestBuilder(root);
+        var method = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "toGetRequestInformation",
+            Kind = CodeMethodKind.RequestGenerator,
+            HttpMethod = Kiota.Builder.CodeDOM.HttpMethod.Get,
+            ReturnType = new CodeType { Name = "RequestInformation", IsExternal = true },
+            IsAsync = false,
+            UrlTemplateOverride = template,
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, TestContext.Current.CancellationToken);
+
+        Assert.Equal(template, method.UrlTemplateOverride);
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, ".", "client");
+        using var output = new StringWriter();
+        writer.SetTextWriter(output);
+        writer.Write(method);
+
+        Assert.Contains($"urlTemplate : '{expectedContent}',", output.ToString());
+    }
+
+    private static CodeClass AddRequestBuilder(CodeNamespace root)
+    {
+        var requestBuilder = root.AddNamespace("client").AddClass(new CodeClass { Name = "ItemsRequestBuilder", Kind = CodeClassKind.RequestBuilder }).First();
+        requestBuilder.AddProperty(
+            new CodeProperty { Name = "urlTemplate", Kind = CodePropertyKind.UrlTemplate, Type = new CodeType { Name = "string" }, DefaultValue = "\"{+baseurl}/items\"" },
+            new CodeProperty { Name = "pathParameters", Kind = CodePropertyKind.PathParameters, Type = new CodeType { Name = "Dictionary<string, object>" } },
+            new CodeProperty { Name = "requestAdapter", Kind = CodePropertyKind.RequestAdapter, Type = new CodeType { Name = "IRequestAdapter" } });
+        return requestBuilder;
+    }
+
+    [Theory]
     [InlineData("{\"type\":\"integer\"}", "int? id")]
     [InlineData("{\"type\":\"string\",\"format\":\"uuid\"}", "UuidValue? id")]
     [InlineData("{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}", "List<int>? id")]
@@ -85,12 +183,16 @@ paths:
 
     [Theory]
     [InlineData(GenerationLanguage.Dart, "string", "\"\"", "''")]
+    [InlineData(GenerationLanguage.Dart, "string", "\"null\"", "'null'")]
+    [InlineData(GenerationLanguage.Dart, "string", "\"NULL\"", "'NULL'")]
     [InlineData(GenerationLanguage.Dart, "string", "\"quote'\\\"line\\n\\r\\t\\\\$value\"", "'quote\\'\"line\\n\\r\\t\\\\\\$value'")]
     [InlineData(GenerationLanguage.Dart, "integer", "42", "42")]
     [InlineData(GenerationLanguage.Dart, "integer", "\"42\"", "42")]
     [InlineData(GenerationLanguage.Dart, "boolean", "true", "true")]
     [InlineData(GenerationLanguage.Dart, "boolean", "\"TRUE\"", "true")]
     [InlineData(GenerationLanguage.CSharp, "string", "\"\"", "")]
+    [InlineData(GenerationLanguage.CSharp, "string", "\"null\"", "")]
+    [InlineData(GenerationLanguage.CSharp, "string", "\"NULL\"", "")]
     [InlineData(GenerationLanguage.CSharp, "integer", "42", "42")]
     public async Task CreatesAndRendersDartSchemaDefaultsWithoutChangingOtherLanguages(GenerationLanguage language, string schemaType, string defaultJson, string expected)
     {
@@ -160,6 +262,92 @@ components:
             await CodeRenderer.GetCodeRender(configuration).RenderCodeNamespaceToSingleFileAsync(writer, Assert.IsType<CodeClass>(label.Parent), path, TestContext.Current.CancellationToken);
             result = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
             Assert.Contains($"label = {expected}", result);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData(GenerationLanguage.Dart, false, "null")]
+    [InlineData(GenerationLanguage.Dart, true, "null")]
+    [InlineData(GenerationLanguage.Dart, true, "\"null\"")]
+    [InlineData(GenerationLanguage.CSharp, false, "null")]
+    [InlineData(GenerationLanguage.CSharp, true, "null")]
+    [InlineData(GenerationLanguage.CSharp, true, "\"null\"")]
+    public async Task DistinguishesSchemaNullSentinelsFromEnumWireDefaults(GenerationLanguage language, bool enumType, string defaultJson)
+    {
+        var schema = enumType
+            ? $$"""{"type":"string","enum":["null","ready"],"default":{{defaultJson}}}"""
+            : $$"""{"type":"string","default":{{defaultJson}}}""";
+        var description = $$"""
+openapi: 3.0.3
+info:
+  title: Null defaults
+  version: 1.0.0
+servers:
+  - url: https://example.com
+paths:
+  /settings:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          schema: {{schema}}
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+components:
+  schemas:
+    Settings:
+      type: object
+      properties:
+        label: {{schema}}
+""";
+        var configuration = new GenerationConfiguration { Language = language, ClientNamespaceName = "client" };
+        using var client = new HttpClient();
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, client);
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(description));
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var root = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var query = root.FindChildByName<CodeProperty>("filter", true);
+        var label = root.FindChildByName<CodeProperty>("label", true);
+        Assert.NotNull(query);
+        Assert.NotNull(label);
+        var hasDefault = language == GenerationLanguage.Dart && defaultJson != "null";
+        foreach (var property in new[] { query, label })
+            Assert.Equal(hasDefault ? defaultJson : string.Empty, property.DefaultValue);
+        if (language != GenerationLanguage.Dart)
+            return;
+
+        await builder.ApplyLanguageRefinementAsync(configuration, root, TestContext.Current.CancellationToken);
+        var path = Path.GetTempFileName();
+        try
+        {
+            var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, Path.GetDirectoryName(path), "client");
+            foreach (var property in new[] { query, label })
+            {
+                await CodeRenderer.GetCodeRender(configuration).RenderCodeNamespaceToSingleFileAsync(writer, Assert.IsType<CodeClass>(property.Parent), path, TestContext.Current.CancellationToken);
+                var result = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
+                if (hasDefault)
+                {
+                    var codeEnum = Assert.IsType<CodeEnum>(Assert.IsType<CodeType>(property.Type).TypeDefinition);
+                    var option = codeEnum.Options.Single(x => x.WireName == "null");
+                    Assert.Equal(option.Name, property.DefaultValue);
+                    Assert.Contains($"{property.Name} = {codeEnum.Name}.{option.Name}", result);
+                }
+                else
+                {
+                    Assert.True(string.IsNullOrEmpty(property.DefaultValue));
+                    Assert.DoesNotContain($"{property.Name} = null", result);
+                    Assert.DoesNotContain($"{property.Name} = 'null'", result);
+                }
+            }
         }
         finally
         {

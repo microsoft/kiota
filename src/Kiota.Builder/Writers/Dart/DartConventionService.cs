@@ -33,6 +33,16 @@ public class DartConventionService : CommonLanguageConventionService
         string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeDoubleQuote().Replace("$", "\\$", StringComparison.Ordinal);
     internal static string SanitizeDartSingleQuoteLiteral(string? value) =>
         string.IsNullOrEmpty(value) ? string.Empty : value.SanitizeSingleQuote().Replace("$", "\\$", StringComparison.Ordinal);
+    internal static string SanitizeDartQuotedStringLiteral(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return value.Length >= 2 ? (value[0], value[^1]) switch
+        {
+            ('"', '"') => $"\"{SanitizeDartDoubleQuoteLiteral(value[1..^1])}\"",
+            ('\'', '\'') => $"'{SanitizeDartSingleQuoteLiteral(value[1..^1])}'",
+            _ => throw new ArgumentException("Expected a quoted string literal.", nameof(value)),
+        } : throw new ArgumentException("Expected a quoted string literal.", nameof(value));
+    }
 
     public override bool WriteShortDescription(IDocumentedElement element, LanguageWriter writer, string prefix = "", string suffix = "")
     {
