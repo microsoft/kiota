@@ -2960,22 +2960,27 @@ public partial class KiotaBuilder
 
         return null;
     }
-    private static IOpenApiSchema? UnwrapNullableQueryParameterSchema(IOpenApiSchema? schema)
+    private static IOpenApiSchema? UnwrapNullableQueryParameterSchema(IOpenApiSchema? schema, out bool isNullable)
     {
+        isNullable = false;
         var visited = new HashSet<IOpenApiSchema>();
-        while (schema is not null && visited.Add(schema) && !schema.IsSemanticallyMeaningful() && schema.AllOf is not { Count: > 0 })
+        while (schema is not null && visited.Add(schema))
         {
-            var members = schema.AnyOf is { Count: 2 } && schema.OneOf is not { Count: > 0 } ? schema.AnyOf :
-                schema.OneOf is { Count: 2 } && schema.AnyOf is not { Count: > 0 } ? schema.OneOf : null;
+            var candidate = schema is OpenApiSchemaReference schemaReference ? schemaReference.Target : schema;
+            if (candidate is null || candidate.IsSemanticallyMeaningful() || candidate.AllOf is { Count: > 0 })
+                break;
+            var members = candidate.AnyOf is { Count: 2 } && candidate.OneOf is not { Count: > 0 } ? candidate.AnyOf :
+                candidate.OneOf is { Count: 2 } && candidate.AnyOf is not { Count: > 0 } ? candidate.OneOf : null;
             if (members is null || members.Count(static x => x.Type == JsonSchemaType.Null) != 1)
                 break;
+            isNullable = true;
             schema = members.First(static x => x.Type != JsonSchemaType.Null);
         }
         return schema;
     }
     private void AddPropertyForQueryParameter(OpenApiUrlTreeNode node, NetHttpMethod operationType, IOpenApiParameter parameter, CodeClass parameterClass)
     {
-        var parameterSchema = UnwrapNullableQueryParameterSchema(parameter.Schema);
+        var parameterSchema = UnwrapNullableQueryParameterSchema(parameter.Schema, out var isNullable);
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
 
@@ -2996,7 +3001,7 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = !parameterSchema.IsArray()
+                    IsNullable = isNullable || !parameterSchema.IsArray()
                 };
                 addBackwardCompatibleParameter = true;
             }

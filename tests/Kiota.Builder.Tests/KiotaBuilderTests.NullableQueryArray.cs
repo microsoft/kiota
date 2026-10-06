@@ -41,17 +41,56 @@ public sealed partial class KiotaBuilderTests
     {
         var type = await GetQueryParameterTypeAsync("""{"anyOf":[{"type":"array","items":{"type":"string","enum":["active","inactive"]}},{"type":"null"}]}""");
         Assert.True(type.IsArray);
+        Assert.True(type.IsNullable);
         var definition = Assert.IsType<CodeEnum>(type.TypeDefinition);
         Assert.Equal(2, definition.Options.Count());
     }
 
-    private async Task<CodeType> GetQueryParameterTypeAsync(string schema)
+    [Theory]
+    [InlineData("anyOf", false, false)]
+    [InlineData("anyOf", false, true)]
+    [InlineData("anyOf", true, false)]
+    [InlineData("anyOf", true, true)]
+    [InlineData("oneOf", false, false)]
+    [InlineData("oneOf", false, true)]
+    [InlineData("oneOf", true, false)]
+    [InlineData("oneOf", true, true)]
+    public async Task PreservesReferencedNullableArrayQueryParametersAsync(string keyword, bool referenceWrapper, bool enumItems)
+    {
+        var items = enumItems ? """{"type":"string","enum":["active","inactive"]}""" : """{"type":"string"}""";
+        var nullable = """{"KEYWORD":[{"$ref":"#/components/schemas/Ids"},{"type":"null"}]}""".Replace("KEYWORD", keyword);
+        var components = """{"State":ITEMS,"Ids":{"type":"array","items":{"$ref":"#/components/schemas/State"}},"NullableIds":NULLABLE}"""
+            .Replace("ITEMS", items).Replace("NULLABLE", nullable);
+        var schema = referenceWrapper ? """{"$ref":"#/components/schemas/NullableIds"}""" : nullable;
+        var type = await GetQueryParameterTypeAsync(schema, components);
+        Assert.True(type.IsArray);
+        Assert.True(type.IsNullable);
+        if (enumItems)
+        {
+            var definition = Assert.IsType<CodeEnum>(type.TypeDefinition);
+            Assert.Equal("State", definition.Name);
+            Assert.Equal(2, definition.Options.Count());
+        }
+        else
+            Assert.Equal("string", type.Name);
+    }
+
+    [Fact]
+    public async Task PreservesNonNullableEnumArrayQueryParameterAsync()
+    {
+        var type = await GetQueryParameterTypeAsync("""{"type":"array","items":{"type":"string","enum":["active","inactive"]}}""");
+        Assert.True(type.IsArray);
+        Assert.False(type.IsNullable);
+        Assert.IsType<CodeEnum>(type.TypeDefinition);
+    }
+
+    private async Task<CodeType> GetQueryParameterTypeAsync(string schema, string components = "{}")
     {
         var description = """
         {"openapi":"3.1.0","info":{"title":"Nullable query","version":"1.0"},
         "paths":{"/test":{"get":{"parameters":[{"name":"ids","in":"query","schema":SCHEMA}],
-        "responses":{"204":{"description":"Success"}}}}}}
-        """.Replace("SCHEMA", schema);
+        "responses":{"204":{"description":"Success"}}}}},"components":{"schemas":COMPONENTS}}
+        """.Replace("SCHEMA", schema).Replace("COMPONENTS", components);
         await using var stream = await GetDocumentStreamAsync(description);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { Language = GenerationLanguage.CSharp, ExcludeBackwardCompatible = true }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
