@@ -2964,10 +2964,13 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-
-        if (parameter.Schema is not null && (parameter.Schema.IsEnum() || (parameter.Schema.IsArray() && parameter.Schema.Items.IsEnum())))
+        var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema);
+        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items);
+        var isArray = parameterSchema.IsArray() ||
+            parameterSchema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && itemSchema.IsEnum();
+        var enumSchema = isArray ? itemSchema : parameterSchema;
+        if (enumSchema is not null && enumSchema.IsEnum())
         {
-            var enumSchema = parameter.Schema.IsArray() ? parameter.Schema.Items! : parameter.Schema;
             var codeNamespace = enumSchema.IsReferencedSchema() switch
             {
                 true => GetShortestNamespace(parameterClass.GetImmediateParentOfType<CodeNamespace>(), enumSchema), // referenced schema
@@ -2982,19 +2985,19 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = !parameter.Schema.IsArray()
+                    IsNullable = !isArray
                 };
                 addBackwardCompatibleParameter = true;
             }
         }
-        resultType ??= GetPrimitiveType(parameter.Schema) ?? new CodeType()
+        resultType ??= GetPrimitiveType(parameterSchema) ?? new CodeType()
         {
             // since its a query parameter default to string if there is no schema
             // it also be an object type, but we'd need to create the model in that case and there's no standard on how to serialize those as query parameters
             Name = "string",
             IsExternal = true,
         };
-        resultType.CollectionKind = parameter.Schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
+        resultType.CollectionKind = isArray ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         if (parameter.Name?.SanitizeParameterNameForCodeSymbols() is not string propName) return;
         var prop = new CodeProperty
         {
@@ -3036,6 +3039,14 @@ public partial class KiotaBuilder
         }
     }
 
+    private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema)
+    {
+        if (schema is null) return null;
+        var visited = new HashSet<IOpenApiSchema>();
+        return new[] { schema }.FlattenEmptyEntries(x =>
+            x is { AllOf.Count: 1 } && x.AnyOf is not { Count: > 0 } && x.OneOf is not { Count: > 0 } &&
+            !x.IsSemanticallyMeaningful() && visited.Add(x) ? x.AllOf : null).Single();
+    }
     private static CodeType GetDefaultQueryParameterType()
     {
         return new()
