@@ -124,7 +124,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
             writer.WriteLine($"{ResultVarName} := New{parentClass.Name.ToFirstCharacterUpperCase()}()");
         if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck)
             writer.StartBlock($"if {parseNodeParameter.Name.ToFirstCharacterLowerCase()} != nil {{");
-        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
+        var writeDiscriminatorValueRead = parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType;
         if (writeDiscriminatorValueRead)
         {
             writer.WriteLine($"mappingValueNode, err := {parseNodeParameter.Name.ToFirstCharacterLowerCase()}.GetChildNode(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
@@ -289,7 +289,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
                 WriteCollectionCast(propertyTypeImportName, valueVarName, "cast", writer, isInterfaceType ? string.Empty : "*", !isInterfaceType);
                 valueVarName = "cast";
             }
+            else if (propertyType.TypeDefinition is CodeEnum)
+            {
+                propertyTypeImportName = conventions.GetTypeString(property.Type, parentClass, false, true);
+                writer.StartBlock($"if {GetTypeAssertion(valueVarName, propertyTypeImportName, "cast", "ok")}; ok {{");
+                valueVarName = "cast";
+            }
             writer.WriteLine($"{ResultVarName}.{property.Setter!.Name.ToFirstCharacterUpperCase()}({valueVarName})");
+            if (!propertyType.IsCollection && propertyType.TypeDefinition is CodeEnum)
+                writer.CloseBlock();
             writer.DecreaseIndent();
             if (!includeElse)
                 includeElse = true;

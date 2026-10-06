@@ -21,7 +21,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
             conventions.WriteNamespaceModules(ns, writer);
         conventions.WriteShortDescription(codeElement, writer);
         writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
-        var options = codeElement.Options.Select(static x => $"{x.Name.ToFirstCharacterUpperCase()}: :{x.Name.ToFirstCharacterUpperCase()}").ToArray();
+        // the value is what goes on the wire, the key is what Ruby code looks the member up by
+        var options = codeElement.Options.Select(static x => $"{x.Name.ToFirstCharacterUpperCase()}: {RubyConventionService.ToRubyStringLiteral(x.WireName)}").ToArray();
         for (var i = 0; i < options.Length; i++)
             writer.WriteLine(i < options.Length - 1 ? $"{options[i]}," : options[i]);
         writer.CloseBlock("}.freeze");
