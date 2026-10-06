@@ -94,6 +94,7 @@ jobs:
           - "./tests/Kiota.Builder.IntegrationTests/ToDoApi.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/GeneratesUritemplateHints.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml"
+          - "./tests/Kiota.Builder.IntegrationTests/UnionWithoutDiscriminator.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json"
           - "oas::petstore"
           - "https://api.twitter.com/2/openapi.json"
