@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- All language refiners accept a generation logger consistently.
+- All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.
 - Reject plugin-manifest file references whose path components become parent-directory traversal after Windows trims trailing spaces or dots.
 - Fixed a stack overflow when generating API plugins from descriptions with cyclic `allOf` schemas.
 - Dart: omit unsupported schema defaults with a generation warning, preserve supported literal and enum property and parameter defaults (including empty strings), initialize query parameters from schema defaults, and keep constructor initialization valid with or without backing stores.

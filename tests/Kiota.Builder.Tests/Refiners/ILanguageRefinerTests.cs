@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -12,6 +14,38 @@ namespace Kiota.Builder.Tests.Refiners;
 
 public class ILanguageRefinerTests
 {
+    [Theory]
+    [InlineData(typeof(CSharpRefiner))]
+    [InlineData(typeof(TypeScriptRefiner))]
+    [InlineData(typeof(JavaRefiner))]
+    [InlineData(typeof(RubyRefiner))]
+    [InlineData(typeof(PhpRefiner))]
+    [InlineData(typeof(GoRefiner))]
+    [InlineData(typeof(HttpRefiner))]
+    [InlineData(typeof(PythonRefiner))]
+    [InlineData(typeof(DartRefiner))]
+    [InlineData(typeof(CommonLanguageRefiner))]
+    public void HidesConfigurationOnlyConstructorFromIntelliSense(Type refinerType)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        var compatibilityConstructor = refinerType.GetConstructor(flags, null, [typeof(GenerationConfiguration)], null);
+        var loggerConstructor = refinerType.GetConstructor(flags, null, [typeof(GenerationConfiguration), typeof(ILogger)], null);
+
+        Assert.NotNull(compatibilityConstructor);
+        Assert.NotNull(loggerConstructor);
+        Assert.Equal(EditorBrowsableState.Never, compatibilityConstructor.GetCustomAttribute<EditorBrowsableAttribute>()?.State);
+        Assert.Null(loggerConstructor.GetCustomAttribute<EditorBrowsableAttribute>());
+        Assert.False(loggerConstructor.GetParameters()[1].IsOptional);
+
+        if (!refinerType.IsAbstract)
+        {
+            var refiner = compatibilityConstructor.Invoke([new GenerationConfiguration()]);
+            var loggerProperty = typeof(CommonLanguageRefiner).GetProperty("Logger", flags);
+            Assert.NotNull(loggerProperty);
+            Assert.Same(NullLogger.Instance, loggerProperty.GetValue(refiner));
+        }
+    }
+
     [Theory]
     [InlineData(GenerationLanguage.CSharp)]
     [InlineData(GenerationLanguage.TypeScript)]
@@ -70,8 +104,10 @@ public class ILanguageRefinerTests
         Assert.Equal("generatedCode", exception.ParamName);
     }
 
-    private sealed class LoggerTestRefiner(GenerationConfiguration configuration, ILogger suppliedLogger = null) : CommonLanguageRefiner(configuration, suppliedLogger)
+    private sealed class LoggerTestRefiner : CommonLanguageRefiner
     {
+        public LoggerTestRefiner(GenerationConfiguration configuration) : base(configuration) { }
+        public LoggerTestRefiner(GenerationConfiguration configuration, ILogger suppliedLogger) : base(configuration, suppliedLogger) { }
         public ILogger CurrentLogger => Logger;
         public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken) => Task.CompletedTask;
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,9 @@ namespace Kiota.Builder.Refiners;
 
 public class GoRefiner : CommonLanguageRefiner
 {
-    public GoRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public GoRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public GoRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         _configuration.NamespaceNameSeparator = "/";

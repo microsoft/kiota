@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,9 @@ namespace Kiota.Builder.Refiners;
 public class PhpRefiner : CommonLanguageRefiner
 {
     private static readonly CodeUsingDeclarationNameComparer usingComparer = new();
-    public PhpRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public PhpRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public PhpRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
 
     private const string AbstractionsNamespaceName = @"Microsoft\Kiota\Abstractions";
 

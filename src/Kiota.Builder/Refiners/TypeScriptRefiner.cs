@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,9 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     public static readonly string BackingStoreEnabledKey = "backingStoreEnabled";
 
-    public TypeScriptRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public TypeScriptRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public TypeScriptRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>

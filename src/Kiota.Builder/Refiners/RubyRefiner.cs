@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -15,7 +16,9 @@ namespace Kiota.Builder.Refiners;
 
 public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public RubyRefiner(GenerationConfiguration configuration, ILogger? logger = null) : base(configuration, logger) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public RubyRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public RubyRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,9 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
     {
         get;
     }
-    protected CommonLanguageRefiner(GenerationConfiguration configuration, ILogger? logger = null)
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    protected CommonLanguageRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    protected CommonLanguageRefiner(GenerationConfiguration configuration, ILogger? logger)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         _configuration = configuration;
