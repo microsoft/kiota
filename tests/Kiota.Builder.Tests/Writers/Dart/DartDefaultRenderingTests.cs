@@ -5,11 +5,13 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using kiota.Rpc;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.CodeRenderers;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -17,6 +19,112 @@ namespace Kiota.Builder.Tests.Writers.Dart;
 
 public class DartDefaultRenderingTests
 {
+    [Theory]
+    [InlineData("date-time", "2026-01-01T12:30:00Z", "DateTime.parse('2026-01-01T12:30:00Z')")]
+    [InlineData("date", "2024-02-29", "DateOnly.fromDateTimeString('2024-02-29')")]
+    [InlineData("time", "12:30:00.123456789+01:30", "TimeOnly.fromDateTimeString('12:30:00.123456789+01:30')")]
+    [InlineData("uuid", "00000000-0000-0000-0000-000000000000", "UuidValue.fromString('00000000-0000-0000-0000-000000000000')")]
+    [InlineData("date-time", "not-a-date", "")]
+    [InlineData("date-time", "+275760-09-13T00:00:00.000001Z", "")]
+    [InlineData("date", "not-a-date", "")]
+    [InlineData("time", "not-a-time", "")]
+    [InlineData("time", "2026-01-01T12:30:00", "")]
+    [InlineData("uuid", "not-a-uuid", "")]
+    [InlineData("uuid", "d4f987cf-b557-433c-9ccb-306d85f24d76\n", "")]
+    [InlineData("date-time", "quote'\"line\n\r\t\\$value", "")]
+    [InlineData("date", "quote'\"line\n\r\t\\$value", "")]
+    [InlineData("time", "quote'\"line\n\r\t\\$value", "")]
+    [InlineData("uuid", "quote'\"line\n\r\t\\$value", "")]
+    public async Task ValidatesParsedSchemaDefaultsBeforeRefiningAndRendering(string format, string defaultValue, string expected)
+    {
+        var schema = JsonSerializer.Serialize(new { type = "string", format, @default = defaultValue });
+        var description = $$"""
+openapi: 3.0.3
+info:
+  title: Parsed defaults
+  version: 1.0.0
+servers:
+  - url: https://example.com
+paths:
+  /settings:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          schema: {{schema}}
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+components:
+  schemas:
+    Settings:
+      type: object
+      properties:
+        label: {{schema}}
+""";
+        foreach (var usesBackingStore in new[] { false, true })
+        {
+            var configuration = new GenerationConfiguration
+            {
+                Language = GenerationLanguage.Dart,
+                ClientNamespaceName = "client",
+                UsesBackingStore = usesBackingStore,
+            };
+            var logger = new FakeLogger<KiotaBuilder>();
+            using var client = new HttpClient();
+            var builder = new KiotaBuilder(logger, configuration, client);
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(description));
+            var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+            var root = builder.CreateSourceModel(builder.CreateUriSpace(document));
+            var query = root.FindChildByName<CodeProperty>("filter", true);
+            var label = root.FindChildByName<CodeProperty>("label", true);
+            Assert.NotNull(query);
+            Assert.NotNull(label);
+            Assert.Equal($"\"{defaultValue}\"", query.DefaultValue);
+            Assert.Equal($"\"{defaultValue}\"", label.DefaultValue);
+            await builder.ApplyLanguageRefinementAsync(configuration, root, TestContext.Current.CancellationToken);
+
+            var warnings = logger.LogEntries.Where(x => x.level == LogLevel.Warning &&
+                x.message.StartsWith("Ignoring the default value for property", System.StringComparison.Ordinal)).ToArray();
+            Assert.Equal(string.IsNullOrEmpty(expected) ? 2 : 0, warnings.Length);
+            if (string.IsNullOrEmpty(expected))
+            {
+                Assert.Contains(warnings, x => x.message.Contains("filter", System.StringComparison.Ordinal));
+                Assert.Contains(warnings, x => x.message.Contains("label", System.StringComparison.Ordinal));
+            }
+
+            var path = Path.GetTempFileName();
+            try
+            {
+                var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, Path.GetDirectoryName(path), "client");
+                foreach (var property in new[] { query, label })
+                {
+                    await CodeRenderer.GetCodeRender(configuration).RenderCodeNamespaceToSingleFileAsync(writer, Assert.IsType<CodeClass>(property.Parent), path, TestContext.Current.CancellationToken);
+                    var result = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
+                    if (!string.IsNullOrEmpty(expected))
+                        Assert.Contains(expected, result);
+                    else
+                    {
+                        Assert.DoesNotContain("DateTime.parse(", result);
+                        Assert.DoesNotContain("DateOnly.fromDateTimeString(", result);
+                        Assert.DoesNotContain("TimeOnly.fromDateTimeString(", result);
+                        Assert.DoesNotContain("UuidValue.fromString(", result);
+                        Assert.DoesNotContain("quote", result);
+                        Assert.DoesNotContain("not-a-", result);
+                    }
+                }
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
     [Theory]
     [InlineData(false, false, "{+baseurl}/plain", "{+baseurl}/plain")]
     [InlineData(false, false, "{+baseurl}/quote\"'line\n\r\t\\$value", "{+baseurl}/quote\\\"'line\\n\\r\\t\\\\\\$value")]

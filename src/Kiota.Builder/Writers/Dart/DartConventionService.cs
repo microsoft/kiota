@@ -329,10 +329,10 @@ public class DartConventionService : CommonLanguageConventionService
         value = codeType.Name.ToLowerInvariant() switch
         {
             "string" => literal,
-            "dateonly" when !constantOnly => $"DateOnly.fromDateTimeString({literal})",
-            "datetime" when !constantOnly => $"DateTime.parse({literal})",
-            "timeonly" when !constantOnly => $"TimeOnly.fromDateTimeString({literal})",
-            "uuidvalue" when !constantOnly => $"UuidValue.fromString({literal})",
+            "dateonly" when !constantOnly && DartDefaultValueUtils.CanParseDateTime(unquotedValue) => $"DateOnly.fromDateTimeString({literal})",
+            "datetime" when !constantOnly && DartDefaultValueUtils.CanParseDateTime(unquotedValue) => $"DateTime.parse({literal})",
+            "timeonly" when !constantOnly && DartDefaultValueUtils.CanParseDateTime($"2024-01-01 {unquotedValue}") => $"TimeOnly.fromDateTimeString({literal})",
+            "uuidvalue" when !constantOnly && unquotedValue.Length == 36 && Guid.TryParseExact(unquotedValue, "D", out _) => $"UuidValue.fromString({literal})",
             _ => string.Empty,
         };
         return !string.IsNullOrEmpty(value);
