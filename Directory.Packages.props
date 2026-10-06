@@ -6,7 +6,7 @@
   <ItemGroup>
     <PackageVersion Include="AsyncKeyedLock" Version="8.1.2" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.9.0" />
-    <PackageVersion Include="coverlet.MTP" Version="10.0.1" />
+    <PackageVersion Include="coverlet.MTP" Version="10.1.0" />
     <PackageVersion Include="DotNet.Glob" Version="3.1.3" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0.0" />
@@ -29,7 +29,7 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.AzureDevOpsReport" Version="2.4.1" />
     <PackageVersion Include="Microsoft.Testing.Extensions.GitHubActionsReport" Version="2.4.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
-    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="OpenTelemetry" Version="1.19.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
