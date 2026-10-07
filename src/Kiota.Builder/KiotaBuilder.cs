@@ -2976,6 +2976,16 @@ public partial class KiotaBuilder
         {
             schema = UnwrapQueryParameterSchema(schema, out var currentDefaultValueSchema);
             defaultValueSchema ??= currentDefaultValueSchema;
+            if (schema is OpenApiSchemaReference { Target: { } referencedSchema })
+            {
+                var unwrappedReference = UnwrapQueryParameterSchema(referencedSchema, out var referencedDefaultValueSchema);
+                defaultValueSchema ??= referencedDefaultValueSchema;
+                if (!ReferenceEquals(unwrappedReference, referencedSchema))
+                {
+                    schema = unwrappedReference;
+                    continue;
+                }
+            }
             var candidate = schema is OpenApiSchemaReference schemaReference ? schemaReference.Target : schema;
             if (candidate is null || candidate.IsSemanticallyMeaningful() || candidate.AllOf is { Count: > 0 })
                 break;

@@ -88,6 +88,38 @@ public sealed partial class KiotaBuilderTests
     }
 
     [Theory]
+    [InlineData("anyOf", false, false)]
+    [InlineData("anyOf", false, true)]
+    [InlineData("anyOf", true, false)]
+    [InlineData("anyOf", true, true)]
+    [InlineData("oneOf", false, false)]
+    [InlineData("oneOf", false, true)]
+    [InlineData("oneOf", true, false)]
+    [InlineData("oneOf", true, true)]
+    public async Task PreservesReferencedAllOfNullableQueryArraysAsync(string keyword, bool referenceNullableWrapper, bool enumItems)
+    {
+        var items = enumItems ? """{"type":"string","enum":["active","inactive"]}""" : """{"type":"string"}""";
+        var nullable = """{"KEYWORD":[{"$ref":"#/components/schemas/IdsWrapper"},{"type":"null"}]}""".Replace("KEYWORD", keyword);
+        var components = """
+        {"State":ITEMS,"Ids":{"type":"array","items":{"$ref":"#/components/schemas/State"}},
+        "IdsWrapper":{"allOf":[{"$ref":"#/components/schemas/IdsWrapperInner"}]},
+        "IdsWrapperInner":{"allOf":[{"$ref":"#/components/schemas/Ids"}]},"NullableIds":NULLABLE}
+        """.Replace("ITEMS", items).Replace("NULLABLE", nullable);
+        var schema = referenceNullableWrapper ? """{"$ref":"#/components/schemas/NullableIds"}""" : nullable;
+        var type = await GetQueryParameterTypeAsync(schema, components);
+        Assert.True(type.IsArray);
+        Assert.True(type.IsNullable);
+        if (enumItems)
+        {
+            var definition = Assert.IsType<CodeEnum>(type.TypeDefinition);
+            Assert.Equal("State", definition.Name);
+            Assert.Equal(new[] { "active", "inactive" }, definition.Options.Select(static x => x.Name));
+        }
+        else
+            Assert.Equal("string", type.Name);
+    }
+
+    [Theory]
     [InlineData("anyOf", 0)]
     [InlineData("oneOf", 0)]
     [InlineData("anyOf", 1)]
@@ -132,6 +164,24 @@ public sealed partial class KiotaBuilderTests
     public async Task PreservesDartQueryDefaultsAcrossNullableWrappersAsync(string schema, string expectedDefault)
     {
         var property = await GetQueryParameterPropertyAsync(schema, language: GenerationLanguage.Dart);
+        Assert.Equal("string", property.Type.Name);
+        Assert.Equal(expectedDefault, property.DefaultValue);
+    }
+
+    [Theory]
+    [InlineData("anyOf", "", "", "\"inner\"")]
+    [InlineData("oneOf", "", "\"default\":null,", "")]
+    [InlineData("anyOf", "\"default\":\"outer\",", "\"default\":\"wrapper\",", "\"outer\"")]
+    [InlineData("oneOf", "", "\"default\":\"wrapper\",", "\"wrapper\"")]
+    public async Task PreservesReferencedAllOfNullableQueryDefaultsAsync(string keyword, string outerDefault, string wrapperDefault, string expectedDefault)
+    {
+        var schema = """{OUTER_DEFAULT"KEYWORD":[{"$ref":"#/components/schemas/ValueWrapper"},{"type":"null"}]}"""
+            .Replace("OUTER_DEFAULT", outerDefault).Replace("KEYWORD", keyword);
+        var components = """
+        {"ValueWrapper":{WRAPPER_DEFAULT"allOf":[{"$ref":"#/components/schemas/Value"}]},
+        "Value":{"type":"string","default":"inner"}}
+        """.Replace("WRAPPER_DEFAULT", wrapperDefault);
+        var property = await GetQueryParameterPropertyAsync(schema, components, GenerationLanguage.Dart);
         Assert.Equal("string", property.Type.Name);
         Assert.Equal(expectedDefault, property.DefaultValue);
     }
