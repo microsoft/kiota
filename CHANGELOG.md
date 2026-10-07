@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [1.29.2] - 2026-10-07
+
+### Changed
+
+- Fixed a code injection vulnerability in Java and PHP doc comments by neutralizing block comment delimiters instead of deleting them. [#8017](https://github.com/microsoft/kiota/pull/8017) [GHSA-rm89-rhwj-9j92](https://github.com/microsoft/kiota/security/advisories/GHSA-rm89-rhwj-9j92)
+
 ## [1.29.1] - 2026-08-13
 
 ### Added
