@@ -2031,9 +2031,12 @@ public partial class KiotaBuilder
                     }
                     else
                         className = $"{unionType.Name}Member{++membersWithNoName}";
+                var memberSchema = HasSingleInlineAllOfObject(currentSchema)
+                    ? currentSchema.MergeAllOfSchemaEntries() ?? currentSchema
+                    : currentSchema;
                 var declarationType = new CodeType
                 {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
+                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, memberSchema, className, shortestNamespace, null),
                     CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
                 };
                 if (!unionType.ContainsType(declarationType))

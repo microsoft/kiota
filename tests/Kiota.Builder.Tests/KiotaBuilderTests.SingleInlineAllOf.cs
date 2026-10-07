@@ -13,6 +13,57 @@ namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests
 {
     [Theory]
+    [InlineData("anyOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("oneOf", false)]
+    public async Task SingleInlineAllOfPreservesPropertiesInUnionMembersAsync(string composition, bool referenced)
+    {
+        const string accountSchema = """
+        {"type":"object","properties":{"label":{"type":"string"}},
+          "allOf":[{"type":"object","properties":{
+            "other":{"$ref":"#/components/schemas/Identification"}
+          }}]}
+        """;
+        var description = """
+        {
+          "openapi":"3.0.3","info":{"title":"Union member allOf","version":"1.0"},
+          "paths":{"/account":{"get":{"responses":{"200":{"description":"Success","content":{
+            "application/json":{"schema":{"COMPOSITION":[ACCOUNT_MEMBER,{"$ref":"#/components/schemas/Company"}]}}
+          }}}}}},
+          "components":{"schemas":{
+            "Account":ACCOUNT_SCHEMA,
+            "Company":{"type":"object","properties":{"companyName":{"type":"string"}}},
+            "Identification":{"type":"object","properties":{"identification":{"type":"string"}}}
+          }}
+        }
+        """.Replace("COMPOSITION", composition)
+            .Replace("ACCOUNT_MEMBER", referenced ? """{"$ref":"#/components/schemas/Account"}""" : accountSchema)
+            .Replace("ACCOUNT_SCHEMA", accountSchema);
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance,
+            new GenerationConfiguration { IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var requestBuilder = model.FindChildByName<CodeClass>("AccountRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && !x.IsOverload);
+        CodeComposedTypeBase composedType = composition == "anyOf"
+            ? Assert.IsType<CodeIntersectionType>(method.ReturnType)
+            : Assert.IsType<CodeUnionType>(method.ReturnType);
+        Assert.Equal(2, composedType.Types.Count());
+        Assert.Contains(composedType.Types, static x => x.Name == "Company");
+        var account = Assert.IsType<CodeClass>(Assert.Single(composedType.Types, static x => x.Name != "Company").TypeDefinition);
+        Assert.Contains(account.Properties, static x => x.Name == "label");
+        var other = Assert.Single(account.Properties, static x => x.Name == "other");
+        var identification = model.FindChildByName<CodeClass>("Identification");
+        Assert.NotNull(identification);
+        Assert.Same(identification, Assert.IsType<CodeType>(other.Type).TypeDefinition);
+        Assert.Contains(identification.Properties, static x => x.Name == "identification");
+    }
+
+    [Theory]
     [InlineData("anyOf")]
     [InlineData("oneOf")]
     public async Task SingleInlineAllOfPreservesSiblingUnionAsync(string composition)
@@ -41,7 +92,7 @@ public sealed partial class KiotaBuilderTests
         var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
         var requestBuilder = model.FindChildByName<CodeClass>("AccountRequestBuilder");
         Assert.NotNull(requestBuilder);
-        var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && !x.IsOverload);
         CodeComposedTypeBase composedType = composition == "anyOf"
             ? Assert.IsType<CodeIntersectionType>(method.ReturnType)
             : Assert.IsType<CodeUnionType>(method.ReturnType);
