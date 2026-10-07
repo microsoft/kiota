@@ -2476,6 +2476,8 @@ public partial class KiotaBuilder
         var includeAdditionalDataProperties = config.IncludeAdditionalData && (schema.AdditionalPropertiesAllowed || schema.AdditionalProperties is not null);
         AddSerializationMembers(newClassStub, includeAdditionalDataProperties, config.UsesBackingStore, static s => s);
 
+        // Other endpoints may reuse this model before its properties and discriminator mappings are built.
+        AddDiscriminatorMethod(newClassStub, schema.GetDiscriminatorPropertyName(), [], static s => s);
         var newClass = currentNamespace.AddClass(newClassStub).First();
         var lifecycle = classLifecycles.GetOrAdd(currentNamespace.Name + "." + declarationName, static n => new());
         if (!lifecycle.IsPropertiesBuilt() && !lifecycle.IsPropertiesBuildingInProgress())
@@ -2522,7 +2524,8 @@ public partial class KiotaBuilder
                             .Where(x => x.Value is { TypeDefinition: CodeClass definition } &&
                                         definition.DerivesFrom(newClass)); // only the mappings that derive from the current class
 
-            AddDiscriminatorMethod(newClass, schema.GetDiscriminatorPropertyName(), mappings, static s => s);
+            foreach (var mapping in mappings)
+                newClass.DiscriminatorInformation.AddDiscriminatorMapping(mapping.Key, mapping.Value);
         }
         finally
         {
