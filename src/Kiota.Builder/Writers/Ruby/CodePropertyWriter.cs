@@ -12,11 +12,23 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         ArgumentNullException.ThrowIfNull(codeElement);
         ArgumentNullException.ThrowIfNull(writer);
         if (codeElement.ExistsInExternalBaseType) return;
+        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
+        var primaryMessageCodePath = codeElement.Kind is CodePropertyKind.ErrorMessageOverride && parentClass.IsErrorDefinition ?
+            parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToSnakeCase(), static x => x.Name.ToSnakeCase(), "&.") :
+            string.Empty;
+        // without a primary message the inherited StandardError#message already applies
+        if (codeElement.Kind is CodePropertyKind.ErrorMessageOverride && string.IsNullOrEmpty(primaryMessageCodePath)) return;
         RubyConventionService.WriteMemberSeparator(writer);
         conventions.WriteShortDescription(codeElement, writer);
-        if (codeElement.Parent is not CodeClass parentClass) throw new InvalidOperationException("The parent of a property should be a class");
         switch (codeElement.Kind)
         {
+            case CodePropertyKind.ErrorMessageOverride:
+                writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}");
+                writer.IncreaseIndent();
+                writer.WriteLine($"{primaryMessageCodePath} || \"\"");
+                writer.DecreaseIndent();
+                writer.WriteLine("end");
+                break;
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}");
                 writer.IncreaseIndent();
