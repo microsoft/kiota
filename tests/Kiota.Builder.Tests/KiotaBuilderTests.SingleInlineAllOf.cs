@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -11,6 +12,44 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Theory]
+    [InlineData("anyOf")]
+    [InlineData("oneOf")]
+    public async Task SingleInlineAllOfPreservesSiblingUnionAsync(string composition)
+    {
+        var description = """
+        {
+          "openapi":"3.0.3","info":{"title":"Mixed composition","version":"1.0"},
+          "paths":{"/account":{"get":{"responses":{"200":{"description":"Success","content":{
+            "application/json":{"schema":{"$ref":"#/components/schemas/Account"}}
+          }}}}}},
+          "components":{"schemas":{
+            "Account":{
+              "allOf":[{"type":"object","properties":{"label":{"type":"string"}}}],
+              "COMPOSITION":[{"$ref":"#/components/schemas/Person"},{"$ref":"#/components/schemas/Company"}]
+            },
+            "Person":{"type":"object","properties":{"firstName":{"type":"string"}}},
+            "Company":{"type":"object","properties":{"companyName":{"type":"string"}}}
+          }}
+        }
+        """.Replace("COMPOSITION", composition);
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance,
+            new GenerationConfiguration { IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var requestBuilder = model.FindChildByName<CodeClass>("AccountRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        CodeComposedTypeBase composedType = composition == "anyOf"
+            ? Assert.IsType<CodeIntersectionType>(method.ReturnType)
+            : Assert.IsType<CodeUnionType>(method.ReturnType);
+        Assert.Equal(2, composedType.Types.Count());
+        Assert.Contains(composedType.Types, static x => x.Name == "Person");
+        Assert.Contains(composedType.Types, static x => x.Name == "Company");
+    }
+
     [Theory]
     [InlineData(true, true)]
     [InlineData(true, false)]

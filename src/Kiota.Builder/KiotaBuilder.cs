@@ -2055,6 +2055,7 @@ public partial class KiotaBuilder
         }
     }
     private static bool HasSingleInlineAllOfObject(IOpenApiSchema schema) =>
+        schema.AnyOf is not { Count: > 0 } && schema.OneOf is not { Count: > 0 } &&
         schema.AllOf is { Count: 1 } && !schema.AllOf[0].IsReferencedSchema() && schema.AllOf[0].HasAnyProperty();
 
     private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false)
