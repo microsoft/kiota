@@ -10071,6 +10071,75 @@ components:
         Assert.NotNull(withoutObjectClassClassAnotherTwoProperty);
     }
 
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public async Task SingleUnionPreservesInheritedPropertiesAsync(string unionKeyword, bool hasDirectProperties)
+    {
+        await using var fs = await GetDocumentStreamAsync(
+        $$"""
+        {
+          "openapi": "3.0.0",
+          "info": { "title": "Single union of an allOf model", "version": "1.0.0" },
+          "servers": [{ "url": "https://example.org" }],
+          "paths": {
+            "/models": {
+              "get": {
+                "responses": {
+                  "200": {
+                    "description": "OK",
+                    "content": {
+                      "application/json": { "schema": { "$ref": "#/components/schemas/Wrapped" } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "components": {
+            "schemas": {
+              "Base": {
+                "type": "object",
+                "properties": { "common": { "type": "string" } }
+              },
+              "Child": {
+                "type": "object",
+                {{(hasDirectProperties ? "\"properties\": {}," : string.Empty)}}
+                "allOf": [
+                  { "$ref": "#/components/schemas/Base" },
+                  { "type": "object", "properties": { "one": { "type": "string" } } }
+                ]
+              },
+              "Wrapped": {
+                "type": "object",
+                "{{unionKeyword}}": [{ "$ref": "#/components/schemas/Child" }],
+                "properties": { "kind": { "type": "string" } },
+                "discriminator": { "propertyName": "kind" }
+              }
+            }
+          }
+        }
+        """);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("ModelsRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var executor = requestBuilder.Methods.First(static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        var responseType = Assert.IsType<CodeType>(executor.ReturnType);
+        var wrappedClass = Assert.IsType<CodeClass>(responseType.TypeDefinition);
+        Assert.NotNull(wrappedClass.FindChildByName<CodeProperty>("one", false));
+        Assert.NotNull(wrappedClass.FindChildByName<CodeProperty>("kind", false));
+        Assert.Equal("kind", wrappedClass.DiscriminatorInformation.DiscriminatorPropertyName);
+        Assert.Equal("Wrapped", wrappedClass.Name);
+        Assert.Equal("Base", wrappedClass.BaseClass?.Name);
+        Assert.NotNull(wrappedClass.BaseClass.FindChildByName<CodeProperty>("common", false));
+    }
+
     [Fact]
     public async Task ExclusiveUnionIntersectionEntriesMergingAsync()
     {
