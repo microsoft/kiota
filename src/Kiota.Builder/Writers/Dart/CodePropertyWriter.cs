@@ -35,7 +35,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             throw new InvalidOperationException("The parent of a property should be a class");
 
         var backingStoreProperty = parentClass.GetBackingStoreProperty();
-        var defaultValue = string.Empty;
+        var defaultValue = codeElement.IsOfKind(CodePropertyKind.QueryParameter) &&
+                           conventions.TryGetPropertyDefaultValue(codeElement, codeElement, out var queryDefault)
+            ? $" = {queryDefault}"
+            : string.Empty;
         var getterModifier = string.Empty;
 
         var propertyName = codeElement.Name;
@@ -49,7 +52,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, DartConvention
             case CodePropertyKind.AdditionalData when backingStoreProperty != null:
             case CodePropertyKind.Custom when backingStoreProperty != null:
                 var backingStoreKey = DartConventionService.SanitizeDartSingleQuoteLiteral(codeElement.WireName);
-                var defaultIfNotNullable = propertyType.EndsWith('?') ? string.Empty : codeElement.IsOfKind(CodePropertyKind.AdditionalData) ? " ?? {}" : $" ?? {codeElement.DefaultValue.SanitizeQuotedStringLiteral()}";
+                var defaultIfNotNullable = !propertyType.EndsWith('?') && conventions.TryGetPropertyDefaultValue(codeElement, codeElement, out var safeDefault) ? $" ?? {safeDefault}" : string.Empty;
                 writer.StartBlock($"{propertyType} get {conventions.GetAccessModifierPrefix(codeElement.Access)}{propertyName} {{");
                 writer.WriteLine($"return {backingStoreProperty.Name}.get<{propertyType}>('{backingStoreKey}'){defaultIfNotNullable};");
                 writer.CloseBlock();

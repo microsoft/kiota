@@ -706,10 +706,12 @@ public partial class KiotaBuilder
     /// <param name="token"></param>
     public async Task ApplyLanguageRefinementAsync(GenerationConfiguration config, CodeNamespace generatedCode, CancellationToken token)
     {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(generatedCode);
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        await ILanguageRefiner.RefineAsync(config, generatedCode, token).ConfigureAwait(false);
+        await ILanguageRefiner.RefineAsync(config, generatedCode, logger, token).ConfigureAwait(false);
 
         stopwatch.Stop();
         LogLanguageRefinementApplied(stopwatch.ElapsedMilliseconds);
@@ -1269,26 +1271,7 @@ public partial class KiotaBuilder
         if (prop.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
             !propertyName.Equals(childIdentifier, StringComparison.Ordinal))
             prop.SerializationName = childIdentifier;
-        if (kind == CodePropertyKind.Custom &&
-            propertySchema?.Default is JsonValue stringDefaultJsonValue &&
-            !stringDefaultJsonValue.IsJsonNullSentinel() &&
-            stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
-            !string.IsNullOrEmpty(stringDefaultValue) &&
-            !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase))
-        {
-            if (TryNormalizeStringDefaultValue(resultType, stringDefaultValue, out var normalizedDefaultValue))
-                prop.DefaultValue = normalizedDefaultValue;
-            else
-                LogInvalidDefaultValue(propertyName, resultType.Name);
-        }
-        else if (kind == CodePropertyKind.Custom &&
-            propertySchema?.Default is JsonValue stringDefaultJsonValue2 &&
-            !stringDefaultJsonValue2.IsJsonNullSentinel() &&
-            (stringDefaultJsonValue2.GetValueKind() == JsonValueKind.Number || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.True || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.False))
-        {
-            //Values not placed in quotes (number and boolean): just forward the value.
-            prop.DefaultValue = stringDefaultJsonValue2.ToString();
-        }
+        SetPropertyDefaultValue(prop, propertySchema);
 
         if (existingType == null)
         {
@@ -1296,6 +1279,30 @@ public partial class KiotaBuilder
             LogCreatingProperty(prop.Name, prop.Type.Name);
         }
         return prop;
+    }
+    private void SetPropertyDefaultValue(CodeProperty prop, IOpenApiSchema? propertySchema)
+    {
+        if (!prop.IsOfKind(CodePropertyKind.Custom) &&
+            !(config.Language == GenerationLanguage.Dart && prop.IsOfKind(CodePropertyKind.QueryParameter)))
+            return;
+        if (propertySchema?.Default is JsonValue stringDefaultJsonValue &&
+            !stringDefaultJsonValue.IsJsonNullSentinel() &&
+            stringDefaultJsonValue.TryGetValue<string>(out var stringDefaultValue) &&
+            (config.Language == GenerationLanguage.Dart || !string.IsNullOrEmpty(stringDefaultValue)) &&
+            (config.Language == GenerationLanguage.Dart || !"null".Equals(stringDefaultValue, StringComparison.OrdinalIgnoreCase)))
+        {
+            if (TryNormalizeStringDefaultValue(prop.Type, stringDefaultValue, out var normalizedDefaultValue))
+                prop.DefaultValue = normalizedDefaultValue;
+            else
+                LogInvalidDefaultValue(prop.Name, prop.Type.Name);
+        }
+        else if (propertySchema?.Default is JsonValue stringDefaultJsonValue2 &&
+            !stringDefaultJsonValue2.IsJsonNullSentinel() &&
+            (stringDefaultJsonValue2.GetValueKind() == JsonValueKind.Number || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.True || stringDefaultJsonValue2.GetValueKind() == JsonValueKind.False))
+        {
+            //Values not placed in quotes (number and boolean): just forward the value.
+            prop.DefaultValue = stringDefaultJsonValue2.ToString();
+        }
     }
     private static readonly HashSet<string> primitiveNumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -1966,9 +1973,11 @@ public partial class KiotaBuilder
             // CreateModelDeclarations so the allOf entries get merged. Calling AddModelDeclarationIfDoesntExist
             // directly with the raw schema would only set the base class (from the single allOf $ref) but drop
             // the inline allOf member's properties, producing an empty model that then wins the name-based dedup.
-            if ((targetSchema.IsInherited() || targetSchema.IsIntersection()) &&
-                CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType inheritedType)
+            if ((modelSchema.IsInherited() || modelSchema.IsIntersection()) &&
+                CreateModelDeclarations(currentNode, modelSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType inheritedType)
             {
+                if (targetSchema.IsArray())
+                    inheritedType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 return inheritedType;
             }
             return new CodeType
@@ -2014,7 +2023,9 @@ public partial class KiotaBuilder
             {
                 var memberSchema = currentSchema.IsArray() && currentSchema.Items is { } itemsSchema ? itemsSchema : currentSchema;
                 var shortestNamespace = GetShortestNamespace(codeNamespace, memberSchema);
-                var className = currentSchema.GetSchemaName().CleanupSymbolName();
+                var isAllOfMember = memberSchema.IsInherited() || memberSchema.IsIntersection();
+                // An inline allOf must not reuse the referenced base model's name.
+                var className = memberSchema.GetSchemaName(directOnly: isAllOfMember).CleanupSymbolName();
                 if (string.IsNullOrEmpty(className))
                     if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                     {
@@ -2026,11 +2037,14 @@ public partial class KiotaBuilder
                     }
                     else
                         className = $"{unionType.Name}Member{++membersWithNoName}";
-                var declarationType = new CodeType
+                var declarationType = isAllOfMember &&
+                    CreateModelDeclarations(currentNode, memberSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: className, isRequestBody: isRequestBody) is CodeType inheritedMemberType ?
+                    inheritedMemberType : new CodeType
                 {
                     TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, memberSchema, className, shortestNamespace, null),
-                    CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
                 };
+                if (currentSchema.IsArray())
+                    declarationType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 if (!unionType.ContainsType(declarationType))
                     unionType.AddType(declarationType);
             }
@@ -2966,8 +2980,8 @@ public partial class KiotaBuilder
     {
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema);
-        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items);
+        var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema, out var defaultValueSchema);
+        var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items, out _);
         var isArray = parameterSchema.IsArray() ||
             parameterSchema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && itemSchema.IsEnum();
         var enumSchema = isArray ? itemSchema : parameterSchema;
@@ -3012,6 +3026,7 @@ public partial class KiotaBuilder
             Type = resultType,
             Deprecation = parameter.GetDeprecationInformation(),
         };
+        SetPropertyDefaultValue(prop, defaultValueSchema);
 
         if (!parameter.Name.Equals(prop.Name, StringComparison.OrdinalIgnoreCase))
         {
@@ -3041,13 +3056,21 @@ public partial class KiotaBuilder
         }
     }
 
-    private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema)
+    private static IOpenApiSchema? UnwrapQueryParameterSchema(IOpenApiSchema? schema, out IOpenApiSchema? defaultValueSchema)
     {
-        if (schema is null) return null;
+        defaultValueSchema = null;
         var visited = new HashSet<IOpenApiSchema>();
-        return new[] { schema }.FlattenEmptyEntries(x =>
-            x is { AllOf.Count: 1 } && x.AnyOf is not { Count: > 0 } && x.OneOf is not { Count: > 0 } &&
-            !x.IsSemanticallyMeaningful() && visited.Add(x) ? x.AllOf : null).Single();
+        while (schema is not null)
+        {
+            if (defaultValueSchema is null && schema.Default is not null)
+                defaultValueSchema = schema;
+            if (schema is { AllOf.Count: 1 } && schema.AnyOf is not { Count: > 0 } && schema.OneOf is not { Count: > 0 } &&
+                !schema.IsSemanticallyMeaningful() && visited.Add(schema))
+                schema = schema.AllOf[0];
+            else
+                break;
+        }
+        return schema;
     }
     private static CodeType GetDefaultQueryParameterType()
     {

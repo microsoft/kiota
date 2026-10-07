@@ -11,14 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Ruby: an error's `message` returns the property the description marks with `x-ms-primary-error-message`, as the other languages do. An error property named `message` is renamed `message_escaped`, like `MessageEscaped` in C#; when it is a string, `message` still returns it. [kiota-ruby#63](https://github.com/microsoft/kiota-ruby/issues/63)
+
 ### Changed
 
+- Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
+
+- All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.
 - Reject plugin-manifest file references whose path components become parent-directory traversal after Windows trims trailing spaces or dots.
 - Fixed a stack overflow when generating API plugins from descriptions with cyclic `allOf` schemas.
+- Dart: omit unsupported schema defaults with a generation warning, preserve supported literal and enum property and parameter defaults (including empty strings), initialize query parameters from schema defaults, and keep constructor initialization valid with or without backing stores.
+- Dart: preserve nullable optional request-builder constructor parameters, including UUIDs and collections, so cloning accepts null arguments without overwriting existing path parameters.
+- Dart: escape URL templates once at final emission to preserve literal dollar signs and backslashes in constructor defaults and method overrides.
+- Dart: preserve schema string defaults named `null`, including enum wire values, without treating them as JSON-null sentinels.
+- Dart: preserve query-parameter defaults inside single-member `allOf` wrappers, retaining outer-default precedence and explicit JSON-null defaults.
+- Dart: validate parser-backed date, time, and UUID defaults before emission, omitting unsupported values with a generation warning.
 - Ruby: a union of object types that no discriminator decides, such as a oneOf without a discriminator, now reads the payload into every object member, as TypeScript does, instead of returning an empty wrapper. A union whose discriminator matched no member does the same, and its array member is only read when no other member was picked. Requires the runtime gems at 0.24.0.
 - Ruby: enum members hold their wire value, so a value such as `incoming-payment` or `read` is sent and read as the description declares it instead of as `IncomingPayment` or `Read`. `Enum[:Name]` now returns the wire value as a string. Requires the runtime gems at 0.24.0.
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
-- Preserve referenced model properties when an array member of an `anyOf` or `oneOf` is generated before a direct reference to that model, including nullable compositions.
+- Preserve referenced and inherited model properties in `anyOf` and `oneOf` array members, including nullable compositions, and serialize enum array members correctly in TypeScript.
+- TypeScript: import response enum objects for request builders reached through path parameters. [#6884](https://github.com/microsoft/kiota/issues/6884)
 - Resolve enum query parameters wrapped in single-member `allOf` schemas, including enum array items.
 - Go: cast scalar enum values in union factories and avoid reading an empty discriminator name for undiscriminated unions. Addresses [#7808](https://github.com/microsoft/kiota/issues/7808).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)

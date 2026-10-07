@@ -13,6 +13,55 @@ namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests
 {
     [Theory]
+    [InlineData("anyOf", false, false)]
+    [InlineData("oneOf", false, false)]
+    [InlineData("anyOf", true, false)]
+    [InlineData("oneOf", true, false)]
+    [InlineData("anyOf", false, true)]
+    [InlineData("oneOf", false, true)]
+    [InlineData("anyOf", true, true)]
+    [InlineData("oneOf", true, true)]
+    [InlineData("anyOf", false, true, true)]
+    [InlineData("oneOf", false, true, true)]
+    [InlineData("anyOf", true, true, true)]
+    [InlineData("oneOf", true, true, true)]
+    public async Task ComposedArrayPreservesAllOfItemPropertiesAsync(string composition, bool nullable, bool inherited, bool inline = false)
+    {
+        var description = """
+        {
+          "openapi":"3.1.0", "info":{"title":"Composed arrays","version":"1.0"},
+          "paths":{"/things":{"get":{"responses":{"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TreeResponse"}}}}}}}},
+          "components":{"schemas":{
+            "TreeResponse":{"type":"object","properties":{"things":{"COMPOSITION":[
+              {"type":"array","items":{"$ref":"#/components/schemas/Thing"}}, OTHER
+            ]}}},
+            "Base":{"type":"object","properties":{"id":{"type":"string"}}},
+            "Thing":{"allOf":[BASE,{"type":"object","properties":{"name":{"type":"string"}}}]}
+          }}
+        }
+        """.Replace("COMPOSITION", composition)
+            .Replace("OTHER", nullable ? """{"type":"null"}""" : """{"type":"string"}""")
+            .Replace("BASE", inherited ? """{"$ref":"#/components/schemas/Base"}""" : """{"type":"object","properties":{"id":{"type":"string"}}}""");
+        if (inline)
+            description = description.Replace("""{"type":"array","items":{"$ref":"#/components/schemas/Thing"}}""", """{"type":"array","items":{"allOf":[{"$ref":"#/components/schemas/Base"},{"type":"object","properties":{"name":{"type":"string"}}}]}}""");
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance,
+            new GenerationConfiguration { IncludeAdditionalData = false }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var tree = model.FindChildByName<CodeClass>("TreeResponse");
+        Assert.NotNull(tree);
+        var things = Assert.Single(tree.Properties, static p => p.Name == "things");
+        var itemType = nullable ? Assert.IsType<CodeType>(things.Type) :
+            Assert.Single(Assert.IsAssignableFrom<CodeComposedTypeBase>(things.Type).Types, static t => t.IsCollection);
+        Assert.True(itemType.IsCollection);
+        var item = Assert.IsType<CodeClass>(itemType.TypeDefinition);
+        Assert.Contains(item.Properties, static p => p.Kind == CodePropertyKind.Custom && p.Name == "name");
+        var baseClass = inherited ? Assert.IsType<CodeClass>(item.StartBlock.Inherits?.TypeDefinition) : item;
+        Assert.Contains(baseClass.Properties, static p => p.Kind == CodePropertyKind.Custom && p.Name == "id");
+    }
+
+    [Theory]
     [InlineData("anyOf", false)]
     [InlineData("anyOf", true)]
     [InlineData("oneOf", false)]

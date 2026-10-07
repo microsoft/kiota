@@ -193,7 +193,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteSerializationFunctionForCodeIntersectionType(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction method, LanguageWriter writer)
     {
-        foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType) && x.TypeDefinition != null))
+        foreach (var mappedType in composedType.Types.Where(x => !IsPrimitiveType(x, composedType, false) && x.TypeDefinition != null))
         {
             var functionName = GetSerializerFunctionName(method, mappedType);
             var variableName = composedParam.Name.ToFirstCharacterLowerCase();
@@ -611,7 +611,7 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             var nodeType = conventions.GetTypeString(type, method, false);
             // the guard narrows the element type, while the cast is on the property, so it keeps the collection suffix
             var castType = conventions.GetTypeString(type, method);
-            var serializationName = type.IsCollection ? $"writeCollectionOfPrimitiveValues<{nodeType}>" : GetSerializationMethodName(type, method.OriginalLocalMethod);
+            var serializationName = type.IsCollection && type.TypeDefinition is not CodeEnum ? $"writeCollectionOfPrimitiveValues<{nodeType}>" : GetSerializationMethodName(type, method.OriginalLocalMethod);
             if (string.IsNullOrEmpty(serializationName) || string.IsNullOrEmpty(nodeType)) return;
             if (!writtenTypeChecks.Add($"{nodeType}|{type.IsCollection}")) continue;
 
@@ -625,6 +625,8 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private static string GetPrimitiveTypeCheck(CodeTypeBase type, string valueReference, string nodeType, string prefix)
     {
+        if (type is CodeType { TypeDefinition: CodeEnum })
+            nodeType = TYPE_LOWERCASE_STRING;
         if (type.IsCollection)
             return TYPE_ARRAYBUFFER.Equals(nodeType, StringComparison.OrdinalIgnoreCase)
                 ? $"{prefix}if (Array.isArray({valueReference}) && ({valueReference}).every(item => item instanceof ArrayBuffer)) {{"

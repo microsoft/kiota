@@ -307,7 +307,9 @@ public class TypeScriptConventionService : CommonLanguageConventionService
 
     public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, true);
 
-    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase, bool includeCollectionInformation) => IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase, includeCollectionInformation));
+    public static bool IsPrimitiveType(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase, bool includeCollectionInformation) =>
+        codeType is { TypeDefinition: CodeEnum } && (!includeCollectionInformation || !codeType.IsCollection) ||
+        IsPrimitiveType(GetTypescriptTypeString(codeType, codeComposedTypeBase, includeCollectionInformation));
 
     internal static bool IsPrimitiveTypeOrPrimitiveCollection(CodeType codeType, CodeComposedTypeBase codeComposedTypeBase) => IsPrimitiveType(codeType, codeComposedTypeBase, false);
 
