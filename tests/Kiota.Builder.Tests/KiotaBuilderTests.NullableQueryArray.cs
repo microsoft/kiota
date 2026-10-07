@@ -124,7 +124,22 @@ public sealed partial class KiotaBuilderTests
         Assert.IsType<CodeEnum>(type.TypeDefinition);
     }
 
-    private async Task<CodeType> GetQueryParameterTypeAsync(string schema, string components = "{}")
+    [Theory]
+    [InlineData("""{"anyOf":[{"allOf":[{"type":"string","default":"inner"}]},{"type":"null"}]}""", "\"inner\"")]
+    [InlineData("""{"default":"outer","allOf":[{"anyOf":[{"type":"string","default":"inner"},{"type":"null"}]}]}""", "\"outer\"")]
+    [InlineData("""{"default":null,"allOf":[{"oneOf":[{"type":"string","default":"inner"},{"type":"null"}]}]}""", "")]
+    [InlineData("""{"oneOf":[{"default":null,"allOf":[{"type":"string","default":"inner"}]},{"type":"null"}]}""", "")]
+    public async Task PreservesDartQueryDefaultsAcrossNullableWrappersAsync(string schema, string expectedDefault)
+    {
+        var property = await GetQueryParameterPropertyAsync(schema, language: GenerationLanguage.Dart);
+        Assert.Equal("string", property.Type.Name);
+        Assert.Equal(expectedDefault, property.DefaultValue);
+    }
+
+    private async Task<CodeType> GetQueryParameterTypeAsync(string schema, string components = "{}") =>
+        Assert.IsType<CodeType>((await GetQueryParameterPropertyAsync(schema, components)).Type);
+
+    private async Task<CodeProperty> GetQueryParameterPropertyAsync(string schema, string components = "{}", GenerationLanguage language = GenerationLanguage.CSharp)
     {
         var description = """
         {"openapi":"3.1.0","info":{"title":"Nullable query","version":"1.0"},
@@ -132,12 +147,11 @@ public sealed partial class KiotaBuilderTests
         "responses":{"204":{"description":"Success"}}}}},"components":{"schemas":COMPONENTS}}
         """.Replace("SCHEMA", schema).Replace("COMPONENTS", components);
         await using var stream = await GetDocumentStreamAsync(description);
-        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { Language = GenerationLanguage.CSharp, ExcludeBackwardCompatible = true }, _httpClient);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { Language = language, ExcludeBackwardCompatible = true }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
         var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
         var parameters = model.FindChildByName<CodeClass>("TestRequestBuilderGetQueryParameters");
         Assert.NotNull(parameters);
-        var property = Assert.Single(parameters.Properties, static x => x.Kind == CodePropertyKind.QueryParameter);
-        return Assert.IsType<CodeType>(property.Type);
+        return Assert.Single(parameters.Properties, static x => x.Kind == CodePropertyKind.QueryParameter);
     }
 }

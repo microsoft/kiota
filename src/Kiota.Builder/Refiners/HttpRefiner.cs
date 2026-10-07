@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -7,11 +8,15 @@ using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
-public class HttpRefiner(GenerationConfiguration configuration) : CommonLanguageRefiner(configuration)
+public class HttpRefiner(GenerationConfiguration configuration, ILogger? logger) : CommonLanguageRefiner(configuration, logger)
 {
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public HttpRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+
     private const string BaseUrl = "BaseUrl";
     private const string BaseUrlName = "string";
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
