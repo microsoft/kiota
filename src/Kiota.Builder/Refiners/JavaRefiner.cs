@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,13 +8,16 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Java;
+using Microsoft.Extensions.Logging;
 using Microsoft.Kiota.Abstractions;
 
 namespace Kiota.Builder.Refiners;
 
 public class JavaRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public JavaRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public JavaRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public JavaRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>

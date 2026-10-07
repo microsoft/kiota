@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -150,5 +151,39 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains($"attr_accessor :{PropertyName.ToSnakeCase()}", result);
         // a bare instance variable in a class body declares nothing and warns under ruby -w
         Assert.DoesNotContain($"@{PropertyName.ToSnakeCase()}", result);
+    }
+    private CodeProperty AddMessageOverride()
+    {
+        parentClass.IsErrorDefinition = true;
+        return parentClass.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Kind = CodePropertyKind.ErrorMessageOverride,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        }).First();
+    }
+    [Fact]
+    public void WritesThePrimaryErrorMessageOfANestedObject()
+    {
+        var mainError = new CodeClass { Name = "mainError" };
+        mainError.AddProperty(new CodeProperty { Name = "message", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" }, IsPrimaryErrorMessage = true });
+        parentClass.AddProperty(new CodeProperty { Name = "error", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "mainError", TypeDefinition = mainError } });
+        writer.Write(AddMessageOverride());
+        var result = tw.ToString();
+        Assert.Contains("def message", result);
+        Assert.Contains("error&.message || \"\"", result);
+    }
+    [Fact]
+    public void WritesThePrimaryErrorMessageOfTheErrorItself()
+    {
+        parentClass.AddProperty(new CodeProperty { Name = "messageEscaped", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" }, IsPrimaryErrorMessage = true });
+        writer.Write(AddMessageOverride());
+        Assert.Contains("message_escaped || \"\"", tw.ToString());
+    }
+    [Fact]
+    public void LeavesTheInheritedMessageWithoutAPrimaryErrorMessage()
+    {
+        writer.Write(AddMessageOverride());
+        Assert.Empty(tw.ToString().Trim());
     }
 }

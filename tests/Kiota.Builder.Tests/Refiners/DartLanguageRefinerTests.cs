@@ -13,6 +13,69 @@ public class DartLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
     [Theory]
+    [InlineData("\"value; injectedCall()\"")]
+    [InlineData("\"valueEscaped\"")]
+    [InlineData("\"\"value\"\"")]
+    public async Task DoesNotNormalizeInvalidDartDefaultIntoEnumMember(string input)
+    {
+        var models = root.AddNamespace("models");
+        var model = models.AddClass(new CodeClass { Name = "Settings", Kind = CodeClassKind.Model }).First();
+        var labels = models.AddEnum(new CodeEnum { Name = "Labels" }).First();
+        labels.AddOption(new CodeEnumOption { Name = "value", SerializationName = "value" });
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "label",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { TypeDefinition = labels },
+            DefaultValue = input,
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.False(new Kiota.Builder.Writers.Dart.DartConventionService().TryGetPropertyDefaultValue(property, property, out _));
+        Assert.Equal(input, property.DefaultValue);
+    }
+    [Theory]
+    [InlineData("\"value\"")]
+    [InlineData("")]
+    public async Task PreservesDartQueryParameterSchemaDefaults(string input)
+    {
+        var model = root.AddNamespace("models").AddClass(new CodeClass { Name = "QueryParameters", Kind = CodeClassKind.QueryParameters }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "filter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType { Name = "String", IsExternal = true },
+            DefaultValue = input,
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(input, property.DefaultValue);
+    }
+    [Fact]
+    public async Task RefinesGeneratedDartDefaultsToRuntimeInitializers()
+    {
+        var model = root.AddNamespace("models").AddClass(new CodeClass { Name = "Configuration" }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "headers",
+            Kind = CodePropertyKind.Headers,
+            Type = new CodeType { Name = "RequestHeaders", IsExternal = true },
+            DefaultValue = "injectedCall()",
+        }).First();
+        var options = model.AddProperty(new CodeProperty
+        {
+            Name = "options",
+            Kind = CodePropertyKind.Options,
+            Type = new CodeType { Name = "RequestOption", IsExternal = true, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex },
+            DefaultValue = "injectedCall()",
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("HttpHeaders", property.Type.Name);
+        Assert.Equal("HttpHeaders()", property.DefaultValue);
+        Assert.Contains(model.Usings, static x => x.Name == "HttpHeaders");
+        Assert.Equal("<RequestOption>[]", options.DefaultValue);
+        Assert.Contains(model.Usings, static x => x.Name == "RequestOption");
+    }
+
+    [Theory]
     [InlineData("value", false, 2)]
     [InlineData("values", false, 2)]
     [InlineData("value", true, 2)]
