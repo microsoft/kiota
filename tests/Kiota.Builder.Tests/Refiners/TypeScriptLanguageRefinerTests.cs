@@ -37,6 +37,60 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
     }
 
     #region commonrefiner
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AliasesRepeatedSegmentNavigationMetadataAsync(bool indexed)
+    {
+        graphNS.AddNamespace("graph.models");
+        var parentNamespace = graphNS.AddNamespace("graph.foo");
+        var childNamespace = parentNamespace.AddNamespace(indexed ? "graph.foo.item" : "graph.foo.foo");
+        var leafNamespace = childNamespace.AddNamespace($"{childNamespace.Name}.bar");
+        CodeClass AddBuilder(CodeNamespace codeNamespace, string name)
+        {
+            var requestBuilder = codeNamespace.AddClass(new CodeClass { Name = name, Kind = CodeClassKind.RequestBuilder }).First();
+            requestBuilder.AddProperty(new CodeProperty
+            {
+                Name = "urlTemplate",
+                Kind = CodePropertyKind.UrlTemplate,
+                DefaultValue = "{+baseurl}/foo",
+                Type = new CodeType { Name = "string" },
+            });
+            return requestBuilder;
+        }
+        var parentBuilder = AddBuilder(parentNamespace, "FooRequestBuilder");
+        var childBuilder = AddBuilder(childNamespace, "FooRequestBuilder");
+        var leafBuilder = AddBuilder(leafNamespace, "BarRequestBuilder");
+        var navigationType = new CodeType { Name = childBuilder.Name, TypeDefinition = childBuilder };
+        if (indexed)
+            parentBuilder.AddIndexer(new CodeIndexer
+            {
+                Name = "item",
+                ReturnType = navigationType,
+                IndexParameter = new CodeParameter { Name = "id", Type = new CodeType { Name = "string" } },
+            });
+        else
+            parentBuilder.AddProperty(new CodeProperty { Name = "foo", Kind = CodePropertyKind.RequestBuilder, Type = navigationType });
+        childBuilder.AddProperty(new CodeProperty
+        {
+            Name = "bar",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { Name = leafBuilder.Name, TypeDefinition = leafBuilder },
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript, ClientNamespaceName = "graph" }, root, TestContext.Current.CancellationToken);
+
+        var parentFile = Assert.Single(parentNamespace.Files);
+        var childFile = Assert.Single(childNamespace.Files);
+        var parentMetadata = Assert.Single(parentFile.Constants, x => x.Kind == CodeConstantKind.NavigationMetadata);
+        var childMetadata = Assert.Single(childFile.Constants, x => x.Kind == CodeConstantKind.NavigationMetadata);
+        Assert.Equal(parentMetadata.Name, childMetadata.Name);
+        var parentInterface = Assert.Single(parentFile.Interfaces);
+        var importedMetadata = Assert.Single(parentInterface.Usings, x => x.Declaration?.TypeDefinition == childMetadata);
+        Assert.False(string.IsNullOrEmpty(importedMetadata.Alias));
+        Assert.False(parentMetadata.Name.Equals(importedMetadata.Alias, StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public async Task AddStaticMethodsUsingsForDeserializerAsync()
     {
