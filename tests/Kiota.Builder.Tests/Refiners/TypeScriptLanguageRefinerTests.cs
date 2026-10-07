@@ -91,6 +91,32 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.False(parentMetadata.Name.Equals(importedMetadata.Alias, StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task DoesNotAliasImportedTypeMatchingNestedPropertyAsync()
+    {
+        var configuration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var model = TestHelper.CreateModelClassInModelsNamespace(configuration, root, "Parent");
+        var modelsNamespace = model.GetImmediateParentOfType<CodeNamespace>();
+        var childNamespace = modelsNamespace.AddNamespace($"{modelsNamespace.Name}.child");
+        var child = TestHelper.CreateModelClass(childNamespace, "Child");
+        model.AddProperty(new CodeProperty
+        {
+            Name = "child",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = child.Name, TypeDefinition = child },
+        });
+
+        await ILanguageRefiner.RefineAsync(configuration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        var parentInterface = modelsNamespace.FindChildByName<CodeInterface>("Parent");
+        var childInterface = childNamespace.FindChildByName<CodeInterface>("Child");
+        Assert.NotNull(parentInterface);
+        Assert.NotNull(childInterface);
+        Assert.Contains(parentInterface.Properties, x => x.Name.Equals(childInterface.Name, StringComparison.OrdinalIgnoreCase));
+        var importedChild = Assert.Single(parentInterface.Usings, x => x.Declaration?.TypeDefinition == childInterface);
+        Assert.True(string.IsNullOrEmpty(importedChild.Alias));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

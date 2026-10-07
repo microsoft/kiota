@@ -633,23 +633,27 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains($"pathParametersMappings: [\"{"foo\"\n-id".SanitizeDoubleQuote()}\"]", result);
     }
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void WritesAliasedNavigationMetadata(bool indexed)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void WritesAliasedNavigationMetadata(bool indexed, bool renamed)
     {
         parentClass.Kind = CodeClassKind.RequestBuilder;
         var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
         var childNamespace = parentNamespace.AddNamespace($"{parentNamespace.Name}.foo");
         var childInterface = new CodeInterface
         {
-            Name = "FooRequestBuilder",
+            Name = renamed ? "OriginalRequestBuilder" : "FooRequestBuilder",
             Kind = CodeInterfaceKind.RequestBuilder,
             OriginalClass = new CodeClass { Name = "FooRequestBuilder", Kind = CodeClassKind.RequestBuilder },
         };
+        var navigationType = new CodeType { Name = childInterface.Name, TypeDefinition = childInterface };
+        if (renamed)
+            childInterface.Name = "FooRequestBuilder";
         var childNavigation = new CodeConstant { Name = "FooRequestBuilderNavigationMetadata", Kind = CodeConstantKind.NavigationMetadata };
         var childRequests = new CodeConstant { Name = "FooRequestBuilderRequestsMetadata", Kind = CodeConstantKind.RequestsMetadata };
         childNamespace.TryAddCodeFile("fooRequestBuilder", childInterface, childNavigation, childRequests);
-        var navigationType = new CodeType { Name = childInterface.Name, TypeDefinition = childInterface };
         if (indexed)
             parentClass.AddMethod(new CodeMethod
             {
