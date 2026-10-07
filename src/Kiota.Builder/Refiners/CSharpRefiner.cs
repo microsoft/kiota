@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public CSharpRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public CSharpRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public CSharpRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>

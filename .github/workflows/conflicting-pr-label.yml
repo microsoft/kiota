@@ -31,3 +31,44 @@ jobs:
           continueOnMissingPermissions: true
           commentOnDirty: 'This pull request has conflicting changes, the author must resolve the conflicts before this pull request can be merged.'
           commentOnClean: 'Conflicts have been resolved. A maintainer will take a look shortly.'
+      - name: remove previous merge conflict comments
+        if: steps.check.outputs.prDirtyStatuses != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_DIRTY_STATUSES: ${{ steps.check.outputs.prDirtyStatuses }}
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            const notificationBodies = new Set([
+              'This pull request has conflicting changes, the author must resolve the conflicts before this pull request can be merged.',
+              'Conflicts have been resolved. A maintainer will take a look shortly.',
+            ]);
+            const pullRequestNumbers = Object.keys(JSON.parse(process.env.PR_DIRTY_STATUSES));
+
+            for (const issue_number of pullRequestNumbers) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                per_page: 100,
+              });
+              const previousComments = comments
+                .filter(comment =>
+                  comment.user?.login === 'github-actions[bot]' &&
+                  notificationBodies.has(comment.body)
+                )
+                .sort((left, right) => right.id - left.id)
+                .slice(1);
+
+              for (const comment of previousComments) {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: comment.id,
+                  });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                }
+              }
+            }
