@@ -91,6 +91,59 @@ public sealed class TypeScriptLanguageRefinerTests : IDisposable
         Assert.False(parentMetadata.Name.Equals(importedMetadata.Alias, StringComparison.OrdinalIgnoreCase));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ImportsEnumResponseObjectAsync(bool indexed)
+    {
+        var modelsNamespace = graphNS.AddNamespace("graph.models");
+        var responseEnum = modelsNamespace.AddEnum(new CodeEnum { Name = "Status" }).First();
+        var parentNamespace = indexed ? graphNS.AddNamespace("graph.groups") : graphNS;
+        var childNamespace = graphNS.AddNamespace(indexed ? "graph.groups.item" : "graph.groups");
+        var parentBuilder = parentNamespace.AddClass(new CodeClass
+        {
+            Name = indexed ? "GroupsRequestBuilder" : "ApiClient",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var childBuilder = childNamespace.AddClass(new CodeClass
+        {
+            Name = indexed ? "GroupItemRequestBuilder" : "GroupsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        foreach (var requestBuilder in new[] { parentBuilder, childBuilder })
+            requestBuilder.AddProperty(new CodeProperty
+            {
+                Name = "urlTemplate",
+                Kind = CodePropertyKind.UrlTemplate,
+                DefaultValue = "{+baseurl}/groups",
+                Type = new CodeType { Name = "string" },
+            });
+        var navigationType = new CodeType { Name = childBuilder.Name, TypeDefinition = childBuilder };
+        if (indexed)
+            parentBuilder.AddIndexer(new CodeIndexer
+            {
+                Name = "item",
+                ReturnType = navigationType,
+                IndexParameter = new CodeParameter { Name = "groupId", Type = new CodeType { Name = "string" } },
+            });
+        else
+            parentBuilder.AddProperty(new CodeProperty { Name = "groups", Kind = CodePropertyKind.RequestBuilder, Type = navigationType });
+        childBuilder.AddMethod(new CodeMethod
+        {
+            Name = "get",
+            Kind = CodeMethodKind.RequestExecutor,
+            HttpMethod = Kiota.Builder.CodeDOM.HttpMethod.Get,
+            ReturnType = new CodeType { Name = responseEnum.Name, TypeDefinition = responseEnum },
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript, ClientNamespaceName = "graph" }, root, TestContext.Current.CancellationToken);
+
+        var requestBuilderInterface = childNamespace.FindChildByName<CodeInterface>(childBuilder.Name);
+        Assert.NotNull(requestBuilderInterface);
+        Assert.NotNull(responseEnum.CodeEnumObject);
+        Assert.Contains(requestBuilderInterface.Usings, x => x.Declaration?.TypeDefinition == responseEnum.CodeEnumObject && !x.IsErasable);
+    }
+
     [Fact]
     public async Task AddStaticMethodsUsingsForDeserializerAsync()
     {
