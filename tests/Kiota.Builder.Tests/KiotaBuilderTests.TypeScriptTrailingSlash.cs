@@ -33,6 +33,20 @@ public sealed partial class KiotaBuilderTests
         Assert.Equal(2, file.Interfaces.Count(x => x.Kind == CodeInterfaceKind.RequestBuilder));
         Assert.Contains(file.Interfaces, x => x.Name.Equals("PostRequestBody", System.StringComparison.OrdinalIgnoreCase));
         Assert.Contains(file.Interfaces, x => x.Name.Equals("PostResponse", System.StringComparison.OrdinalIgnoreCase));
+        var tokenBuilder = Assert.Single(file.Interfaces, x => x.Name.Equals("TokenRequestBuilder", System.StringComparison.OrdinalIgnoreCase));
+        var trailingSlashBuilder = Assert.Single(file.Interfaces, x => x.Name.Equals("EmptyPathSegmentRequestBuilder", System.StringComparison.OrdinalIgnoreCase));
+        var tokenTemplate = Assert.Single(file.Constants, x => x.Kind == CodeConstantKind.UriTemplate && x.OriginalCodeElement == tokenBuilder.OriginalClass);
+        var trailingSlashTemplate = Assert.Single(file.Constants, x => x.Kind == CodeConstantKind.UriTemplate && x.OriginalCodeElement == trailingSlashBuilder.OriginalClass);
+        Assert.Equal("\"{+baseurl}/token\"", tokenTemplate.UriTemplate);
+        Assert.Equal("\"{+baseurl}/token/\"", trailingSlashTemplate.UriTemplate);
+        var apiClient = model.FindChildByName<CodeInterface>(configuration.ClientClassName);
+        Assert.NotNull(apiClient);
+        var tokenNavigation = Assert.Single(apiClient.Properties, x => x.Name.Equals("token", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Same(tokenBuilder.OriginalClass, Assert.IsType<CodeType>(tokenNavigation.Type).TypeDefinition);
+        var trailingSlashNavigation = Assert.Single(tokenBuilder.Properties, x => x.Name.Equals("EmptyPathSegment", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Same(trailingSlashBuilder.OriginalClass, Assert.IsType<CodeType>(trailingSlashNavigation.Type).TypeDefinition);
+        Assert.Contains(tokenBuilder.Methods, x => x.Kind == CodeMethodKind.RequestExecutor && x.HttpMethod == HttpMethod.Get);
+        Assert.Contains(trailingSlashBuilder.Methods, x => x.Kind == CodeMethodKind.RequestExecutor && x.HttpMethod == HttpMethod.Post);
         foreach (var metadata in file.Constants.Where(x => x.Kind == CodeConstantKind.RequestsMetadata))
         {
             using var output = new StringWriter();
