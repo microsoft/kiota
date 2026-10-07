@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,11 +8,12 @@ using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers.Dart;
+using Microsoft.Extensions.Logging;
 
 
 namespace Kiota.Builder.Refiners;
 
-public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
+public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "microsoft_kiota_abstractions/microsoft_kiota_abstractions";
@@ -38,7 +40,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeClass @class && @class.OriginalComposedType is CodeIntersectionType intersectionType && intersectionType.Types.Any(static y => !y.IsExternal),
             AbstractionsNamespaceName, "ParseNodeHelper"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Headers),
-            AbstractionsNamespaceName, "RequestHeaders"),
+            AbstractionsNamespaceName, "HttpHeaders"),
+        new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Options),
+            AbstractionsNamespaceName, "RequestOption"),
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.Custom) && prop.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase),
             AbstractionsNamespaceName, KiotaBuilder.UntypedNodeName),
         new (static x => x is CodeMethod method && method.IsOfKind(CodeMethodKind.RequestExecutor, CodeMethodKind.RequestGenerator) && method.Parameters.Any(static y => y.IsOfKind(CodeParameterKind.RequestBody) && y.Type.Name.Equals(MultipartBodyClassName, StringComparison.OrdinalIgnoreCase)),
@@ -46,7 +50,9 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
     };
 
 
-    public DartRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public DartRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public DartRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -63,7 +69,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 static x => $"by{x.ToPascalCase('_')}",
                 static x => x.ToCamelCase('_'),
                 GenerationLanguage.Dart);
-            var enumDefaults = new Dictionary<CodeProperty, CodeEnumOption>();
+            var enumDefaults = new Dictionary<CodeElement, CodeEnumOption>();
             CollectEnumDefaults(generatedCode, enumDefaults);
             CorrectCommonNames(generatedCode);
             var reservedNamesProvider = new DartReservedNamesProvider();
@@ -125,8 +131,11 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true, addUsingsForComposedTypes: false);
 
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_");
-            foreach (var (property, option) in enumDefaults)
-                property.DefaultValue = option.Name;
+            foreach (var (element, option) in enumDefaults)
+                if (element is CodeProperty property)
+                    property.DefaultValue = option.Name;
+                else if (element is CodeParameter parameter)
+                    parameter.DefaultValue = option.Name;
             ReplaceReservedModelTypes(generatedCode, reservedNamesProvider, x => $"{x}Object");
             ReplaceReservedExceptionPropertyNames(
                 generatedCode,
@@ -171,8 +180,26 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddCustomMethods(generatedCode);
             EscapeStringValues(generatedCode);
             AliasUsingWithSameSymbol(generatedCode);
+            WarnInvalidDefaults(generatedCode, new DartConventionService());
         }, cancellationToken);
     }
+
+    private void WarnInvalidDefaults(CodeElement element, DartConventionService conventions)
+    {
+        if (element is CodeProperty property && property.IsOfKind(CodePropertyKind.Custom, CodePropertyKind.QueryParameter) &&
+            !string.IsNullOrEmpty(property.DefaultValue) && !conventions.TryGetPropertyDefaultValue(property, property, out _))
+            LogInvalidDefaultValue(Logger, property.Name, property.Type.Name);
+        if (element is CodeMethod method)
+            foreach (var parameter in method.Parameters.Where(x => !string.IsNullOrEmpty(x.DefaultValue) &&
+                                                                   !conventions.TryGetDefaultValue(x.Type, x.DefaultValue, method, out _, constantOnly: true)))
+                LogInvalidParameterDefaultValue(Logger, $"{method.Name}.{parameter.Name}", parameter.Type.Name);
+        CrawlTree(element, child => WarnInvalidDefaults(child, conventions));
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for property {PropertyName} because it is incompatible with type {TypeName}.")]
+    private static partial void LogInvalidDefaultValue(ILogger logger, string propertyName, string typeName);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Ignoring the default value for parameter {ParameterName} because it is incompatible with type {TypeName}.")]
+    private static partial void LogInvalidParameterDefaultValue(ILogger logger, string parameterName, string typeName);
 
     ///error classes should always have a constructor for the copyWith method
     private void AddConstructorForErrorClass(CodeElement currentElement)
@@ -203,12 +230,22 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         CrawlTree(currentElement, element => AddConstructorForErrorClass(element));
     }
 
-    private static void CollectEnumDefaults(CodeElement currentElement, Dictionary<CodeProperty, CodeEnumOption> defaults)
+    private static CodeEnumOption? FindEnumDefaultOption(CodeTypeBase type, string defaultValue) =>
+        type is CodeType { TypeDefinition: CodeEnum codeEnum } && !string.IsNullOrEmpty(defaultValue)
+            ? codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(DartConventionService.UnquoteDefaultValue(defaultValue), StringComparison.Ordinal))
+            : null;
+
+    private static void CollectEnumDefaults(CodeElement currentElement, Dictionary<CodeElement, CodeEnumOption> defaults)
     {
-        if (currentElement is CodeProperty { Type: CodeType { TypeDefinition: CodeEnum codeEnum } } property &&
-            !string.IsNullOrEmpty(property.DefaultValue) &&
-            codeEnum.Options.FirstOrDefault(x => x.WireName.Equals(property.DefaultValue.Trim('"'), StringComparison.Ordinal)) is CodeEnumOption option)
+        if (currentElement is CodeProperty property &&
+            FindEnumDefaultOption(property.Type, property.DefaultValue) is CodeEnumOption option)
             defaults[property] = option;
+        if (currentElement is CodeMethod method)
+            foreach (var entry in method.Parameters
+                .Where(static parameter => !string.Equals(parameter.DefaultValue, "null", StringComparison.OrdinalIgnoreCase))
+                .Select(static parameter => (Parameter: parameter, Option: FindEnumDefaultOption(parameter.Type, parameter.DefaultValue)))
+                .Where(static entry => entry.Option is not null))
+                defaults[entry.Parameter] = entry.Option!;
         CrawlTree(currentElement, element => CollectEnumDefaults(element, defaults));
     }
     /// <summary>
@@ -253,14 +290,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
                 }
             }
         }
-        else if (currentElement is CodeProperty p && p.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum && !string.IsNullOrEmpty(p.DefaultValue))
-        {
-            p.DefaultValue = DartConventionService.getCorrectedEnumName(p.DefaultValue.Trim('"').CleanupSymbolName());
-            if (new DartReservedNamesProvider().ReservedNames.Contains(p.DefaultValue))
-            {
-                p.DefaultValue += "_";
-            }
-        }
         CrawlTree(currentElement, element => CorrectCommonNames(element));
     }
 
@@ -298,9 +327,12 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
         ArgumentNullException.ThrowIfNull(currentProperty);
 
         if (currentProperty.IsOfKind(CodePropertyKind.Options))
-            currentProperty.DefaultValue = "List<RequestOption>()";
+            currentProperty.DefaultValue = "<RequestOption>[]";
         else if (currentProperty.IsOfKind(CodePropertyKind.Headers))
-            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterLowerCase()}()";
+        {
+            currentProperty.Type.Name = "HttpHeaders";
+            currentProperty.DefaultValue = "HttpHeaders()";
+        }
         else if (currentProperty.IsOfKind(CodePropertyKind.RequestAdapter))
         {
             currentProperty.Type.Name = "RequestAdapter";
@@ -311,10 +343,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             currentProperty.Type.Name = currentProperty.Type.Name[1..]; // removing the "I"
             currentProperty.SerializationName = currentProperty.Name;
             currentProperty.Name = currentProperty.Name.ToFirstCharacterLowerCase();
-        }
-        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
-        {
-            currentProperty.DefaultValue = $"{currentProperty.Type.Name.ToFirstCharacterUpperCase()}()";
         }
         else if (currentProperty.IsOfKind(CodePropertyKind.AdditionalData))
         {
@@ -490,14 +518,6 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             {
                 property.SerializationName = property.SerializationName.Replace("$", "\\$", StringComparison.Ordinal);
             }
-            if (property.DefaultValue.Contains('$', StringComparison.Ordinal))
-            {
-                property.DefaultValue = property.DefaultValue.Replace("$", "\\$", StringComparison.Ordinal);
-            }
-        }
-        else if (currentElement is CodeMethod method && method.HasUrlTemplateOverride)
-        {
-            method.UrlTemplateOverride = method.UrlTemplateOverride.Replace("$", "\\$", StringComparison.Ordinal);
         }
         CrawlTree(currentElement, EscapeStringValues);
     }

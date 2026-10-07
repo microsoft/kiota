@@ -14,4 +14,13 @@ RSpec.describe Integration_test do
         expect(error.code).to be 123
       }
   end
+
+  it "uses the primary error message the description declares" do
+    request_adapter = MicrosoftKiotaFaraday::FaradayRequestAdapter.new(MicrosoftKiotaAbstractions::AnonymousAuthenticationProvider.new)
+    request_adapter.set_base_url("http://127.0.0.1:1080")
+    client = Integration_test::Client::ApiClient.new(request_adapter)
+
+    expect { client.api.v1.partitions.get.resume }
+      .to raise_error(Integration_test::Client::Models::ServiceError, "The broker is not available.")
+  end
 end

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -9,12 +10,15 @@ using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.PathSegmenters;
 using Kiota.Builder.Writers.Ruby;
+using Microsoft.Extensions.Logging;
 
 namespace Kiota.Builder.Refiners;
 
 public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
 {
-    public RubyRefiner(GenerationConfiguration configuration) : base(configuration) { }
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public RubyRefiner(GenerationConfiguration configuration) : this(configuration, null) { }
+    public RubyRefiner(GenerationConfiguration configuration, ILogger? logger) : base(configuration, logger) { }
     public override Task RefineAsync(CodeNamespace generatedCode, CancellationToken cancellationToken)
     {
         return Task.Run(() =>
@@ -79,6 +83,11 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 "ApiError",
                 "MicrosoftKiotaAbstractions",
+                true
+            );
+            AddPrimaryErrorMessage(generatedCode,
+                "message",
+                () => new CodeType { Name = "string", IsNullable = false, IsExternal = true },
                 true
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
