@@ -122,7 +122,7 @@ public class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddConstructorForErrorClass(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddAsyncSuffix(generatedCode);
-            AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true);
+            AddDiscriminatorMappingsUsingsToParentClasses(generatedCode, "ParseNode", addUsings: true, includeParentNamespace: true, addUsingsForComposedTypes: false);
 
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_");
             foreach (var (property, option) in enumDefaults)
