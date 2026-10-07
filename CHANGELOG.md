@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Ruby: an error's `message` returns the property the description marks with `x-ms-primary-error-message`, as the other languages do. An error property named `message` is renamed `message_escaped`, like `MessageEscaped` in C#; when it is a string, `message` still returns it. [kiota-ruby#63](https://github.com/microsoft/kiota-ruby/issues/63)
+
 ### Changed
 
 - Reject plugin-manifest file references whose path components become parent-directory traversal after Windows trims trailing spaces or dots.
