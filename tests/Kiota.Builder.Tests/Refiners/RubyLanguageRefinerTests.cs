@@ -27,6 +27,27 @@ public class RubyLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task OverridesTheMessageOfAnErrorAndKeepsAPropertyOfTheSameNameAsync()
+    {
+        var error = graphNS.AddClass(new CodeClass
+        {
+            Name = "someError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).First();
+        error.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var kept = error.Properties.Single(static x => x.Kind is CodePropertyKind.Custom);
+        Assert.Equal("message", kept.SerializationName);
+        Assert.True(kept.IsPrimaryErrorMessage);
+        Assert.Equal("message", error.Properties.Single(static x => x.Kind is CodePropertyKind.ErrorMessageOverride).Name);
+    }
+    [Fact]
     public async Task ReplacesBinaryByNativeTypeAsync()
     {
         var model = graphNS.AddClass(new CodeClass
