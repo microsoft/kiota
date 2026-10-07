@@ -1960,7 +1960,8 @@ public partial class KiotaBuilder
             unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
         {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
-            var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            var modelSchema = targetSchema.IsArray() && targetSchema.Items is { } itemsSchema ? itemsSchema : targetSchema;
+            var shortestNamespace = GetShortestNamespace(codeNamespace, modelSchema);
             // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
             // CreateModelDeclarations so the allOf entries get merged. Calling AddModelDeclarationIfDoesntExist
             // directly with the raw schema would only set the base class (from the single allOf $ref) but drop
@@ -1972,7 +1973,7 @@ public partial class KiotaBuilder
             }
             return new CodeType
             {
-                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, modelSchema, className, shortestNamespace),
                 CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
             };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
