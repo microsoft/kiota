@@ -36,6 +36,16 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
                 writer.DecreaseIndent();
                 writer.WriteLine("end");
                 break;
+            case CodePropertyKind.Custom or CodePropertyKind.AdditionalData when RubyConventionService.GetBackingStoreVariable(codeElement) is not null:
+                var propertyName = codeElement.Name.ToSnakeCase();
+                writer.StartBlock($"def {propertyName}");
+                writer.WriteLine(RubyConventionService.ReadProperty(codeElement));
+                writer.CloseBlock("end");
+                writer.WriteLine();
+                writer.StartBlock($"def {propertyName}=(value)");
+                writer.WriteLine(RubyConventionService.AssignProperty(codeElement, "value"));
+                writer.CloseBlock("end");
+                break;
             case CodePropertyKind.QueryParameter:
             case CodePropertyKind.QueryParameters:
             case CodePropertyKind.Headers:

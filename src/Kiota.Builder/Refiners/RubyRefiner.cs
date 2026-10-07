@@ -71,6 +71,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             RemoveUntypedNodeTypeValues(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "StringIO", "stringio", true);
+            CorrectCoreTypesForBackingStore(generatedCode, "MicrosoftKiotaAbstractions::BackingStoreFactorySingleton.instance.create_backing_store", false);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplacePropertyNames(generatedCode,
@@ -341,5 +342,9 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder");
+        block.Implements
+            .Where(static x => x.Name is "BackedModel" or "IBackedModel")
+            .ToList()
+            .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::BackedModel");
     }
 }
