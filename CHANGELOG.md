@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
+
 - All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.
 - Reject plugin-manifest file references whose path components become parent-directory traversal after Windows trims trailing spaces or dots.
 - Fixed a stack overflow when generating API plugins from descriptions with cyclic `allOf` schemas.
