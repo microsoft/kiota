@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
 - Python: preserve false, zero, empty strings, and empty collections when parsing and serializing union type wrappers.
 
 - All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruby: a union of object types that no discriminator decides, such as a oneOf without a discriminator, now reads the payload into every object member, as TypeScript does, instead of returning an empty wrapper. A union whose discriminator matched no member does the same, and its array member is only read when no other member was picked. Requires the runtime gems at 0.24.0.
 - Ruby: enum members hold their wire value, so a value such as `incoming-payment` or `read` is sent and read as the description declares it instead of as `IncomingPayment` or `Read`. `Enum[:Name]` now returns the wire value as a string. Requires the runtime gems at 0.24.0.
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
+- TypeScript: import response enum objects for request builders reached through path parameters. [#6884](https://github.com/microsoft/kiota/issues/6884)
 - Resolve enum query parameters wrapped in single-member `allOf` schemas, including enum array items.
 - Go: cast scalar enum values in union factories and avoid reading an empty discriminator name for undiscriminated unions. Addresses [#7808](https://github.com/microsoft/kiota/issues/7808).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
