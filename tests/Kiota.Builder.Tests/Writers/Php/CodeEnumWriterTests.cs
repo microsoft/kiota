@@ -39,6 +39,29 @@ public sealed class CodeEnumWriterTests : IDisposable
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritesDocumentationForCurrentEnums(bool explicitlyCurrent)
+    {
+        currentEnum.Documentation.DescriptionTemplate = "Available statuses */ \\next";
+        currentEnum.Documentation.DocumentationLink = new Uri("https://example.com/status");
+        currentEnum.Documentation.DocumentationLabel = "Status reference";
+        if (explicitlyCurrent)
+            currentEnum.Deprecation = new DeprecationInformation("Current", IsDeprecated: false);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains(" * Available statuses * / /next", result);
+        Assert.Contains(" * @link https://example.com/status Status reference", result);
+        Assert.DoesNotContain("Available statuses */", result);
+        Assert.DoesNotContain("@deprecated", result);
+    }
+    [Fact]
+    public void DoesNotWriteEmptyDocumentationForCurrentEnums()
+    {
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        Assert.DoesNotContain("/**", tw.ToString());
+    }
     [Fact]
     public void DisambiguatesEnumConstantsWithoutStealingExistingNames()
     {
