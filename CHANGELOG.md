@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Initialize model factories before publishing models for reuse during parallel generation, avoiding intermittent failures when creating backward-compatible C# and Go responses. Fixes [#6854](https://github.com/microsoft/kiota/issues/6854).
+- Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
 
 - All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.
 - Reject plugin-manifest file references whose path components become parent-directory traversal after Windows trims trailing spaces or dots.
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruby: a union of object types that no discriminator decides, such as a oneOf without a discriminator, now reads the payload into every object member, as TypeScript does, instead of returning an empty wrapper. A union whose discriminator matched no member does the same, and its array member is only read when no other member was picked. Requires the runtime gems at 0.24.0.
 - Ruby: enum members hold their wire value, so a value such as `incoming-payment` or `read` is sent and read as the description declares it instead of as `IncomingPayment` or `Read`. `Enum[:Name]` now returns the wire value as a string. Requires the runtime gems at 0.24.0.
 - Go: keep escaped namespace segments lowercase so imports match generated package directories on case-sensitive filesystems. Fixes [#7828](https://github.com/microsoft/kiota/issues/7828).
+- TypeScript: import response enum objects for request builders reached through path parameters. [#6884](https://github.com/microsoft/kiota/issues/6884)
 - Resolve enum query parameters wrapped in single-member `allOf` schemas, including enum array items.
 - Go: cast scalar enum values in union factories and avoid reading an empty discriminator name for undiscriminated unions. Addresses [#7808](https://github.com/microsoft/kiota/issues/7808).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
@@ -58,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruby: generated clients can now execute every response shape. The request adapter was only ever called with `send_async`, so a void operation raised `factory cannot be null`, a binary one raised on an undefined `Binary` constant, a scalar or primitive collection emitted a bare lowercase type name, and a collection of models silently returned a single empty model. Enum collections, scalar and binary request bodies, and the `int64`, `double`, `decimal`, `int8`, `uint8` and base64 formats are handled too. Requires the runtime gems at 0.22.0. [kiota-ruby#42](https://github.com/microsoft/kiota-ruby/issues/42) [kiota-ruby#54](https://github.com/microsoft/kiota-ruby/issues/54) [kiota-ruby#67](https://github.com/microsoft/kiota-ruby/issues/67) [kiota-ruby#125](https://github.com/microsoft/kiota-ruby/issues/125) [#7956](https://github.com/microsoft/kiota/issues/7956)
 
 - Go: nullable UUID path parameters now dereference the pointer before calling `String()`, so generated request builders compile.
+- Initialize model factories before publishing models for reuse during parallel generation, avoiding intermittent failures when creating backward-compatible C# and Go responses. Fixes [#6854](https://github.com/microsoft/kiota/issues/6854).
 
 - Ruby: a composed type without a discriminator generated `parse_node.get_child_node("")`, which raises, and composed type wrappers referenced their member classes unqualified so the constants did not resolve. Completes the composed type support added in [#8065](https://github.com/microsoft/kiota/pull/8065). [kiota-ruby#73](https://github.com/microsoft/kiota-ruby/issues/73)
 
