@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed relative description paths when opening or selecting clients in the VS Code Kiota workspace.
+- Removed the retired lock-search command from the VS Code command palette. Lock-file migration remains available.
+
 - Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
 - Python: preserve false, zero, empty strings, and empty collections when parsing and serializing union type wrappers.
 
