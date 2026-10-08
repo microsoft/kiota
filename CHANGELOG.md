@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. [#7802](https://github.com/microsoft/kiota/issues/7802)
 - Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
 
 - All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.

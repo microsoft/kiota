@@ -1983,6 +1983,13 @@ public partial class KiotaBuilder
                 CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
             };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
+        // An inline schema plus a { "type": "null" } branch (e.g. "oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }],
+        // or what FastAPI emits for Optional[str]) is just a nullable version of that inline schema. Map it like the inline schema
+        // instead of creating a union wrapper with an empty member class for the null branch.
+        if (unionEntries is { Count: 2 } &&
+            unionEntries.Count(IsNullOnlySchema) == 1 &&
+            unionEntries.First(static x => !IsNullOnlySchema(x)) is { } nonNullSchema)
+            return CreateModelDeclarations(currentNode, nonNullSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeName, isRequestBody: isRequestBody);
         var (unionType, schemas) = (schema.IsExclusiveUnion(), schema.IsInclusiveUnion()) switch
         {
             (true, false) => (new CodeUnionType
@@ -2048,6 +2055,14 @@ public partial class KiotaBuilder
         }
         return unionType;
     }
+    private static bool IsNullOnlySchema(IOpenApiSchema schema) =>
+        schema is { Type: JsonSchemaType.Null } &&
+        !schema.IsReferencedSchema() &&
+        !schema.HasAnyProperty() &&
+        schema.Items is null &&
+        schema.AllOf is not { Count: > 0 } &&
+        schema.AnyOf is not { Count: > 0 } &&
+        schema.OneOf is not { Count: > 0 };
     private void AddTypeArrayMemberToComposedType(IOpenApiSchema schema, JsonSchemaType typeToScan, CodeComposedTypeBase codeComposedTypeBase)
     {
         if (!schema.Type.HasValue || (schema.Type.Value & typeToScan) != typeToScan) return;
