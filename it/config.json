@@ -28,6 +28,12 @@
   },
   "https://raw.githubusercontent.com/github/rest-api-description/refs/heads/main/descriptions/api.github.com/api.github.com.json": {
     "MockServerITFolder": "gh",
+    "IdempotencySuppressions": [
+      {
+        "Language": "typescript",
+        "Rationale": "Updated GitHub API description triggers 'Namespace not found for return type'; the fix is intentionally not backported to 1.29.x. https://github.com/microsoft/kiota/actions/runs/37675726743/job/113279593748#step:8:29"
+      }
+    ],
     "Suppressions": [
       {
         "Language": "ruby",

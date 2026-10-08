@@ -1658,7 +1658,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.DoesNotContain("see */ more", result);
-        Assert.Contains("see  more", result);
+        Assert.Contains("see * / more", result);
         Assert.Contains("@see <a href=", result);
     }
     [Fact]
