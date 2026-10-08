@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -148,13 +149,17 @@ public class PhpConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(element);
-        if (!element.Documentation.DescriptionAvailable) return false;
+        var deprecation = GetDeprecationDescription(element);
+        if (!element.Documentation.DescriptionAvailable && string.IsNullOrEmpty(deprecation)) return false;
         if (element is not CodeElement codeElement) return false;
 
         var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
 
         writer.WriteLine(DocCommentStart);
-        writer.WriteLine($"{DocCommentPrefix}{description}");
+        if (element.Documentation.DescriptionAvailable)
+            writer.WriteLine($"{DocCommentPrefix}{description}");
+        if (!string.IsNullOrEmpty(deprecation))
+            writer.WriteLine($"{DocCommentPrefix}{deprecation}");
         writer.WriteLine(DocCommentEnd);
 
         return true;
@@ -169,8 +174,9 @@ public class PhpConventionService : CommonLanguageConventionService
         additionalRemarks ??= [];
 
         var enumerableArray = additionalRemarks as string[] ?? additionalRemarks.ToArray();
+        var deprecation = GetDeprecationDescription(element);
         if (documentation.DescriptionAvailable || documentation.ExternalDocumentationAvailable ||
-            enumerableArray.Length != 0)
+            enumerableArray.Length != 0 || !string.IsNullOrEmpty(deprecation))
         {
             writer.WriteLine(DocCommentStart);
             if (documentation.DescriptionAvailable)
@@ -178,6 +184,8 @@ public class PhpConventionService : CommonLanguageConventionService
                 var description = element.Documentation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
                 writer.WriteLine($"{DocCommentPrefix}{description}");
             }
+            if (!string.IsNullOrEmpty(deprecation))
+                writer.WriteLine($"{DocCommentPrefix}{deprecation}");
             foreach (var additionalRemark in enumerableArray.Where(static x => !string.IsNullOrEmpty(x)))
                 writer.WriteLine($"{DocCommentPrefix}{additionalRemark}");
 
@@ -190,6 +198,18 @@ public class PhpConventionService : CommonLanguageConventionService
             writer.WriteLine(DocCommentEnd);
         }
 
+    }
+
+    internal string GetDeprecationDescription(IDocumentedElement element)
+    {
+        if (element is not IDeprecableElement { Deprecation: { IsDeprecated: true } deprecation } || element is not CodeElement codeElement)
+            return string.Empty;
+
+        var version = string.IsNullOrEmpty(deprecation.Version) ? string.Empty : $" {RemoveInvalidDescriptionCharacters(deprecation.Version.CleanupDescription())}";
+        var description = deprecation.GetDescription(type => GetTypeString(type, codeElement), normalizationFunc: RemoveInvalidDescriptionCharacters);
+        var date = deprecation.Date is null ? string.Empty : $" on {deprecation.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        var removal = deprecation.RemovalDate is null ? string.Empty : $" and will be removed {deprecation.RemovalDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        return $"@deprecated{version} {description}{date}{removal}".TrimEnd();
     }
 
     public void AddRequestBuilderBody(string returnType, LanguageWriter writer, string? suffix = default, IEnumerable<CodeParameter>? pathParameters = default)
