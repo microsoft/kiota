@@ -1357,14 +1357,14 @@ public sealed class CodeFunctionWriterTests : IDisposable
         method.Kind = CodeMethodKind.Factory;
         method.IsStatic = true;
         method.Documentation.DescriptionTemplate = "description";
-        method.Documentation.DocumentationLabel = "see */ more";
+        method.Documentation.DocumentationLabel = "see*\r/;payload;/\r*z";
         method.Documentation.DocumentationLink = new("https://foo.org/docs");
         var function = new CodeFunction(method);
         root.TryAddCodeFile("foo", function);
         writer.Write(function);
         var result = tw.ToString();
-        Assert.DoesNotContain("see */ more", result);
-        Assert.Contains("see * / more", result);
+        Assert.DoesNotContain("see*/;payload", result);
+        Assert.Contains("see* /;payload;//*z", result);
         Assert.Contains("@see {@link", result);
     }
     [Fact]

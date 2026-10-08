@@ -262,10 +262,15 @@ public class TypeScriptConventionServiceTests
         Assert.Equal("Policy", result);
     }
 
-    [Fact]
-    public void RemoveInvalidDescriptionCharacters_SanitizesCommentBreakoutCharacters()
+    [Theory]
+    [InlineData("line1*/\r\nline2", "line1* /line2")]
+    [InlineData("line1*\r/line2", "line1* /line2")]
+    [InlineData("line1*\n/line2", "line1* /line2")]
+    [InlineData("line1*\r\n/line2", "line1* /line2")]
+    [InlineData(@"line1*\payload\*line2", "line1* /payload//*line2")]
+    public void RemoveInvalidDescriptionCharacters_SanitizesCommentBreakoutCharacters(string description, string expected)
     {
-        var result = TypeScriptConventionService.RemoveInvalidDescriptionCharacters("line1*/\r\nline2");
-        Assert.Equal("line1* /line2", result);
+        var result = TypeScriptConventionService.RemoveInvalidDescriptionCharacters(description);
+        Assert.Equal(expected, result);
     }
 }
