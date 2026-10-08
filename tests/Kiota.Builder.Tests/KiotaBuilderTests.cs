@@ -3707,6 +3707,112 @@ components:
         }
     }
 
+    private static OpenApiSchema NullableInlineUnion(string keyword, bool nullFirst, IOpenApiSchema member)
+    {
+        IOpenApiSchema nullSchema = new OpenApiSchema { Type = JsonSchemaType.Null };
+        List<IOpenApiSchema> entries = nullFirst ? [nullSchema, member] : [member, nullSchema];
+        return keyword == "anyOf" ? new OpenApiSchema { AnyOf = entries } : new OpenApiSchema { OneOf = entries };
+    }
+
+    private CodeNamespace CreateCodeModelForParentProperties(Dictionary<string, IOpenApiSchema> properties)
+    {
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["thing"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, IOpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchemaReference("parent")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        document.AddComponent("parent", new OpenApiSchema { Type = JsonSchemaType.Object, Properties = properties });
+        document.SetReferenceHostDocument();
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", ApiRootUrl = "https://localhost" }, _httpClient);
+        builder.SetOpenApiDocument(document);
+        var node = builder.CreateUriSpace(document);
+        return builder.CreateSourceModel(node);
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public void SquishesNullableInlinePrimitiveUnionProperty(string keyword, bool nullFirst)
+    {
+        // OpenAPI 3.1 nullable inline schemas, e.g. what FastAPI emits for Optional[str]: { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+        var codeModel = CreateCodeModelForParentProperties(new Dictionary<string, IOpenApiSchema>
+        {
+            ["end"] = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema { Type = JsonSchemaType.String, Format = "date" }),
+            ["name"] = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema { Type = JsonSchemaType.String }),
+            ["count"] = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int64" }),
+            ["tags"] = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema { Type = JsonSchemaType.Array, Items = new OpenApiSchema { Type = JsonSchemaType.String } }),
+        });
+        var parentClass = codeModel.FindChildByName<CodeClass>("parent");
+        Assert.NotNull(parentClass);
+        foreach (var (propertyName, expectedTypeName, expectedCollection) in new[] { ("end", "DateOnly", false), ("name", "string", false), ("count", "int64", false), ("tags", "string", true) })
+        {
+            var property = parentClass.FindChildByName<CodeProperty>(propertyName, false);
+            Assert.NotNull(property);
+            var propertyType = Assert.IsType<CodeType>(property.Type);
+            Assert.Equal(expectedTypeName, propertyType.Name, StringComparer.OrdinalIgnoreCase);
+            Assert.True(propertyType.IsExternal);
+            Assert.Equal(expectedCollection, propertyType.IsCollection);
+            // no union wrapper nor empty model for the null branch
+            Assert.Null(codeModel.FindChildByName<CodeClass>($"parent_{propertyName}"));
+            Assert.Null(codeModel.FindChildByName<CodeClass>($"parent_{propertyName}Member1"));
+        }
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("anyOf", true)]
+    public void SquishesNullableInlineObjectAndEnumUnionProperty(string keyword, bool nullFirst)
+    {
+        var codeModel = CreateCodeModelForParentProperties(new Dictionary<string, IOpenApiSchema>
+        {
+            ["location"] = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema
+            {
+                Type = JsonSchemaType.Object,
+                Properties = new Dictionary<string, IOpenApiSchema> { ["city"] = new OpenApiSchema { Type = JsonSchemaType.String } }
+            }),
+            ["status"] = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema { Type = JsonSchemaType.String, Enum = new List<JsonNode> { "active", "inactive" } }),
+        });
+        var parentClass = codeModel.FindChildByName<CodeClass>("parent");
+        Assert.NotNull(parentClass);
+        var locationProperty = parentClass.FindChildByName<CodeProperty>("location", false);
+        Assert.NotNull(locationProperty);
+        var locationType = Assert.IsType<CodeType>(locationProperty.Type);
+        var locationClass = Assert.IsType<CodeClass>(locationType.TypeDefinition);
+        Assert.NotNull(locationClass.FindChildByName<CodeProperty>("city", false));
+        var statusProperty = parentClass.FindChildByName<CodeProperty>("status", false);
+        Assert.NotNull(statusProperty);
+        var statusType = Assert.IsType<CodeType>(statusProperty.Type);
+        Assert.IsType<CodeEnum>(statusType.TypeDefinition);
+        Assert.Null(codeModel.FindChildByName<CodeClass>("parent_locationMember1"));
+        Assert.Null(codeModel.FindChildByName<CodeClass>("parent_statusMember1"));
+    }
+
     [Fact]
     public void AddsDiscriminatorMappings()
     {
