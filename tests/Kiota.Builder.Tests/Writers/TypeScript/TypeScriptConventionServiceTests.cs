@@ -267,6 +267,7 @@ public class TypeScriptConventionServiceTests
     [InlineData("line1*\r/line2", "line1* /line2")]
     [InlineData("line1*\n/line2", "line1* /line2")]
     [InlineData("line1*\r\n/line2", "line1* /line2")]
+    [InlineData(@"line1*\payload\*line2", "line1* /payload//*line2")]
     public void RemoveInvalidDescriptionCharacters_SanitizesCommentBreakoutCharacters(string description, string expected)
     {
         var result = TypeScriptConventionService.RemoveInvalidDescriptionCharacters(description);
