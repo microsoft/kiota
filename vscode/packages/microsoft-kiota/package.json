@@ -381,12 +381,6 @@
         "icon": "$(file-symlink-file)"
       },
       {
-        "command": "kiota.searchLock",
-        "category": "Kiota",
-        "title": "%kiota.searchLock.title%",
-        "icon": "$(file-symlink-file)"
-      },
-      {
         "command": "kiota.updateClients",
         "category": "Kiota",
         "title": "%kiota.updateClients.title%"
