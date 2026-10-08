@@ -2056,13 +2056,15 @@ public partial class KiotaBuilder
     /// <summary>
     /// Whether the schema maps to a primitive type or a collection of primitives instead of a model or an enum.
     /// A union whose members include an object or a reference keeps mapping to a model.
+    /// A single allOf wrapper around a primitive, such as { "allOf": [{ "type": "string" }] }, maps to that primitive.
     /// </summary>
     private static bool MapsToPrimitiveType(IOpenApiSchema schema) =>
         !schema.IsObjectType() &&
         !schema.HasAnyProperty() &&
         !schema.IsEnum() &&
         !(schema.AnyOf ?? []).Union(schema.OneOf ?? []).Union(schema.AllOf ?? []).Any(static x => x.IsReferencedSchema() || x.IsObjectType() || x.HasAnyProperty()) &&
-        GetPrimitiveType(schema) is not null;
+        (GetPrimitiveType(schema) is not null ||
+        (!schema.IsIntersection() && schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) is { } allOfEntry && MapsToPrimitiveType(allOfEntry)));
     private void AddTypeArrayMemberToComposedType(IOpenApiSchema schema, JsonSchemaType typeToScan, CodeComposedTypeBase codeComposedTypeBase)
     {
         if (!schema.Type.HasValue || (schema.Type.Value & typeToScan) != typeToScan) return;

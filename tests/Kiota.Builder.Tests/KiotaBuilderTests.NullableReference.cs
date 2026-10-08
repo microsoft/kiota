@@ -28,6 +28,8 @@ public sealed partial class KiotaBuilderTests
             ("""{"type":"integer","oneOf":[{"const":1,"title":"Actual"},{"const":2,"title":"Budget"}]}""", "integer", false),
             ("""{"type":"array","items":{"type":"string"}}""", "string", true),
             ("""{"type":"array","items":{"type":"integer","format":"int32"}}""", "integer", true),
+            ("""{"allOf":[{"type":"string"}]}""", "string", false),
+            ("""{"allOf":[{"type":"string","format":"date-time"}],"description":"wrapped"}""", "DateTimeOffset", false),
         ];
         var data = new TheoryData<string, string, bool, string, bool>();
         foreach (var (schema, typeName, isCollection) in targets)
