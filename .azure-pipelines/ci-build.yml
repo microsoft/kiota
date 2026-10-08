@@ -31,6 +31,7 @@ schedules:
 variables:
   buildPlatform: "Any CPU"
   buildConfiguration: "Release"
+  NuGetOrganizationName: "openapinet"
   ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
   REGISTRY: "msgraphprodregistry.azurecr.io"
   IMAGE_NAME: "public/openapi/kiota"
@@ -1145,9 +1146,6 @@ extends:
                 deploy:
                   steps:
                     - pwsh: |
-                        Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg" -Verbose
-                      displayName: remove other nupkgs to avoid duplication
-                    - pwsh: |
                         $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter "Microsoft.OpenApi.Kiota.*.nupkg" | Where-Object { $_.Name -match '^Microsoft\.OpenApi\.Kiota\.(\d[\w\.\-]*)\.nupkg$' } | Select-Object -First 1
                         if (-not $pkg) { throw "No Microsoft.OpenApi.Kiota nupkg found to publish." }
                         $null = $pkg.Name -match '^Microsoft\.OpenApi\.Kiota\.(\d[\w\.\-]*)\.nupkg$'
@@ -1157,27 +1155,51 @@ extends:
                         try {
                           $resp = Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline' }
                           if ($resp.versions -contains $version) {
-                            Write-Host "NuGet $id $version already published; skipping push (idempotent re-run)."
+                            Write-Host "NuGet $id $version already published; skipping ESRP release (idempotent re-run)."
                             Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]true"
                           } else {
-                            Write-Host "NuGet $id $version not found on nuget.org; will push."
+                            Write-Host "NuGet $id $version not found on nuget.org; will publish via ESRP."
                             Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
                           }
                         } catch {
                           if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "NuGet $id has no published versions yet; will push."
+                            Write-Host "NuGet $id has no published versions yet; will publish via ESRP."
                             Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
                           } else { throw }
                         }
                       displayName: "Check whether NuGet package version already published (idempotent)"
-                    - task: 1ES.PublishNuget@1
-                      displayName: "NuGet push"
-                      condition: ne(variables['nugetAlreadyPublished'], 'true')
+                    - task: CopyFiles@2
+                      displayName: "Stage Kiota NuGet packages for ESRP release"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
                       inputs:
-                        packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg"
-                        packageParentPath: "$(Pipeline.Workspace)"
-                        nuGetFeedType: external
-                        publishFeedCredentials: "OpenAPI Nuget Connection"
+                        SourceFolder: "$(Pipeline.Workspace)"
+                        Contents: |
+                          Microsoft.OpenApi.Kiota.*.nupkg
+                          Microsoft.OpenApi.Kiota.*.snupkg
+                          !Microsoft.OpenApi.Kiota.Builder.*
+                        TargetFolder: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/kiota"
+                        CleanTargetFolder: true
+                    - task: EsrpRelease@14
+                      displayName: "ESRP Release - Kiota NuGet"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
+                      inputs:
+                        connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                        usemanagedidentity: false
+                        keyvaultname: "akv-prod-eastus"
+                        authcertname: "ReferenceLibraryPrivateCert"
+                        signcertname: "ReferencePackagePublisherCertificate"
+                        clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                        intent: "packagedistribution"
+                        contenttype: "NuGet"
+                        organizationname: "$(NuGetOrganizationName)"
+                        contentsource: "Folder"
+                        folderlocation: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/kiota"
+                        waitforreleasecompletion: true
+                        owners: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        approvers: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        serviceendpointurl: "https://api.esrp.microsoft.com/"
+                        mainpublisher: "ESRPRELPACMAN"
+                        domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
 
           - deployment: deploy_builder
             templateContext:
@@ -1198,9 +1220,6 @@ extends:
                 deploy:
                   steps:
                     - pwsh: |
-                        Remove-Item "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.*.nupkg" -Verbose -Exclude "*.Builder.*"
-                      displayName: remove other nupkgs to avoid duplication
-                    - pwsh: |
                         $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter "Microsoft.OpenApi.Kiota.Builder.*.nupkg" | Where-Object { $_.Name -match '^Microsoft\.OpenApi\.Kiota\.Builder\.(\d[\w\.\-]*)\.nupkg$' } | Select-Object -First 1
                         if (-not $pkg) { throw "No Microsoft.OpenApi.Kiota.Builder nupkg found to publish." }
                         $null = $pkg.Name -match '^Microsoft\.OpenApi\.Kiota\.Builder\.(\d[\w\.\-]*)\.nupkg$'
@@ -1210,27 +1229,50 @@ extends:
                         try {
                           $resp = Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline' }
                           if ($resp.versions -contains $version) {
-                            Write-Host "NuGet $id $version already published; skipping push (idempotent re-run)."
+                            Write-Host "NuGet $id $version already published; skipping ESRP release (idempotent re-run)."
                             Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]true"
                           } else {
-                            Write-Host "NuGet $id $version not found on nuget.org; will push."
+                            Write-Host "NuGet $id $version not found on nuget.org; will publish via ESRP."
                             Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
                           }
                         } catch {
                           if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "NuGet $id has no published versions yet; will push."
+                            Write-Host "NuGet $id has no published versions yet; will publish via ESRP."
                             Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
                           } else { throw }
                         }
                       displayName: "Check whether NuGet package version already published (idempotent)"
-                    - task: 1ES.PublishNuget@1
-                      displayName: "NuGet push"
-                      condition: ne(variables['nugetAlreadyPublished'], 'true')
+                    - task: CopyFiles@2
+                      displayName: "Stage Builder NuGet packages for ESRP release"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
                       inputs:
-                        packagesToPush: "$(Pipeline.Workspace)/Microsoft.OpenApi.Kiota.Builder.*.nupkg"
-                        packageParentPath: "$(Pipeline.Workspace)"
-                        nuGetFeedType: external
-                        publishFeedCredentials: "OpenAPI Nuget Connection"
+                        SourceFolder: "$(Pipeline.Workspace)"
+                        Contents: |
+                          Microsoft.OpenApi.Kiota.Builder.*.nupkg
+                          Microsoft.OpenApi.Kiota.Builder.*.snupkg
+                        TargetFolder: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/builder"
+                        CleanTargetFolder: true
+                    - task: EsrpRelease@14
+                      displayName: "ESRP Release - Builder NuGet"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
+                      inputs:
+                        connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                        usemanagedidentity: false
+                        keyvaultname: "akv-prod-eastus"
+                        authcertname: "ReferenceLibraryPrivateCert"
+                        signcertname: "ReferencePackagePublisherCertificate"
+                        clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                        intent: "packagedistribution"
+                        contenttype: "NuGet"
+                        organizationname: "$(NuGetOrganizationName)"
+                        contentsource: "Folder"
+                        folderlocation: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/builder"
+                        waitforreleasecompletion: true
+                        owners: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        approvers: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        serviceendpointurl: "https://api.esrp.microsoft.com/"
+                        mainpublisher: "ESRPRELPACMAN"
+                        domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
           - job: PushDockerImage
             displayName: "Push Docker Image"
             dependsOn: []
@@ -1328,6 +1370,32 @@ extends:
                   FEED_ACCESS_TOKEN: $(System.AccessToken)
                   GITHUB_TOKEN: $(githubToken)
 
+              # Keep feed credentials out of the Docker build context and image layers.
+              - pwsh: |
+                  if ([string]::IsNullOrWhiteSpace($env:FEED_ACCESS_TOKEN)) {
+                    throw "No Azure Artifacts access token available for the Docker build."
+                  }
+                  $feedAccessToken = [System.Security.SecurityElement]::Escape($env:FEED_ACCESS_TOKEN)
+                  @"
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <configuration>
+                    <packageSources>
+                      <clear />
+                      <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
+                    </packageSources>
+                    <packageSourceCredentials>
+                      <GraphDeveloperExperiences_Public>
+                        <add key="Username" value="AzureDevOps" />
+                        <add key="ClearTextPassword" value="$feedAccessToken" />
+                        <add key="ValidAuthenticationTypes" value="Basic" />
+                      </GraphDeveloperExperiences_Public>
+                    </packageSourceCredentials>
+                  </configuration>
+                  "@ | Set-Content -Path "$(Agent.TempDirectory)/kiota-docker.nuget.config" -Encoding UTF8
+                displayName: "Create Docker NuGet config (central feed)"
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
+
               - script: |
                   docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
                 displayName: "Enable multi-platform builds"
@@ -1359,6 +1427,7 @@ extends:
                   # Use explicit variable references and ensure proper context path
                   docker buildx build \
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                    --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
                     --push \
                     -t $(REGISTRY)/$(IMAGE_NAME):nightly \
                     -t $(REGISTRY)/$(IMAGE_NAME):$VERSION-preview.$(currentDate)$(truncatedRunNumber) \
@@ -1376,12 +1445,21 @@ extends:
                   # Use explicit variable references and ensure proper context path
                   docker buildx build \
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                    --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
                     --push \
                     -t $(REGISTRY)/$(IMAGE_NAME):latest \
                     -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
                     "$(Build.SourcesDirectory)"
                 displayName: "Build and Push Release Image"
                 condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+
+              - pwsh: |
+                  $configPath = "$(Agent.TempDirectory)/kiota-docker.nuget.config"
+                  if (Test-Path $configPath) {
+                    Remove-Item $configPath -Force
+                  }
+                displayName: "Remove Docker NuGet config"
+                condition: always()
           - job: deploy_npm
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
