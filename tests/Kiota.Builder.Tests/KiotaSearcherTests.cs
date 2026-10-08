@@ -31,7 +31,7 @@ public sealed class KiotaSearcherTests : IDisposable
         {
         }
     };
-    [Fact]
+    [LiveGitHubFact]
     public async Task GetsMicrosoftGraphBothVersionsAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
@@ -39,23 +39,23 @@ public sealed class KiotaSearcherTests : IDisposable
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata", string.Empty, new CancellationToken());
         Assert.Equal(2, results.Count);
     }
-    [Fact]
+    [LiveGitHubFact]
     public async Task GetsMicrosoftGraphAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata/graph.microsoft.com/v1.0", string.Empty, new CancellationToken());
-        Assert.Single(results);
-        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
+        var item = Assert.Single(results);
+        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", item.Value.DescriptionUrl.ToString());
     }
-    [Fact]
+    [LiveGitHubFact]
     public async Task GetsMicrosoftGraphBetaAsync()
     {
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata/graph.microsoft.com/beta", string.Empty, new CancellationToken());
-        Assert.Single(results);
-        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/beta/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
+        var item = Assert.Single(results);
+        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/beta/openapi.yaml", item.Value.DescriptionUrl.ToString());
     }
     [Fact]
     public async Task DoesntFailOnEmptyTermAsync()
@@ -83,6 +83,14 @@ public sealed class KiotaSearcherTests : IDisposable
         var resultUrl = result.Value.DescriptionUrl;
         var bytes = await httpClient.GetByteArrayAsync(resultUrl);
         Assert.NotEmpty(bytes);
+    }
+    private sealed class LiveGitHubFactAttribute : FactAttribute
+    {
+        public LiveGitHubFactAttribute()
+        {
+            if (string.Equals(Environment.GetEnvironmentVariable("TF_BUILD"), "True", StringComparison.OrdinalIgnoreCase))
+                Skip = "Live GitHub search is skipped on Azure DevOps agents.";
+        }
     }
     public void Dispose()
     {
