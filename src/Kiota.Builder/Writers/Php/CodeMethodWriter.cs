@@ -329,7 +329,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
         var methodDescription = codeMethod.Documentation.GetDescription(x => conventions.GetTypeString(x, codeMethod), normalizationFunc: PhpConventionService.RemoveInvalidDescriptionCharacters);
         var methodThrows = codeMethod.IsOfKind(CodeMethodKind.RequestExecutor);
         var hasMethodDescription = !string.IsNullOrEmpty(methodDescription.Trim());
-        if (!hasMethodDescription && !codeMethod.Parameters.Any())
+        if (!hasMethodDescription && !codeMethod.Parameters.Any() && codeMethod.Deprecation is not { IsDeprecated: true })
         {
             return;
         }

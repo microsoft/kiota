@@ -45,6 +45,7 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
         {
             writer.WriteLine(string.Empty);
         }
+        conventions.WriteLongDescription(codeElement, writer);
         writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} extends Enum {{");
         writer.IncreaseIndent();
         var reservedNames = enumProperties.Select(static option => GetEnumValueName(option.Name)).ToHashSet(StringComparer.Ordinal);

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- PHP: include deprecation metadata in PHPDoc for generated classes, enums, properties and methods.
+
 ### Changed
 
 ## [1.36.0] - 2026-10-08
