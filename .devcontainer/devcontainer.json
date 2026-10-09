@@ -61,6 +61,6 @@
     "ghcr.io/devcontainers/features/java:1": {},
     "ghcr.io/devcontainers/features/rust:1": {},
     // disabled swift & ruby as their are failing for now
-    "ghcr.io/devcontainers/features/powershell:1": {}
+    "ghcr.io/devcontainers/features/powershell:2": {}
   }
 }
