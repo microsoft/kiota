@@ -2967,11 +2967,43 @@ public partial class KiotaBuilder
 
         return null;
     }
+    private static IOpenApiSchema? UnwrapNullableQueryParameterSchema(IOpenApiSchema? schema, out bool isNullable, out IOpenApiSchema? defaultValueSchema)
+    {
+        isNullable = false;
+        defaultValueSchema = null;
+        var visited = new HashSet<IOpenApiSchema>();
+        while (schema is not null && visited.Add(schema))
+        {
+            schema = UnwrapQueryParameterSchema(schema, out var currentDefaultValueSchema);
+            defaultValueSchema ??= currentDefaultValueSchema;
+            if (schema is OpenApiSchemaReference { Target: { } referencedSchema })
+            {
+                var unwrappedReference = UnwrapQueryParameterSchema(referencedSchema, out var referencedDefaultValueSchema);
+                defaultValueSchema ??= referencedDefaultValueSchema;
+                if (!ReferenceEquals(unwrappedReference, referencedSchema))
+                {
+                    schema = unwrappedReference;
+                    continue;
+                }
+            }
+            var candidate = schema is OpenApiSchemaReference schemaReference ? schemaReference.Target : schema;
+            if (candidate is null || candidate.IsSemanticallyMeaningful() || candidate.AllOf is { Count: > 0 })
+                break;
+            var members = candidate.AnyOf is { Count: 2 } && candidate.OneOf is not { Count: > 0 } ? candidate.AnyOf :
+                candidate.OneOf is { Count: 2 } && candidate.AnyOf is not { Count: > 0 } ? candidate.OneOf : null;
+            if (members is null || members.Count(static x => x.Type == JsonSchemaType.Null) != 1)
+                break;
+            isNullable = true;
+            schema = members.First(static x => x.Type != JsonSchemaType.Null);
+        }
+        isNullable |= (schema?.Type & JsonSchemaType.Null) == JsonSchemaType.Null;
+        return schema;
+    }
     private void AddPropertyForQueryParameter(OpenApiUrlTreeNode node, NetHttpMethod operationType, IOpenApiParameter parameter, CodeClass parameterClass)
     {
+        var parameterSchema = UnwrapNullableQueryParameterSchema(parameter.Schema, out var isNullable, out var defaultValueSchema);
         CodeType? resultType = default;
         var addBackwardCompatibleParameter = false;
-        var parameterSchema = UnwrapQueryParameterSchema(parameter.Schema, out var defaultValueSchema);
         var itemSchema = UnwrapQueryParameterSchema(parameterSchema?.Items, out _);
         var isArray = parameterSchema.IsArray() ||
             parameterSchema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && itemSchema.IsEnum();
@@ -2992,7 +3024,7 @@ public partial class KiotaBuilder
                 resultType = new CodeType
                 {
                     TypeDefinition = enumDeclaration,
-                    IsNullable = !isArray
+                    IsNullable = isNullable || !isArray
                 };
                 addBackwardCompatibleParameter = true;
             }
