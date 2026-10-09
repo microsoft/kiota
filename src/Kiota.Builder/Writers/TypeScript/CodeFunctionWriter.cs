@@ -288,22 +288,43 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"throw new Error(\"{requestAdapterArgumentName} cannot be undefined\");");
         writer.CloseBlock();
 
-        writer.WriteLine($"const serializationWriterFactory = {requestAdapterArgumentName}.getSerializationWriterFactory() as SerializationWriterFactoryRegistry;");
-        writer.WriteLine($"const parseNodeFactoryRegistry = {requestAdapterArgumentName}.getParseNodeFactory() as ParseNodeFactoryRegistry;");
-        writer.WriteLine($"const backingStoreFactory = {requestAdapterArgumentName}.getBackingStoreFactory();");
-        writer.WriteLine(string.Empty);
+        var hasDeserializerModules = method.DeserializerModules is { Count: > 0 };
+        var hasSerializerModules = method.SerializerModules is { Count: > 0 };
 
-        writer.StartBlock("if (parseNodeFactoryRegistry.registerDefaultDeserializer) {");
-        WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
-            "registerDefaultDeserializer", "backingStoreFactory");
-        writer.CloseBlock();
-        writer.WriteLine(string.Empty);
+        // Only emit factory locals and registration guards when there is something to register.
+        // With --serializer none / --deserializer none the modules are empty; empty `if (fn)`
+        // guards fail tsc under strictNullChecks (TS2774) because the methods are always defined.
+        if (hasSerializerModules)
+        {
+            writer.WriteLine($"const serializationWriterFactory = {requestAdapterArgumentName}.getSerializationWriterFactory() as SerializationWriterFactoryRegistry;");
+        }
+        if (hasDeserializerModules)
+        {
+            writer.WriteLine($"const parseNodeFactoryRegistry = {requestAdapterArgumentName}.getParseNodeFactory() as ParseNodeFactoryRegistry;");
+            writer.WriteLine($"const backingStoreFactory = {requestAdapterArgumentName}.getBackingStoreFactory();");
+        }
+        if (hasSerializerModules || hasDeserializerModules)
+        {
+            writer.WriteLine(string.Empty);
+        }
 
-        writer.StartBlock("if (serializationWriterFactory.registerDefaultSerializer) {");
-        WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
-            "registerDefaultSerializer");
-        writer.CloseBlock();
-        writer.WriteLine(string.Empty);
+        if (hasDeserializerModules)
+        {
+            writer.StartBlock("if (parseNodeFactoryRegistry.registerDefaultDeserializer) {");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
+                "registerDefaultDeserializer", "backingStoreFactory");
+            writer.CloseBlock();
+            writer.WriteLine(string.Empty);
+        }
+
+        if (hasSerializerModules)
+        {
+            writer.StartBlock("if (serializationWriterFactory.registerDefaultSerializer) {");
+            WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
+                "registerDefaultSerializer");
+            writer.CloseBlock();
+            writer.WriteLine(string.Empty);
+        }
 
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {

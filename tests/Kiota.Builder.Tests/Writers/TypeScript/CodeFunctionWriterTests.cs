@@ -1013,6 +1013,61 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains($"pathParameters", result);
     }
     [Fact]
+    public void WritesApiConstructorOmitsEmptySerializerRegistrationGuards()
+    {
+        var parentClass = root.AddClass(new CodeClass
+        {
+            Name = "ApiClient",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var method = TestHelper.CreateMethod(parentClass, MethodName, ReturnTypeName);
+        method.Kind = CodeMethodKind.ClientConstructor;
+        method.IsAsync = false;
+        method.BaseUrl = "https://graph.microsoft.com/v1.0";
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "pathParameters",
+            Kind = CodePropertyKind.PathParameters,
+            Type = new CodeType
+            {
+                Name = "Dictionary<string, string>",
+                IsExternal = true,
+            }
+        });
+        var requestAdapterProp = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "requestAdapter",
+            Kind = CodePropertyKind.RequestAdapter,
+            Type = new CodeType
+            {
+                Name = "RequestAdapter",
+                IsExternal = true,
+            }
+        }).First();
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestAdapter",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = requestAdapterProp.Type,
+        });
+        // Mimic --serializer none --deserializer none (#8303)
+        method.DeserializerModules = [];
+        method.SerializerModules = [];
+        method.IsStatic = true;
+        root.RemoveChildElement(parentClass);
+        var function = new CodeFunction(method);
+        root.TryAddCodeFile("foo", function, CodeInterface.FromRequestBuilder(parentClass));
+        writer.Write(function);
+        var result = tw.ToString();
+        Assert.DoesNotContain("registerDefaultSerializer", result);
+        Assert.DoesNotContain("registerDefaultDeserializer", result);
+        Assert.DoesNotContain("serializationWriterFactory", result);
+        Assert.DoesNotContain("parseNodeFactoryRegistry", result);
+        Assert.DoesNotContain("backingStoreFactory", result);
+        Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
+        Assert.Contains($"apiClientProxifier<", result);
+    }
+    [Fact]
     public void EscapesApiConstructorBaseUrl()
     {
         var parentClass = root.AddClass(new CodeClass
