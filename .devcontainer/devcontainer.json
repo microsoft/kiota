@@ -3,8 +3,8 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      "VARIANT": "9.0",
-      "NODE_VERSION": "20"
+      "VARIANT": "10.0",
+      "NODE_VERSION": "24"
     }
   },
   "customizations": {
@@ -44,7 +44,6 @@
         "fknop.vscode-npm",
         "ms-vscode.powershell",
         "Shopify.ruby-lsp",
-        "visualstudioexptteam.vscodeintellicode",
         "streetsidesoftware.code-spell-checker",
         "swiftlang.swift-vscode",
         "ms-dotnettools.blazorwasm-companion",

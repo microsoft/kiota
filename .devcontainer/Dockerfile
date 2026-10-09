@@ -1,9 +1,9 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/blob/v0.245.2/containers/dotnet/.devcontainer/Dockerfile
+# See here for image contents: https://github.com/devcontainers/images/tree/main/src/dotnet
 
-ARG VARIANT="9.0-bookworm-slim"
-FROM mcr.microsoft.com/vscode/devcontainers/dotnet:${VARIANT}
+ARG VARIANT="10.0"
+FROM mcr.microsoft.com/devcontainers/dotnet:${VARIANT}
 
-# [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
+# [Choice] Node.js version: none, lts/*, or a specific version
 ARG NODE_VERSION="none"
 RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
 
