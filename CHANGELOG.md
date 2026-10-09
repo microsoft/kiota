@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript: import response enum objects for request builders reached through path parameters. [#6884](https://github.com/microsoft/kiota/issues/6884)
 - Resolve enum query parameters wrapped in single-member `allOf` schemas, including enum array items.
 - Go: cast scalar enum values in union factories and avoid reading an empty discriminator name for undiscriminated unions. Addresses [#7808](https://github.com/microsoft/kiota/issues/7808).
+- C#: resolve child-namespace name collisions after composed wrapper classes are created, avoiding CS0101 for dotted component schemas. Fixes [#7729](https://github.com/microsoft/kiota/issues/7729).
 - Preserve models for multipart properties with default content types when other properties specify an encoding. [#7342](https://github.com/microsoft/kiota/issues/7342)
 - Dart: escape enum options named value or values to avoid conflicts with generated and built-in enum members. [#7807](https://github.com/microsoft/kiota/issues/7807)
 - Ruby: the client's root module has an `eager_load!` method that loads every autoloaded model, for servers that preload before forking.
