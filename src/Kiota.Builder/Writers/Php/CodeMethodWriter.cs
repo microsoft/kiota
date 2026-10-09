@@ -971,7 +971,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
                 var methodName = GetDeserializationMethodName(propertyType, codeElement);
                 var deserializationMethodName = $"{ParseNodeVarName}->{methodName.Item2}";
                 writer.StartBlock($"{(includeElse ? "} else " : string.Empty)}if ({deserializationMethodName} !== null) {{");
-                writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
+                if (!string.IsNullOrEmpty(methodName.Item1))
+                {
+                    const string finalValueName = "$finalValue";
+                    writer.WriteLine($"/** @var array<{methodName.Item1}> {finalValueName} */");
+                    writer.WriteLine($"{finalValueName} = {deserializationMethodName};");
+                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({finalValueName});");
+                }
+                else
+                    writer.WriteLine($"{ResultVarName}->{property.Setter!.Name.ToFirstCharacterLowerCase()}({deserializationMethodName});");
                 writer.DecreaseIndent();
             }
             if (!includeElse)

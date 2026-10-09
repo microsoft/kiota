@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- PHP: annotate primitive collection values in intersection-wrapper factories so generated setters pass PHPStan type checks.
+
 ## [1.36.0] - 2026-10-08
 
 ### Added
