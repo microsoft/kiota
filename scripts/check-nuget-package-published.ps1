@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 <#
 .SYNOPSIS
 Checks whether a NuGet artifact's version exists in an authenticated Azure Artifacts feed.
@@ -35,17 +38,17 @@ if ([string]::IsNullOrWhiteSpace($FeedAccessToken)) {
 }
 
 $packagePattern = '^' + [regex]::Escape($PackageId) + '\.(\d[\w\.\-]*)\.nupkg$'
-$package = Get-ChildItem -Path $PackageDirectory -File -Filter "$PackageId.*.nupkg" |
-    Where-Object { $_.Name -match $packagePattern } | Select-Object -First 1
-if (-not $package) {
-    throw "No $PackageId nupkg found to publish."
+$packages = @(Get-ChildItem -Path $PackageDirectory -File -Filter "$PackageId.*.nupkg" |
+    Where-Object { $_.Name -match $packagePattern })
+if ($packages.Count -ne 1) {
+    throw "Expected exactly one $PackageId nupkg to publish; found $($packages.Count)."
 }
-$null = $package.Name -match $packagePattern
-$version = $Matches[1]
+$version = [regex]::Match($packages[0].Name, $packagePattern, 'IgnoreCase').Groups[1].Value
 $id = $PackageId.ToLowerInvariant()
+$credentials = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("AzureDevOps:$FeedAccessToken"))
 $headers = @{
-    'Authorization' = "Bearer $FeedAccessToken"
-    'User-Agent' = 'kiota-azdo-pipeline'
+    'Authorization' = "Basic $credentials"
+    'User-Agent' = 'openapi-azdo-pipeline'
 }
 
 $index = Invoke-RestMethod -Uri $NuGetServiceIndexUrl -Headers $headers -MaximumRedirection 0
@@ -73,7 +76,7 @@ catch {
 }
 
 if ($alreadyPublished) {
-    Write-Host "NuGet $id $version already published; skipping ESRP release (idempotent re-run)."
+    Write-Host "NuGet $id $version already present in the private feed; skipping ESRP release (idempotent re-run)."
 }
 else {
     Write-Host "NuGet $id $version not found in the private feed; will publish via ESRP."
