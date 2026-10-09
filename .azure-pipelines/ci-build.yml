@@ -1135,6 +1135,9 @@ extends:
                 - input: pipelineArtifact
                   artifactName: Nugets
                   targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -1145,29 +1148,14 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - pwsh: |
-                        $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter "Microsoft.OpenApi.Kiota.*.nupkg" | Where-Object { $_.Name -match '^Microsoft\.OpenApi\.Kiota\.(\d[\w\.\-]*)\.nupkg$' } | Select-Object -First 1
-                        if (-not $pkg) { throw "No Microsoft.OpenApi.Kiota nupkg found to publish." }
-                        $null = $pkg.Name -match '^Microsoft\.OpenApi\.Kiota\.(\d[\w\.\-]*)\.nupkg$'
-                        $version = $Matches[1]
-                        $id = 'microsoft.openapi.kiota'
-                        $uri = "https://api.nuget.org/v3-flatcontainer/$id/index.json"
-                        try {
-                          $resp = Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline' }
-                          if ($resp.versions -contains $version) {
-                            Write-Host "NuGet $id $version already published; skipping ESRP release (idempotent re-run)."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]true"
-                          } else {
-                            Write-Host "NuGet $id $version not found on nuget.org; will publish via ESRP."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          }
-                        } catch {
-                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "NuGet $id has no published versions yet; will publish via ESRP."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          } else { throw }
-                        }
+                    - pwsh: >
+                        $(Pipeline.Workspace)/scripts/check-nuget-package-published.ps1
+                        -PackageDirectory "$(Pipeline.Workspace)"
+                        -PackageId "Microsoft.OpenApi.Kiota"
+                        -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
                       displayName: "Check whether NuGet package version already published (idempotent)"
+                      env:
+                        FEED_ACCESS_TOKEN: $(System.AccessToken)
                     - task: CopyFiles@2
                       displayName: "Stage Kiota NuGet packages for ESRP release"
                       condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
@@ -1209,6 +1197,9 @@ extends:
                 - input: pipelineArtifact
                   artifactName: Nugets
                   targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
             pool:
               name: Azure-Pipelines-1ESPT-ExDShared
               os: linux
@@ -1219,29 +1210,14 @@ extends:
               runOnce:
                 deploy:
                   steps:
-                    - pwsh: |
-                        $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter "Microsoft.OpenApi.Kiota.Builder.*.nupkg" | Where-Object { $_.Name -match '^Microsoft\.OpenApi\.Kiota\.Builder\.(\d[\w\.\-]*)\.nupkg$' } | Select-Object -First 1
-                        if (-not $pkg) { throw "No Microsoft.OpenApi.Kiota.Builder nupkg found to publish." }
-                        $null = $pkg.Name -match '^Microsoft\.OpenApi\.Kiota\.Builder\.(\d[\w\.\-]*)\.nupkg$'
-                        $version = $Matches[1]
-                        $id = 'microsoft.openapi.kiota.builder'
-                        $uri = "https://api.nuget.org/v3-flatcontainer/$id/index.json"
-                        try {
-                          $resp = Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline' }
-                          if ($resp.versions -contains $version) {
-                            Write-Host "NuGet $id $version already published; skipping ESRP release (idempotent re-run)."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]true"
-                          } else {
-                            Write-Host "NuGet $id $version not found on nuget.org; will publish via ESRP."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          }
-                        } catch {
-                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-                            Write-Host "NuGet $id has no published versions yet; will publish via ESRP."
-                            Write-Host "##vso[task.setvariable variable=nugetAlreadyPublished]false"
-                          } else { throw }
-                        }
+                    - pwsh: >
+                        $(Pipeline.Workspace)/scripts/check-nuget-package-published.ps1
+                        -PackageDirectory "$(Pipeline.Workspace)"
+                        -PackageId "Microsoft.OpenApi.Kiota.Builder"
+                        -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
                       displayName: "Check whether NuGet package version already published (idempotent)"
+                      env:
+                        FEED_ACCESS_TOKEN: $(System.AccessToken)
                     - task: CopyFiles@2
                       displayName: "Stage Builder NuGet packages for ESRP release"
                       condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
