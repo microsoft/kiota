@@ -1095,7 +1095,7 @@ extends:
                     - task: GitHubRelease@1
                       condition: and(eq(variables['isPrerelease'], 'false'), ne(variables['releaseExists'], 'true'))
                       inputs:
-                        gitHubConnection: "microsoftkiota"
+                        gitHubConnection: "microsoftkiotarelease"
                         tagSource: userSpecifiedTag
                         tag: "v$(artifactVersion)"
                         title: "v$(artifactVersion)"
@@ -1111,7 +1111,7 @@ extends:
                     - task: GitHubRelease@1
                       condition: and(eq(variables['isPrerelease'], 'true'), ne(variables['releaseExists'], 'true'))
                       inputs:
-                        gitHubConnection: "microsoftkiota"
+                        gitHubConnection: "microsoftkiotarelease"
                         tagSource: userSpecifiedTag
                         tag: "v$(artifactVersion)$(versionSuffix)"
                         title: "v$(artifactVersion)$(versionSuffix)"
