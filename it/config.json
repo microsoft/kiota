@@ -40,7 +40,7 @@
     "Suppressions": [
       {
         "Language": "php",
-        "Rationale": "PHPStan rejects array<mixed> passed to StringOrStringArray::setString(), which expects array<string>|null; primitive parsing can retain null elements. Pending issue creation in microsoft/kiota-php (blocked by issue-write permissions): https://github.com/microsoft/kiota-php/blob/11a2bf3eb030a66389bb55a794e22b09c6dda0bc/packages/serialization/json/src/JsonParseNode.php#L233-L276"
+        "Rationale": "PHPStan rejects array<mixed> passed to StringOrStringArray::setString(), which expects array<string>|null; resolving primitive element nullability requires breaking contract or behavior changes - https://github.com/microsoft/kiota-php/issues/117"
       },
       {
         "Language": "typescript",
