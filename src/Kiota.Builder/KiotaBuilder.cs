@@ -595,6 +595,8 @@ public partial class KiotaBuilder
             StopLogAndReset(stopwatch, nameof(CreateRequestBuilderClass));
             stopwatch.Start();
             CreateWebhookModels();
+            // Check for subclass properties that are not properly linked to base class properties
+            FixInheritedProperties(codeNamespace);
             StopLogAndReset(stopwatch, nameof(CreateWebhookModels));
             stopwatch.Start();
             UnmarkDerivedErrorDefinitions();
@@ -3081,6 +3083,44 @@ public partial class KiotaBuilder
 
         paramType.CollectionKind = schema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Array : default;
         return paramType;
+    }
+
+    /// <summary>
+    /// Workaround for https://github.com/microsoft/kiota/issues/8139: if a class has a property whose type is one of its own subclasses
+    /// and both the current class and the subclass have another property with the same name, the sub class property might not be linked
+    /// to the base class property due to the order of class/property processing. This method tries to find such cases and
+    /// link the properties.
+    /// </summary>
+    /// <param name="codeNamespace"></param>
+    private static void FixInheritedProperties(CodeNamespace codeNamespace)
+    {
+        foreach (CodeNamespace codeSubNamespace in codeNamespace.Namespaces)
+        {
+            FixInheritedProperties(codeSubNamespace);
+        }
+
+        foreach (CodeClass codeClass in codeNamespace.Classes)
+        {
+            // Check only classes that have a base class:
+            if (codeClass.BaseClass != null)
+            {
+                foreach (CodeProperty property in codeClass.Properties)
+                {
+                    // Check only properties that are not already linked to a base class property.
+                    // "GetOriginalPropertyDefinedFromBaseType" ignores two types of properties, so do the same here.
+                    if (property.OriginalPropertyFromBaseType == null && property.Kind is not (CodePropertyKind.AdditionalData or CodePropertyKind.BackingStore))
+                    {
+                        // Is this property also contained in any base class?
+                        CodeProperty? propertyInBaseClass = codeClass.GetOriginalPropertyDefinedFromBaseType(property.WireName);
+
+                        if (propertyInBaseClass != null)
+                        {
+                            property.OriginalPropertyFromBaseType = propertyInBaseClass;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void CleanUpInternalState()
