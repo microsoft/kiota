@@ -39,18 +39,8 @@
   "https://developers.notion.com/openapi.json": {
     "Suppressions": [
       {
-        "Language": "typescript",
-        "Rationale": "Kiota client generation fails with api from 2026-06-17 - https://github.com/microsoft/kiota/issues/7802"
-      },
-      {
         "Language": "dart",
         "Rationale": "Compilation fails with api from 2026-06-18 - https://github.com/microsoft/kiota/issues/7807"
-      }
-    ],
-    "IdempotencySuppressions": [
-      {
-        "Language": "typescript",
-        "Rationale": "Kiota client generation fails with api from 2026-06-17 - https://github.com/microsoft/kiota/issues/7802"
       }
     ]
   },
