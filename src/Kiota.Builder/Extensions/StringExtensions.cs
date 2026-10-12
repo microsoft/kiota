@@ -119,6 +119,8 @@ public static partial class StringExtensions
             nameSpan = nameSpan[..indexOfLess];
         }
 
+        if (nameSpan.IsEmpty) return string.Empty;
+
         static int CountNecessaryNewSeparators(ReadOnlySpan<char> span)
         {
             int count = 0;
@@ -136,18 +138,29 @@ public static partial class StringExtensions
         var newStringLength = nameSpan.Length + CountNecessaryNewSeparators(nameSpan);
         Span<char> span = Encoding.UTF8.GetMaxByteCount(newStringLength) <= MaxStackLimit ? stackalloc char[newStringLength] : new char[newStringLength];
         var current = nameSpan[0];
-        span[0] = char.ToLowerInvariant(current);
-        var counter = 1;
+        var counter = 0;
+        if (current == '-')
+        {
+            if (nameSpan.Length == 1 || !char.IsUpper(nameSpan[1]))
+            {
+                span[counter++] = separator;
+            }
+        }
+        else
+        {
+            span[counter++] = char.ToLowerInvariant(current);
+        }
+
         for (int i = 1; i < nameSpan.Length; i++)
         {
             current = nameSpan[i];
             if (current == '-')
             {
-                if (!char.IsUpper(nameSpan[i + 1])) span[counter++] = separator;
+                if (i + 1 >= nameSpan.Length || !char.IsUpper(nameSpan[i + 1])) span[counter++] = separator;
             }
             else if (char.IsUpper(current))
             {
-                if (nameSpan[i - 1] != '_') span[counter++] = separator;
+                if (nameSpan[i - 1] != '_' && nameSpan[i - 1] != separator) span[counter++] = separator;
                 span[counter++] = char.ToLowerInvariant(current);
             }
             else
@@ -156,7 +169,7 @@ public static partial class StringExtensions
             }
         }
 
-        return new string(span);
+        return new string(span[..counter]);
     }
 
     public static string NormalizeNameSpaceName(this string? original, string delimiter) =>
