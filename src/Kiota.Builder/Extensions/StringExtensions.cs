@@ -160,7 +160,7 @@ public static partial class StringExtensions
             }
             else if (char.IsUpper(current))
             {
-                if (nameSpan[i - 1] != '_' && nameSpan[i - 1] != separator) span[counter++] = separator;
+                if (nameSpan[i - 1] == '-' || (nameSpan[i - 1] != '_' && nameSpan[i - 1] != separator)) span[counter++] = separator;
                 span[counter++] = char.ToLowerInvariant(current);
             }
             else
