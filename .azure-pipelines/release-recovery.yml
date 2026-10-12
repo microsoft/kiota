@@ -1080,16 +1080,41 @@ extends:
                     - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version Unreleased -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
                       condition: eq(variables['isPrerelease'], 'true')
                       displayName: "Get release notes from CHANGELOG.md"
-                    # Idempotency: if the pipeline is re-triggered for a tag whose GitHub
-                    # release already exists, skip creating it (create fails with a 422 on
-                    # an existing tag) and leave the existing release untouched so
-                    # downstream publish jobs can still run. The lookup is anonymous
-                    # because microsoft/kiota is a public repository.
+                    # Recovery must never create or move a tag. Require the derived tag to exist and point
+                    # to the selected Kiota source commit before checking whether its release already exists.
                     - pwsh: |
                         $tag = if ($env:ISPRERELEASE -eq 'true') { "v$(artifactVersion)$(versionSuffix)" } else { "v$(artifactVersion)" }
-                        $uri = "https://api.github.com/repos/microsoft/kiota/releases/tags/$tag"
+                        $expectedCommit = $env:KIOTA_SOURCE_COMMIT
+                        if ($expectedCommit -notmatch '^[0-9a-fA-F]{40}$') {
+                          throw "Selected Kiota source commit '$expectedCommit' is not a full commit SHA."
+                        }
+                        $headers = @{ 'User-Agent' = 'kiota-azdo-pipeline'; 'Accept' = 'application/vnd.github+json' }
+                        $encodedTag = [Uri]::EscapeDataString($tag)
+                        $tagUri = "https://api.github.com/repos/microsoft/kiota/git/ref/tags/$encodedTag"
                         try {
-                          Invoke-RestMethod -Uri $uri -Headers @{ 'User-Agent' = 'kiota-azdo-pipeline'; 'Accept' = 'application/vnd.github+json' } | Out-Null
+                          $tagRef = Invoke-RestMethod -Uri $tagUri -Headers $headers
+                        } catch {
+                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+                            throw "Recovery requires existing tag '$tag'; refusing to create it."
+                          }
+                          throw
+                        }
+
+                        $tagObject = $tagRef.object
+                        for ($depth = 0; $tagObject.type -eq 'tag' -and $depth -lt 5; $depth++) {
+                          $tagObject = (Invoke-RestMethod -Uri "https://api.github.com/repos/microsoft/kiota/git/tags/$($tagObject.sha)" -Headers $headers).object
+                        }
+                        if ($tagObject.type -ne 'commit' -or [string]::IsNullOrWhiteSpace($tagObject.sha)) {
+                          throw "Tag '$tag' did not resolve to a commit."
+                        }
+                        if (-not $tagObject.sha.Equals($expectedCommit, [StringComparison]::OrdinalIgnoreCase)) {
+                          throw "Tag '$tag' points to '$($tagObject.sha)', not selected Kiota commit '$expectedCommit'."
+                        }
+                        Write-Host "Verified existing tag '$tag' points to selected Kiota commit '$expectedCommit'."
+
+                        $releaseUri = "https://api.github.com/repos/microsoft/kiota/releases/tags/$encodedTag"
+                        try {
+                          Invoke-RestMethod -Uri $releaseUri -Headers $headers | Out-Null
                           Write-Host "Release '$tag' already exists; skipping GitHub release creation (idempotent re-run)."
                           Write-Host "##vso[task.setvariable variable=releaseExists]true"
                         } catch {
@@ -1100,9 +1125,10 @@ extends:
                             throw
                           }
                         }
-                      displayName: "Check whether GitHub release already exists (idempotent)"
+                      displayName: "Verify tag and check whether GitHub release exists"
                       env:
                         ISPRERELEASE: $(isPrerelease)
+                        KIOTA_SOURCE_COMMIT: $(kiotaSourceCommit)
                     - task: GitHubRelease@1
                       condition: and(eq(variables['isPrerelease'], 'false'), ne(variables['releaseExists'], 'true'))
                       inputs:
