@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 #
-# Manual recovery pipeline for rebuilding the selected commit and redeploying only failed release targets.
-# All deployment targets default to off, and release versions are read from the selected commit's VersionPrefix.
+# Manual recovery pipeline for rebuilding the selected commit or an optional Kiota tag and redeploying only failed release targets.
+# All deployment targets default to off, and release versions are read from the checked-out source's VersionPrefix.
 
 name: $(BuildDefinitionName)_recovery_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
@@ -27,6 +27,10 @@ variables:
   privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
 
 parameters:
+  - name: kiotaTag
+    displayName: Kiota version tag to check out (optional)
+    type: string
+    default: ""
   - name: deployVsMarketplace
     displayName: Deploy VS Code extension to Marketplace
     type: boolean
@@ -135,13 +139,10 @@ extends:
                 suppression:
                   suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
             steps:
-              - checkout: self
-                clean: true
-                submodules: true
-                # Persist the ephemeral GitHub App token that the microsoftkiota connection mints for the
-                # checkout so the version-lookup step can reuse it for GitHub's authenticated rate limit.
-                # No PAT is stored anywhere; the token is short-lived and scoped to this job only.
-                persistCredentials: true
+              # Persist the ephemeral GitHub App token so the version-lookup step can reuse it.
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
 
               # The it/ integration-test fixtures are not used by this pipeline and their per-language
               # manifests trigger Component Governance to reach public registries under network isolation.
@@ -265,9 +266,9 @@ extends:
                   artifactName: AppSettings
                   targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
             steps:
-              - checkout: self
-                clean: true
-                submodules: true
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
 
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
@@ -517,9 +518,9 @@ extends:
                       targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
 
                 steps:
-                  - checkout: self
-                    clean: true
-                    submodules: true
+                  - template: templates/checkout-kiota-recovery-source.yml
+                    parameters:
+                      tag: ${{ parameters.kiotaTag }}
                   - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                     displayName: "Remove unused integration-test fixtures (it/)"
                   - task: UseDotNet@2
@@ -760,9 +761,9 @@ extends:
                       artifactName: Binaries_${{ distribution.jobPrefix }}
                       targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
-              - checkout: self
-                clean: true
-                submodules: true
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
@@ -897,9 +898,9 @@ extends:
                       artifactName: Binaries_${{ distribution.jobPrefix }}
                       targetPath: $(Build.ArtifactStagingDirectory)/Binaries
             steps:
-              - checkout: self
-                clean: true
-                submodules: true
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
               - task: UseNode@1
@@ -952,6 +953,8 @@ extends:
       - stage: deploy
         condition: and(succeeded(), ${{ or(parameters.deployVsMarketplace, parameters.deployGitHubRelease, parameters.deployKiotaNuGet, parameters.deployBuilderNuGet, parameters.deployDocker, parameters.deployNpm) }})
         dependsOn: build
+        variables:
+          kiotaSourceCommit: $[ stageDependencies.build.update_appsettings.outputs['resolveKiotaSource.sourceCommit'] ]
         jobs:
           - job: vs_marketplace
             condition: and(succeeded(), ${{ parameters.deployVsMarketplace }})
@@ -1106,6 +1109,7 @@ extends:
                         gitHubConnection: "microsoftkiotarelease"
                         tagSource: userSpecifiedTag
                         tag: "v$(artifactVersion)"
+                        target: "$(kiotaSourceCommit)"
                         title: "v$(artifactVersion)"
                         releaseNotesSource: filePath
                         releaseNotesFilePath: $(Pipeline.Workspace)/changelog/release-notes.txt
@@ -1122,6 +1126,7 @@ extends:
                         gitHubConnection: "microsoftkiotarelease"
                         tagSource: userSpecifiedTag
                         tag: "v$(artifactVersion)$(versionSuffix)"
+                        target: "$(kiotaSourceCommit)"
                         title: "v$(artifactVersion)$(versionSuffix)"
                         releaseNotesSource: filePath
                         releaseNotesFilePath: $(Pipeline.Workspace)/changelog/release-notes.txt
@@ -1267,11 +1272,10 @@ extends:
               image: ubuntu-latest
               os: linux
             steps:
-              - checkout: self
-                # Persist the ephemeral GitHub App token that the microsoftkiota connection mints for the
-                # checkout so the version-lookup step can reuse it for GitHub's authenticated rate limit.
-                # No PAT is stored anywhere; the token is short-lived and scoped to this job only.
-                persistCredentials: true
+              # Persist the ephemeral GitHub App token so the version-lookup step can reuse it.
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
 
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
