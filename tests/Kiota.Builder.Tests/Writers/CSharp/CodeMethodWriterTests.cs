@@ -637,9 +637,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.DoesNotContain("return mappingValue switch", result);
         Assert.Contains("var result = new UnionTypeWrapper()", result);
-        Assert.Contains("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
+        Assert.Contains("if (\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
-        Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
+        Assert.Contains("else if (parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("StringValue = stringValueValue", result);
         Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.AsList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
@@ -738,12 +738,12 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("var result = new UnionTypeWrapper()", result);
         // Should emit discriminator check for the mapped type
-        Assert.Contains("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
+        Assert.Contains("if (\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
         Assert.Contains("ComplexType1Value = new ComplexType1()", result);
         // Should NOT emit a discriminator check for the unmapped type (null key)
         Assert.DoesNotContain("UnmappedType", result);
         // Should still emit the string check
-        Assert.Contains("else if(parseNode.GetStringValue() is string stringValueValue)", result);
+        Assert.Contains("else if (parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("return result", result);
         AssertExtensions.CurlyBracesAreClosed(result);
     }
@@ -1037,8 +1037,8 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("var mappingValue = parseNode.GetChildNode(\"@odata.type\")?.GetStringValue()", result);
         Assert.DoesNotContain("return mappingValue switch", result);
         Assert.Contains("var result = new IntersectionTypeWrapper()", result);
-        Assert.DoesNotContain("if(\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
-        Assert.Contains("if(parseNode.GetStringValue() is string stringValueValue)", result);
+        Assert.DoesNotContain("if (\"#kiota.complexType1\".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))", result);
+        Assert.Contains("if (parseNode.GetStringValue() is string stringValueValue)", result);
         Assert.Contains("StringValue = stringValueValue", result);
         Assert.Contains("parseNode.GetCollectionOfObjectValues<ComplexType2>(ComplexType2.CreateFromDiscriminatorValue)?.AsList() is List<ComplexType2> complexType2ValueValue", result);
         Assert.Contains("ComplexType2Value = complexType2ValueValue", result);
@@ -2622,7 +2622,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("int? sampleParam", result);
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
-        Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
+        Assert.Contains("if (ReferenceEquals(ra, null)) { throw new ArgumentNullException(nameof(ra)); }", result);
     }
 
     [Fact]
@@ -2700,7 +2700,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("string? sampleParam = \"\"", result);
         Assert.DoesNotContain("#nullable enable", result);
         Assert.DoesNotContain("#nullable restore", result);
-        Assert.Contains("if(ReferenceEquals(ra, null)) throw new ArgumentNullException(nameof(ra));", result);
+        Assert.Contains("if (ReferenceEquals(ra, null)) { throw new ArgumentNullException(nameof(ra)); }", result);
     }
     [Fact]
     public void WritesMethodWithEscapedStringDefaultValue()
