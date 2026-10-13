@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A nullable reference to a component that is not a model, such as a `oneOf` or `anyOf` with a `$ref` to a string, integer, number, boolean, numeric enum or primitive array schema and a `{"type": "null"}` branch, generated an empty model for the component, so the value was dropped when reading and written back as `{}`. It now maps to the same type as a direct reference to the component, such as `string?`, `int?` or `List<string>`. [#8353](https://github.com/microsoft/kiota/issues/8353)
 
+## [1.36.1] - 2026-10-12
+
+### Added
+
+### Changed
+
+- Fixed small issues with release pipelines
+
 ## [1.36.0] - 2026-10-08
 
 ### Added

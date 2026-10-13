@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY ./src ./kiota/src
 COPY ./resources ./kiota/resources
+COPY ./Directory.Packages.props ./kiota/Directory.Packages.props
 WORKDIR /app/kiota
 # CI supplies the private feed config as a secret; local builds use default NuGet sources.
 RUN --mount=type=secret,id=nuget_config,target=/app/kiota/NuGet.Config \
