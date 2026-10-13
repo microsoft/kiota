@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- C#: generated `if` statements now include a space after the keyword and wrap single-statement bodies in braces.
+
 ## [1.36.1] - 2026-10-12
 
 ### Added
