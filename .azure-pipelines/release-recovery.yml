@@ -1521,7 +1521,7 @@ extends:
                   exit 0
                 displayName: "Check whether npm version already published (idempotent)"
               - task: EsrpRelease@12
-                condition: ne(variables['npmAlreadyPublished'], 'true')
+                condition: and(succeeded(), ne(variables['npmAlreadyPublished'], 'true'))
                 inputs:
                   connectedservicename: "Federated DevX ESRP Managed Identity Connection"
                   usemanagedidentity: false
