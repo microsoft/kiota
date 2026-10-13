@@ -1462,7 +1462,6 @@ extends:
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
                     --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
                     --push \
-                    -t $(REGISTRY)/$(IMAGE_NAME):latest \
                     -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
                     "$(Build.SourcesDirectory)"
                 displayName: "Build and Push Release Image"
