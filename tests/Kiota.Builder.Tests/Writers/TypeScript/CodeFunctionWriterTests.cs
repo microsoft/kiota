@@ -2427,6 +2427,59 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("\"none\" as SingleObject", result);
     }
 
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, true)]
+    public async Task WritesComposedEnumMemberFunctionsAsync(bool intersection, bool collection, bool includeModel)
+    {
+        var configuration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var parentClass = TestHelper.CreateModelClassInModelsNamespace(configuration, root, "parentClass");
+        var models = parentClass.GetImmediateParentOfType<CodeNamespace>();
+        var codeEnum = models.AddEnum(new CodeEnum { Name = "UpdateKind" }).First();
+        codeEnum.AddOption(new CodeEnumOption { Name = "Email" }, new CodeEnumOption { Name = "Address" });
+        CodeComposedTypeBase composedType = intersection ? new CodeIntersectionType() : new CodeUnionType();
+        composedType.Name = "AllowedUpdates";
+        composedType.AddType(new CodeType
+        {
+            Name = codeEnum.Name,
+            TypeDefinition = codeEnum,
+            CollectionKind = collection ? CodeTypeBase.CodeTypeCollectionKind.Array : CodeTypeBase.CodeTypeCollectionKind.None,
+        }, new CodeType { Name = "string" });
+        if (includeModel)
+        {
+            var model = TestHelper.CreateModelClass(models, "UpdateDetails");
+            TestHelper.AddSerializationPropertiesToModelClass(model);
+            composedType.AddType(new CodeType { Name = model.Name, TypeDefinition = model });
+        }
+        parentClass.AddProperty(new CodeProperty { Name = "allowedUpdates", Kind = CodePropertyKind.Custom, Type = composedType });
+        TestHelper.AddSerializationPropertiesToModelClass(parentClass);
+        await ILanguageRefiner.RefineAsync(configuration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Render the wrapper functions too: an enum member must never be treated as a model with its own serializer.
+        static IEnumerable<CodeFunction> GetFunctions(CodeElement element) => element.GetChildElements(true)
+            .SelectMany(child => child is CodeFunction function ? [function] : GetFunctions(child));
+        var functions = GetFunctions(root).ToArray();
+        Assert.Contains(functions, function => function.OriginalLocalMethod.Kind == CodeMethodKind.Deserializer);
+        foreach (var function in functions)
+            writer.Write(function);
+
+        var result = tw.ToString();
+        Assert.Contains(collection ? "getCollectionOfEnumValues<UpdateKind>" : "getEnumValue<UpdateKind>", result);
+        Assert.Contains(collection ? "writeCollectionOfEnumValues<UpdateKind>" : "writeEnumValue<UpdateKind>", result);
+        Assert.DoesNotContain("deserializeIntoUpdateKind(", result);
+        Assert.DoesNotContain("serializeUpdateKind(", result);
+        Assert.DoesNotContain("typeof item === \"UpdateKind\"", result);
+        Assert.DoesNotContain("typeof parentClass.allowedUpdates === \"UpdateKind\"", result);
+        if (collection)
+            Assert.Contains(".every(item => typeof item === \"string\")", result);
+    }
+
     private Task<string> WriteSerializerForUnionPropertyAsync(params CodeType[] memberTypes) =>
         WriteSerializerForUnionPropertyWithDefaultAsync(string.Empty, memberTypes);
 
