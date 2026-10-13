@@ -11,12 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. [#7802](https://github.com/microsoft/kiota/issues/7802)
+
+## [1.36.1] - 2026-10-12
+
+### Added
+
+### Changed
+
+- Fixed small issues with release pipelines
+
+## [1.36.0] - 2026-10-08
+
+### Added
+
 - Ruby: an error's `message` returns the property the description marks with `x-ms-primary-error-message`, as the other languages do. An error property named `message` is renamed `message_escaped`, like `MessageEscaped` in C#; when it is a string, `message` still returns it. [kiota-ruby#63](https://github.com/microsoft/kiota-ruby/issues/63)
 
 ### Changed
 
-- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. [#7802](https://github.com/microsoft/kiota/issues/7802)
+- Fixed relative description paths when opening or selecting clients in the VS Code Kiota workspace.
+- Removed the retired lock-search command from the VS Code command palette. Lock-file migration remains available.
+
 - Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
+- Python: preserve false, zero, empty strings, and empty collections when parsing and serializing union type wrappers.
 
 - All language refiners accept a generation logger consistently, retaining configuration-only compatibility constructors hidden from IntelliSense.
 - Reject plugin-manifest file references whose path components become parent-directory traversal after Windows trims trailing spaces or dots.
@@ -52,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dart: qualify model fields named `node` or `deserializerMap` during deserialization so local variables do not shadow them; escape `override` model members to preserve Dart annotations. Fixes [#7822](https://github.com/microsoft/kiota/issues/7822).
 - PHP: disambiguate enum constants that normalize to the same name while preserving wire values and existing constant names.
 - Java: omit unused discriminator-mapping imports for union/intersection wrappers, avoiding imports of nonexistent models while retaining member and inherited-factory imports.
+- Dart: omit unused discriminator-mapping imports for composed wrappers while preserving member and inherited-factory imports. Addresses [#7821](https://github.com/microsoft/kiota/issues/7821).
 - Preserve endpoints whose static path segments collide after name sanitization, such as /v1.1 and /v11. [#7143](https://github.com/microsoft/kiota/issues/7143)
 
 - Ruby: a path with an escaped suffix, such as `/domains/{domainName}!quote`, generated a request builder method that passed the raw path parameter name where the signature had snake cased it, and referenced the builder class without its namespace. Both raised `NameError` on first use. [#7956](https://github.com/microsoft/kiota/issues/7956)
@@ -1917,3 +1937,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

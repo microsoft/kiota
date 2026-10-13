@@ -14,7 +14,7 @@ import * as vscode from 'vscode';
 
 import { treeViewId } from '../constants';
 import { ExtensionSettings } from '../types/extensionSettings';
-import { updateTreeViewIcons } from '../util';
+import { getWorkspaceJsonDirectory, updateTreeViewIcons } from '../util';
 import { SharedService } from './sharedService';
 
 export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeNode> {
@@ -38,10 +38,10 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
     public get isWorkspaceFileLoaded(): boolean {
         return !!this._workspaceFile;
     }
-    public async loadWorkspaceFile(path: string, clientOrPluginName?: string): Promise<void> {
+    public async loadWorkspaceFile(workspaceFilePath: string, clientOrPluginName?: string): Promise<void> {
         this.closeDescription(false);
-        this._workspaceFilePath = path;
-        const workspaceFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
+        this._workspaceFilePath = workspaceFilePath;
+        const workspaceFileData = await vscode.workspace.fs.readFile(vscode.Uri.file(workspaceFilePath));
         let parsedWorkspaceFile = JSON.parse(workspaceFileData.toString()) as ConfigurationFile;
 
         if (clientOrPluginName) {
@@ -69,7 +69,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
             Object.values(this._workspaceFile.plugins ?? {})[0];
 
         if (clientOrPlugin) {
-            this._descriptionUrl = clientOrPlugin.descriptionLocation;
+            this._descriptionUrl = this.resolveWorkspaceDescriptionPath(clientOrPlugin.descriptionLocation, path.dirname(path.dirname(workspaceFilePath)));
             this.includeFilters = clientOrPlugin.includePatterns;
             this.excludeFilters = clientOrPlugin.excludePatterns;
 
@@ -92,7 +92,7 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
         }
         this._workspaceFile = newWorkspaceFile;
         if (clientObject.descriptionLocation) {
-            this._descriptionUrl = clientObject.descriptionLocation;
+            this._descriptionUrl = this.resolveWorkspaceDescriptionPath(clientObject.descriptionLocation, getWorkspaceJsonDirectory());
             this.includeFilters = clientObject.includePatterns;
             this.excludeFilters = clientObject.excludePatterns;
 
@@ -103,6 +103,11 @@ export class OpenApiTreeProvider implements vscode.TreeDataProvider<OpenApiTreeN
                 this.refreshView();
             }
         }
+    }
+    private resolveWorkspaceDescriptionPath(descriptionLocation: string, workspaceRoot: string): string {
+        return !descriptionLocation || /^https?:\/\//i.test(descriptionLocation)
+            ? descriptionLocation
+            : path.resolve(workspaceRoot, descriptionLocation);
     }
     public async loadManifestFromUri(path: string, apiIdentifier?: string): Promise<KiotaLogEntry[]> {
         this.closeDescription(false);

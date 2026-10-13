@@ -4,8 +4,11 @@ WORKDIR /app
 
 COPY ./src ./kiota/src
 COPY ./resources ./kiota/resources
+COPY ./Directory.Packages.props ./kiota/Directory.Packages.props
 WORKDIR /app/kiota
-RUN if [ -z "$version_suffix" ]; then \
+# CI supplies the private feed config as a secret; local builds use default NuGet sources.
+RUN --mount=type=secret,id=nuget_config,target=/app/kiota/NuGet.Config \
+    if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net10.0; \
     else \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net10.0 --version-suffix "$version_suffix"; \

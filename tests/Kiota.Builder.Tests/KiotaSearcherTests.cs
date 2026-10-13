@@ -36,6 +36,7 @@ public sealed class KiotaSearcherTests : IDisposable
     [RetryFact]
     public async Task GetsMicrosoftGraphBothVersionsAsync()
     {
+        SkipIfAzureDevOps();
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata", string.Empty, new CancellationToken());
@@ -45,22 +46,24 @@ public sealed class KiotaSearcherTests : IDisposable
     [RetryFact]
     public async Task GetsMicrosoftGraphAsync()
     {
+        SkipIfAzureDevOps();
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata/graph.microsoft.com/v1.0", string.Empty, new CancellationToken());
         await SkipIfGitHubRateLimitedAsync(results.Count, 1, GitHubCoreRateLimitResource, TestContext.Current.CancellationToken);
-        Assert.Single(results);
-        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
+        var item = Assert.Single(results);
+        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/v1.0/openapi.yaml", item.Value.DescriptionUrl.ToString());
     }
     [RetryFact]
     public async Task GetsMicrosoftGraphBetaAsync()
     {
+        SkipIfAzureDevOps();
         var searchConfiguration = searchConfigurationFactory;
         var searcher = new KiotaSearcher(new Mock<ILogger<KiotaSearcher>>().Object, searchConfiguration, httpClient, null, null);
         var results = await searcher.SearchAsync("github::microsoftgraph/msgraph-metadata/graph.microsoft.com/beta", string.Empty, new CancellationToken());
         await SkipIfGitHubRateLimitedAsync(results.Count, 1, GitHubCoreRateLimitResource, TestContext.Current.CancellationToken);
-        Assert.Single(results);
-        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/beta/openapi.yaml", results.First().Value.DescriptionUrl.ToString());
+        var item = Assert.Single(results);
+        Assert.Equal("https://raw.githubusercontent.com/microsoftgraph/msgraph-metadata/master/openapi/beta/openapi.yaml", item.Value.DescriptionUrl.ToString());
     }
     [Fact]
     public async Task DoesntFailOnEmptyTermAsync()
@@ -90,6 +93,12 @@ public sealed class KiotaSearcherTests : IDisposable
         Assert.NotEmpty(bytes);
     }
     private const string GitHubCoreRateLimitResource = "core";
+
+    private static void SkipIfAzureDevOps()
+    {
+        Assert.SkipWhen(string.Equals(Environment.GetEnvironmentVariable("TF_BUILD"), "True", StringComparison.OrdinalIgnoreCase),
+            "Live GitHub search is skipped on Azure DevOps agents.");
+    }
 
     /// <summary>
     /// The <c>github::</c> searcher relies on the anonymous GitHub REST API, which is limited to
