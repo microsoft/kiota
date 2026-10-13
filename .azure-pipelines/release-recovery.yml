@@ -1130,7 +1130,7 @@ extends:
                         ISPRERELEASE: $(isPrerelease)
                         KIOTA_SOURCE_COMMIT: $(kiotaSourceCommit)
                     - task: GitHubRelease@1
-                      condition: and(eq(variables['isPrerelease'], 'false'), ne(variables['releaseExists'], 'true'))
+                      condition: and(succeeded(), eq(variables['isPrerelease'], 'false'), ne(variables['releaseExists'], 'true'))
                       inputs:
                         gitHubConnection: "microsoftkiotarelease"
                         tagSource: userSpecifiedTag
