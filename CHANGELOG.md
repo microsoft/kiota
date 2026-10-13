@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. [#7802](https://github.com/microsoft/kiota/issues/7802)
+
 ## [1.36.1] - 2026-10-12
 
 ### Added
