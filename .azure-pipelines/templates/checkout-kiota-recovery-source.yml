@@ -1,6 +1,9 @@
 parameters:
   - name: tag
     type: string
+  - name: persistCredentials
+    type: boolean
+    default: false
 
 steps:
   - checkout: self
@@ -8,7 +11,7 @@ steps:
     submodules: false
     fetchDepth: 0
     fetchTags: true
-    persistCredentials: true
+    persistCredentials: ${{ parameters.persistCredentials }}
   - pwsh: |
       $tag = $env:KIOTA_TAG
       if ([string]::IsNullOrWhiteSpace($tag)) {

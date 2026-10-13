@@ -143,6 +143,7 @@ extends:
               - template: templates/checkout-kiota-recovery-source.yml
                 parameters:
                   tag: ${{ parameters.kiotaTag }}
+                  persistCredentials: true
 
               # The it/ integration-test fixtures are not used by this pipeline and their per-language
               # manifests trigger Component Governance to reach public registries under network isolation.
@@ -174,6 +175,25 @@ extends:
                       $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
                     } catch {
                       Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    } finally {
+                      $credentialEntries = @(git -C "$(Build.SourcesDirectory)" config --local --get-regexp '^http\..*\.extraheader$' 2>$null)
+                      $global:LASTEXITCODE = 0
+                      $headerNames = @($credentialEntries | ForEach-Object {
+                        $entryParts = $_ -split '\s+', 2
+                        if ($entryParts.Count -eq 2 -and $entryParts[1].Trim() -eq $header.Trim()) {
+                          $entryParts[0]
+                        }
+                      } | Select-Object -Unique)
+                      if ($headerNames.Count -eq 0) {
+                        throw "Could not locate the persisted GitHub credential in the local Git config for removal."
+                      }
+                      foreach ($headerName in $headerNames) {
+                        git -C "$(Build.SourcesDirectory)" config --local --unset-all $headerName
+                        if ($LASTEXITCODE -ne 0) {
+                          throw "Could not remove the persisted GitHub credential from the local Git config."
+                        }
+                      }
+                      Write-Host "Removed the persisted GitHub credential from the local Git config."
                     }
                   }
                   if ([string]::IsNullOrWhiteSpace($token)) {
@@ -1302,6 +1322,7 @@ extends:
               - template: templates/checkout-kiota-recovery-source.yml
                 parameters:
                   tag: ${{ parameters.kiotaTag }}
+                  persistCredentials: true
 
               - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
                 displayName: "Remove unused integration-test fixtures (it/)"
@@ -1330,6 +1351,25 @@ extends:
                       $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
                     } catch {
                       Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    } finally {
+                      $credentialEntries = @(git -C "$(Build.SourcesDirectory)" config --local --get-regexp '^http\..*\.extraheader$' 2>$null)
+                      $global:LASTEXITCODE = 0
+                      $headerNames = @($credentialEntries | ForEach-Object {
+                        $entryParts = $_ -split '\s+', 2
+                        if ($entryParts.Count -eq 2 -and $entryParts[1].Trim() -eq $header.Trim()) {
+                          $entryParts[0]
+                        }
+                      } | Select-Object -Unique)
+                      if ($headerNames.Count -eq 0) {
+                        throw "Could not locate the persisted GitHub credential in the local Git config for removal."
+                      }
+                      foreach ($headerName in $headerNames) {
+                        git -C "$(Build.SourcesDirectory)" config --local --unset-all $headerName
+                        if ($LASTEXITCODE -ne 0) {
+                          throw "Could not remove the persisted GitHub credential from the local Git config."
+                        }
+                      }
+                      Write-Host "Removed the persisted GitHub credential from the local Git config."
                     }
                   }
                   if ([string]::IsNullOrWhiteSpace($token)) {
