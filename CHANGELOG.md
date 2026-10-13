@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- C#: generate private setters for read-only properties with backing storage when `--exclude-backward-compatible` is enabled, preserving public setters by default. Fixes [kiota-dotnet#499](https://github.com/microsoft/kiota-dotnet/issues/499).
+
 ## [1.36.1] - 2026-10-12
 
 ### Added
