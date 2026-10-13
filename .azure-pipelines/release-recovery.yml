@@ -1378,15 +1378,6 @@ extends:
                   Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
                 displayName: "Extract GitHub token for release lookups"
 
-              - task: AzureCLI@2
-                displayName: "Login to Azure Container Registry"
-                inputs:
-                  azureSubscription: "ACR Images Push Service Connection"
-                  scriptType: bash
-                  scriptLocation: inlineScript
-                  inlineScript: |
-                    az acr login --name $(REGISTRY)
-
               - pwsh: |
                   $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
                   $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
@@ -1411,6 +1402,27 @@ extends:
                   Write-Host "##vso[task.setvariable variable=version;isoutput=true]$version"
                 displayName: "Get Kiota version number"
                 name: getversion
+
+              - task: AzureCLI@2
+                displayName: "Login to Azure Container Registry and check release tag"
+                inputs:
+                  azureSubscription: "ACR Images Push Service Connection"
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    set -euo pipefail
+                    az acr login --name $(REGISTRY)
+
+                    VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+                    TAG_EXISTS=$(az acr repository show-tags \
+                      --name $(REGISTRY) \
+                      --repository $(IMAGE_NAME) \
+                      --query "contains(@, '$VERSION')" \
+                      --output tsv)
+                    if [ "$TAG_EXISTS" = "true" ]; then
+                      echo "Docker image tag '$VERSION' already exists; skipping release image build and push (idempotent re-run)."
+                      echo "##vso[task.setvariable variable=dockerVersionExists]true"
+                    fi
 
               # Route package-version lookups through the authenticated Azure Artifacts feed
               # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
@@ -1505,7 +1517,7 @@ extends:
                     -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
                     "$(Build.SourcesDirectory)"
                 displayName: "Build and Push Release Image"
-                condition: succeeded()
+                condition: and(succeeded(), ne(variables['dockerVersionExists'], 'true'))
 
               - pwsh: |
                   $configPath = "$(Agent.TempDirectory)/kiota-docker.nuget.config"
