@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: dotnet build kiota.slnx --no-restore
       - name: Test
-        run: dotnet test kiota.slnx --no-build --verbosity normal --results-directory=./TestResults --coverlet --coverlet-output-format cobertura --report-gh
+        run: dotnet test kiota.slnx --no-build --verbosity normal --results-directory=./TestResults --coverlet --coverlet-output-format cobertura --coverlet-include '[Kiota.Builder]*' --coverlet-include '[kiota]*' --coverlet-exclude '[*.Tests]*' --report-gh
       - name: Install report generator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
       - name: Generate coverage report
@@ -43,7 +43,7 @@ jobs:
       - name: Add coverage to job summary
         run: cat ./reports/coverage/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
       - name: Upload coverage report
-        uses: actions/upload-code-coverage@bfa741d815a28cb064a8e3a0837e577457a017d5 # v1.4.3
+        uses: actions/upload-code-coverage@2b21a77928be8d5168c2b9581a67f2adbebacc52 # v1.4.4
         if: github.event_name != 'merge_group' && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') || (github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch))
         with:
           file: ./reports/coverage/Cobertura.xml

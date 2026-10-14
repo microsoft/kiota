@@ -381,12 +381,6 @@
         "icon": "$(file-symlink-file)"
       },
       {
-        "command": "kiota.searchLock",
-        "category": "Kiota",
-        "title": "%kiota.searchLock.title%",
-        "icon": "$(file-symlink-file)"
-      },
-      {
         "command": "kiota.updateClients",
         "category": "Kiota",
         "title": "%kiota.updateClients.title%"
@@ -527,8 +521,8 @@
     "@types/vscode": "^1.138.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
-    "chai": "^6.2.2",
-    "mocha": "^12.0.2",
+    "chai": "^6.3.0",
+    "mocha": "^12.0.3",
     "sinon": "^22.1.0",
     "webpack": "^5.111.1",
     "webpack-cli": "^7.2.3"

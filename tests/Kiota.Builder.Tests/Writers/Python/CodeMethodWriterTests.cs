@@ -919,6 +919,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("super().serialize", result);
         Assert.DoesNotContain("defined_in_parent", result, StringComparison.OrdinalIgnoreCase);
     }
+    [Theory]
+    [InlineData(CodeMethodKind.Factory, "boolean", false, "get_bool_value()")]
+    [InlineData(CodeMethodKind.Factory, "integer", false, "get_int_value()")]
+    [InlineData(CodeMethodKind.Factory, "string", false, "get_str_value()")]
+    [InlineData(CodeMethodKind.Factory, "string", true, "get_collection_of_primitive_values(str)")]
+    [InlineData(CodeMethodKind.Serializer, "boolean", false, "write_bool_value")]
+    [InlineData(CodeMethodKind.Serializer, "integer", false, "write_int_value")]
+    [InlineData(CodeMethodKind.Serializer, "string", false, "write_str_value")]
+    [InlineData(CodeMethodKind.Serializer, "string", true, "write_collection_of_primitive_values")]
+    public void WritesUnionMemberPresenceChecks(CodeMethodKind kind, string typeName, bool isCollection, string serializationMethod)
+    {
+        setup();
+        var wrapper = AddUnionTypeWrapper();
+        wrapper.AddProperty(new CodeProperty
+        {
+            Name = "value",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = typeName,
+                CollectionKind = isCollection ? CodeTypeBase.CodeTypeCollectionKind.Complex : CodeTypeBase.CodeTypeCollectionKind.None,
+            },
+        });
+        var unionMethod = wrapper.AddMethod(new CodeMethod
+        {
+            Name = "method",
+            Kind = kind,
+            IsAsync = false,
+            ReturnType = new CodeType
+            {
+                Name = kind == CodeMethodKind.Factory ? wrapper.Name : "void",
+                TypeDefinition = kind == CodeMethodKind.Factory ? wrapper : null,
+            },
+        }).First();
+        unionMethod.AddParameter(new CodeParameter
+        {
+            Name = kind == CodeMethodKind.Factory ? "parse_node" : "writer",
+            Kind = kind == CodeMethodKind.Factory ? CodeParameterKind.ParseNode : CodeParameterKind.Serializer,
+            Type = new CodeType
+            {
+                Name = kind == CodeMethodKind.Factory ? "ParseNode" : "SerializationWriter",
+            },
+        });
+        writer.Write(unionMethod);
+        var result = tw.ToString();
+        if (kind == CodeMethodKind.Factory)
+        {
+            Assert.Contains($"if (value_value := parse_node.{serializationMethod}) is not None:", result);
+            Assert.Contains("result.value = value_value", result);
+        }
+        else
+        {
+            Assert.Contains("if self.value is not None:", result);
+            Assert.Contains($"writer.{serializationMethod}(None, self.value)", result);
+        }
+    }
     [Fact]
     public void WritesUnionSerializerBody()
     {
@@ -946,11 +1002,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(serializationMethod);
         var result = tw.ToString();
         Assert.DoesNotContain("super().serialize", result);
-        Assert.Contains("if self.complex_type1_value:", result);
+        Assert.Contains("if self.complex_type1_value is not None:", result);
         Assert.Contains("writer.write_object_value(None, self.complex_type1_value)", result);
-        Assert.Contains("if self.string_value:", result);
+        Assert.Contains("if self.string_value is not None:", result);
         Assert.Contains("writer.write_str_value(None, self.string_value)", result);
-        Assert.Contains("if self.complex_type2_value:", result);
+        Assert.Contains("if self.complex_type2_value is not None:", result);
         Assert.Contains("writer.write_collection_of_object_values(None, self.complex_type2_value)", result);
     }
     [Fact]
@@ -1328,9 +1384,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("if mapping_value and mapping_value.casefold() == \"#kiota.complexType1\".casefold():", result);
         Assert.Contains("from .complex_type1 import ComplexType1", result);
         Assert.Contains("result.complex_type1_value = ComplexType1()", result);
-        Assert.Contains("elif string_value_value := parse_node.get_str_value():", result);
+        Assert.Contains("elif (string_value_value := parse_node.get_str_value()) is not None:", result);
         Assert.Contains("result.string_value = string_value_value", result);
-        Assert.Contains("elif complex_type2_value_value := parse_node.get_collection_of_object_values(ComplexType2):", result);
+        Assert.Contains("elif (complex_type2_value_value := parse_node.get_collection_of_object_values(ComplexType2)) is not None:", result);
         Assert.Contains("result.complex_type2_value = complex_type2_value_value", result);
         Assert.Contains("return result", result);
     }

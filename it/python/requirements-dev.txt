@@ -1,6 +1,6 @@
 -i https://pypi.org/simple
 
-astroid==4.0.4 ; python_full_version >= '3.7.2'
+astroid==4.3.3 ; python_full_version >= '3.7.2'
 
 certifi==2026.7.22 ; python_version >= '3.6'
 
@@ -24,13 +24,13 @@ importlib-metadata==6.8.0 ; python_version >= '3.7'
 
 iniconfig==2.3.0 ; python_version >= '3.7'
 
-isort==8.0.1
+isort==9.0.2
 
 lazy-object-proxy==1.12.0 ; python_version >= '3.7'
 
 mccabe==0.7.0 ; python_version >= '3.6'
 
-mypy==2.3.1
+mypy==2.4.0
 
 mypy-extensions==1.1.0 ; python_version >= '3.5'
 
@@ -40,7 +40,7 @@ platformdirs==4.12.2 ; python_version >= '3.7'
 
 pluggy==1.6.0 ; python_version >= '3.7'
 
-pylint==4.0.6
+pylint==4.1.1
 
 pytest==9.1.1
 
@@ -78,11 +78,11 @@ attrs==26.1.0 ; python_version >= '3.7'
 
 azure-core==1.41.0 ; python_version >= '3.7'
 
-azure-identity==1.25.3
+azure-identity==1.26.0
 
 cffi==2.1.1
 
-cryptography==50.0.1 ; python_version >= '3.7'
+cryptography==50.0.2 ; python_version >= '3.7'
 
 frozenlist==1.8.0 ; python_version >= '3.7'
 
