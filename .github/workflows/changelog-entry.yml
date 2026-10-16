@@ -18,8 +18,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Check commit types
+        id: commits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: pwsh
+        run: |
+          $commitSubjects = @(gh api --paginate "repos/$env:BASE_REPOSITORY/pulls/$env:PR_NUMBER/commits" --jq '.[].commit.message | split("\n")[0]')
+          $nonTestCiOrChoreCommits = @($commitSubjects | Where-Object { $_ -notmatch '^(test|ci|chore)(\([^)]+\))?!?:\s+\S' })
+          $isTestsCiOrChoreOnly = $commitSubjects.Count -gt 0 -and $nonTestCiOrChoreCommits.Count -eq 0
+          "is_tests_ci_or_chore_only=$($isTestsCiOrChoreOnly.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
       - name: Check for a new changelog entry
         id: changelog
+        if: steps.commits.outputs.is_tests_ci_or_chore_only != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_REPOSITORY: ${{ github.repository }}
@@ -39,7 +53,7 @@ jobs:
           "has_entry=$($hasEntry.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
       - name: Comment on missing changelog entry
-        if: steps.changelog.outputs.has_entry == 'false'
+        if: steps.commits.outputs.is_tests_ci_or_chore_only != 'true' && steps.changelog.outputs.has_entry == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_REPOSITORY: ${{ github.repository }}

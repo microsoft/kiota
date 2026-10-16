@@ -39,6 +39,10 @@
   "https://developers.notion.com/openapi.json": {
     "Suppressions": [
       {
+        "Language": "php",
+        "Rationale": "PHPStan rejects array<mixed> passed to StringOrStringArray::setString(), which expects array<string>|null; resolving primitive element nullability requires breaking contract or behavior changes - https://github.com/microsoft/kiota-php/issues/117"
+      },
+      {
         "Language": "typescript",
         "Rationale": "Kiota client generation fails with api from 2026-06-17 - https://github.com/microsoft/kiota/issues/7802"
       },
