@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Ruby: models generated with `--backing-store` keep their values in the runtime's backing store and send only the values changed since they were read, as the other languages do. Before, `--backing-store` generated Ruby that failed to load. Requires the runtime gems at 0.25.0. [kiota-ruby#53](https://github.com/microsoft/kiota-ruby/issues/53)
+- Ruby: generated clients register the text, form and multipart serializers, so `text/plain`, `application/x-www-form-urlencoded` and `multipart/form-data` bodies work, as in the other languages. Requires the runtime gems at 0.25.0. [kiota-ruby#52](https://github.com/microsoft/kiota-ruby/issues/52), [kiota-ruby#55](https://github.com/microsoft/kiota-ruby/issues/55), [kiota-ruby#57](https://github.com/microsoft/kiota-ruby/issues/57)
 
 ### Changed
 
