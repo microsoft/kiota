@@ -63,6 +63,42 @@ public abstract class BaseApiConsumerConfiguration
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison))
             throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+        ValidateNoReparsePointEscape(targetFullPath, outputFullPath, comparison);
+    }
+    private static void ValidateNoReparsePointEscape(string targetFullPath, string outputFullPath, StringComparison comparison)
+    {
+        var realTarget = ResolveFinalPath(targetFullPath);
+        var realTargetWithSeparator = Path.EndsInDirectorySeparator(realTarget) ? realTarget : realTarget + Path.DirectorySeparatorChar;
+        var targetWithSeparator = Path.EndsInDirectorySeparator(targetFullPath) ? targetFullPath : targetFullPath + Path.DirectorySeparatorChar;
+        var relative = Path.GetRelativePath(targetFullPath, outputFullPath);
+        var current = targetFullPath;
+        foreach (var segment in relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        {
+            if (string.IsNullOrEmpty(segment) || segment == ".")
+                continue;
+            current = Path.Combine(current, segment);
+            FileSystemInfo info = Directory.Exists(current) ? new DirectoryInfo(current) : new FileInfo(current);
+            if (!info.Exists && info.LinkTarget is null)
+                break; // remaining components don't exist yet
+            if (info.LinkTarget is null)
+                continue;
+            var resolved = ResolveFinalPath(current) + Path.DirectorySeparatorChar;
+            if (!resolved.StartsWith(realTargetWithSeparator, comparison) && !resolved.StartsWith(targetWithSeparator, comparison))
+                throw new InvalidOperationException("The output path must be a subdirectory of the workspace and cannot traverse symbolic links or junctions outside of it.");
+        }
+    }
+    private static string ResolveFinalPath(string path)
+    {
+        try
+        {
+            FileSystemInfo info = Directory.Exists(path) ? new DirectoryInfo(path) : new FileInfo(path);
+            var target = info.ResolveLinkTarget(true);
+            return Path.GetFullPath(target?.FullName ?? path);
+        }
+        catch (IOException)
+        {
+            throw new InvalidOperationException("The output path could not be resolved and cannot be validated.");
+        }
     }
     private static bool IsRootedPath(string path)
     {

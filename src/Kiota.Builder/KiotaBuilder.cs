@@ -81,6 +81,12 @@ public partial class KiotaBuilder
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
+            if (useKiotaConfig)
+            {
+                var workspaceDirectory = Directory.GetCurrentDirectory();
+                var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(config.OutputPath));
+                BaseApiConsumerConfiguration.ValidateOutputPath(relativeOutput, workspaceDirectory);
+            }
             LogCleaningOutputDirectory(config.OutputPath);
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
