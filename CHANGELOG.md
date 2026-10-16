@@ -11,9 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+## [1.36.1] - 2026-10-12
+
+### Added
+
+### Changed
+
+- Fixed small issues with release pipelines
+
+## [1.36.0] - 2026-10-08
+
+### Added
+
 - Ruby: an error's `message` returns the property the description marks with `x-ms-primary-error-message`, as the other languages do. An error property named `message` is renamed `message_escaped`, like `MessageEscaped` in C#; when it is a string, `message` still returns it. [kiota-ruby#63](https://github.com/microsoft/kiota-ruby/issues/63)
 
 ### Changed
+
+- Fixed relative description paths when opening or selecting clients in the VS Code Kiota workspace.
+- Removed the retired lock-search command from the VS Code command palette. Lock-file migration remains available.
 
 - Preserve inherited properties when a single `oneOf` or `anyOf` member defines its properties only through `allOf`. Fixes [#6778](https://github.com/microsoft/kiota/issues/6778).
 - Python: preserve false, zero, empty strings, and empty collections when parsing and serializing union type wrappers.
@@ -1918,3 +1935,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.PathSegmenters;
 using Xunit;
@@ -7,23 +8,25 @@ namespace Kiota.Builder.Tests.PathSegmenters
 {
     public class RubyPathSegmenterTests
     {
+        private readonly string tempPathForAllTests = Path.GetTempPath();
         private readonly RubyPathSegmenter segmenter;
         public RubyPathSegmenterTests()
         {
-            segmenter = new RubyPathSegmenter("/tmp/kiota-sample", "client");
+            segmenter = new RubyPathSegmenter(Path.Join(tempPathForAllTests, "kiota-sample"), "client");
         }
 
         [Fact]
         public void WritesTheClientBarrelWhereFilesRequireItForAMultiSegmentNamespace()
         {
-            var multiSegment = new RubyPathSegmenter("/tmp/kiota-sample", "integration_test.client");
+            var tempPathToUse = Path.GetTempPath();
+            var multiSegment = new RubyPathSegmenter(Path.Join(tempPathToUse, "kiota-sample"), "integration_test.client");
             var rootNamespace = CodeNamespace.InitRootNamespace();
             var parent = rootNamespace.AddNamespace("integration_test");
             var client = parent.AddNamespace("integration_test.client");
             var models = client.AddNamespace("integration_test.client.models");
             // the renderer passes the parent namespace, whose name is only a prefix of the client's
-            Assert.Equal(System.IO.Path.Combine("/tmp/kiota-sample", "client.rb"), multiSegment.GetPath(parent, client));
-            Assert.Equal(System.IO.Path.Combine("/tmp/kiota-sample", "models", "models.rb"), multiSegment.GetPath(client, models));
+            Assert.Equal(Path.Join(tempPathToUse, "kiota-sample", "client.rb"), multiSegment.GetPath(parent, client));
+            Assert.Equal(Path.Join(tempPathToUse, "kiota-sample", "models", "models.rb"), multiSegment.GetPath(client, models));
         }
 
         [Fact]
@@ -31,7 +34,7 @@ namespace Kiota.Builder.Tests.PathSegmenters
         {
             var rootNamespace = CodeNamespace.InitRootNamespace();
             var client = rootNamespace.AddNamespace("client");
-            Assert.Equal(System.IO.Path.Combine("/tmp/kiota-sample", "client.rb"), segmenter.GetPath(rootNamespace, client));
+            Assert.Equal(Path.Join(tempPathForAllTests, "kiota-sample", "client.rb"), segmenter.GetPath(rootNamespace, client));
         }
 
         [Fact]
