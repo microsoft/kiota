@@ -1698,7 +1698,10 @@ public partial class KiotaBuilder
 
     private static bool HasBinaryFileCollection(IOpenApiSchema schema)
     {
-        if (schema.Properties?.Values is not { } properties)
+        if (schema.Properties?.Values is not { } properties ||
+            schema.AllOf is { Count: > 0 } ||
+            schema.AnyOf is { Count: > 0 } ||
+            schema.OneOf is { Count: > 0 })
             return false;
 
         static bool IsBinaryFile(IOpenApiSchema property) =>
@@ -1710,8 +1713,8 @@ public partial class KiotaBuilder
             (property.Items?.Type is JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null)) &&
             string.Equals(property.Items?.Format, "binary", StringComparison.OrdinalIgnoreCase);
 
-        return properties.Any(IsBinaryFileCollection) &&
-            properties.All(property => IsBinaryFile(property) || IsBinaryFileCollection(property));
+        return properties.Any(property => !property.ReadOnly && IsBinaryFileCollection(property)) &&
+            properties.All(property => property.ReadOnly || IsBinaryFile(property) || IsBinaryFileCollection(property));
     }
 
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, NetHttpMethod operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)

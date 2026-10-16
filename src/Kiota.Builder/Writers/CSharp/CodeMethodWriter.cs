@@ -511,6 +511,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                         if (property.Type.IsCollection)
                         {
                             // MultipartBody replaces matching field-name/filename pairs, so repeated file fields need unique filenames.
+                            // Braces in a schema field name must remain literal inside the generated interpolated filename.
+                            var filenamePartName = partName.Replace("{", "{{", StringComparison.Ordinal).Replace("}", "}}", StringComparison.Ordinal);
                             var filesVariableName = $"multipart{variableSuffix}Files";
                             var fileVariableName = $"multipart{variableSuffix}File";
                             var fileIndexVariableName = $"multipart{variableSuffix}Index";
@@ -521,7 +523,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                             writer.StartBlock();
                             writer.WriteLine($"if ({fileVariableName} is not null)");
                             writer.StartBlock();
-                            writer.WriteLine($"{multipartBodyName}.AddOrReplacePart<byte[]>(\"{partName}\", \"application/octet-stream\", {fileVariableName}, $\"{partName}-{{{fileIndexVariableName}}}.bin\");");
+                            writer.WriteLine($"{multipartBodyName}.AddOrReplacePart<byte[]>(\"{partName}\", \"application/octet-stream\", {fileVariableName}, $\"{filenamePartName}-{{{fileIndexVariableName}}}.bin\");");
                             writer.CloseBlock();
                             writer.WriteLine($"{fileIndexVariableName}++;");
                             writer.CloseBlock();
@@ -554,10 +556,11 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         properties = [];
         if (!string.Equals(codeElement.RequestBodyContentType, "multipart/form-data", StringComparison.OrdinalIgnoreCase) ||
-            requestBody.Type is not CodeType { TypeDefinition: CodeClass bodyClass })
+            requestBody.Type is not CodeType { TypeDefinition: CodeClass bodyClass } ||
+            bodyClass.StartBlock.Inherits is not null)
             return false;
 
-        var customProperties = bodyClass.Properties.Where(static property => property.IsOfKind(CodePropertyKind.Custom)).ToArray();
+        var customProperties = bodyClass.Properties.Where(static property => property.IsOfKind(CodePropertyKind.Custom) && !property.ReadOnly).ToArray();
         if (customProperties.Length == 0 ||
             !customProperties.Any(static property => property.Type is CodeType { Name: "binary", IsCollection: true }) ||
             !customProperties.All(static property => property.Type is CodeType { Name: "binary" }))
