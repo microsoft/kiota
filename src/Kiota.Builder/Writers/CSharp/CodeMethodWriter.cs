@@ -502,6 +502,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                 if (TryGetFlatMultipartBinaryProperties(codeElement, requestParams.requestBody, out var binaryProperties))
                 {
                     const string multipartBodyName = "multipartBody";
+                    if (requestParams.requestBody.Type is CodeType { TypeDefinition: CodeClass bodyClass } &&
+                        bodyClass.GetPropertyOfKind(CodePropertyKind.AdditionalData) is CodeProperty additionalDataProperty)
+                    {
+                        writer.WriteLine($"if ({requestParams.requestBody.Name}.{additionalDataProperty.Name.ToFirstCharacterUpperCase()}?.Count > 0)");
+                        writer.StartBlock();
+                        writer.WriteLine("throw new global::System.InvalidOperationException(\"AdditionalData cannot be serialized as multipart/form-data by this generated request. Declare additional fields in the schema.\");");
+                        writer.CloseBlock();
+                    }
                     writer.WriteLine($"var {multipartBodyName} = new MultipartBody {{ RequestAdapter = {requestAdapterName} }};");
                     foreach (var property in binaryProperties)
                     {
