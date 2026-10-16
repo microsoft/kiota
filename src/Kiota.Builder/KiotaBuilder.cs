@@ -1696,6 +1696,13 @@ public partial class KiotaBuilder
         return false;
     }
 
+    private static bool HasBinaryFileCollection(IOpenApiSchema schema)
+    {
+        return schema.Properties?.Values.Any(static property =>
+            (property.Type is JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null)) &&
+            string.Equals(property.Items?.Format, "binary", StringComparison.OrdinalIgnoreCase)) is true;
+    }
+
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, NetHttpMethod operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.RequestBody is not null)
@@ -1724,7 +1731,8 @@ public partial class KiotaBuilder
                                 multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                         }
                     }
-                    else if (requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
+                    else if (!HasBinaryFileCollection(requestBodySchema)
+                            && requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
                             && operation.RequestBody.Content.Count == 1)// it's the only content type.
                     {
                         requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
