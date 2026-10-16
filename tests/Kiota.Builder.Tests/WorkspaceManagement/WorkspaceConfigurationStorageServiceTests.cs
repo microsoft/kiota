@@ -287,13 +287,15 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("output", workspace));
     }
     [Theory]
-    [InlineData(false, "external")]
-    [InlineData(true, "external")]
-    [InlineData(false, "workspace")]
-    [InlineData(true, "workspace")]
-    [InlineData(false, "indirect")]
-    [InlineData(true, "indirect")]
-    public async Task GenerateClientRejectsSwappedOutputLinkBeforeDeletingFilesAsync(bool useJunction, string targetKind)
+    [InlineData(false, "external", false)]
+    [InlineData(true, "external", false)]
+    [InlineData(false, "workspace", false)]
+    [InlineData(true, "workspace", false)]
+    [InlineData(false, "indirect", false)]
+    [InlineData(true, "indirect", false)]
+    [InlineData(false, "workspace", true)]
+    [InlineData(true, "workspace", true)]
+    public async Task GenerateClientRejectsSwappedOutputLinkBeforeDeletingFilesAsync(bool useJunction, string targetKind, bool changeWorkingDirectory)
     {
         Directory.CreateDirectory(workspace);
         var originalDirectory = Directory.GetCurrentDirectory();
@@ -320,7 +322,7 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
                 OutputPath = outputPath,
                 OpenAPIFilePath = Path.Join(tempPath, "missing.yaml"),
                 CleanOutput = true,
-                NoWorkspace = true,
+                NoWorkspace = false,
             }, httpClient, useKiotaConfig: true);
             Directory.CreateDirectory(outputPath);
             BaseApiConsumerConfiguration.ValidateOutputPath("output", workspace);
@@ -331,6 +333,8 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
                 targetPath = Path.Join(workspace, "escape", "client");
             }
             CreateDirectoryLink(outputPath, targetPath, useJunction);
+            if (changeWorkingDirectory)
+                Directory.SetCurrentDirectory(tempPath);
 
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateClientAsync(cancellationToken));
 
@@ -344,6 +348,64 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
             Directory.SetCurrentDirectory(originalDirectory);
             if (Directory.Exists(outputPath) || new DirectoryInfo(outputPath).LinkTarget is not null)
                 Directory.Delete(outputPath);
+        }
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GeneratesOutsideWorkspaceWithCleanOutputWhenWorkspaceDisabledAsync(bool generatePlugin)
+    {
+        Directory.CreateDirectory(workspace);
+        var nestedDirectory = Directory.CreateDirectory(Path.Join(outside, "data")).FullName;
+        var looseFile = Path.Join(outside, "old.txt");
+        var nestedFile = Path.Join(nestedDirectory, "old.txt");
+        var descriptionPath = Path.Join(tempPath, "description.yaml");
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await File.WriteAllTextAsync(looseFile, "old file", cancellationToken);
+        await File.WriteAllTextAsync(nestedFile, "old nested file", cancellationToken);
+        await File.WriteAllTextAsync(descriptionPath, """
+        openapi: 3.0.4
+        info:
+          title: Test API
+          version: 1.0.0
+        servers:
+          - url: https://example.org
+        paths:
+          /items:
+            get:
+              operationId: getItems
+              responses:
+                '200':
+                  description: Success
+        """, cancellationToken);
+        using var httpClient = new HttpClient();
+        var originalDirectory = Directory.GetCurrentDirectory();
+        try
+        {
+            Directory.SetCurrentDirectory(workspace);
+            var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration
+            {
+                OutputPath = outside,
+                OpenAPIFilePath = descriptionPath,
+                ClientClassName = "TestClient",
+                PluginTypes = generatePlugin ? [PluginType.APIPlugin] : [],
+                CleanOutput = true,
+                NoWorkspace = true,
+            }, httpClient, useKiotaConfig: true);
+
+            var generated = generatePlugin
+                ? await builder.GeneratePluginAsync(cancellationToken)
+                : await builder.GenerateClientAsync(cancellationToken);
+
+            Assert.True(generated);
+            Assert.False(File.Exists(looseFile));
+            Assert.False(Directory.Exists(nestedDirectory));
+            Assert.True(File.Exists(Path.Join(outside, generatePlugin ? "testclient-apiplugin.json" : "TestClient.cs")));
+            Assert.False(Directory.Exists(Path.Join(workspace, WorkspaceConfigurationStorageService.KiotaDirectorySegment)));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
         }
     }
     private void CreateDirectoryLink(string linkPath, string targetPath, bool useJunction)
