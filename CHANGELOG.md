@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Generate a typed request body for flat multipart schemas containing binary file collections. Fixes [#8080](https://github.com/microsoft/kiota/issues/8080).
+- Generate typed C# request bodies for flat multipart schemas containing binary file collections and serialize their fields as multipart parts. Fixes [#8080](https://github.com/microsoft/kiota/issues/8080).
 
 ## [1.36.1] - 2026-10-12
 

@@ -1698,9 +1698,20 @@ public partial class KiotaBuilder
 
     private static bool HasBinaryFileCollection(IOpenApiSchema schema)
     {
-        return schema.Properties?.Values.Any(static property =>
+        if (schema.Properties?.Values is not { } properties)
+            return false;
+
+        static bool IsBinaryFile(IOpenApiSchema property) =>
+            (property.Type is JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null)) &&
+            string.Equals(property.Format, "binary", StringComparison.OrdinalIgnoreCase);
+
+        static bool IsBinaryFileCollection(IOpenApiSchema property) =>
             (property.Type is JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null)) &&
-            string.Equals(property.Items?.Format, "binary", StringComparison.OrdinalIgnoreCase)) is true;
+            (property.Items?.Type is JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null)) &&
+            string.Equals(property.Items?.Format, "binary", StringComparison.OrdinalIgnoreCase);
+
+        return properties.Any(IsBinaryFileCollection) &&
+            properties.All(property => IsBinaryFile(property) || IsBinaryFileCollection(property));
     }
 
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, NetHttpMethod operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
@@ -1731,7 +1742,7 @@ public partial class KiotaBuilder
                                 multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                         }
                     }
-                    else if (!HasBinaryFileCollection(requestBodySchema)
+                    else if (!(config.Language == GenerationLanguage.CSharp && HasBinaryFileCollection(requestBodySchema))
                             && requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
                             && operation.RequestBody.Content.Count == 1)// it's the only content type.
                     {

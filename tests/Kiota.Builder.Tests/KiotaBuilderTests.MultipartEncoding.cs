@@ -43,8 +43,10 @@ public sealed partial class KiotaBuilderTests
             Assert.Null(info);
     }
 
-    [Fact]
-    public async Task GeneratesTypedRequestBodyForFlatMultipartFileCollectionsAsync()
+    [Theory]
+    [InlineData(GenerationLanguage.CSharp, true)]
+    [InlineData(GenerationLanguage.Python, false)]
+    public async Task GeneratesTypedRequestBodyForFlatMultipartFileCollectionsAsync(GenerationLanguage language, bool expectedTypedBody)
     {
         const string description = """
         {
@@ -82,7 +84,7 @@ public sealed partial class KiotaBuilderTests
         // Arrange
         await using var stream = await GetDocumentStreamAsync(description);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance,
-            new GenerationConfiguration { Language = GenerationLanguage.CSharp }, _httpClient);
+            new GenerationConfiguration { Language = language }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
@@ -93,10 +95,62 @@ public sealed partial class KiotaBuilderTests
         Assert.NotNull(requestBuilder);
         var executor = Assert.Single(requestBuilder.Methods, x => x.Kind == CodeMethodKind.RequestExecutor);
         var body = Assert.Single(executor.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
-        Assert.NotEqual("MultipartBody", body.Type.Name);
-        var bodyType = Assert.IsType<CodeType>(body.Type);
-        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
-        Assert.Contains(bodyClass.Properties, x => x.Name == "resume");
-        Assert.Contains(bodyClass.Properties, x => x.Name == "files");
+        if (expectedTypedBody)
+        {
+            Assert.NotEqual("MultipartBody", body.Type.Name);
+            var bodyType = Assert.IsType<CodeType>(body.Type);
+            var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+            Assert.Contains(bodyClass.Properties, x => x.Name == "resume");
+            Assert.Contains(bodyClass.Properties, x => x.Name == "files");
+        }
+        else
+            Assert.Equal("MultipartBody", body.Type.Name);
+    }
+
+    [Fact]
+    public async Task KeepsMultipartBodyFallbackForFlatFileCollectionsWithNonBinaryFieldsAsync()
+    {
+        const string description = """
+        {
+          "openapi": "3.0.4",
+          "info": { "title": "Multipart API", "version": "1.0.0" },
+          "paths": {
+            "/forms/form-file-multiple": {
+              "post": {
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "files": {
+                            "type": "array",
+                            "items": { "type": "string", "format": "binary" }
+                          },
+                          "description": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": { "204": { "description": "No Content" } }
+              }
+            }
+          }
+        }
+        """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance,
+            new GenerationConfiguration { Language = GenerationLanguage.CSharp }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+
+        var requestBuilder = model.FindChildByName<CodeClass>("FormFileMultipleRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var executor = Assert.Single(requestBuilder.Methods, x => x.Kind == CodeMethodKind.RequestExecutor);
+        var body = Assert.Single(executor.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
+        Assert.Equal("MultipartBody", body.Type.Name);
     }
 }

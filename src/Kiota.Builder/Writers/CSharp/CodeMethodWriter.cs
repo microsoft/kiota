@@ -497,16 +497,74 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                     writer.WriteLine($"{RequestInfoVarName}.SetStreamContent({requestParams.requestBody.Name}, \"{sanitizedRequestBodyContentType}\");");
             }
             else if (currentClass.GetPropertyOfKind(CodePropertyKind.RequestAdapter) is CodeProperty requestAdapterProperty)
-                if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)
+            {
+                var requestAdapterName = requestAdapterProperty.Name.ToFirstCharacterUpperCase();
+                if (TryGetFlatMultipartBinaryProperties(codeElement, requestParams.requestBody, out var binaryProperties))
+                {
+                    const string multipartBodyName = "multipartBody";
+                    writer.WriteLine($"var {multipartBodyName} = new MultipartBody {{ RequestAdapter = {requestAdapterName} }};");
+                    foreach (var property in binaryProperties)
+                    {
+                        var bodyPropertyName = property.Name.ToFirstCharacterUpperCase();
+                        var partName = property.WireName.SanitizeCSharpDoubleQuote();
+                        var variableSuffix = bodyPropertyName;
+                        if (property.Type.IsCollection)
+                        {
+                            // MultipartBody replaces matching field-name/filename pairs, so repeated file fields need unique filenames.
+                            var filesVariableName = $"multipart{variableSuffix}Files";
+                            var fileVariableName = $"multipart{variableSuffix}File";
+                            var fileIndexVariableName = $"multipart{variableSuffix}Index";
+                            writer.WriteLine($"if ({requestParams.requestBody.Name}.{bodyPropertyName} is {{ }} {filesVariableName})");
+                            writer.StartBlock();
+                            writer.WriteLine($"var {fileIndexVariableName} = 0;");
+                            writer.WriteLine($"foreach (var {fileVariableName} in {filesVariableName})");
+                            writer.StartBlock();
+                            writer.WriteLine($"if ({fileVariableName} is not null)");
+                            writer.StartBlock();
+                            writer.WriteLine($"{multipartBodyName}.AddOrReplacePart<byte[]>(\"{partName}\", \"application/octet-stream\", {fileVariableName}, $\"{partName}-{{{fileIndexVariableName}}}.bin\");");
+                            writer.CloseBlock();
+                            writer.WriteLine($"{fileIndexVariableName}++;");
+                            writer.CloseBlock();
+                            writer.CloseBlock();
+                        }
+                        else
+                        {
+                            var fileVariableName = $"multipart{variableSuffix}File";
+                            writer.WriteLine($"if ({requestParams.requestBody.Name}.{bodyPropertyName} is {{ }} {fileVariableName})");
+                            writer.StartBlock();
+                            writer.WriteLine($"{multipartBodyName}.AddOrReplacePart<byte[]>(\"{partName}\", \"application/octet-stream\", {fileVariableName}, \"{partName}.bin\");");
+                            writer.CloseBlock();
+                        }
+                    }
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterName}, \"{sanitizedRequestBodyContentType}\", {multipartBodyName});");
+                }
+                else if (requestParams.requestBody.Type is CodeType bodyType && (bodyType.TypeDefinition is CodeClass || bodyType.Name.Equals("MultipartBody", StringComparison.OrdinalIgnoreCase)
                     || bodyType.Name.Equals("UntypedNode", StringComparison.OrdinalIgnoreCase)))
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromParsable({requestAdapterName}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
                 else if (requestParams.requestBody.Type is CodeType bodyType2 && (bodyType2.TypeDefinition is CodeEnum))
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromEnum{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromEnum{suffix}({requestAdapterName}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
                 else
-                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{suffix}({requestAdapterProperty.Name.ToFirstCharacterUpperCase()}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
+                    writer.WriteLine($"{RequestInfoVarName}.SetContentFromScalar{suffix}({requestAdapterName}, \"{sanitizedRequestBodyContentType}\", {requestParams.requestBody.Name});");
+            }
         }
 
         writer.WriteLine($"return {RequestInfoVarName};");
+    }
+    private static bool TryGetFlatMultipartBinaryProperties(CodeMethod codeElement, CodeParameter requestBody, out CodeProperty[] properties)
+    {
+        properties = [];
+        if (!string.Equals(codeElement.RequestBodyContentType, "multipart/form-data", StringComparison.OrdinalIgnoreCase) ||
+            requestBody.Type is not CodeType { TypeDefinition: CodeClass bodyClass })
+            return false;
+
+        var customProperties = bodyClass.Properties.Where(static property => property.IsOfKind(CodePropertyKind.Custom)).ToArray();
+        if (customProperties.Length == 0 ||
+            !customProperties.Any(static property => property.Type is CodeType { Name: "binary", IsCollection: true }) ||
+            !customProperties.All(static property => property.Type is CodeType { Name: "binary" }))
+            return false;
+
+        properties = customProperties;
+        return true;
     }
     private static string GetPropertyCall(CodeProperty property, string defaultValue) => property == null ? defaultValue : $"{property.Name.ToFirstCharacterUpperCase()}";
     private void WriteSerializerBody(bool shouldHide, CodeMethod method, CodeClass parentClass, LanguageWriter writer)
