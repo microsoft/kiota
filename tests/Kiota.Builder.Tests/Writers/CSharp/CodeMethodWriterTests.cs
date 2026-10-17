@@ -543,6 +543,162 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void WritesRequestGeneratorBodyForFlatMultipartBinaryFileCollection()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "resume",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary" },
+        }, new CodeProperty
+        {
+            Name = "files",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        }, new CodeProperty
+        {
+            Name = "additionalData",
+            Kind = CodePropertyKind.AdditionalData,
+            Type = new CodeType { Name = "IDictionary<string, object>" },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("new MultipartBody { RequestAdapter = RequestAdapter }", result);
+        Assert.Contains("AddOrReplacePart<byte[]>(\"resume\", \"application/octet-stream\", multipartResumeFile, \"resume.bin\")", result);
+        Assert.Contains("AddOrReplacePart<byte[]>(\"files\", \"application/octet-stream\", multipartFilesFile, $\"files-{multipartFilesIndex}.bin\")", result);
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", multipartBody)", result);
+        Assert.Contains("if (b.AdditionalData?.Count > 0)", result);
+        Assert.Contains("AdditionalData cannot be serialized as multipart/form-data", result);
+        Assert.Contains("var multipartResumeFile = b.Resume;", result);
+        Assert.Contains("if (multipartResumeFile != null)", result);
+        Assert.Contains("var multipartFilesFiles = b.Files;", result);
+        Assert.Contains("if (multipartFilesFiles != null)", result);
+        Assert.Contains("if (multipartFilesFile != null)", result);
+        Assert.DoesNotContain(" is { }", result);
+        Assert.DoesNotContain(" is not null", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void EscapesMultipartFilenamesAndSkipsReadOnlyFields()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "files",
+            SerializationName = "files{global::System.Environment.TickCount}\"",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        }, new CodeProperty
+        {
+            Name = "serverOwned",
+            ReadOnly = true,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary" },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.Contains("AddOrReplacePart<byte[]>(\"files{global::System.Environment.TickCount}\\\"\"", result);
+        Assert.Contains("$\"files{{global::System.Environment.TickCount}}\\\"-{multipartFilesIndex}.bin\"", result);
+        Assert.DoesNotContain("multipartServerOwned", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+    [Fact]
+    public void DoesNotConvertInheritedMultipartModelsAsFlatBodies()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        bodyClass.StartBlock.Inherits = new CodeType { Name = "BaseMultipartBody", TypeDefinition = new CodeClass { Name = "BaseMultipartBody" } };
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "files",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("new MultipartBody", result);
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", b)", result);
+    }
+    [Fact]
+    public void DoesNotConvertMultipartModelCollectionsAsFlatBodies()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        bodyType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array;
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "files",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("new MultipartBody", result);
+        Assert.DoesNotContain("b.Files", result);
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", b)", result);
+    }
+    [Fact]
+    public void DoesNotConvertResolvedBinaryModelsAsFlatMultipartFiles()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        var binaryModel = new CodeClass { Name = "binary" };
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "files",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", TypeDefinition = binaryModel, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("new MultipartBody", result);
+        Assert.DoesNotContain("AddOrReplacePart<byte[]>", result);
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", b)", result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyForEnum()
     {
         setup();

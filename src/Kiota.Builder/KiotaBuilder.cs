@@ -1696,6 +1696,28 @@ public partial class KiotaBuilder
         return false;
     }
 
+    private static bool HasBinaryFileCollection(IOpenApiSchema schema)
+    {
+        if (schema.Properties?.Values is not { } properties ||
+            schema.AdditionalProperties is not null ||
+            schema.AllOf is { Count: > 0 } ||
+            schema.AnyOf is { Count: > 0 } ||
+            schema.OneOf is { Count: > 0 })
+            return false;
+
+        static bool IsBinaryFile(IOpenApiSchema property) =>
+            (property.Type is JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null)) &&
+            string.Equals(property.Format, "binary", StringComparison.OrdinalIgnoreCase);
+
+        static bool IsBinaryFileCollection(IOpenApiSchema property) =>
+            (property.Type is JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null)) &&
+            (property.Items?.Type is JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null)) &&
+            string.Equals(property.Items?.Format, "binary", StringComparison.OrdinalIgnoreCase);
+
+        return properties.Any(property => !property.ReadOnly && IsBinaryFileCollection(property)) &&
+            properties.All(property => property.ReadOnly || IsBinaryFile(property) || IsBinaryFileCollection(property));
+    }
+
     private void AddRequestBuilderMethodParameters(OpenApiUrlTreeNode currentNode, NetHttpMethod operationType, OpenApiOperation operation, CodeClass requestConfigClass, CodeMethod method)
     {
         if (operation.RequestBody is not null)
@@ -1724,7 +1746,8 @@ public partial class KiotaBuilder
                                 multipartPropertiesModels.TryAdd(propertyType.TypeDefinition, true);
                         }
                     }
-                    else if (requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
+                    else if (!(config.Language == GenerationLanguage.CSharp && HasBinaryFileCollection(requestBodySchema))
+                            && requestBodySchema.Properties.Values.Any(schema => IsSupportedMultipartDefault(schema, config.StructuredMimeTypes))
                             && operation.RequestBody.Content.Count == 1)// it's the only content type.
                     {
                         requestBodyType = new CodeType { Name = "MultipartBody", IsExternal = true, };
