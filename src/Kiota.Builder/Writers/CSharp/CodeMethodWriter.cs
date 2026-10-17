@@ -573,8 +573,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
 
         var customProperties = bodyClass.Properties.Where(static property => property.IsOfKind(CodePropertyKind.Custom) && !property.ReadOnly).ToArray();
         if (customProperties.Length == 0 ||
-            !customProperties.Any(static property => property.Type is CodeType { Name: "binary", IsCollection: true }) ||
-            !customProperties.All(static property => property.Type is CodeType { Name: "binary" }))
+            !customProperties.Any(static property => property.Type is CodeType { Name: "binary", TypeDefinition: null, IsCollection: true }) ||
+            !customProperties.All(static property => property.Type is CodeType { Name: "binary", TypeDefinition: null }))
             return false;
 
         properties = customProperties;

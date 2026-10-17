@@ -673,6 +673,32 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", b)", result);
     }
     [Fact]
+    public void DoesNotConvertResolvedBinaryModelsAsFlatMultipartFiles()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        var binaryModel = new CodeClass { Name = "binary" };
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "files",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", TypeDefinition = binaryModel, CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+
+        Assert.DoesNotContain("new MultipartBody", result);
+        Assert.DoesNotContain("AddOrReplacePart<byte[]>", result);
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", b)", result);
+    }
+    [Fact]
     public void WritesRequestGeneratorBodyForEnum()
     {
         setup();
