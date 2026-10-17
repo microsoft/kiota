@@ -524,12 +524,13 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                             var filesVariableName = $"multipart{variableSuffix}Files";
                             var fileVariableName = $"multipart{variableSuffix}File";
                             var fileIndexVariableName = $"multipart{variableSuffix}Index";
-                            writer.WriteLine($"if ({requestParams.requestBody.Name}.{bodyPropertyName} is {{ }} {filesVariableName})");
+                            writer.WriteLine($"var {filesVariableName} = {requestParams.requestBody.Name}.{bodyPropertyName};");
+                            writer.WriteLine($"if ({filesVariableName} != null)");
                             writer.StartBlock();
                             writer.WriteLine($"var {fileIndexVariableName} = 0;");
                             writer.WriteLine($"foreach (var {fileVariableName} in {filesVariableName})");
                             writer.StartBlock();
-                            writer.WriteLine($"if ({fileVariableName} is not null)");
+                            writer.WriteLine($"if ({fileVariableName} != null)");
                             writer.StartBlock();
                             writer.WriteLine($"{multipartBodyName}.AddOrReplacePart<byte[]>(\"{partName}\", \"application/octet-stream\", {fileVariableName}, $\"{filenamePartName}-{{{fileIndexVariableName}}}.bin\");");
                             writer.CloseBlock();
@@ -540,7 +541,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                         else
                         {
                             var fileVariableName = $"multipart{variableSuffix}File";
-                            writer.WriteLine($"if ({requestParams.requestBody.Name}.{bodyPropertyName} is {{ }} {fileVariableName})");
+                            writer.WriteLine($"var {fileVariableName} = {requestParams.requestBody.Name}.{bodyPropertyName};");
+                            writer.WriteLine($"if ({fileVariableName} != null)");
                             writer.StartBlock();
                             writer.WriteLine($"{multipartBodyName}.AddOrReplacePart<byte[]>(\"{partName}\", \"application/octet-stream\", {fileVariableName}, \"{partName}.bin\");");
                             writer.CloseBlock();
@@ -564,6 +566,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
     {
         properties = [];
         if (!string.Equals(codeElement.RequestBodyContentType, "multipart/form-data", StringComparison.OrdinalIgnoreCase) ||
+            requestBody.Type.IsCollection ||
             requestBody.Type is not CodeType { TypeDefinition: CodeClass bodyClass } ||
             bodyClass.StartBlock.Inherits is not null)
             return false;
