@@ -26,7 +26,7 @@ jobs:
       - name: Build
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -p:PublishReadyToRun=true -o ./publish -f net10.0
         # -p:PublishTrimmed=true -p:PublishAot=true should be enabled to make test run faster, but there are still limitations
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: generator
           path: publish
@@ -63,7 +63,7 @@ jobs:
       - id: replace_url
         run: ./it/get-description-artifact-key.ps1 -descriptionUrl ${{ matrix.description }}
         shell: pwsh
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: description-${{ steps.replace_url.outputs.ARTKEY }}
           # Output is either openapi.json or openapi.yml. Try to upload the one that is found.
@@ -190,7 +190,7 @@ jobs:
         run: ./it/do-clean.ps1 -language ${{ matrix.language }}
         if: always()
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always() && github.event_name != 'merge_group'
         with:
           name: generation-results-${{ matrix.language }}-${{ steps.replace_url.outputs.ARTKEY }}
