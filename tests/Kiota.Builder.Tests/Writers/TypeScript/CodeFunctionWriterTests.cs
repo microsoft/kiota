@@ -1799,11 +1799,14 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
-    [Fact]
-    public async Task Writes_UnionOfObjects_SerializerFunctionsAsync()
+    [Theory]
+    [InlineData("Cat", "Cat")]
+    [InlineData("ca\"t'\n\r\t\\$", "ca\\\"t'\\n\\r\\t\\\\$")]
+    public async Task Writes_UnionOfObjects_SerializerFunctionsAsync(string discriminatorValue, string escapedDiscriminatorValue)
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
         await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1829,12 +1832,17 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         // Test Serializer function
         var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
-        Assert.True(serializerFunction is not null);
+        var discriminatorInfo = Assert.IsType<CodeFunction>(serializerFunction).OriginalMethodParentClass.DiscriminatorInformation;
+        var catType = Assert.IsType<CodeType>(discriminatorInfo.GetDiscriminatorMappingValue("Cat"));
+        discriminatorInfo.RemoveDiscriminatorMapping("Cat");
+        discriminatorInfo.AddDiscriminatorMapping(discriminatorValue, catType);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
         Assert.Contains("return", serializerFunctionStr);
         Assert.Contains("switch", serializerFunctionStr);
-        Assert.Contains("case \"Cat\":", serializerFunctionStr);
+        Assert.Contains($"case \"{escapedDiscriminatorValue}\":", serializerFunctionStr);
+        if (discriminatorValue != escapedDiscriminatorValue)
+            Assert.DoesNotContain(discriminatorValue, serializerFunctionStr);
         Assert.Contains("case \"Dog\":", serializerFunctionStr);
         Assert.Contains("break", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
@@ -1869,6 +1877,55 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // the wire name is pet_type, the property on the generated interfaces is petType
         Assert.Contains(".petType) {", serializerFunctionStr);
         Assert.DoesNotContain(".pet_type", serializerFunctionStr);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Writes_UnionOfObjects_SerializerFunctionWithMissingDiscriminatorPropertyAsync(bool missingFromAllMembers)
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var builder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var petClass = rootNS.FindChildByName<CodeClass>("Pet");
+        Assert.NotNull(petClass);
+        if (missingFromAllMembers)
+        {
+            var discriminatorProperty = petClass.Properties.First(static x => x.WireName == "pet_type");
+            petClass.RemoveChildElement(discriminatorProperty);
+        }
+        else
+        {
+            var catClass = rootNS.FindChildByName<CodeClass>("Cat");
+            Assert.NotNull(catClass);
+            catClass.StartBlock.Inherits = null;
+        }
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(static x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
+        Assert.NotNull(serializerFunction);
+
+        writer.Write(serializerFunction);
+
+        var result = tw.ToString();
+        Assert.DoesNotContain("switch", result);
+        Assert.DoesNotContain(".pet_type", result);
+        Assert.DoesNotContain(".petType", result);
+        Assert.Contains("serializeCat(writer,", result);
+        Assert.Contains("serializeDog(writer,", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 
     [Fact]

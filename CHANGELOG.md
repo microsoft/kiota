@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- TypeScript: serialize union members without discriminator dispatch when the discriminator property is missing from any member, preventing generated clients from referencing nonexistent properties.
+
 ## [1.36.1] - 2026-10-12
 
 ### Added
@@ -1935,4 +1937,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
