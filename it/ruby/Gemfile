@@ -11,7 +11,7 @@ gem "rspec", "~> 3.0"
 
 gem "rubocop", "~> 1.21"
 
-gem "microsoft_kiota_abstractions", "~> 0.24.0"
+gem "microsoft_kiota_abstractions", "~> 0.24.1"
 
 gem "microsoft_kiota_faraday", "~> 0.24.0"
 
