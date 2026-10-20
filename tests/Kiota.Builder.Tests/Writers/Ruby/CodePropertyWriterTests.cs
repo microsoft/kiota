@@ -171,6 +171,23 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("@backing_store.set(\"property-name\", value)", result);
         Assert.DoesNotContain("attr_accessor", result);
     }
+    [Fact]
+    public void EscapesHostileWireNamesInTheBackingStoreAccessors()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "BackingStore", IsExternal = true },
+        });
+        property.Kind = CodePropertyKind.Custom;
+        property.SerializationName = "a\"b\\c\r\n\t\0d$e#{x}#$y";
+        writer.Write(property);
+        var result = tw.ToString();
+        const string Key = "\"a\\\"b\\\\c\\r\\n\\t\\0d$e\\#{x}\\#$y\"";
+        Assert.Contains($"@backing_store.get({Key})", result);
+        Assert.Contains($"@backing_store.set({Key}, value)", result);
+    }
     private CodeProperty AddMessageOverride()
     {
         parentClass.IsErrorDefinition = true;
