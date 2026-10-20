@@ -1844,7 +1844,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
         if (discriminatorValue != escapedDiscriminatorValue)
             Assert.DoesNotContain(discriminatorValue, serializerFunctionStr);
         Assert.Contains("case \"Dog\":", serializerFunctionStr);
-        Assert.Contains("break", serializerFunctionStr);
+        Assert.DoesNotContain("break;", serializerFunctionStr);
+        Assert.Matches("case \"Dog\":\\s+serializeDog\\(writer, petsPatchRequestBody as Dog\\);\\s+return;", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1908,6 +1909,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
             var catClass = rootNS.FindChildByName<CodeClass>("Cat");
             Assert.NotNull(catClass);
             catClass.StartBlock.Inherits = null;
+            catClass.Properties.First(static x => x.Name == "age").DefaultValue = "18";
         }
         await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
         var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
@@ -1920,11 +1922,27 @@ public sealed class CodeFunctionWriterTests : IDisposable
         writer.Write(serializerFunction);
 
         var result = tw.ToString();
-        Assert.DoesNotContain("switch", result);
         Assert.DoesNotContain(".pet_type", result);
-        Assert.DoesNotContain(".petType", result);
         Assert.Contains("serializeCat(writer,", result);
         Assert.Contains("serializeDog(writer,", result);
+        if (missingFromAllMembers)
+        {
+            Assert.DoesNotContain("switch", result);
+            Assert.DoesNotContain(".petType", result);
+        }
+        else
+        {
+            Assert.Contains("if (typeof petsPatchRequestBody === \"object\" && \"petType\" in petsPatchRequestBody)", result);
+            Assert.Contains("switch (petsPatchRequestBody.petType)", result);
+            Assert.Matches("case \"Dog\":\\s+serializeDog\\(writer, petsPatchRequestBody as Dog\\);\\s+return;", result);
+            Assert.True(result.LastIndexOf("serializeCat(writer,", StringComparison.Ordinal) > result.LastIndexOf("return;", StringComparison.Ordinal));
+            Assert.True(result.LastIndexOf("serializeDog(writer,", StringComparison.Ordinal) > result.LastIndexOf("return;", StringComparison.Ordinal));
+            tw.GetStringBuilder().Clear();
+            var catSerializer = rootNS.FindChildByName<CodeFunction>("serializeCat");
+            Assert.NotNull(catSerializer);
+            writer.Write(catSerializer);
+            Assert.Contains("cat.age ?? 18", tw.ToString());
+        }
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 

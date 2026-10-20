@@ -206,9 +206,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteSerializationFunctionForCodeUnionTypes(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
         var discriminatorInfo = codeElement.OriginalMethodParentClass.DiscriminatorInformation;
-        var discriminatorPropertyName = GetDiscriminatorPropertyAccessorName(composedType, discriminatorInfo.DiscriminatorPropertyName);
+        var discriminatorPropertyNames = GetDiscriminatorPropertyAccessorNames(composedType, discriminatorInfo.DiscriminatorPropertyName);
 
-        if (string.IsNullOrEmpty(discriminatorPropertyName))
+        if (discriminatorPropertyNames.Length == 0)
         {
             WriteBruteForceSerializationFunctionForCodeUnionType(composedType, composedParam, codeElement, writer);
             return;
@@ -216,7 +216,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
-        WriteDiscriminatorSwitchBlock(discriminatorInfo, discriminatorPropertyName, paramName, codeElement, writer);
+        foreach (var discriminatorPropertyName in discriminatorPropertyNames)
+        {
+            writer.StartBlock($"if (typeof {paramName} === \"object\" && \"{discriminatorPropertyName.SanitizeDoubleQuote()}\" in {paramName}) {{");
+            WriteDiscriminatorSwitchBlock(discriminatorInfo, discriminatorPropertyName, paramName, codeElement, writer);
+            writer.CloseBlock();
+        }
+        WriteBruteForceSerializationFunctionForCodeUnionType(composedType, composedParam, codeElement, writer);
     }
 
     /// <summary>
@@ -248,33 +254,29 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         {
             writer.StartBlock($"case \"{mappedType.Key.SanitizeDoubleQuote()}\":");
             writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType.Value)}(writer, {paramName} as {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()});");
-            writer.WriteLine("break;");
+            writer.WriteLine("return;");
             writer.DecreaseIndent();
         }
 
         writer.CloseBlock();
     }
 
-    private static string? GetDiscriminatorPropertyAccessorName(CodeComposedTypeBase composedType, string discriminatorPropertyName)
+    private static string[] GetDiscriminatorPropertyAccessorNames(CodeComposedTypeBase composedType, string discriminatorPropertyName)
     {
-        if (string.IsNullOrEmpty(discriminatorPropertyName)) return null;
-        string? accessorName = null;
-        foreach (var type in composedType.Types)
-        {
-            var property = type.TypeDefinition switch
+        if (string.IsNullOrEmpty(discriminatorPropertyName)) return [];
+        return composedType.Types
+            .Select(type => type.TypeDefinition switch
             {
                 CodeInterface codeInterface => FindDiscriminatorPropertyBySerializationName(codeInterface, discriminatorPropertyName),
                 CodeClass codeClass => codeClass.GetInheritanceTree()
                     .SelectMany(static x => x.Properties)
                     .FirstOrDefault(x => x.WireName.EqualsIgnoreCase(discriminatorPropertyName)),
                 _ => null,
-            };
-            if (property is null) return null;
-            var propertyName = property.Name.ToFirstCharacterLowerCase();
-            if (accessorName is not null && !accessorName.Equals(propertyName, StringComparison.Ordinal)) return null;
-            accessorName = propertyName;
-        }
-        return accessorName;
+            })
+            .OfType<CodeProperty>()
+            .Select(static property => property.Name.ToFirstCharacterLowerCase())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
     }
 
     private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, string key, string modelParamName, CodeFunction method, LanguageWriter writer, String prefix)
