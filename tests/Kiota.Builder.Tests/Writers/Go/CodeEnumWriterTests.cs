@@ -232,4 +232,19 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("return []string{\"line1\\\"\\nline2\"}[i]", result);
         Assert.Contains("case \"line1\\\"\\nline2\":", result);
     }
+
+    [Fact]
+    public void WritesEmptyEnumWireValue()
+    {
+        currentEnum.AddOption(
+            new CodeEnumOption { Name = "option1" },
+            new CodeEnumOption { Name = "empty", SerializationName = string.Empty });
+
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+
+        Assert.Contains("return []string{\"option1\", \"\"}[i]", result);
+        Assert.Contains("case \"\":", result);
+        Assert.Contains("result = EMPTY_SOMEENUM", result);
+    }
 }
