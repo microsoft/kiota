@@ -15,6 +15,56 @@ namespace Kiota.Builder.Tests.Refiners;
 public class GoLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    [Fact]
+    public async Task PreservesDistinctModelsWhenFlattenedNamesCollideAsync()
+    {
+        var package = root.AddNamespace("ApiSdk.oauth");
+        var nested = root.AddNamespace("ApiSdk.oauth.token");
+        root.AddNamespace("ApiSdk.models");
+        var first = package.AddClass(new CodeClass { Name = "TokenPostResponse", Kind = CodeClassKind.Model }).First();
+        var second = nested.AddClass(new CodeClass { Name = "TokenPostResponse", Kind = CodeClassKind.Model }).First();
+        foreach (var model in new[] { first, second })
+            model.StartBlock.AddImplements(new CodeType { Name = "IAdditionalDataHolder", IsExternal = true });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration
+        {
+            ClientNamespaceName = "ApiSdk",
+            Language = GenerationLanguage.Go,
+        }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotEqual(first.Name, second.Name);
+        Assert.Same(package, first.GetImmediateParentOfType<CodeNamespace>());
+        Assert.Same(package, second.GetImmediateParentOfType<CodeNamespace>());
+        Assert.NotNull(first.AssociatedInterface);
+        Assert.NotNull(second.AssociatedInterface);
+        Assert.NotSame(first.AssociatedInterface, second.AssociatedInterface);
+        Assert.All(new[] { first, second }, model => Assert.DoesNotContain(model.AssociatedInterface.StartBlock.Implements, type => type.Name == "IAdditionalDataHolder"));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ResolvesFlattenedModelCollisionsDeterministicallyAsync(bool reverseInsertion)
+    {
+        var package = root.AddNamespace("ApiSdk.oauth");
+        root.AddNamespace("ApiSdk.models");
+        package.AddClass(new CodeClass { Name = "TokenPostResponse", Kind = CodeClassKind.Model });
+        package.AddClass(new CodeClass { Name = "TokenPostResponse1", Kind = CodeClassKind.Model });
+        var specs = new[] { (Namespace: "token", Name: "TokenPostResponse"), (Namespace: "tokenPost", Name: "Response") };
+        var models = (reverseInsertion ? specs.Reverse() : specs).Select(spec =>
+            root.AddNamespace($"ApiSdk.oauth.{spec.Namespace}").AddClass(new CodeClass
+            {
+                Name = spec.Name,
+                Kind = CodeClassKind.Model,
+            }).First()).ToArray();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration
+        {
+            ClientNamespaceName = "ApiSdk",
+            Language = GenerationLanguage.Go,
+        }, root, cancellationToken: TestContext.Current.CancellationToken);
+        if (reverseInsertion)
+            Array.Reverse(models);
+        Assert.Equal("TokenPostResponse2", models[0].Name);
+        Assert.Equal("TokenPostResponse3", models[1].Name);
+        Assert.NotSame(models[0].AssociatedInterface, models[1].AssociatedInterface);
+    }
     [Theory]
     [InlineData("switch")]
     [InlineData("type")]
@@ -931,6 +981,45 @@ components:
         Assert.Equal("SubbModelB", modelB.Name); // renamed to avoid conflict
 
         Assert.Empty(subANamespace.GetChildElements(true));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesCollidingModelsWhenMigratingCircularDependenciesAsync(bool reverseInsertion)
+    {
+        var models = root.AddNamespace("ApiSdk.models");
+        var existing = models.AddClass(new CodeClass { Name = "SubaModelA", Kind = CodeClassKind.Model }).First();
+        models.AddClass(new CodeClass { Name = "SubaModelA1", Kind = CodeClassKind.Model });
+        var existingEnum = models.AddEnum(new CodeEnum { Name = "SubaModelAEnum" }).First();
+        var namespaces = new[] { "suba", "subb" };
+        foreach (var name in reverseInsertion ? namespaces.Reverse() : namespaces)
+            models.AddNamespace($"{models.Name}.{name}");
+        var suba = models.FindNamespaceByName("ApiSdk.models.suba");
+        var subb = models.FindNamespaceByName("ApiSdk.models.subb");
+        var first = suba.AddClass(new CodeClass { Name = "ModelA", Kind = CodeClassKind.Model }).First();
+        var second = subb.AddClass(new CodeClass { Name = "ModelB", Kind = CodeClassKind.Model }).First();
+        var migratedEnum = suba.AddEnum(new CodeEnum { Name = "ModelAEnum" }).First();
+        first.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = subb.Name,
+            Declaration = new CodeType { Name = second.Name, TypeDefinition = second },
+        });
+        second.StartBlock.AddUsings(new CodeUsing
+        {
+            Name = suba.Name,
+            Declaration = new CodeType { Name = first.Name, TypeDefinition = first },
+        });
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("SubaModelA2", first.Name);
+        Assert.Same(existing, models.FindChildByName<CodeClass>("SubaModelA", true));
+        Assert.Same(first, models.FindChildByName<CodeClass>("SubaModelA2", true));
+        Assert.NotNull(first.AssociatedInterface);
+        Assert.NotSame(existing.AssociatedInterface, first.AssociatedInterface);
+        Assert.Equal("SubaModelAEnum1", migratedEnum.Name);
+        Assert.Same(existingEnum, models.FindChildByName<CodeEnum>("SubaModelAEnum", true));
+        Assert.Same(migratedEnum, models.FindChildByName<CodeEnum>("SubaModelAEnum1", true));
     }
     #endregion
 
