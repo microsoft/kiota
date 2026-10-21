@@ -189,10 +189,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private static string GetIntersectionValueVarName(CodeProperty property) => $"val_{property.Name.ToSnakeCase()}";
     private void WriteComposedTypeGuardedSerialization(CodeProperty property, LanguageWriter writer)
     {
-        var propertyName = property.Name.ToSnakeCase();
-        writer.WriteLine($"return if @{propertyName}.nil?");
+        var value = RubyConventionService.ReadProperty(property);
+        writer.WriteLine($"return if {value}.nil?");
         writer.WriteLine();
-        writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{propertyName})");
+        writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, {value})");
     }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
     {
@@ -294,6 +294,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var requestAdapterPropertyName = $"{requestAdapterProperty?.NamePrefix}{requestAdapterProperty?.Name.ToSnakeCase()}";
         WriteSerializationRegistration(parentClass, method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(parentClass, method.DeserializerModules, writer, "register_default_deserializer");
+        if (method.Parameters.OfKind(CodeParameterKind.BackingStore) is CodeParameter backingStoreParameter)
+            writer.WriteLine($"@{requestAdapterPropertyName}.enable_backing_store({RubyConventionService.GetParameterName(backingStoreParameter)})");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url({RubyConventionService.ToRubyStringLiteral(method.BaseUrl)}) if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
@@ -369,7 +371,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                         _ => defaultValue
                     };
             }
-            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {defaultValue}");
+            writer.WriteLine(RubyConventionService.AssignProperty(propWithDefault, defaultValue));
         }
     }
     private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
@@ -429,7 +431,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var entries = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                 .Where(static x => !x.ExistsInBaseType)
                                 .OrderBy(static x => x.Name)
-                                .Select(x => $"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(x.WireName)}\" => ->(n) {{ @{x.NamePrefix}{x.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(x.Type)} }}")
+                                .Select(x => $"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(x.WireName)}\" => ->(n) {{ {RubyConventionService.AssignProperty(x, $"n.{GetDeserializationMethodName(x.Type)}")} }}")
                                 .ToArray();
         if (entries.Length == 0)
         {
@@ -454,8 +456,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                            .ToArray();
         if (complexProperties.Length > 0)
         {
-            var condition = string.Join(" || ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
-            var propNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            var condition = string.Join(" || ", complexProperties.Select(RubyConventionService.ReadProperty));
+            var propNames = string.Join(", ", complexProperties.Select(RubyConventionService.ReadProperty));
             writer.WriteLine($"return MicrosoftKiotaAbstractions::ParseNodeHelper.merge_deserializers_for_intersection_wrapper({propNames}) if {condition}");
             writer.WriteLine();
         }
@@ -573,10 +575,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\", @{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\", {RubyConventionService.ReadProperty(otherProp)})");
         }
         if (additionalDataProperty != null)
-            writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.write_additional_data({RubyConventionService.ReadProperty(additionalDataProperty)})");
     }
     private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer) =>
         WriteSerializerBodyForIntersectionModel(parentClass, writer);
@@ -596,8 +598,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var elseIfPrefix = string.Empty;
         foreach (var property in nonComplexProperties)
         {
-            writer.StartBlock($"{elseIfPrefix}if !@{property.Name.ToSnakeCase()}.nil?");
-            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{property.Name.ToSnakeCase()})");
+            writer.StartBlock($"{elseIfPrefix}if !{RubyConventionService.ReadProperty(property)}.nil?");
+            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, {RubyConventionService.ReadProperty(property)})");
             writer.DecreaseIndent();
             elseIfPrefix = "els";
         }
@@ -607,7 +609,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.StartBlock("else");
             // write_object_value returns early when its first argument is nil, which would drop
             // every remaining member, so compact the list and skip the call when nothing is set
-            var complexPropNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            var complexPropNames = string.Join(", ", complexProperties.Select(RubyConventionService.ReadProperty));
             writer.WriteLine($"composed_values = [{complexPropNames}].compact");
             writer.WriteLine("writer.write_object_value(nil, *composed_values) unless composed_values.empty?");
             if (nonComplexProperties.Length > 0)

@@ -29,6 +29,20 @@ public class RubyConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(writer);
         if (!writer.IsAtBlockStart) writer.WriteLine();
     }
+    // a model with a backing store keeps its values there instead of in instance variables
+    internal static string? GetBackingStoreVariable(CodeProperty property) =>
+        property.Kind is CodePropertyKind.Custom or CodePropertyKind.AdditionalData &&
+        property.Parent is CodeClass parentClass && parentClass.GetBackingStoreProperty() is CodeProperty store ?
+            $"@{store.NamePrefix}{store.Name.ToSnakeCase()}" :
+            null;
+    internal static string ReadProperty(CodeProperty property) =>
+        GetBackingStoreVariable(property) is string store ?
+            $"{store}.get({ToRubyStringLiteral(property.WireName)})" :
+            $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";
+    internal static string AssignProperty(CodeProperty property, string value) =>
+        GetBackingStoreVariable(property) is string store ?
+            $"{store}.set({ToRubyStringLiteral(property.WireName)}, {value})" :
+            $"@{property.NamePrefix}{property.Name.ToSnakeCase()} = {value}";
     // a barrel is written, and required, only when it has something to autoload
     internal static bool HasAutoloadedMembers(CodeNamespace codeNamespace) =>
         codeNamespace.Classes.Any(IsAutoloaded) || codeNamespace.Enums.Any(IsAutoloaded);
