@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - C#: generate private setters for read-only properties with backing storage when `--exclude-backward-compatible` is enabled, preserving public setters by default. Fixes [kiota-dotnet#499](https://github.com/microsoft/kiota-dotnet/issues/499).
 
+- TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
+
 ## [1.36.1] - 2026-10-12
 
 ### Added
@@ -1937,4 +1939,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
