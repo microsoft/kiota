@@ -47,7 +47,7 @@
     "vscode-jsonrpc": "^9.0.3"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.8",
+    "@types/adm-zip": "^0.6.0",
     "@types/jest": "^30.0.0",
     "glob": "^13.0.6",
     "jest": "^30.5.2",
