@@ -78,6 +78,13 @@ public class StringExtensionsTests
         Assert.Equal("microsoft_graph_message_content", "microsoft_Graph_Message_Content".ToSnakeCase());
         Assert.Equal("test_value", "testValue<WithStrippedContent".ToSnakeCase());
         Assert.Equal("test", "test<Value".ToSnakeCase());
+        Assert.Equal("toto_", "toto-".ToSnakeCase());
+        Assert.Equal(string.Empty, "<Value>".ToSnakeCase());
+        Assert.Equal("_bar", "-Bar".ToSnakeCase());
+        Assert.Equal("_bar", "-bar".ToSnakeCase());
+        Assert.Equal("_", "-".ToSnakeCase());
+        Assert.Equal("__", "--".ToSnakeCase());
+        Assert.Equal("test_", "test-<Value>".ToSnakeCase());
     }
     [Fact]
     public void NormalizeNameSpaceName()
