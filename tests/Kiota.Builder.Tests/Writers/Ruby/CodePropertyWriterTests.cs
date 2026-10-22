@@ -152,6 +152,42 @@ public sealed class CodePropertyWriterTests : IDisposable
         // a bare instance variable in a class body declares nothing and warns under ruby -w
         Assert.DoesNotContain($"@{PropertyName.ToSnakeCase()}", result);
     }
+    [Fact]
+    public void WritesAccessorsThroughTheBackingStore()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "BackingStore", IsExternal = true },
+        });
+        property.Kind = CodePropertyKind.Custom;
+        property.SerializationName = "property-name";
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"def {PropertyName.ToSnakeCase()}{Environment.NewLine}", result);
+        Assert.Contains("@backing_store.get(\"property-name\")", result);
+        Assert.Contains($"def {PropertyName.ToSnakeCase()}=(value)", result);
+        Assert.Contains("@backing_store.set(\"property-name\", value)", result);
+        Assert.DoesNotContain("attr_accessor", result);
+    }
+    [Fact]
+    public void EscapesHostileWireNamesInTheBackingStoreAccessors()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "BackingStore", IsExternal = true },
+        });
+        property.Kind = CodePropertyKind.Custom;
+        property.SerializationName = "a\"b\\c\r\n\t\0d$e#{x}#$y";
+        writer.Write(property);
+        var result = tw.ToString();
+        const string Key = "\"a\\\"b\\\\c\\r\\n\\t\\0d$e\\#{x}\\#$y\"";
+        Assert.Contains($"@backing_store.get({Key})", result);
+        Assert.Contains($"@backing_store.set({Key}, value)", result);
+    }
     private CodeProperty AddMessageOverride()
     {
         parentClass.IsErrorDefinition = true;

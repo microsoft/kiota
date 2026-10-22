@@ -1926,11 +1926,34 @@ public sealed class CodeMethodWriterTests : IDisposable
             }
         };
         method.AddParameter(backingStoreParam);
-        var tempWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.Java, DefaultPath, DefaultName);
-        tempWriter.SetTextWriter(tw);
-        tempWriter.Write(method);
+        writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("enableBackingStore", result);
+        Assert.Contains("@core.enable_backing_store(backing_store)", result);
+    }
+    private void AddBackingStore()
+    {
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            Type = new CodeType { Name = "BackingStore", IsExternal = true },
+        });
+    }
+    [Fact]
+    public void WritesSerializerAndDeserializerThroughTheBackingStore()
+    {
+        setup();
+        AddSerializationProperties();
+        AddBackingStore();
+        method.Kind = CodeMethodKind.Deserializer;
+        writer.Write(method);
+        method.Kind = CodeMethodKind.Serializer;
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("\"dummyProp\" => ->(n) { @backing_store.set(\"dummyProp\", n.get_string_value) }", result);
+        Assert.Contains("writer.write_string_value(\"dummyProp\", @backing_store.get(\"dummyProp\"))", result);
+        Assert.Contains("writer.write_additional_data(@backing_store.get(\"additionalData\"))", result);
+        Assert.DoesNotContain("@dummy_prop", result);
     }
     [Fact]
     public void WritesNameMapperMethod()
