@@ -63,6 +63,68 @@ public abstract class BaseApiConsumerConfiguration
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison))
             throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+        ValidateNoReparsePointEscape(targetFullPath, outputFullPath, comparison);
+    }
+    private static void ValidateNoReparsePointEscape(string targetFullPath, string outputFullPath, StringComparison comparison)
+    {
+        var realTarget = ResolveFinalPath(targetFullPath);
+        var realTargetWithSeparator = Path.EndsInDirectorySeparator(realTarget) ? realTarget : realTarget + Path.DirectorySeparatorChar;
+        var relative = Path.GetRelativePath(targetFullPath, outputFullPath);
+        var current = realTarget;
+        foreach (var segment in relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                     .Where(static segment => !string.IsNullOrEmpty(segment) && segment != "."))
+        {
+            current = ResolveFinalPath(Path.Join(current, segment));
+            if (!current.Equals(realTarget, comparison) && !current.StartsWith(realTargetWithSeparator, comparison))
+                throw new InvalidOperationException("The output path must be a subdirectory of the workspace and cannot traverse symbolic links or junctions outside of it.");
+        }
+        if (current.Equals(realTarget, comparison))
+            throw new InvalidOperationException("The output path must resolve to a subdirectory of the workspace, not the workspace itself.");
+    }
+    private static string ResolveFinalPath(string path)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var current = Path.GetPathRoot(fullPath) ?? throw new IOException("The output path has no filesystem root.");
+            var segments = new Stack<string>(fullPath[current.Length..]
+                .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries).Reverse());
+            var linkCount = 0;
+            while (segments.TryPop(out var segment))
+            {
+                if (segment == ".")
+                    continue;
+                if (segment == "..")
+                {
+                    current = Path.GetDirectoryName(current) ?? current;
+                    continue;
+                }
+                var next = Path.Join(current, segment);
+                FileSystemInfo info = Directory.Exists(next) ? new DirectoryInfo(next) : new FileInfo(next);
+                var target = info.LinkTarget;
+                if (target is null)
+                {
+                    current = next;
+                    continue;
+                }
+                if (++linkCount > 40)
+                    throw new IOException("Too many symbolic links in the output path.");
+                if (OperatingSystem.IsWindows())
+                    target = info.ResolveLinkTarget(false)?.FullName ?? throw new IOException("The output path link could not be resolved.");
+                if (Path.IsPathRooted(target))
+                {
+                    current = Path.GetPathRoot(target) ?? throw new IOException("The output path link has no filesystem root.");
+                    target = target[current.Length..];
+                }
+                foreach (var targetSegment in target.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries).Reverse())
+                    segments.Push(targetSegment);
+            }
+            return Path.TrimEndingDirectorySeparator(current);
+        }
+        catch (IOException ex)
+        {
+            throw new InvalidOperationException("The output path could not be resolved and cannot be validated.", ex);
+        }
     }
     private static bool IsRootedPath(string path)
     {
