@@ -12,8 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - PHP: include deprecation metadata in PHPDoc for generated classes, enums, properties and methods.
+- Ruby: models generated with `--backing-store` keep their values in the runtime's backing store and send only the values changed since they were read, as the other languages do. Before, `--backing-store` generated Ruby that failed to load. Requires the runtime gems at 0.25.0. [kiota-ruby#53](https://github.com/microsoft/kiota-ruby/issues/53)
 
 ### Changed
+
+- TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
 
 ## [1.36.1] - 2026-10-12
 
@@ -1937,4 +1940,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
-
