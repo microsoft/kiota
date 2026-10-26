@@ -2526,4 +2526,112 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Kind = CodeMethodKind.ComposedTypeMarker;
         Assert.Throws<InvalidOperationException>(() => writer.Write(method));
     }
+
+    [Fact]
+    public void WritesDeprecationInformation()
+    {
+        setup();
+        method.Deprecation = new("This method is deprecated", DateTimeOffset.Parse("2020-01-01T00:00:00Z"), DateTimeOffset.Parse("2021-01-01T00:00:00Z"), "v2.0");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("# @deprecated This method is deprecated as of v2.0 on 2020-01-01 and will be removed 2021-01-01", result);
+        Assert.Contains("warn(\"This method is deprecated as of v2.0 on 2020-01-01 and will be removed 2021-01-01\", category: :deprecated, uplevel: 1)", result);
+    }
+    [Fact]
+    public void WritesTheDeprecationTagAfterTheRestOfTheDocumentation()
+    {
+        setup();
+        method.Documentation.DescriptionTemplate = MethodDescription;
+        method.Deprecation = new("Gone soon");
+        writer.Write(method);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        var description = Array.IndexOf(lines, $"# {MethodDescription}");
+        Assert.StartsWith("# @return a ", lines[description + 1], StringComparison.Ordinal);
+        Assert.Equal("# @deprecated Gone soon", lines[description + 2]);
+        Assert.StartsWith("def ", lines[description + 3]);
+    }
+    [Fact]
+    public void WritesABareDeprecationWhenTheDescriptionSaysNothing()
+    {
+        // an operation with deprecated: true and no x-ms-deprecation extension
+        setup();
+        method.Deprecation = new(null);
+        writer.Write(method);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        Assert.Contains("# @deprecated", lines);
+        Assert.Contains("warn(\"method_name is deprecated\", category: :deprecated, uplevel: 1)", lines);
+    }
+    [Fact]
+    public void DoesNotWriteDeprecationWhenNotDeprecated()
+    {
+        setup();
+        method.Deprecation = new("not really", IsDeprecated: false);
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("@deprecated", result);
+        Assert.DoesNotContain("warn(", result);
+    }
+    [Fact]
+    public void EscapesDeprecationWarningStringLiteral()
+    {
+        setup();
+        method.Deprecation = new("line1\"\nline2 #{boom}");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("warn(\"line1\\\"line2 \\#{boom}\", category: :deprecated, uplevel: 1)", result);
+        Assert.DoesNotContain("line1\"\nline2", result);
+    }
+    [Fact]
+    public void NamesTheReplacementMethodTheRubyWay()
+    {
+        setup();
+        var newMethod = method.Clone() as CodeMethod;
+        newMethod.Name = "NewAwesomeMethod";
+        method.Deprecation = new("This method is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = newMethod, IsExternal = false } } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("# @deprecated This method is obsolete. Use new_awesome_method instead.", result);
+        Assert.Contains("warn(\"This method is obsolete. Use new_awesome_method instead.\", category: :deprecated, uplevel: 1)", result);
+    }
+    [Fact]
+    public void DoesNotWarnFromARequestGenerator()
+    {
+        // the executor already warns for the caller
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Get;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        method.Deprecation = new("This method is deprecated");
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("# @deprecated This method is deprecated", result);
+        Assert.DoesNotContain("warn(", result);
+    }
+    [Fact]
+    public void WarnsBeforeTheNullGuards()
+    {
+        setup();
+        method.AddParameter(new CodeParameter { Name = "body", Kind = CodeParameterKind.RequestBody, Type = new CodeType { Name = "string" } });
+        method.Deprecation = new("This method is deprecated");
+        writer.Write(method);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        var warn = Array.FindIndex(lines, static l => l.StartsWith("warn(", StringComparison.Ordinal));
+        Assert.StartsWith("def ", lines[warn - 1]);
+        Assert.Equal("raise StandardError, \"body cannot be null\" if body.nil?", lines[warn + 1]);
+    }
+    [Fact]
+    public void DocumentsADeprecatedParameter()
+    {
+        setup();
+        method.AddParameter(new CodeParameter { Name = "oldParam", Type = new CodeType { Name = "string" }, Deprecation = new("Use new_param instead") });
+        method.AddParameter(new CodeParameter { Name = "silentParam", Type = new CodeType { Name = "string" }, Deprecation = new(null) });
+        method.AddParameter(new CodeParameter { Name = "describedParam", Type = new CodeType { Name = "string" }, Deprecation = new("Going away"), Documentation = new() { DescriptionTemplate = ParamDescription } });
+        writer.Write(method);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        Assert.Contains("# @param old_param (deprecated: Use new_param instead)", lines);
+        Assert.Contains("# @param silent_param (deprecated)", lines);
+        Assert.Contains($"# @param described_param {ParamDescription} (deprecated: Going away)", lines);
+        Assert.DoesNotContain("warn(", tw.ToString());
+    }
 }

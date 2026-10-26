@@ -20,6 +20,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
         if (codeElement.Parent is CodeNamespace ns)
             conventions.WriteNamespaceModules(ns, writer);
         conventions.WriteShortDescription(codeElement, writer);
+        conventions.WriteDeprecationComment(codeElement, writer);
         writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         // the value is what goes on the wire, the key is what Ruby code looks the member up by
         var options = codeElement.Options.Select(static x => $"{x.Name.ToFirstCharacterUpperCase()}: {RubyConventionService.ToRubyStringLiteral(x.WireName)}").ToArray();
