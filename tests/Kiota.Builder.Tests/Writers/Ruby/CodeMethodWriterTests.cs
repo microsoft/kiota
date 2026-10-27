@@ -2535,7 +2535,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("# @deprecated This method is deprecated as of v2.0 on 2020-01-01 and will be removed 2021-01-01", result);
-        Assert.Contains("warn(\"This method is deprecated as of v2.0 on 2020-01-01 and will be removed 2021-01-01\", category: :deprecated, uplevel: 1)", result);
+        Assert.Contains("::Kernel.warn(\"This method is deprecated as of v2.0 on 2020-01-01 and will be removed 2021-01-01\", category: :deprecated, uplevel: 1)", result);
     }
     [Fact]
     public void WritesTheDeprecationTagAfterTheRestOfTheDocumentation()
@@ -2559,7 +2559,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
         Assert.Contains("# @deprecated", lines);
-        Assert.Contains("warn(\"method_name is deprecated\", category: :deprecated, uplevel: 1)", lines);
+        Assert.Contains("::Kernel.warn(\"method_name is deprecated\", category: :deprecated, uplevel: 1)", lines);
     }
     [Fact]
     public void DoesNotWriteDeprecationWhenNotDeprecated()
@@ -2578,7 +2578,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Deprecation = new("line1\"\nline2 #{boom}");
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("warn(\"line1\\\"line2 \\#{boom}\", category: :deprecated, uplevel: 1)", result);
+        Assert.Contains("::Kernel.warn(\"line1\\\"line2 \\#{boom}\", category: :deprecated, uplevel: 1)", result);
         Assert.DoesNotContain("line1\"\nline2", result);
     }
     [Fact]
@@ -2591,7 +2591,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         writer.Write(method);
         var result = tw.ToString();
         Assert.Contains("# @deprecated This method is obsolete. Use new_awesome_method instead.", result);
-        Assert.Contains("warn(\"This method is obsolete. Use new_awesome_method instead.\", category: :deprecated, uplevel: 1)", result);
+        Assert.Contains("::Kernel.warn(\"This method is obsolete. Use new_awesome_method instead.\", category: :deprecated, uplevel: 1)", result);
     }
     [Fact]
     public void DoesNotWarnFromARequestGenerator()
@@ -2616,7 +2616,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         method.Deprecation = new("This method is deprecated");
         writer.Write(method);
         var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
-        var warn = Array.FindIndex(lines, static l => l.StartsWith("warn(", StringComparison.Ordinal));
+        var warn = Array.FindIndex(lines, static l => l.StartsWith("::Kernel.warn(", StringComparison.Ordinal));
         Assert.StartsWith("def ", lines[warn - 1]);
         Assert.Equal("raise StandardError, \"body cannot be null\" if body.nil?", lines[warn + 1]);
     }

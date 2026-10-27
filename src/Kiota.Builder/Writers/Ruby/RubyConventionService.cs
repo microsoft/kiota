@@ -213,7 +213,8 @@ public class RubyConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(writer);
         if (GetDeprecationMessage(element) is not string message) return;
         if (string.IsNullOrEmpty(message)) message = $"{rubyName} is deprecated";
-        writer.WriteLine($"warn({ToRubyStringLiteral(message)}, category: :deprecated, uplevel: 1)");
+        // qualified, so a generated `warn` accessor (a sibling /warn path) cannot shadow it
+        writer.WriteLine($"::Kernel.warn({ToRubyStringLiteral(message)}, category: :deprecated, uplevel: 1)");
     }
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ? string.Empty :
