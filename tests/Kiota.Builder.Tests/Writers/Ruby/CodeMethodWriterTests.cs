@@ -8,6 +8,8 @@ using Kiota.Builder.Extensions;
 using Kiota.Builder.Writers;
 using Kiota.Builder.Writers.Ruby;
 
+using Microsoft.OpenApi.MicrosoftExtensions;
+
 using Xunit;
 
 namespace Kiota.Builder.Tests.Writers.Ruby;
@@ -2580,6 +2582,16 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("::Kernel.warn(\"line1\\\"line2 \\#{boom}\", category: :deprecated, uplevel: 1)", result);
         Assert.DoesNotContain("line1\"\nline2", result);
+    }
+    [Fact]
+    public void WritesTheDeprecationTextOfTheDescriptionUnescaped()
+    {
+        setup();
+        method.Deprecation = new OpenApiDeprecationExtension { Description = "Use \"new-api\" & <v2>, it's faster", Version = "<2.0>" }.ToDeprecationInformation();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("# @deprecated Use \"new-api\" & <v2>, it's faster as of <2.0>", result);
+        Assert.Contains("::Kernel.warn(\"Use \\\"new-api\\\" & <v2>, it's faster as of <2.0>\", category: :deprecated, uplevel: 1)", result);
     }
     [Fact]
     public void NamesTheReplacementMethodTheRubyWay()
