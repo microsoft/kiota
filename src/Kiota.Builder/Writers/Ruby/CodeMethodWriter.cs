@@ -26,6 +26,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
         var requestParams = new RequestParams(requestBodyParam, config, requestContentType);
         WriteMethodPrototype(codeElement, writer);
+        // the executor warns for the caller, so the generator it calls stays quiet
+        if (!codeElement.IsOfKind(CodeMethodKind.RequestGenerator))
+            conventions.WriteDeprecationWarning(codeElement, GetMethodName(codeElement), writer);
         var wroteGuards = AddNullChecks(codeElement, writer);
         var body = writer.CaptureLines(() => WriteMethodBody(codeElement, parentClass, requestParams, returnType, inherits, writer));
         if (wroteGuards && body.Count != 0)
@@ -620,15 +623,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.CloseBlock("end", false);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
+    private static string GetMethodName(CodeMethod code) => code.Kind switch
+    {
+        CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "initialize",
+        CodeMethodKind.Getter or CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
+        _ => code.Name.ToSnakeCase()
+    };
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer)
     {
-        var methodName = code.Kind switch
-        {
-            CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "initialize",
-            CodeMethodKind.Getter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
-            CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
-            _ => code.Name.ToSnakeCase()
-        };
+        var methodName = GetMethodName(code);
         var parameters = string.Join(", ", code.Parameters
                                                 .OrderBy(static x => x, parameterOrderComparer)
                                                 .Select(p => conventions.GetParameterSignature(p, code))
@@ -641,7 +644,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        var parametersWithDescription = code.Parameters.Where(x => x.Documentation.DescriptionAvailable || conventions.GetDeprecationMessage(x) is not null).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         if (code.Documentation.DescriptionAvailable || parametersWithDescription.Length != 0)
         {
             if (code.Documentation.DescriptionAvailable)
@@ -652,8 +655,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             foreach (var paramWithDescription in parametersWithDescription)
             {
-                var description = paramWithDescription.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: RubyConventionService.RemoveInvalidDescriptionCharacters);
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {description}".TrimEnd());
+                var description = paramWithDescription.Documentation.DescriptionAvailable ?
+                    paramWithDescription.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: RubyConventionService.RemoveInvalidDescriptionCharacters) :
+                    string.Empty;
+                // YARD has no tag for a deprecated parameter, so the note goes in its description
+                var deprecation = conventions.GetDeprecationMessage(paramWithDescription) switch
+                {
+                    null => string.Empty,
+                    "" => "(deprecated)",
+                    var message => $"(deprecated: {message})",
+                };
+                var text = string.Join(' ', new[] { description, deprecation }.Where(static x => !string.IsNullOrEmpty(x)));
+                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {text}".TrimEnd());
             }
 
             if (code.IsAsync)
@@ -661,6 +674,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             else
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name.ToSnakeCase()}");
         }
+        conventions.WriteDeprecationComment(code, writer);
     }
     private string GetDeserializationMethodName(CodeTypeBase propType)
     {

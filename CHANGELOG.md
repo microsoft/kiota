@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Ruby: a deprecated operation, path, model, enum, property or parameter carries a YARD `@deprecated` tag with the description's deprecation text, date, removal date and version. Calling a deprecated method or navigating to a deprecated path also warns with `category: :deprecated`, which Ruby prints when `Warning[:deprecated]` is on, as it does for its own deprecations. [kiota-ruby#64](https://github.com/microsoft/kiota-ruby/issues/64)
 - Ruby: models generated with `--backing-store` keep their values in the runtime's backing store and send only the values changed since they were read, as the other languages do. Before, `--backing-store` generated Ruby that failed to load. Requires the runtime gems at 0.25.0. [kiota-ruby#53](https://github.com/microsoft/kiota-ruby/issues/53)
 
 ### Changed

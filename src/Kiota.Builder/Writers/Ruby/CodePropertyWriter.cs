@@ -20,6 +20,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         if (codeElement.Kind is CodePropertyKind.ErrorMessageOverride && string.IsNullOrEmpty(primaryMessageCodePath)) return;
         RubyConventionService.WriteMemberSeparator(writer);
         conventions.WriteShortDescription(codeElement, writer);
+        conventions.WriteDeprecationComment(codeElement, writer);
         switch (codeElement.Kind)
         {
             case CodePropertyKind.ErrorMessageOverride:
@@ -32,6 +33,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}");
                 writer.IncreaseIndent();
+                conventions.WriteDeprecationWarning(codeElement, codeElement.Name.ToSnakeCase(), writer);
                 conventions.AddRequestBuilderBody(parentClass, conventions.GetQualifiedTypeName(codeElement.Type), writer);
                 writer.DecreaseIndent();
                 writer.WriteLine("end");
