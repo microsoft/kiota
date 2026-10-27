@@ -23,7 +23,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Kiota.Bundle" Version="2.1.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-    <PackageVersion Include="Microsoft.OpenApi" Version="3.10.2" />
+    <PackageVersion Include="Microsoft.OpenApi" Version="3.11.0" />
     <PackageVersion Include="Microsoft.OpenApi.ApiManifest" Version="3.0.0-preview.1" />
     <PackageVersion Include="Microsoft.OpenApi.YamlReader" Version="3.10.2" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
