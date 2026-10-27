@@ -1001,6 +1001,51 @@ components:
         Assert.Null(modelsNS.FindChildByName<CodeClass>("UsersResponse", false)); //empty type
     }
     [Fact]
+    public async Task MarksTheNavigationPropertyToADeprecatedPathAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://localhost
+paths:
+  /api/current:
+    get:
+      responses:
+        '200':
+          description: ok
+  /api/legacy:
+    get:
+      deprecated: true
+      x-ms-deprecation:
+        description: Use current instead
+        version: '2.0'
+      responses:
+        '200':
+          description: ok");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var apiRequestBuilder = codeModel.FindNamespaceByName("ApiSdk.api")?.FindChildByName<CodeClass>("ApiRequestBuilder", false);
+        Assert.NotNull(apiRequestBuilder);
+        var legacy = apiRequestBuilder.FindChildByName<CodeProperty>("legacy", false);
+        Assert.NotNull(legacy);
+        Assert.True(legacy.Deprecation?.IsDeprecated);
+        Assert.Equal("Use current instead", legacy.Deprecation.DescriptionTemplate);
+        Assert.Equal("2.0", legacy.Deprecation.Version);
+        var current = apiRequestBuilder.FindChildByName<CodeProperty>("current", false);
+        Assert.NotNull(current);
+        Assert.False(current.Deprecation?.IsDeprecated ?? false);
+        // a path with one deprecated child is not deprecated itself
+        var api = codeModel.FindChildByName<CodeClass>("Graph")?.FindChildByName<CodeProperty>("api", false);
+        Assert.NotNull(api);
+        Assert.False(api.Deprecation?.IsDeprecated ?? false);
+    }
+    [Fact]
     public async Task TrimsInheritanceUnusedModelsAsync()
     {
         var tempFilePath = Path.GetTempFileName();
