@@ -2682,4 +2682,84 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.DoesNotContain("createSunnyDayForecastFromDiscriminatorValue", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+
+    private async Task<CodeNamespace> GetRefinedNestedDiscriminatedUnionSampleAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, NestedDiscriminatedUnionPropertySample.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Invoices", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        return rootNS;
+    }
+
+    private string WriteFunction(CodeNamespace rootNS, string functionName)
+    {
+        var function = rootNS.FindChildByName<CodeFunction>(functionName);
+        Assert.NotNull(function);
+        tw.GetStringBuilder().Clear();
+        writer.Write(function);
+        return tw.ToString();
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionProperty_NestedInUnionMember_UsesBaseFactoryMethodAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        var invoice = WriteFunction(rootNS, "deserializeIntoInvoice");
+        Assert.Contains("n.getCollectionOfObjectValues<InvoiceLine>(createInvoiceLineFromDiscriminatorValue)", invoice);
+        Assert.DoesNotContain("createNetLineFromDiscriminatorValue", invoice);
+        Assert.DoesNotContain("createGrossLineFromDiscriminatorValue", invoice);
+        AssertExtensions.CurlyBracesAreClosed(invoice, 1);
+
+        foreach (var member in new[] { "NetLine", "GrossLine" })
+        {
+            var line = WriteFunction(rootNS, $"deserializeInto{member}");
+            Assert.Contains("n.getObjectValue<LineVat>(createLineVatFromDiscriminatorValue)", line);
+            Assert.DoesNotContain("createStandardVatFromDiscriminatorValue", line);
+            Assert.DoesNotContain("createTaxFreeVatFromDiscriminatorValue", line);
+            AssertExtensions.CurlyBracesAreClosed(line, 1);
+        }
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionProperty_ManyToOneMapping_DispatchesEveryValueAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        // The property defers to the union's factory, so every mapping value reaches its member,
+        // including the values that share one (export and exempt both map to TaxFreeVat).
+        var factory = WriteFunction(rootNS, "createLineVatFromDiscriminatorValue");
+        Assert.Contains("case \"export\":", factory);
+        Assert.Contains("case \"exempt\":", factory);
+        Assert.Contains("case \"standard\":", factory);
+        Assert.Equal(2, factory.Split("return deserializeIntoTaxFreeVat;").Length - 1);
+        Assert.Contains("return deserializeIntoStandardVat;", factory);
+
+        var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
+        Assert.Contains("n.getObjectValue<Receipt_payment>(createReceipt_paymentFromDiscriminatorValue)", receipt);
+        Assert.DoesNotContain("createCardPaymentFromDiscriminatorValue", receipt);
+        Assert.DoesNotContain("createCashPaymentFromDiscriminatorValue", receipt);
+    }
+
+    [Fact]
+    public async Task Writes_UnionPropertyWithoutDiscriminator_KeepsMemberFactoriesAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        // Without a discriminator there is no mapping to dispatch on, so the property keeps
+        // reading each member in turn.
+        var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
+        Assert.Contains("n.getObjectValue<LinkNote>(createLinkNoteFromDiscriminatorValue) ?? n.getObjectValue<TextNote>(createTextNoteFromDiscriminatorValue)", receipt);
+        AssertExtensions.CurlyBracesAreClosed(receipt, 1);
+    }
 }
