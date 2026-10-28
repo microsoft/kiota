@@ -1589,6 +1589,46 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.True(result.IndexOf("@path_parameters[\"drive%2Did\"] = drive_id unless drive_id.nil?", StringComparison.Ordinal) > superCall, result);
     }
     [Fact]
+    public void EscapesPathParameterKeysInRequestBuilderConstructor()
+    {
+        setup(true);
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        AddRequestProperties();
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType { Name = "Hash" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestAdapter",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType { Name = "RequestAdapter" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "quoted",
+            SerializationName = "\"q\"",
+            Kind = CodeParameterKind.Path,
+            Optional = true,
+            Type = new CodeType { Name = "string" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "hostile",
+            SerializationName = "a\"b\\c\r\n\t\0d$e#{x}#$y",
+            Kind = CodeParameterKind.Path,
+            Optional = true,
+            Type = new CodeType { Name = "string" },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("@path_parameters[\"\\\"q\\\"\"] = quoted unless quoted.nil?", result);
+        Assert.Contains("@path_parameters[\"a\\\"b\\\\c\\r\\n\\t\\0d$e\\#{x}\\#$y\"] = hostile unless hostile.nil?", result);
+    }
+    [Fact]
     public void WritesSetterToField()
     {
         setup();
