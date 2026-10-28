@@ -28,7 +28,7 @@
     "eslint-config-prettier": "^10.1.8",
     "minimist": "^1.2.8",
     "prettier": "^3.9.10",
-    "typescript": "^5.8.2"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@azure/identity": "^4.14.0",
