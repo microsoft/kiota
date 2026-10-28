@@ -339,7 +339,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             {
                 var parameterName = RubyConventionService.GetParameterName(pathParameter);
                 var templateName = string.IsNullOrEmpty(pathParameter.SerializationName) ? pathParameter.Name : pathParameter.SerializationName;
-                writer.WriteLine($"@{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}[\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(templateName)}\"] = {parameterName} unless {parameterName}.nil?");
+                writer.WriteLine($"@{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}[{RubyConventionService.ToRubyStringLiteral(templateName)}] = {parameterName} unless {parameterName}.nil?");
             }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder)
