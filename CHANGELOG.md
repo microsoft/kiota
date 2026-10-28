@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The accessor to a child path is marked deprecated when that path is deprecated. It used to take the deprecation of its parent path instead, so a deprecated `/legacy` under a live `/api` was not flagged, and every child of a deprecated path was.
 - TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
+- TypeScript: resolve factory default deserializers in the declared model's namespace, preventing unresolved references to similarly named deserializers in child namespaces. Fixes [#8461](https://github.com/microsoft/kiota/issues/8461).
 
 ## [1.36.1] - 2026-10-12
 
