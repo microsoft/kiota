@@ -682,6 +682,63 @@ public class RubyLanguageRefinerTests
         Assert.Empty(subModelsNS.Enums);
     }
     [Fact]
+    public async Task RenamesAFlattenedEnumCollidingWithAModelAsync()
+    {
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        var securityNS = modelsNS.AddNamespace($"{config.ModelsNamespaceName}.security");
+        var model = modelsNS.AddClass(new CodeClass
+        {
+            Name = "securityAction",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var nestedEnum = securityNS.AddEnum(new CodeEnum
+        {
+            Name = "action",
+        }).First();
+        var property = model.AddProperty(new CodeProperty
+        {
+            Name = "kind",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType
+            {
+                Name = nestedEnum.Name,
+                TypeDefinition = nestedEnum,
+            },
+        }).First();
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Same(model, Assert.Single(modelsNS.Classes));
+        Assert.Equal("securityAction", model.Name);
+        Assert.Same(nestedEnum, Assert.Single(modelsNS.Enums));
+        Assert.Equal("securityActionEnum", nestedEnum.Name);
+        Assert.Empty(securityNS.Enums);
+        Assert.Equal("securityActionEnum", property.Type.Name);
+    }
+    [Fact]
+    public async Task RenamesAFlattenedModelCollidingWithAModelAsync()
+    {
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        var securityNS = modelsNS.AddNamespace($"{config.ModelsNamespaceName}.security");
+        var model = modelsNS.AddClass(new CodeClass
+        {
+            Name = "securityAction",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var nestedModel = securityNS.AddClass(new CodeClass
+        {
+            Name = "action",
+            Kind = CodeClassKind.Model,
+        }).First();
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(2, modelsNS.Classes.Count());
+        Assert.Contains(model, modelsNS.Classes);
+        Assert.Contains(nestedModel, modelsNS.Classes);
+        Assert.Equal("securityAction", model.Name);
+        Assert.Equal("securityActionModel", nestedModel.Name);
+        Assert.Empty(securityNS.Classes);
+    }
+    [Fact]
     public async Task FlattensNestedModelsNamespaceIntoACamelCasedNameAsync()
     {
         // a namespace more than one level below models keeps its separators in the flattened name,
