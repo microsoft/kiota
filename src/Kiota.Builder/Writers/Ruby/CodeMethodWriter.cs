@@ -26,6 +26,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var requestContentType = codeElement.Parameters.OfKind(CodeParameterKind.RequestBodyContentType);
         var requestParams = new RequestParams(requestBodyParam, config, requestContentType);
         WriteMethodPrototype(codeElement, writer);
+        // the executor warns for the caller, so the generator it calls stays quiet
+        if (!codeElement.IsOfKind(CodeMethodKind.RequestGenerator))
+            conventions.WriteDeprecationWarning(codeElement, GetMethodName(codeElement), writer);
         var wroteGuards = AddNullChecks(codeElement, writer);
         var body = writer.CaptureLines(() => WriteMethodBody(codeElement, parentClass, requestParams, returnType, inherits, writer));
         if (wroteGuards && body.Count != 0)
@@ -189,10 +192,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     private static string GetIntersectionValueVarName(CodeProperty property) => $"val_{property.Name.ToSnakeCase()}";
     private void WriteComposedTypeGuardedSerialization(CodeProperty property, LanguageWriter writer)
     {
-        var propertyName = property.Name.ToSnakeCase();
-        writer.WriteLine($"return if @{propertyName}.nil?");
+        var value = RubyConventionService.ReadProperty(property);
+        writer.WriteLine($"return if {value}.nil?");
         writer.WriteLine();
-        writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{propertyName})");
+        writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, {value})");
     }
     private void WriteFactoryMethodBodyForIntersectionModel(CodeParameter parseNodeParameter, CodeClass parentClass, LanguageWriter writer)
     {
@@ -294,6 +297,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var requestAdapterPropertyName = $"{requestAdapterProperty?.NamePrefix}{requestAdapterProperty?.Name.ToSnakeCase()}";
         WriteSerializationRegistration(parentClass, method.SerializerModules, writer, "register_default_serializer");
         WriteSerializationRegistration(parentClass, method.DeserializerModules, writer, "register_default_deserializer");
+        if (method.Parameters.OfKind(CodeParameterKind.BackingStore) is CodeParameter backingStoreParameter)
+            writer.WriteLine($"@{requestAdapterPropertyName}.enable_backing_store({RubyConventionService.GetParameterName(backingStoreParameter)})");
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {
             writer.WriteLine($"@{requestAdapterPropertyName}.set_base_url({RubyConventionService.ToRubyStringLiteral(method.BaseUrl)}) if @{requestAdapterPropertyName}.get_base_url.nil? || @{requestAdapterPropertyName}.get_base_url.empty?");
@@ -369,7 +374,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                         _ => defaultValue
                     };
             }
-            writer.WriteLine($"@{propWithDefault.NamePrefix}{propWithDefault.Name.ToSnakeCase()} = {defaultValue}");
+            writer.WriteLine(RubyConventionService.AssignProperty(propWithDefault, defaultValue));
         }
     }
     private static bool TryNormalizePrimitiveDefaultValue(string defaultValue, CodeType propertyType, out string? normalizedDefaultValue)
@@ -429,7 +434,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var entries = parentClass.GetPropertiesOfKind(CodePropertyKind.Custom)
                                 .Where(static x => !x.ExistsInBaseType)
                                 .OrderBy(static x => x.Name)
-                                .Select(x => $"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(x.WireName)}\" => ->(n) {{ @{x.NamePrefix}{x.Name.ToSnakeCase()} = n.{GetDeserializationMethodName(x.Type)} }}")
+                                .Select(x => $"\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(x.WireName)}\" => ->(n) {{ {RubyConventionService.AssignProperty(x, $"n.{GetDeserializationMethodName(x.Type)}")} }}")
                                 .ToArray();
         if (entries.Length == 0)
         {
@@ -454,8 +459,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                            .ToArray();
         if (complexProperties.Length > 0)
         {
-            var condition = string.Join(" || ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
-            var propNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            var condition = string.Join(" || ", complexProperties.Select(RubyConventionService.ReadProperty));
+            var propNames = string.Join(", ", complexProperties.Select(RubyConventionService.ReadProperty));
             writer.WriteLine($"return MicrosoftKiotaAbstractions::ParseNodeHelper.merge_deserializers_for_intersection_wrapper({propNames}) if {condition}");
             writer.WriteLine();
         }
@@ -573,10 +578,10 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                                             .Where(static x => !x.ExistsInBaseType && !x.ReadOnly)
                                             .OrderBy(static x => x.Name))
         {
-            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\", @{otherProp.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.{GetSerializationMethodName(otherProp.Type)}(\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(otherProp.WireName)}\", {RubyConventionService.ReadProperty(otherProp)})");
         }
         if (additionalDataProperty != null)
-            writer.WriteLine($"writer.write_additional_data(@{additionalDataProperty.NamePrefix}{additionalDataProperty.Name.ToSnakeCase()})");
+            writer.WriteLine($"writer.write_additional_data({RubyConventionService.ReadProperty(additionalDataProperty)})");
     }
     private void WriteSerializerBodyForUnionModel(CodeClass parentClass, LanguageWriter writer) =>
         WriteSerializerBodyForIntersectionModel(parentClass, writer);
@@ -596,8 +601,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
         var elseIfPrefix = string.Empty;
         foreach (var property in nonComplexProperties)
         {
-            writer.StartBlock($"{elseIfPrefix}if !@{property.Name.ToSnakeCase()}.nil?");
-            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, @{property.Name.ToSnakeCase()})");
+            writer.StartBlock($"{elseIfPrefix}if !{RubyConventionService.ReadProperty(property)}.nil?");
+            writer.WriteLine($"writer.{GetSerializationMethodName(property.Type)}(nil, {RubyConventionService.ReadProperty(property)})");
             writer.DecreaseIndent();
             elseIfPrefix = "els";
         }
@@ -607,7 +612,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
                 writer.StartBlock("else");
             // write_object_value returns early when its first argument is nil, which would drop
             // every remaining member, so compact the list and skip the call when nothing is set
-            var complexPropNames = string.Join(", ", complexProperties.Select(x => $"@{x.Name.ToSnakeCase()}"));
+            var complexPropNames = string.Join(", ", complexProperties.Select(RubyConventionService.ReadProperty));
             writer.WriteLine($"composed_values = [{complexPropNames}].compact");
             writer.WriteLine("writer.write_object_value(nil, *composed_values) unless composed_values.empty?");
             if (nonComplexProperties.Length > 0)
@@ -618,15 +623,15 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             writer.CloseBlock("end", false);
     }
     private static readonly BaseCodeParameterOrderComparer parameterOrderComparer = new();
+    private static string GetMethodName(CodeMethod code) => code.Kind switch
+    {
+        CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "initialize",
+        CodeMethodKind.Getter or CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
+        _ => code.Name.ToSnakeCase()
+    };
     private void WriteMethodPrototype(CodeMethod code, LanguageWriter writer)
     {
-        var methodName = code.Kind switch
-        {
-            CodeMethodKind.Constructor or CodeMethodKind.ClientConstructor => "initialize",
-            CodeMethodKind.Getter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
-            CodeMethodKind.Setter => $"{code.AccessedProperty?.Name?.ToSnakeCase()}",
-            _ => code.Name.ToSnakeCase()
-        };
+        var methodName = GetMethodName(code);
         var parameters = string.Join(", ", code.Parameters
                                                 .OrderBy(static x => x, parameterOrderComparer)
                                                 .Select(p => conventions.GetParameterSignature(p, code))
@@ -639,7 +644,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
     }
     private void WriteMethodDocumentation(CodeMethod code, LanguageWriter writer)
     {
-        var parametersWithDescription = code.Parameters.Where(static x => x.Documentation.DescriptionAvailable).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        var parametersWithDescription = code.Parameters.Where(x => x.Documentation.DescriptionAvailable || conventions.GetDeprecationMessage(x) is not null).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         if (code.Documentation.DescriptionAvailable || parametersWithDescription.Length != 0)
         {
             if (code.Documentation.DescriptionAvailable)
@@ -650,8 +655,18 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             foreach (var paramWithDescription in parametersWithDescription)
             {
-                var description = paramWithDescription.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: RubyConventionService.RemoveInvalidDescriptionCharacters);
-                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {description}".TrimEnd());
+                var description = paramWithDescription.Documentation.DescriptionAvailable ?
+                    paramWithDescription.Documentation.GetDescription(type => conventions.GetTypeString(type, code), normalizationFunc: RubyConventionService.RemoveInvalidDescriptionCharacters) :
+                    string.Empty;
+                // YARD has no tag for a deprecated parameter, so the note goes in its description
+                var deprecation = conventions.GetDeprecationMessage(paramWithDescription) switch
+                {
+                    null => string.Empty,
+                    "" => "(deprecated)",
+                    var message => $"(deprecated: {message})",
+                };
+                var text = string.Join(' ', new[] { description, deprecation }.Where(static x => !string.IsNullOrEmpty(x)));
+                writer.WriteLine($"{conventions.DocCommentPrefix}@param {paramWithDescription.Name.ToSnakeCase()} {text}".TrimEnd());
             }
 
             if (code.IsAsync)
@@ -659,6 +674,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             else
                 writer.WriteLine($"{conventions.DocCommentPrefix}@return a {code.ReturnType.Name.ToSnakeCase()}");
         }
+        conventions.WriteDeprecationComment(code, writer);
     }
     private string GetDeserializationMethodName(CodeTypeBase propType)
     {
