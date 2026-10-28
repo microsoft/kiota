@@ -1547,6 +1547,48 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain("return Somecustomtype.new", result);
     }
     [Fact]
+    public void WritesPathParametersInRequestBuilderConstructor()
+    {
+        setup(true);
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        AddRequestProperties();
+        parentClass.GetPropertyOfKind(CodePropertyKind.UrlTemplate).DefaultValue = "\"{+baseurl}/drives/{drive%2Did}/search(q='{searchText}')\"";
+        method.Kind = CodeMethodKind.Constructor;
+        method.AddParameter(new CodeParameter
+        {
+            Name = "pathParameters",
+            Kind = CodeParameterKind.PathParameters,
+            Type = new CodeType { Name = "Hash" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "requestAdapter",
+            Kind = CodeParameterKind.RequestAdapter,
+            Type = new CodeType { Name = "RequestAdapter" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "searchText",
+            Kind = CodeParameterKind.Path,
+            Optional = true,
+            Type = new CodeType { Name = "string" },
+        });
+        method.AddParameter(new CodeParameter
+        {
+            Name = "driveId",
+            SerializationName = "drive%2Did",
+            Kind = CodeParameterKind.Path,
+            Optional = true,
+            Type = new CodeType { Name = "string" },
+        });
+        writer.Write(method);
+        var result = tw.ToString();
+        var superCall = result.IndexOf("super(path_parameters, request_adapter, \"{+baseurl}/drives/{drive%2Did}/search(q='{searchText}')\")", StringComparison.Ordinal);
+        Assert.True(superCall >= 0, result);
+        Assert.True(result.IndexOf("@path_parameters[\"searchText\"] = search_text unless search_text.nil?", StringComparison.Ordinal) > superCall, result);
+        Assert.True(result.IndexOf("@path_parameters[\"drive%2Did\"] = drive_id unless drive_id.nil?", StringComparison.Ordinal) > superCall, result);
+    }
+    [Fact]
     public void WritesSetterToField()
     {
         setup();
