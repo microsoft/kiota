@@ -333,6 +333,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, RubyConventionServ
             }
             else
                 writer.WriteLine("super");
+        if (parentClass.IsOfKind(CodeClassKind.RequestBuilder) &&
+            parentClass.GetPropertyOfKind(CodePropertyKind.PathParameters) is CodeProperty pathParametersProperty)
+            foreach (var pathParameter in currentMethod.Parameters.Where(static x => x.IsOfKind(CodeParameterKind.Path)))
+            {
+                var parameterName = RubyConventionService.GetParameterName(pathParameter);
+                var templateName = string.IsNullOrEmpty(pathParameter.SerializationName) ? pathParameter.Name : pathParameter.SerializationName;
+                writer.WriteLine($"@{pathParametersProperty.NamePrefix}{pathParametersProperty.Name.ToSnakeCase()}[\"{RubyConventionService.SanitizeRubyDoubleQuoteLiteral(templateName)}\"] = {parameterName} unless {parameterName}.nil?");
+            }
         foreach (var propWithDefault in parentClass.GetPropertiesOfKind(CodePropertyKind.BackingStore,
                                                                         CodePropertyKind.RequestBuilder)
                                         .Where(static x => !string.IsNullOrEmpty(x.DefaultValue))

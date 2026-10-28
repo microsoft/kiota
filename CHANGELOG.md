@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript: resolve factory default deserializers in the declared model's namespace, preventing unresolved references to similarly named deserializers in child namespaces. Fixes [#8461](https://github.com/microsoft/kiota/issues/8461).
 - Ruby: `kiota info` lists the runtime gems at 0.25.0.
 - Ruby: fixed generation failing when a nested model is flattened onto the name of an existing one, as in Microsoft Graph beta.
+- Ruby: a request builder for a path with function parameters, such as Microsoft Graph's `search(q='{q}')`, puts their values in the URL. They were accepted and dropped, so the request went out with empty values.
 
 ## [1.36.1] - 2026-10-12
 
