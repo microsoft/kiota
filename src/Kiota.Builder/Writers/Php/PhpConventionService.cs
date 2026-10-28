@@ -300,11 +300,17 @@ public class PhpConventionService : CommonLanguageConventionService
 
     private static bool IsSymbolDuplicated(string symbol, CodeElement targetElement)
     {
-        var targetClass = targetElement?.GetImmediateParentOfType<CodeClass>();
-        if (targetClass?.Parent is CodeClass parentClass)
-            targetClass = parentClass;
-        return targetClass?.StartBlock
-            ?.Usings
+        IEnumerable<CodeUsing>? usings;
+        if (targetElement is CodeEnum targetEnum)
+            usings = targetEnum.StartBlock.Usings;
+        else
+        {
+            var targetClass = targetElement?.GetImmediateParentOfType<CodeClass>();
+            if (targetClass?.Parent is CodeClass parentClass)
+                targetClass = parentClass;
+            usings = targetClass?.StartBlock?.Usings;
+        }
+        return usings
             ?.Where(x => !x.IsExternal && symbol.Equals(x.Declaration?.TypeDefinition?.Name, StringComparison.OrdinalIgnoreCase))
             ?.Distinct(_usingDeclarationNameComparer)
             ?.Count() > 1;
