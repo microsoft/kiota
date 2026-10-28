@@ -5,8 +5,8 @@ on:
     branches: [main]
 
 permissions:
-  pull-requests: write
-  contents: write
+  pull-requests: read
+  contents: read
 
 jobs:
   dependabot-merge:
@@ -21,10 +21,20 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Generate GitHub App token
+        id: app-token
+        if: ${{steps.metadata.outputs.update-type != 'version-update:semver-major'}}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_TOKEN_PROVIDER_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_TOKEN_PROVIDER_PEM }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Enable auto-merge for Dependabot PRs
         # Only if version bump is not a major version change
         if: ${{steps.metadata.outputs.update-type != 'version-update:semver-major'}}
         run: gh pr merge --auto "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
