@@ -8,5 +8,5 @@ Your project will need a reference to the abstraction package to build and run, 
 - [Java](https://github.com/microsoft/kiota-java/tree/main/components/abstractions)
 - [PHP](https://github.com/microsoft/kiota-abstractions-php)
 - [Python](https://github.com/microsoft/kiota-abstractions-python)
-- [Ruby](https://github.com/microsoft/kiota-abstractions-ruby)
+- [Ruby](https://github.com/microsoft/kiota-ruby/tree/main/components/abstractions)
 - [TypeScript](https://github.com/microsoft/kiota-typescript/tree/main/packages/abstractions)
