@@ -20,6 +20,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
         if (codeElement.Kind is CodePropertyKind.ErrorMessageOverride && string.IsNullOrEmpty(primaryMessageCodePath)) return;
         RubyConventionService.WriteMemberSeparator(writer);
         conventions.WriteShortDescription(codeElement, writer);
+        conventions.WriteDeprecationComment(codeElement, writer);
         switch (codeElement.Kind)
         {
             case CodePropertyKind.ErrorMessageOverride:
@@ -32,9 +33,20 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, RubyConvention
             case CodePropertyKind.RequestBuilder:
                 writer.WriteLine($"def {codeElement.Name.ToSnakeCase()}");
                 writer.IncreaseIndent();
+                conventions.WriteDeprecationWarning(codeElement, codeElement.Name.ToSnakeCase(), writer);
                 conventions.AddRequestBuilderBody(parentClass, conventions.GetQualifiedTypeName(codeElement.Type), writer);
                 writer.DecreaseIndent();
                 writer.WriteLine("end");
+                break;
+            case CodePropertyKind.Custom or CodePropertyKind.AdditionalData when RubyConventionService.GetBackingStoreVariable(codeElement) is not null:
+                var propertyName = codeElement.Name.ToSnakeCase();
+                writer.StartBlock($"def {propertyName}");
+                writer.WriteLine(RubyConventionService.ReadProperty(codeElement));
+                writer.CloseBlock("end");
+                writer.WriteLine();
+                writer.StartBlock($"def {propertyName}=(value)");
+                writer.WriteLine(RubyConventionService.AssignProperty(codeElement, "value"));
+                writer.CloseBlock("end");
                 break;
             case CodePropertyKind.QueryParameter:
             case CodePropertyKind.QueryParameters:

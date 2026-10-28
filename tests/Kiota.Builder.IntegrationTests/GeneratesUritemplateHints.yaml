@@ -15,6 +15,26 @@ paths:
           schema:
             type: string
           in: "query"
+        - name: "legacyFilter"
+          schema:
+            type: string
+          in: "query"
+          deprecated: true
+          x-ms-deprecation:
+            description: "Use EndDateTime instead"
+      responses:
+        "200":
+          description: "something"
+          content:
+            application/json: {}
+  /api/something/v1/legacy:
+    get:
+      deprecated: true
+      x-ms-deprecation:
+        date: 2026-01-01T00:00:00Z
+        removalDate: 2027-01-01T00:00:00Z
+        version: "2.0"
+        description: "Use v1 directly"
       responses:
         "200":
           description: "something"

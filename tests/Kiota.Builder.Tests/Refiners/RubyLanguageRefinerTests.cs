@@ -27,6 +27,26 @@ public class RubyLanguageRefinerTests
     }
     #region CommonLanguageRefinerTests
     [Fact]
+    public async Task BacksAModelWithTheRuntimeStoreAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "user",
+            Kind = CodeClassKind.Model,
+        }).First();
+        model.StartBlock.AddImplements(new CodeType { Name = "IBackedModel", IsExternal = true });
+        model.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            DefaultValue = "BackingStoreFactorySingleton.Instance.CreateBackingStore()",
+            Type = new CodeType { Name = "IBackingStore", IsExternal = true },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, UsesBackingStore = true }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains("MicrosoftKiotaAbstractions::BackedModel", model.StartBlock.Implements.Select(static x => x.Name));
+        Assert.Equal("MicrosoftKiotaAbstractions::BackingStoreFactorySingleton.instance.create_backing_store", model.GetPropertyOfKind(CodePropertyKind.BackingStore)!.DefaultValue);
+    }
+    [Fact]
     public async Task OverridesTheMessageOfAnErrorAndKeepsAPropertyOfTheSameNameAsync()
     {
         var error = graphNS.AddClass(new CodeClass
