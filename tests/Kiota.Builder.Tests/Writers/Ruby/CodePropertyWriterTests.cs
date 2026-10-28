@@ -222,4 +222,58 @@ public sealed class CodePropertyWriterTests : IDisposable
         writer.Write(AddMessageOverride());
         Assert.Empty(tw.ToString().Trim());
     }
+
+    [Fact]
+    public void WritesDeprecationComment()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        var replacement = new CodeProperty { Name = "newerProperty", Type = new CodeType { Name = "string" } };
+        parentClass.AddProperty(replacement);
+        property.Deprecation = new("This property is deprecated, use {TypeName} instead", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { TypeDefinition = replacement, IsExternal = false } } });
+        writer.Write(property);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        var tag = Array.IndexOf(lines, "# @deprecated This property is deprecated, use newer_property instead");
+        Assert.True(tag >= 0, tw.ToString());
+        Assert.Equal($"attr_accessor :{PropertyName.ToSnakeCase()}", lines[tag + 1]);
+        Assert.DoesNotContain("warn(", tw.ToString());
+    }
+    [Fact]
+    public void WarnsFromADeprecatedRequestBuilder()
+    {
+        // navigating to a deprecated path is a call user code makes directly
+        property.Kind = CodePropertyKind.RequestBuilder;
+        property.Deprecation = new("This path is deprecated", Version: "2.0");
+        writer.Write(property);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        var definition = Array.IndexOf(lines, $"def {PropertyName.ToSnakeCase()}");
+        Assert.Equal("# @deprecated This path is deprecated as of 2.0", lines[definition - 1]);
+        Assert.Equal("::Kernel.warn(\"This path is deprecated as of 2.0\", category: :deprecated, uplevel: 1)", lines[definition + 1]);
+        Assert.Contains($"{RootNamespaceName}::ParentClass.new", lines[definition + 2]);
+    }
+    [Fact]
+    public void WarnsThroughKernelWhenASiblingAccessorIsNamedWarn()
+    {
+        var sibling = parentClass.AddProperty(new CodeProperty
+        {
+            Name = "warn",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType { Name = TypeName, TypeDefinition = parentClass },
+        }).First();
+        property.Kind = CodePropertyKind.RequestBuilder;
+        property.Deprecation = new("This path is deprecated");
+        writer.Write(sibling);
+        writer.Write(property);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        Assert.Contains("def warn", lines);
+        Assert.Contains("::Kernel.warn(\"This path is deprecated\", category: :deprecated, uplevel: 1)", lines);
+        Assert.DoesNotContain(lines, static l => l.StartsWith("warn(", StringComparison.Ordinal));
+    }
+    [Fact]
+    public void DoesNotWriteDeprecationWhenNotDeprecated()
+    {
+        property.Kind = CodePropertyKind.Custom;
+        property.Deprecation = new("not really", IsDeprecated: false);
+        writer.Write(property);
+        Assert.DoesNotContain("@deprecated", tw.ToString());
+    }
 }

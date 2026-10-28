@@ -64,7 +64,10 @@ public class CodeClassDeclarationWriter : BaseElementWriter<ClassDeclaration, Ru
 
         var derivation = codeElement.Inherits == null ? string.Empty : $" < {conventions.GetQualifiedTypeName(codeElement.Inherits)}";
         if (codeElement.Parent is CodeClass parentClass)
+        {
             conventions.WriteShortDescription(parentClass, writer);
+            conventions.WriteDeprecationComment(parentClass, writer);
+        }
         writer.StartBlock($"class {codeElement.Name.ToFirstCharacterUpperCase()}{derivation}");
         // writing an empty mixin line would leave a blank (indent-only) first line in the class body
         if (codeElement.Implements.Any())

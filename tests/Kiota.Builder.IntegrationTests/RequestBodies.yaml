@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Request bodies
+  version: 1.0.0
+servers:
+  - url: http://localhost:1080
+paths:
+  /forms:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/Signup"
+      responses:
+        "204":
+          description: No content
+  /uploads:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  $ref: "#/components/schemas/Signup"
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "204":
+          description: No content
+  /notes:
+    get:
+      responses:
+        "200":
+          description: A note
+          content:
+            text/plain:
+              schema:
+                type: string
+    post:
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "204":
+          description: No content
+components:
+  schemas:
+    Signup:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        active:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
