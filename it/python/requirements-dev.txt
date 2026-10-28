@@ -2,7 +2,7 @@
 
 astroid==4.3.3 ; python_full_version >= '3.7.2'
 
-certifi==2026.10.18 ; python_version >= '3.6'
+certifi==2026.10.19 ; python_version >= '3.6'
 
 charset-normalizer==3.5.2 ; python_full_version >= '3.7.0'
 
@@ -38,7 +38,7 @@ packaging==26.3 ; python_version >= '3.7'
 
 platformdirs==4.12.4 ; python_version >= '3.7'
 
-pluggy==1.6.0 ; python_version >= '3.7'
+pluggy==1.7.0 ; python_version >= '3.7'
 
 pylint==4.1.1
 
@@ -54,7 +54,7 @@ tomli==2.5.0 ; python_version < '3.11'
 
 tomli-w==1.2.0 ; python_version >= '3.7'
 
-tomlkit==0.15.1 ; python_version >= '3.7'
+tomlkit==0.15.2 ; python_version >= '3.7'
 
 typing-extensions==4.16.0 ; python_version >= '3.7'
 
