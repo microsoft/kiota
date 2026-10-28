@@ -38,7 +38,7 @@ packaging==26.3 ; python_version >= '3.7'
 
 platformdirs==4.12.4 ; python_version >= '3.7'
 
-pluggy==1.6.0 ; python_version >= '3.7'
+pluggy==1.7.0 ; python_version >= '3.7'
 
 pylint==4.1.1
 
