@@ -788,7 +788,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         }
         else if (GetOriginalComposedType(otherProp.Type) is { } composedType)
         {
-            if (TypeHasBasicDiscriminatorInformation(otherProp.Type))
+            // Only an object-only oneOf dispatches on its discriminator: a factory cannot read a primitive member,
+            // and an anyOf factory merges every member's fields instead of dispatching.
+            if (composedType is CodeUnionType && !HasPrimitiveMembers(composedType) && TypeHasBasicDiscriminatorInformation(otherProp.Type))
             {
                 var deserializationMethodName = conventions.GetDeserializationMethodName(otherProp.Type, codeFile);
                 var defaultValueSuffix = GetDefaultValueSuffix(otherProp);

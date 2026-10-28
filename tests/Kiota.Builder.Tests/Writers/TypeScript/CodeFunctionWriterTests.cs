@@ -2661,6 +2661,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var tempFilePath = Path.GetTempFileName();
         await File.WriteAllTextAsync(tempFilePath, DiscriminatedUnionPropertySample.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        _tempFiles.Add(tempFilePath);
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Forecast", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
         await using var fs = new FileStream(tempFilePath, FileMode.Open);
         var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
@@ -2670,7 +2671,6 @@ public sealed class CodeFunctionWriterTests : IDisposable
         var rootNS = codeModel.FindNamespaceByName("ApiSdk");
         Assert.NotNull(rootNS);
         await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
-        File.Delete(tempFilePath);
 
         var deserializerFunction = rootNS.FindChildByName<CodeFunction>("deserializeIntoWeatherSummary");
         Assert.NotNull(deserializerFunction);
@@ -2746,9 +2746,7 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("return deserializeIntoStandardVat;", factory);
 
         var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
-        Assert.Contains("n.getObjectValue<Receipt_payment>(createReceipt_paymentFromDiscriminatorValue)", receipt);
-        Assert.DoesNotContain("createCardPaymentFromDiscriminatorValue", receipt);
-        Assert.DoesNotContain("createCashPaymentFromDiscriminatorValue", receipt);
+        Assert.Contains("\"payment\": n => { receipt.payment = n.getObjectValue<Receipt_payment>(createReceipt_paymentFromDiscriminatorValue); },", receipt);
     }
 
     [Fact]
@@ -2760,6 +2758,21 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // reading each member in turn.
         var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
         Assert.Contains("n.getObjectValue<LinkNote>(createLinkNoteFromDiscriminatorValue) ?? n.getObjectValue<TextNote>(createTextNoteFromDiscriminatorValue)", receipt);
+        AssertExtensions.CurlyBracesAreClosed(receipt, 1);
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedMixedOrAnyOfProperty_KeepsMemberReadersAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        // A factory cannot return a primitive, and an anyOf factory merges its members instead of
+        // dispatching, so these properties keep reading member by member despite their discriminator.
+        var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
+        Assert.Contains("n.getNumberValue()", receipt);
+        Assert.DoesNotContain("createReceipt_tipFromDiscriminatorValue", receipt);
+        Assert.DoesNotContain("createReceipt_settlementFromDiscriminatorValue", receipt);
+        Assert.Contains("\"settlement\": n => { receipt.settlement = n.getObjectValue<CardPayment>(createCardPaymentFromDiscriminatorValue) ?? n.getObjectValue<CashPayment>(createCashPaymentFromDiscriminatorValue);", receipt);
         AssertExtensions.CurlyBracesAreClosed(receipt, 1);
     }
 }

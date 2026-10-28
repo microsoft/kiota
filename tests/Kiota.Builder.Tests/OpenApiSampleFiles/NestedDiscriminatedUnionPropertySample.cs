@@ -7,7 +7,8 @@ public static class NestedDiscriminatedUnionPropertySample
     * collection of the InvoiceLine union, and each line member has a vat property typed as the
     * LineVat union. LineVat maps several discriminator values to one member (export and exempt
     * both map to TaxFreeVat). Receipt.payment is an inline oneOf with a discriminator, and
-    * Receipt.note is a oneOf without one.
+    * Receipt.note is a oneOf without one. Receipt.tip mixes a primitive into a discriminated
+    * oneOf, and Receipt.settlement is a discriminated anyOf.
     */
     public static readonly string OpenApiYaml = @"
 openapi: 3.1.0
@@ -117,6 +118,25 @@ components:
           oneOf:
             - $ref: '#/components/schemas/TextNote'
             - $ref: '#/components/schemas/LinkNote'
+        tip:
+          oneOf:
+            - type: number
+            - $ref: '#/components/schemas/CardPayment'
+            - $ref: '#/components/schemas/CashPayment'
+          discriminator:
+            propertyName: method
+            mapping:
+              card: '#/components/schemas/CardPayment'
+              cash: '#/components/schemas/CashPayment'
+        settlement:
+          anyOf:
+            - $ref: '#/components/schemas/CardPayment'
+            - $ref: '#/components/schemas/CashPayment'
+          discriminator:
+            propertyName: method
+            mapping:
+              card: '#/components/schemas/CardPayment'
+              cash: '#/components/schemas/CashPayment'
     CardPayment:
       type: object
       properties:
