@@ -195,7 +195,9 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             else if (currentElement is CodeEnum currentEnum)
                 modelsNS.AddEnum(currentEnum);
         }
-        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS));
+        // ordered, so the element that takes a contested name is the same on every run
+        foreach (var childElement in currentElement.GetChildElements(true).OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
+            FlattenModelsNamespaces(childElement, modelsNS);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {

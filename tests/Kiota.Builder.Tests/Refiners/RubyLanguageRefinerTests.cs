@@ -739,6 +739,20 @@ public class RubyLanguageRefinerTests
         Assert.Empty(securityNS.Classes);
     }
     [Fact]
+    public async Task RenamesCompetingFlattenedModelsInNameOrderAsync()
+    {
+        var config = new GenerationConfiguration { Language = GenerationLanguage.Ruby };
+        var modelsNS = root.AddNamespace(config.ModelsNamespaceName);
+        var securityNS = modelsNS.AddNamespace($"{config.ModelsNamespaceName}.security");
+        modelsNS.AddClass(new CodeClass { Name = "securityAction", Kind = CodeClassKind.Model });
+        var actionModel = securityNS.AddClass(new CodeClass { Name = "actionModel", Kind = CodeClassKind.Model }).First();
+        var action = securityNS.AddClass(new CodeClass { Name = "action", Kind = CodeClassKind.Model }).First();
+        await ILanguageRefiner.RefineAsync(config, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(3, modelsNS.Classes.Count());
+        Assert.Equal("securityActionModel", action.Name);
+        Assert.Equal("securityActionModelModel", actionModel.Name);
+    }
+    [Fact]
     public async Task FlattensNestedModelsNamespaceIntoACamelCasedNameAsync()
     {
         // a namespace more than one level below models keeps its separators in the flattened name,
