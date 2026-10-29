@@ -9,12 +9,18 @@ gem "rake", "~> 13.0"
 
 gem "rspec", "~> 3.0"
 
-gem "rubocop", "~> 1.21"
+gem "rubocop", "~> 1.92"
 
-gem "microsoft_kiota_abstractions", "~> 0.24.0"
+gem "microsoft_kiota_abstractions", "~> 0.25.0"
 
-gem "microsoft_kiota_faraday", "~> 0.24.0"
+gem "microsoft_kiota_faraday", "~> 0.25.0"
 
-gem "microsoft_kiota_serialization_json", "~> 0.24.0"
+gem "microsoft_kiota_serialization_json", "~> 0.25.0"
 
-gem "microsoft_kiota_authentication_oauth", "~> 0.24.0"
+gem "microsoft_kiota_serialization_text", "~> 0.25.0"
+
+gem "microsoft_kiota_serialization_form", "~> 0.25.0"
+
+gem "microsoft_kiota_serialization_multipart", "~> 0.25.0"
+
+gem "microsoft_kiota_authentication_oauth", "~> 0.25.0"

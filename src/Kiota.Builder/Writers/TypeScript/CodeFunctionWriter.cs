@@ -360,14 +360,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteFactoryMethod(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)
     {
-        var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
-
         if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
-        WriteFactoryMethodBody(codeElement, returnType, codeFile, writer);
+        WriteFactoryMethodBody(codeElement, codeFile, writer);
     }
 
-    private void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, CodeFile codeFile, LanguageWriter writer)
+    private void WriteFactoryMethodBody(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
         var composedType = GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType);
@@ -381,25 +379,26 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             case CodeUnionType _ when parseNodeParameter != null:
                 WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
                 // The default discriminator is useful when the discriminator information is not provided.
-                WriteDefaultDiscriminator(codeElement, returnType, writer);
+                WriteDefaultDiscriminator(codeElement, writer);
                 break;
             case CodeIntersectionType _ when parseNodeParameter != null:
-                WriteDefaultDiscriminator(codeElement, returnType, writer);
+                WriteDefaultDiscriminator(codeElement, writer);
                 break;
             default:
                 if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null)
                     WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
 
-                WriteDefaultDiscriminator(codeElement, returnType, writer);
+                WriteDefaultDiscriminator(codeElement, writer);
                 break;
         }
     }
 
-    private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer)
+    private void WriteDefaultDiscriminator(CodeFunction codeElement, LanguageWriter writer)
     {
-        var nameSpace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        var deserializationFunction = GetFunctionName(codeElement, returnType, CodeMethodKind.Deserializer, nameSpace);
-        writer.WriteLine($"return {deserializationFunction.ToFirstCharacterLowerCase()};");
+        var deserializationFunction = codeElement.OriginalLocalMethod.ReturnType is CodeType { TypeDefinition: not null } returnType
+            ? GetDeserializerFunctionName(codeElement, returnType)
+            : string.Empty;
+        writer.WriteLine($"return {deserializationFunction};");
     }
 
     private void WriteDiscriminatorInformation(CodeFunction codeElement, CodeParameter parseNodeParameter, LanguageWriter writer)
@@ -427,34 +426,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.CloseBlock();
             writer.CloseBlock();
         }
-    }
-
-    private string GetFunctionName(CodeElement codeElement, string returnType, CodeMethodKind kind, CodeNamespace targetNamespace)
-    {
-        var functionName = kind switch
-        {
-            CodeMethodKind.Serializer => $"serialize{returnType}",
-            CodeMethodKind.Deserializer => $"deserializeInto{returnType}",
-            _ => throw new InvalidOperationException($"Unsupported function kind :: {kind}")
-        };
-
-        var codeFunction = FindCodeFunctionInParentNamespaces(functionName, targetNamespace);
-
-        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
-    }
-
-    private static CodeFunction? FindCodeFunctionInParentNamespaces(string functionName, CodeNamespace? parentNamespace)
-    {
-        CodeFunction? codeFunction = null;
-
-        for (var currentNamespace = parentNamespace;
-            currentNamespace is not null && !functionName.Equals(codeFunction?.Name, StringComparison.Ordinal);
-            currentNamespace = currentNamespace.Parent?.GetImmediateParentOfType<CodeNamespace>())
-        {
-            codeFunction = currentNamespace.FindChildByName<CodeFunction>(functionName);
-        }
-
-        return codeFunction;
     }
 
     private string GetDeserializerFunctionName(CodeElement codeElement, CodeType returnType) =>

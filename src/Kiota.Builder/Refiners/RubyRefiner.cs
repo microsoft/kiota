@@ -71,6 +71,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             RemoveUntypedNodeTypeValues(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "StringIO", "stringio", true);
+            CorrectCoreTypesForBackingStore(generatedCode, "MicrosoftKiotaAbstractions::BackingStoreFactorySingleton.instance.create_backing_store", false);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplacePropertyNames(generatedCode,
@@ -107,12 +108,17 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization_json.JsonSerializationWriterFactory"});
+                    "microsoft_kiota_serialization_json.JsonSerializationWriterFactory",
+                    "microsoft_kiota_serialization_text.TextSerializationWriterFactory",
+                    "microsoft_kiota_serialization_form.FormSerializationWriterFactory",
+                    "microsoft_kiota_serialization_multipart.MultipartSerializationWriterFactory"});
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
+                    "microsoft_kiota_serialization_json.JsonParseNodeFactory",
+                    "microsoft_kiota_serialization_text.TextParseNodeFactory",
+                    "microsoft_kiota_serialization_form.FormParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
                                         ["microsoft_kiota_abstractions.ApiClientBuilder",
                                             "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry"],
@@ -341,5 +347,9 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder");
+        block.Implements
+            .Where(static x => x.Name is "BackedModel" or "IBackedModel")
+            .ToList()
+            .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::BackedModel");
     }
 }
