@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
 - TypeScript: resolve factory default deserializers in the declared model's namespace, preventing unresolved references to similarly named deserializers in child namespaces. Fixes [#8461](https://github.com/microsoft/kiota/issues/8461).
 - Ruby: `kiota info` lists the runtime gems at 0.25.0.
+- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. [#7802](https://github.com/microsoft/kiota/issues/7802)
 
 ## [1.36.1] - 2026-10-12
 
