@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- TypeScript and Python keep same-named composed types in their referenced namespaces instead of reusing the first type by name. Fixes [#8499](https://github.com/microsoft/kiota/issues/8499).
+
 ## [1.37.0] - 2026-10-29
 
 ### Added

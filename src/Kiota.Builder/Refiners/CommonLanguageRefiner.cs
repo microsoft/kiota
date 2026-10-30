@@ -509,7 +509,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             "Composed type wrapper for classes {TypesList}";
         if (!supportsInnerClasses)
         {
-            var @namespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var owningNamespace = codeClass.GetImmediateParentOfType<CodeNamespace>();
+            var @namespace = codeClass.IsOfKind(CodeClassKind.Model) ? codeComposedType.TargetNamespace ?? owningNamespace : owningNamespace;
             if (@namespace.FindChildByName<CodeClass>(codeComposedType.Name, false) is { OriginalComposedType: null })
                 codeComposedType.Name = $"{codeComposedType.Name}Wrapper";
             if (GetAlreadyExistingComposedCodeType(@namespace, codeComposedType) is { } existingCodeType)

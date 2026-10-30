@@ -837,8 +837,14 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         if (GetOriginalComposedType(propType) is not null)
         {
-            if (codeFunction.GetImmediateParentOfType<CodeFile>() is not CodeFile functionParentFile ||
-                functionParentFile.FindChildByName<CodeFunction>(propertySerializerName, false) is not CodeFunction composedTypeSerializationFunction)
+            var propertyNamespace = propType.TypeDefinition?.GetImmediateParentOfType<CodeNamespace>();
+            var composedTypeSerializationFunction = codeFunction.Usings
+                .Select(static x => x.Declaration?.TypeDefinition)
+                .OfType<CodeFunction>()
+                .FirstOrDefault(x => x.Name.Equals(propertySerializerName, StringComparison.OrdinalIgnoreCase) &&
+                                     x.GetImmediateParentOfType<CodeNamespace>() == propertyNamespace) ??
+                codeFunction.GetImmediateParentOfType<CodeFile>()?.FindChildByName<CodeFunction>(propertySerializerName, false);
+            if (composedTypeSerializationFunction is null)
             {
                 return string.Empty;
             }

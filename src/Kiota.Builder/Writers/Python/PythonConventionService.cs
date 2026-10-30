@@ -59,7 +59,7 @@ public class PythonConventionService : CommonLanguageConventionService
         var deprecationSuffix = string.IsNullOrEmpty(deprecationInfo) ? string.Empty : $"# {deprecationInfo}";
         return $"{parameter.Name}: {(parameter.Optional ? "Optional[" : string.Empty)}{GetTypeString(parameter.Type, targetElement, true, writer)}{(parameter.Optional ? "] = None" : string.Empty)}{defaultValueSuffix}{deprecationSuffix}";
     }
-    private static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
+    internal static string GetTypeAlias(CodeType targetType, CodeElement targetElement)
     {
         if (targetElement.GetImmediateParentOfType<IBlock>() is IBlock parentBlock)
         {

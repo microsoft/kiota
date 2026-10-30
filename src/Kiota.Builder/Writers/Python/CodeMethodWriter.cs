@@ -805,6 +805,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.TranslateType(propType);
+        if (propType is CodeType aliasedType && PythonConventionService.GetTypeAlias(aliasedType, codeElement) is { Length: > 0 } alias)
+            propertyType = alias;
         if (conventions.TypeExistInSameClassAsTarget(propType, codeElement))
             propertyType = parentClass.Name;
         if (propType is CodeType currentType)

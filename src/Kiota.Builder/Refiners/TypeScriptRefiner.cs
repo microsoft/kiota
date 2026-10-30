@@ -681,28 +681,27 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         var fileElements = codeFile.GetChildElements(true).ToArray();
         foreach (var element in fileElements)
         {
-            var foundUsingsNames = GetUsingsFromCodeElement(element)
-                .Select(static x => x.Declaration?.TypeDefinition)
-                .OfType<CodeElement>()
-                .Where(x => x.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
-                .Where(x => elementSet.Contains(x.Name))
-                .Select(static x => x.Name);
+            var selfReferencingUsings = GetUsingsFromCodeElement(element)
+                .Where(static x => x.Declaration?.TypeDefinition is not null)
+                .Where(x => x.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>() == codeNamespace)
+                .Where(x => elementSet.Contains(x.Declaration!.TypeDefinition!.Name))
+                .ToArray();
 
-            foreach (var x in foundUsingsNames)
+            foreach (var selfReferencingUsing in selfReferencingUsings)
             {
                 switch (element)
                 {
                     case CodeFunction ci:
-                        ci.RemoveUsingsByDeclarationName(x);
+                        ci.StartBlock.RemoveUsings(selfReferencingUsing);
                         break;
                     case CodeInterface ci:
-                        ci.RemoveUsingsByDeclarationName(x);
+                        ci.StartBlock.RemoveUsings(selfReferencingUsing);
                         break;
                     case CodeEnum ci:
-                        ci.RemoveUsingsByDeclarationName(x);
+                        ci.StartBlock.RemoveUsings(selfReferencingUsing);
                         break;
                     case CodeClass ci:
-                        ci.RemoveUsingsByDeclarationName(x);
+                        ci.StartBlock.RemoveUsings(selfReferencingUsing);
                         break;
                 }
             }
@@ -1547,6 +1546,20 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
     private static void AddPropertyFactoryUsingToDeserializer(CodeFunction codeFunction, CodeProperty property, Func<CodeType, string> functionNameCallback)
     {
         if (property.Type is CodeType propertyType && propertyType.TypeDefinition != null)
+        {
+            if (GetOriginalComposedType(propertyType) is { } composedType)
+            {
+                foreach (var type in composedType.AllTypes.Where(static x => x.TypeDefinition is not null))
+                    AddPropertyFactoryUsingToDeserializer(codeFunction, type, functionNameCallback);
+                return;
+            }
+            AddPropertyFactoryUsingToDeserializer(codeFunction, propertyType, functionNameCallback);
+        }
+    }
+
+    private static void AddPropertyFactoryUsingToDeserializer(CodeFunction codeFunction, CodeType propertyType, Func<CodeType, string> functionNameCallback)
+    {
+        if (propertyType.TypeDefinition != null)
         {
             var staticMethodName = functionNameCallback.Invoke(propertyType);
             var staticMethodNS = propertyType.TypeDefinition.GetImmediateParentOfType<CodeNamespace>();

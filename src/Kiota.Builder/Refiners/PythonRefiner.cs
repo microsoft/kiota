@@ -154,12 +154,33 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
                 addUsings: true,
                 includeParentNamespace: true
             );
+            AliasUsingsWithSameSymbol(generatedCode);
             AddPrimaryErrorMessage(generatedCode,
                 "primary_message",
                 () => new CodeType { Name = "str", IsNullable = false, IsExternal = true },
                 true
             );
         }, cancellationToken);
+    }
+
+    private static void AliasUsingsWithSameSymbol(CodeElement currentElement)
+    {
+        if (currentElement is CodeClass currentClass)
+        {
+            var duplicatedUsings = currentClass.Usings
+                .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition is not null)
+                .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(static x => x.Select(static y => y.Declaration!.TypeDefinition).Distinct().Skip(1).Any())
+                .SelectMany(static x => x);
+            foreach (var usingElement in duplicatedUsings)
+            {
+                usingElement.Alias = (usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name +
+                                      usingElement.Declaration.TypeDefinition.Name.ToFirstCharacterUpperCase())
+                    .GetNamespaceImportSymbol()
+                    .ToFirstCharacterUpperCase();
+            }
+        }
+        CrawlTree(currentElement, AliasUsingsWithSameSymbol);
     }
 
     private const string MultipartBodyClassName = "MultipartBody";
