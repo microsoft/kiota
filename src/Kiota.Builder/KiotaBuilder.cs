@@ -1499,12 +1499,15 @@ public partial class KiotaBuilder
     }
     private static CodeType GetExecutorMethodDefaultReturnType(OpenApiOperation operation, NetHttpMethod operationType)
     {
+        var hasSuccessResponseWithBody = operation.Responses?.Any(static x =>
+            OpenApiOperationExtensions.SuccessCodes.Contains(x.Key) &&
+            x.Value.Content?.Values.Any(static y => y.Schema is not null) is true) is true;
         string returnType;
         if (operationType == NetHttpMethod.Head)
             returnType = VoidType;
         else if (operation.Responses?.Any(static x => (x.Value.Content?.ContainsKey(RequestBodyOctetStreamContentType) ?? false) && redirectStatusCodes.Contains(x.Key)) is true)
             returnType = "binary";
-        else if (operation.Responses?.Any(static x => noContentStatusCodes.Contains(x.Key)) is true)
+        else if (!hasSuccessResponseWithBody && operation.Responses?.Any(static x => noContentStatusCodes.Contains(x.Key)) is true)
             returnType = VoidType;
         else if (operation.Responses?.Any(static x => (x.Value.Content?.ContainsKey(RequestBodyPlainTextContentType) ?? false) && OpenApiOperationExtensions.SuccessCodes.Contains(x.Key)) is true)
             returnType = "string";
