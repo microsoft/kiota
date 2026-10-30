@@ -135,6 +135,23 @@ public class CodeUsingWriter
         WriteCodeUsings(internalImportSymbolsAndPaths, writer);
     }
 
+    public void WriteDeferredImport(CodeClass parentClass, CodeType type, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(parentClass);
+        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(writer);
+        var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
+        var internalImportSymbolsAndPaths = parentClass.Usings
+                                                        .Where(static x => !x.IsExternal)
+                                                        .Where(x => x.Declaration?.TypeDefinition == type.TypeDefinition)
+                                                        .Select(x => _relativeImportManager.GetRelativeImportPathForUsing(x, parentNamespace))
+                                                        .GroupBy(static x => x.Item3)
+                                                        .Where(static x => !string.IsNullOrEmpty(x.Key))
+                                                        .OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase)
+                                                        .ToArray();
+        WriteCodeUsings(internalImportSymbolsAndPaths, writer);
+    }
+
     private static void WriteCodeUsings(IGrouping<string, (string, string, string)>[] importSymbolsAndPaths, LanguageWriter writer)
     {
         if (importSymbolsAndPaths.Length != 0)

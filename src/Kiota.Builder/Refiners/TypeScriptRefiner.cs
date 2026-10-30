@@ -1376,11 +1376,12 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
         }
     }
 
-    private static void SetUsingsOfPropertyInSerializationFunctions(string propertySerializerFunctionName, CodeFunction codeFunction, CodeClass property, Func<CodeClass, string> interfaceNamingCallback)
+    private static void SetUsingsOfPropertyInSerializationFunctions(CodeFunction codeFunction, CodeClass property, Func<CodeClass, string> interfaceNamingCallback)
     {
-        if (!propertySerializerFunctionName.EqualsIgnoreCase(codeFunction.Name))
+        var serializationFunction = GetSerializationFunctionsForNamespace(property).Item1;
+        if (serializationFunction != codeFunction)
         {
-            if (GetSerializationFunctionsForNamespace(property).Item1 is CodeFunction serializationFunction && serializationFunction.Parent is not null)
+            if (serializationFunction.Parent is not null)
             {
                 codeFunction.AddUsing(new CodeUsing
                 {
@@ -1499,10 +1500,10 @@ public class TypeScriptRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SetUsingInModelInterface(modelInterface, interfaceTypeAndUsing);
 
                 // In case of a serializer function, the object serializer function will hold reference to serializer function of the property type.
-                SetUsingsOfPropertyInSerializationFunctions($"{ModelSerializerPrefix}{propertyClass.Name.ToFirstCharacterUpperCase()}", serializer, propertyClass, interfaceNamingCallback);
+                SetUsingsOfPropertyInSerializationFunctions(serializer, propertyClass, interfaceNamingCallback);
 
                 // In case of a deserializer function, for creating each object property the Parsable factory will be called. That is, `create{ModelName}FromDiscriminatorValue`.
-                SetUsingsOfPropertyInSerializationFunctions(GetFactoryFunctionNameFromTypeName(propertyClass.Name), deserializer, propertyClass, interfaceNamingCallback);
+                SetUsingsOfPropertyInSerializationFunctions(deserializer, propertyClass, interfaceNamingCallback);
             }
 
             // Add the property of the model class to the model interface.

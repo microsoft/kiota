@@ -71,6 +71,14 @@ public class PythonConventionService : CommonLanguageConventionService
         }
         return string.Empty;
     }
+    internal string GetTypeName(CodeType currentType, CodeElement targetElement)
+    {
+        var alias = GetTypeAlias(currentType, targetElement);
+        var typeName = string.IsNullOrEmpty(alias) ? TranslateType(currentType) : alias;
+        if (TypeExistInSameClassAsTarget(currentType, targetElement) && targetElement.Parent is CodeClass parentClass)
+            typeName = parentClass.Name;
+        return typeName;
+    }
     public override string GetTypeString(CodeTypeBase code, CodeElement targetElement, bool includeCollectionInformation = true, LanguageWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(targetElement);
@@ -82,10 +90,7 @@ public class PythonConventionService : CommonLanguageConventionService
             return currentUnion.Types.Select(x => GetTypeString(x, targetElement, true, writer)).Aggregate((x, y) => $"Union[{x}, {TranslateAllTypes(y)}]");
         if (code is CodeType currentType)
         {
-            var alias = GetTypeAlias(currentType, targetElement);
-            var typeName = string.IsNullOrEmpty(alias) ? TranslateType(currentType) : alias;
-            if (TypeExistInSameClassAsTarget(code, targetElement) && targetElement.Parent != null)
-                typeName = targetElement.Parent.Name;
+            var typeName = GetTypeName(currentType, targetElement);
             if (code.ActionOf && writer != null)
                 return WriteInlineDeclaration(currentType, targetElement, writer);
             var genericParameters = currentType.GenericTypeParameterValues.Any() ?
@@ -133,7 +138,9 @@ public class PythonConventionService : CommonLanguageConventionService
     {
         ArgumentNullException.ThrowIfNull(currentType);
         ArgumentNullException.ThrowIfNull(targetElement);
-        return targetElement.Parent is CodeClass && currentType.Name == targetElement.Parent.Name;
+        return targetElement.Parent is CodeClass parentClass &&
+               currentType.Name.Equals(parentClass.Name, StringComparison.OrdinalIgnoreCase) &&
+               (currentType is not CodeType { TypeDefinition: not null } codeType || codeType.TypeDefinition == parentClass);
     }
 #pragma warning disable CA1822 // Method should be static
     public bool IsPrimitiveType(string typeName)

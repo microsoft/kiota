@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
@@ -15,6 +17,113 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Theory]
+    [InlineData(GenerationLanguage.TypeScript)]
+    [InlineData(GenerationLanguage.Python)]
+    public async Task UsesAliasesForSameNamedRuntimeTypesAsync(GenerationLanguage language)
+    {
+        const string description = """
+        openapi: 3.1.0
+        info: {title: Alias collisions, version: 1.0.0}
+        paths:
+          /pet:
+            get:
+              responses:
+                '200':
+                  description: ok
+                  content:
+                    application/json:
+                      schema: {$ref: '#/components/schemas/com.example.a.Pet'}
+        components:
+          schemas:
+            com.example.a.Pet:
+              type: object
+              properties:
+                kind: {type: string}
+                otherPet: {$ref: '#/components/schemas/com.example.b.Pet'}
+                base: {$ref: '#/components/schemas/com.example.c.Base'}
+            com.example.b.Pet:
+              oneOf: [{$ref: '#/components/schemas/com.example.a.Pet'}, {$ref: '#/components/schemas/com.example.b.Fish'}]
+              discriminator:
+                propertyName: kind
+                mapping: {pet: '#/components/schemas/com.example.a.Pet', fish: '#/components/schemas/com.example.b.Fish'}
+            com.example.b.Fish:
+              type: object
+              properties: {kind: {type: string}, fins: {type: integer}}
+            com.example.c.Base:
+              type: object
+              required: [kind]
+              discriminator:
+                propertyName: kind
+                mapping: {a: '#/components/schemas/com.example.a.Child', b: '#/components/schemas/com.example.b.Child'}
+              properties: {kind: {type: string}}
+            com.example.a.Child:
+              allOf:
+                - {$ref: '#/components/schemas/com.example.c.Base'}
+                - {type: object, properties: {aValue: {type: string}}}
+            com.example.b.Child:
+              allOf:
+                - {$ref: '#/components/schemas/com.example.c.Base'}
+                - {type: object, properties: {bValue: {type: string}}}
+        """;
+        var outputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(outputPath);
+        try
+        {
+            await using var stream = await GetDocumentStreamAsync(description);
+            var configuration = new GenerationConfiguration
+            {
+                ClientClassName = "Api",
+                ClientNamespaceName = "api",
+                Language = language,
+                OutputPath = outputPath,
+            };
+            var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, _httpClient);
+            var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.NotNull(document);
+            var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+            await ILanguageRefiner.RefineAsync(configuration, model, cancellationToken: TestContext.Current.CancellationToken);
+            await builder.CreateLanguageSourceFilesAsync(language, model, TestContext.Current.CancellationToken);
+
+            if (language == GenerationLanguage.TypeScript)
+            {
+                var ownerCode = await File.ReadAllTextAsync(FindOutputFile(outputPath, "a", "index.ts"), TestContext.Current.CancellationToken);
+                var serializerImport = Regex.Match(ownerCode, @"serializePet as (?<alias>\w+)");
+                Assert.True(serializerImport.Success);
+                Assert.Contains($"pet.otherPet, {serializerImport.Groups["alias"].Value});", ownerCode);
+                Assert.DoesNotContain("pet.otherPet, serializePet);", ownerCode);
+            }
+            else
+            {
+                var unionCode = await File.ReadAllTextAsync(FindOutputFile(outputPath, "b", "pet.py"), TestContext.Current.CancellationToken);
+                var petImport = Regex.Match(unionCode, @"from \.\.a\.pet import Pet as (?<alias>\w+)");
+                Assert.True(petImport.Success);
+                Assert.Contains("result = Pet()", unionCode);
+                Assert.Contains($"result.pet = {petImport.Groups["alias"].Value}()", unionCode);
+                Assert.DoesNotContain("result.pet = Pet()", unionCode);
+
+                var baseCode = await File.ReadAllTextAsync(FindOutputFile(outputPath, "c", "base.py"), TestContext.Current.CancellationToken);
+                var firstChildImport = Regex.Match(baseCode, @"from \.\.a\.child import Child as (?<alias>\w+)");
+                var secondChildImport = Regex.Match(baseCode, @"from \.\.b\.child import Child as (?<alias>\w+)");
+                Assert.True(firstChildImport.Success);
+                Assert.True(secondChildImport.Success);
+                Assert.Contains($"return {firstChildImport.Groups["alias"].Value}()", baseCode);
+                Assert.Contains($"return {secondChildImport.Groups["alias"].Value}()", baseCode);
+                Assert.DoesNotContain("return Child()", baseCode);
+            }
+        }
+        finally
+        {
+            Directory.Delete(outputPath, true);
+        }
+
+        static string FindOutputFile(string rootPath, params string[] suffixSegments)
+        {
+            var suffix = Path.Combine(suffixSegments);
+            return Assert.Single(Directory.GetFiles(rootPath, "*", SearchOption.AllDirectories), x => x.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     [Theory]
     [InlineData(GenerationLanguage.TypeScript)]
     [InlineData(GenerationLanguage.Python)]

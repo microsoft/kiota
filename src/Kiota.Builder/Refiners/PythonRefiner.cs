@@ -167,12 +167,15 @@ public class PythonRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeClass currentClass)
         {
-            var duplicatedUsings = currentClass.Usings
+            var internalUsings = currentClass.Usings
                 .Where(static x => !x.IsExternal && x.Declaration?.TypeDefinition is not null)
+                .ToArray();
+            var collidingUsings = internalUsings
                 .GroupBy(static x => x.Declaration!.Name, StringComparer.OrdinalIgnoreCase)
                 .Where(static x => x.Select(static y => y.Declaration!.TypeDefinition).Distinct().Skip(1).Any())
-                .SelectMany(static x => x);
-            foreach (var usingElement in duplicatedUsings)
+                .SelectMany(static x => x)
+                .Union(internalUsings.Where(x => x.Declaration!.Name.Equals(currentClass.Name, StringComparison.OrdinalIgnoreCase)));
+            foreach (var usingElement in collidingUsings)
             {
                 usingElement.Alias = (usingElement.Declaration!.TypeDefinition!.GetImmediateParentOfType<CodeNamespace>().Name +
                                       usingElement.Declaration.TypeDefinition.Name.ToFirstCharacterUpperCase())

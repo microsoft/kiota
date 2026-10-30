@@ -124,13 +124,14 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
 
     private static readonly CodePropertyTypeComparer CodePropertyTypeForwardComparer = new();
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
-    private void WriteFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
+    private void WriteFactoryMethodBodyForInheritedModel(CodeMethod codeElement, CodeClass parentClass, LanguageWriter writer)
     {
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
         {
             writer.StartBlock($"if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
-            var mappedTypeName = mappedType.Value.AllTypes.First().Name;
-            _codeUsingWriter.WriteDeferredImport(parentClass, mappedTypeName, writer);
+            var mappedTypeDefinition = mappedType.Value.AllTypes.First();
+            var mappedTypeName = conventions.GetTypeName(mappedTypeDefinition, codeElement);
+            _codeUsingWriter.WriteDeferredImport(parentClass, mappedTypeDefinition, writer);
             writer.WriteLine($"return {mappedTypeName}()");
             writer.DecreaseIndent();
         }
@@ -152,8 +153,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                     if (!string.IsNullOrEmpty(mappedType.Key))
                     {
                         writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
-                        _codeUsingWriter.WriteDeferredImport(parentClass, propertyType.Name, writer);
-                        writer.WriteLine($"{ResultVarName}.{property.Name} = {propertyType.Name}()");
+                        _codeUsingWriter.WriteDeferredImport(parentClass, propertyType, writer);
+                        writer.WriteLine($"{ResultVarName}.{property.Name} = {conventions.GetTypeName(propertyType, codeElement)}()");
                         writer.DecreaseIndent();
                         includeElse = true;
                     }
@@ -200,8 +201,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             }
             foreach (var property in complexProperties)
             {
-                _codeUsingWriter.WriteDeferredImport(parentClass, property.Item2.Name, writer);
-                writer.WriteLine($"{ResultVarName}.{property.Item1.Name} = {property.Item2.Name}()");
+                _codeUsingWriter.WriteDeferredImport(parentClass, property.Item2, writer);
+                writer.WriteLine($"{ResultVarName}.{property.Item1.Name} = {conventions.GetTypeName(property.Item2, codeElement)}()");
             }
             if (includeElse)
             {
@@ -225,7 +226,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.DecreaseIndent();
         }
         if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
-            WriteFactoryMethodBodyForInheritedModel(parentClass, writer);
+            WriteFactoryMethodBodyForInheritedModel(codeElement, parentClass, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForUnionType)
             WriteFactoryMethodBodyForUnionModel(codeElement, parentClass, parseNodeParameter, writer);
         else if (parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
@@ -391,9 +392,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
             switch (propWithDefault.Type)
             {
-                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
-                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum } enumType:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumType, writer);
+                    defaultValue = $"{conventions.GetTypeName(enumType, propWithDefault)}({defaultValue})";
                     break;
                 case CodeType propType when TryNormalizePrimitiveDefaultValue(defaultValue, propType, out var normalizedDefaultValue):
                     defaultValue = normalizedDefaultValue ?? NoneKeyword;
@@ -424,9 +425,9 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
             switch (propWithDefault.Type)
             {
-                case CodeType { TypeDefinition: CodeEnum enumDefinition }:
-                    _codeUsingWriter.WriteDeferredImport(parentClass, enumDefinition.Name, writer);
-                    defaultValue = $"{enumDefinition.Name}({defaultValue})";
+                case CodeType { TypeDefinition: CodeEnum } enumType:
+                    _codeUsingWriter.WriteDeferredImport(parentClass, enumType, writer);
+                    defaultValue = $"{conventions.GetTypeName(enumType, propWithDefault)}({defaultValue})";
                     break;
                 case CodeType propType:
                     {
@@ -618,7 +619,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
             writer.StartBlock($"{errorMappingVarName}: dict[str, type[ParsableFactory]] = {{");
             foreach (var errorMapping in codeElement.ErrorMappings)
             {
-                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorMapping.Value.Name},");
+                var errorTypeName = errorMapping.Value is CodeType errorType ? conventions.GetTypeName(errorType, codeElement) : errorMapping.Value.Name;
+                writer.WriteLine($"\"{errorMapping.Key.ToUpperInvariant()}\": {errorTypeName},");
             }
             writer.CloseBlock();
         }
@@ -805,8 +807,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         var isCollection = propType.CollectionKind != CodeTypeBase.CodeTypeCollectionKind.None;
         var propertyType = conventions.TranslateType(propType);
-        if (propType is CodeType aliasedType && PythonConventionService.GetTypeAlias(aliasedType, codeElement) is { Length: > 0 } alias)
-            propertyType = alias;
+        if (propType is CodeType aliasedType)
+            propertyType = conventions.GetTypeName(aliasedType, codeElement);
         if (conventions.TypeExistInSameClassAsTarget(propType, codeElement))
             propertyType = parentClass.Name;
         if (propType is CodeType currentType)
