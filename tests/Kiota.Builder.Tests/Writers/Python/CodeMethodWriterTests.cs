@@ -611,6 +611,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         new()
         {
             Name = error4XX.Name,
+            Alias = "Error4XXAlias",
             Declaration = new()
             {
                 Name = error4XX.Name,
@@ -625,10 +626,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("request_info", result);
         Assert.Contains("from .error401 import Error401", result);
-        Assert.Contains("from .error4_x_x import Error4XX", result);
+        Assert.Contains("from .error4_x_x import Error4XX as Error4XXAlias", result);
         Assert.Contains("from .error5_x_x import Error5XX", result);
         Assert.Contains("error_mapping: dict[str, type[ParsableFactory]] =", result);
-        Assert.Contains("\"4XX\": Error4XX", result);
+        Assert.Contains("\"4XX\": Error4XXAlias", result);
         Assert.Contains("\"5XX\": Error5XX", result);
         Assert.Contains("\"401\": Error401", result);
         Assert.Contains("from .somecustomtype import Somecustomtype", result);
@@ -2089,6 +2090,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var nUsing = new CodeUsing
         {
             Name = codeEnum.Name,
+            Alias = "PictureSizeAlias",
             Declaration = new()
             {
                 Name = codeEnum.Name,
@@ -2100,9 +2102,9 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.DoesNotContain("def __init__()", result);
         Assert.DoesNotContain("super().__init__()", result);
-        Assert.Contains($"from .{codeEnum.Name.ToSnakeCase()} import {codeEnum.Name.ToFirstCharacterUpperCase()}", result);
+        Assert.Contains($"from .{codeEnum.Name.ToSnakeCase()} import {codeEnum.Name.ToFirstCharacterUpperCase()} as PictureSizeAlias", result);
         Assert.Contains("has a description", result);
-        Assert.Contains($"{propName}: Optional[{codeEnum.Name}] = {codeEnum.Name}({defaultValue})", result);
+        Assert.Contains($"{propName}: Optional[PictureSizeAlias] = PictureSizeAlias({defaultValue})", result);
         Assert.Contains($"some_property: Optional[str] = None", result);
     }
     [Fact]
