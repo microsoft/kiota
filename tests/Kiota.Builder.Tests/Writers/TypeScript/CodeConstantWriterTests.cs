@@ -632,6 +632,54 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("navigationMetadata: SomecustomtypeNavigationMetadata", result);
         Assert.Contains($"pathParametersMappings: [\"{"foo\"\n-id".SanitizeDoubleQuote()}\"]", result);
     }
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void WritesAliasedNavigationMetadata(bool indexed, bool renamed)
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
+        var childNamespace = parentNamespace.AddNamespace($"{parentNamespace.Name}.foo");
+        var childInterface = new CodeInterface
+        {
+            Name = renamed ? "OriginalRequestBuilder" : "FooRequestBuilder",
+            Kind = CodeInterfaceKind.RequestBuilder,
+            OriginalClass = new CodeClass { Name = "FooRequestBuilder", Kind = CodeClassKind.RequestBuilder },
+        };
+        var navigationType = new CodeType { Name = childInterface.Name, TypeDefinition = childInterface };
+        if (renamed)
+            childInterface.Name = "FooRequestBuilder";
+        var childNavigation = new CodeConstant { Name = "FooRequestBuilderNavigationMetadata", Kind = CodeConstantKind.NavigationMetadata };
+        var childRequests = new CodeConstant { Name = "FooRequestBuilderRequestsMetadata", Kind = CodeConstantKind.RequestsMetadata };
+        childNamespace.TryAddCodeFile("fooRequestBuilder", childInterface, childNavigation, childRequests);
+        if (indexed)
+            parentClass.AddMethod(new CodeMethod
+            {
+                Name = "byId",
+                Kind = CodeMethodKind.IndexerBackwardCompatibility,
+                ReturnType = navigationType,
+            });
+        else
+            parentClass.AddProperty(new CodeProperty { Name = "foo", Kind = CodePropertyKind.RequestBuilder, Type = navigationType });
+        var parentInterface = CodeInterface.FromRequestBuilder(parentClass);
+        parentInterface.AddUsing(
+            new CodeUsing { Name = childNamespace.Name, Alias = "ChildFooNavigation", Declaration = new CodeType { TypeDefinition = childNavigation } },
+            new CodeUsing { Name = childNamespace.Name, Alias = "ChildFooRequests", Declaration = new CodeType { TypeDefinition = childRequests } });
+        var constant = CodeConstant.FromRequestBuilderToNavigationMetadata(parentClass);
+        Assert.NotNull(constant);
+        parentNamespace.TryAddCodeFile("parentClass", parentInterface, constant);
+
+        writer.Write(constant);
+
+        var result = tw.ToString();
+        Assert.Contains("navigationMetadata: ChildFooNavigation", result);
+        Assert.Contains("requestsMetadata: ChildFooRequests", result);
+        Assert.DoesNotContain("navigationMetadata: FooRequestBuilderNavigationMetadata", result);
+        Assert.DoesNotContain("requestsMetadata: FooRequestBuilderRequestsMetadata", result);
+    }
+
     private void AddRequestProperties()
     {
         parentClass.AddProperty(new CodeProperty
@@ -712,5 +760,49 @@ public sealed class CodeConstantWriterTests : IDisposable
             },
             Optional = true,
         });
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DoesNotUseDescendantNavigationMetadata(bool refined)
+    {
+        parentClass.Kind = CodeClassKind.RequestBuilder;
+        var parentNamespace = parentClass.GetImmediateParentOfType<CodeNamespace>();
+        var targetNamespace = parentNamespace.AddNamespace($"{parentNamespace.Name}.foo");
+        var targetClass = targetNamespace.AddClass(new CodeClass
+        {
+            Name = "FooRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder,
+        }).First();
+        var targetInterface = CodeInterface.FromRequestBuilder(targetClass);
+        targetNamespace.TryAddCodeFile("fooRequestBuilder", targetInterface,
+            new CodeConstant
+            {
+                Name = "FooRequestBuilderRequestsMetadata",
+                Kind = CodeConstantKind.RequestsMetadata,
+            });
+        targetNamespace.AddNamespace($"{targetNamespace.Name}.foo").TryAddCodeFile("fooRequestBuilder",
+            new CodeConstant
+            {
+                Name = "FooRequestBuilderNavigationMetadata",
+                Kind = CodeConstantKind.NavigationMetadata,
+            });
+        parentClass.AddProperty(new CodeProperty
+        {
+            Name = "foo",
+            Kind = CodePropertyKind.RequestBuilder,
+            Type = new CodeType
+            {
+                Name = targetClass.Name,
+                TypeDefinition = refined ? targetInterface : targetClass,
+            },
+        });
+        var parentInterface = CodeInterface.FromRequestBuilder(parentClass);
+        var constant = CodeConstant.FromRequestBuilderToNavigationMetadata(parentClass);
+        parentNamespace.TryAddCodeFile("parentClass", parentInterface, constant);
+        writer.Write(constant);
+        var result = tw.ToString();
+        Assert.Contains("requestsMetadata: FooRequestBuilderRequestsMetadata", result);
+        Assert.DoesNotContain("navigationMetadata:", result);
     }
 }
