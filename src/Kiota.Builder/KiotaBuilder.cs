@@ -2410,6 +2410,7 @@ public partial class KiotaBuilder
         if (schema.Extensions is not null && schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
         target.AddOption(schema.Enum?.OfType<JsonValue>()
+                        .Where(static x => !x.IsJsonNullSentinel())
                         .Where(static x => x.GetValueKind() is JsonValueKind.String or JsonValueKind.Number)
                         .Select(static x => x.GetValueKind() is JsonValueKind.String ? x.GetValue<string>() : x.GetValue<decimal>().ToString(CultureInfo.InvariantCulture))
                         .Where(static x => !string.IsNullOrEmpty(x))
