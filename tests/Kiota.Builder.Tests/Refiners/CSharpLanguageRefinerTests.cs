@@ -13,7 +13,82 @@ namespace Kiota.Builder.Tests.Refiners;
 public class CSharpLanguageRefinerTests
 {
     private readonly CodeNamespace root = CodeNamespace.InitRootNamespace();
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MovesComposedWrappersWithNamespaceNamesAsync(bool intersection)
+    {
+        var models = root.AddNamespace("graph.models");
+        var nested = root.AddNamespace("graph.models.ResourceType");
+        var container = models.AddClass(new CodeClass { Name = "Container", Kind = CodeClassKind.Model }).First();
+        CodeComposedTypeBase composed = intersection ? new CodeIntersectionType() : new CodeUnionType();
+        composed.Name = "ResourceType";
+        composed.TargetNamespace = models;
+        composed.AddType(new CodeType { Name = "string", IsExternal = true }, new CodeType { Name = "integer", IsExternal = true });
+        var property = container.AddProperty(new CodeProperty { Name = "resource", Kind = CodePropertyKind.Custom, Type = composed }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var wrapper = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(property.Type).TypeDefinition);
+        Assert.Same(nested, wrapper.Parent);
+        Assert.DoesNotContain(models.Classes, model => model.Name == "ResourceType");
+        Assert.Same(wrapper, nested.Classes.Single());
+        Assert.NotNull(wrapper.OriginalComposedType);
+    }
     #region CommonLanguageRefinerTests
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OnlyMovesClassesToImmediateChildNamespacesAsync(bool hasDirectCollision)
+    {
+        var models = root.AddNamespace("graph.models");
+        var unrelated = root.AddNamespace("graph.models.Other.ResourceType");
+        var destination = hasDirectCollision ? root.AddNamespace("graph.models.ResourceType") : models;
+        var model = models.AddClass(new CodeClass { Name = "ResourceType", Kind = CodeClassKind.Model }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Same(destination, model.Parent);
+        Assert.Same(model, destination.FindChildByName<CodeClass>("ResourceType", false));
+        Assert.Empty(unrelated.Classes);
+    }
+    [Fact]
+    public async Task DoesNotMoveClassesForPartialNamespaceSuffixesAsync()
+    {
+        var models = root.AddNamespace("graph.models");
+        root.AddNamespace("graph.models.SpecialResourceType");
+        var model = models.AddClass(new CodeClass { Name = "ResourceType", Kind = CodeClassKind.Model }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Same(models, model.Parent);
+        Assert.Same(model, models.FindChildByName<CodeClass>("ResourceType", false));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreservesComposedWrappersWhenDestinationContainsSameNameAsync(bool intersection)
+    {
+        var models = root.AddNamespace("graph.models");
+        var nested = root.AddNamespace("graph.models.ResourceType");
+        var existing = nested.AddClass(new CodeClass { Name = "ResourceType", Kind = CodeClassKind.Model }).First();
+        nested.AddClass(new CodeClass { Name = "ResourceType1", Kind = CodeClassKind.Model });
+        var container = models.AddClass(new CodeClass { Name = "Container", Kind = CodeClassKind.Model }).First();
+        CodeComposedTypeBase composed = intersection ? new CodeIntersectionType() : new CodeUnionType();
+        composed.Name = "ResourceType";
+        composed.TargetNamespace = models;
+        composed.AddType(new CodeType { Name = "string", IsExternal = true }, new CodeType { Name = "integer", IsExternal = true });
+        var property = container.AddProperty(new CodeProperty { Name = "resource", Kind = CodePropertyKind.Custom, Type = composed }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        var wrapper = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(property.Type).TypeDefinition);
+        Assert.Equal("ResourceType2", wrapper.Name);
+        Assert.Equal("ResourceType2", property.Type.Name);
+        Assert.EndsWith(".ResourceType.ResourceType2", new Kiota.Builder.Writers.CSharp.CSharpConventionService().GetTypeString(property.Type, property, false, false));
+        Assert.Same(nested, wrapper.Parent);
+        Assert.Same(wrapper, nested.FindChildByName<CodeClass>(wrapper.Name, false));
+        Assert.Same(existing, nested.FindChildByName<CodeClass>("ResourceType", false));
+        Assert.NotNull(wrapper.OriginalComposedType);
+    }
     [Fact]
     public async Task EnumHasEscapedOption_UsesEnumMemberAttributeAsync()
     {
