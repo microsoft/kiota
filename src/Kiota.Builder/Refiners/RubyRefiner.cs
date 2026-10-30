@@ -187,12 +187,17 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             var elementPrefix = CapitalizedFirstLetterAfterDot().Replace(currentElementNamespace.Name[(modelsNS.Name.Length + 1)..], x => x.Groups["letter"].Value.ToUpperInvariant());
             currentElementNamespace.RemoveChildElement(currentElement);
             currentElement.Name = $"{elementPrefix}{currentElement.Name.ToFirstCharacterUpperCase()}";
+            // adding onto a taken name throws for another type and silently drops a class for a class
+            while (modelsNS.FindChildByName<CodeElement>(currentElement.Name, false) is not null)
+                currentElement.Name = $"{currentElement.Name}{(currentElement is CodeEnum ? "Enum" : "Model")}";
             if (currentElement is CodeClass currentClass)
                 modelsNS.AddClass(currentClass);
             else if (currentElement is CodeEnum currentEnum)
                 modelsNS.AddEnum(currentEnum);
         }
-        CrawlTree(currentElement, x => FlattenModelsNamespaces(x, modelsNS));
+        // ordered, so the element that takes a contested name is the same on every run
+        foreach (var childElement in currentElement.GetChildElements(true).OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
+            FlattenModelsNamespaces(childElement, modelsNS);
     }
     private static void CorrectMethodType(CodeMethod currentMethod)
     {
