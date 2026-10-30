@@ -26,6 +26,79 @@ public sealed class ContentTypeMappingTests : IDisposable
     }
     private readonly HttpClient _httpClient = new();
 
+    [Theory]
+    [InlineData(false, "void")]
+    [InlineData(true, "binary")]
+    public void BodylessNotModifiedDoesNotOverrideBinarySuccessResponse(bool includeBinarySuccessResponse, string expectedReturnType)
+    {
+        var responses = new OpenApiResponses
+        {
+            ["304"] = new OpenApiResponse
+            {
+                Description = "Not Modified",
+            },
+            ["416"] = new OpenApiResponse
+            {
+                Description = "Range Not Satisfiable",
+            },
+        };
+        if (includeBinarySuccessResponse)
+        {
+            var binaryContent = new Dictionary<string, IOpenApiMediaType>
+            {
+                ["application/octet-stream"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String,
+                        Format = "binary",
+                    },
+                },
+            };
+            responses["200"] = new OpenApiResponse
+            {
+                Description = "File",
+                Content = binaryContent,
+            };
+            responses["206"] = new OpenApiResponse
+            {
+                Description = "File range",
+                Content = binaryContent,
+            };
+        }
+        var document = new OpenApiDocument
+        {
+            Paths = new OpenApiPaths
+            {
+                ["file"] = new OpenApiPathItem
+                {
+                    Operations = new()
+                    {
+                        [NetHttpMethod.Get] = new OpenApiOperation
+                        {
+                            Responses = responses,
+                        },
+                    },
+                },
+            },
+        };
+        var builder = new KiotaBuilder(
+            Mock.Of<ILogger<KiotaBuilder>>(),
+            new GenerationConfiguration
+            {
+                ClientClassName = "FileClient",
+                ClientNamespaceName = "FileSdk",
+                ApiRootUrl = "https://localhost",
+            },
+            _httpClient);
+
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var requestBuilder = model.FindChildByName<CodeClass>("FileRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var executor = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        Assert.Equal(expectedReturnType, executor.ReturnType.Name);
+    }
+
     [InlineData("application/json", "206", true, "default", "myobject")]
     [InlineData("application/json", "206", false, "default", "binary")]
     [InlineData("application/json", "205", true, "default", "void")]

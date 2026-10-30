@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A bodyless `304 Not Modified` response no longer erases the binary return type of successful download responses. Fixes [#8465](https://github.com/microsoft/kiota/issues/8465).
+
 ## [1.37.0] - 2026-10-29
 
 ### Added
