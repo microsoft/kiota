@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Nullable OpenAPI 3.1 enums no longer expose the OpenAPI.NET JSON-null sentinel as a generated enum member. Fixes [#8425](https://github.com/microsoft/kiota/issues/8425).
+
 ## [1.37.0] - 2026-10-29
 
 ### Added
