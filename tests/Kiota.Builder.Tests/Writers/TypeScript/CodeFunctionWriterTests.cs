@@ -2653,4 +2653,184 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.True(deviceIndex > 0, "Should contain Device deserialization");
         Assert.True(managedDeviceIndex < deviceIndex, "ManagedPrivilegedDevice should appear before Device in the deserialization chain");
     }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionPropertyType_UsesBaseFactoryMethodAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var modelNameSpace = root.AddNamespace("ApiSdk.models");
+
+        var baseClass = TestHelper.CreateModelClass(modelNameSpace, "WeatherForecast");
+        baseClass.DiscriminatorInformation.DiscriminatorPropertyName = "forecastType";
+        var rainyClass = TestHelper.CreateModelClass(modelNameSpace, "RainyDayForecast");
+        var sunnyClass = TestHelper.CreateModelClass(modelNameSpace, "SunnyDayForecast");
+        baseClass.DiscriminatorInformation.AddDiscriminatorMapping("rain", new CodeType { Name = "RainyDayForecast", TypeDefinition = rainyClass });
+        baseClass.DiscriminatorInformation.AddDiscriminatorMapping("sunny", new CodeType { Name = "SunnyDayForecast", TypeDefinition = sunnyClass });
+
+        var composedType = new CodeUnionType { Name = "WeatherForecast", Parent = modelNameSpace };
+        composedType.AddType(
+            new CodeType { Name = "RainyDayForecast", TypeDefinition = rainyClass },
+            new CodeType { Name = "SunnyDayForecast", TypeDefinition = sunnyClass });
+        baseClass.OriginalComposedType = composedType;
+
+        var containerClass = TestHelper.CreateModelClass(modelNameSpace, "WeatherSummary");
+        containerClass.AddProperty(new CodeProperty
+        {
+            Name = "forecasts",
+            Type = new CodeType
+            {
+                Name = "WeatherForecast",
+                TypeDefinition = baseClass,
+                CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array,
+            },
+        });
+        containerClass.AddProperty(new CodeProperty
+        {
+            Name = "primaryForecast",
+            Type = new CodeType
+            {
+                Name = "WeatherForecast",
+                TypeDefinition = baseClass,
+            },
+        });
+
+        TestHelper.AddSerializationPropertiesToModelClass(containerClass);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        var deserializerFunction = root.FindChildByName<CodeFunction>($"DeserializeIntoWeatherSummary");
+        Assert.NotNull(deserializerFunction);
+        var parentNS = deserializerFunction.GetImmediateParentOfType<CodeNamespace>();
+        Assert.NotNull(parentNS);
+        parentNS.TryAddCodeFile("foo", deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("n.getCollectionOfObjectValues<WeatherForecast>(createWeatherForecastFromDiscriminatorValue)", result);
+        Assert.Contains("n.getObjectValue<WeatherForecast>(createWeatherForecastFromDiscriminatorValue)", result);
+        Assert.DoesNotContain("createRainyDayForecastFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createSunnyDayForecastFromDiscriminatorValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionPropertyType_UsesBaseFactoryMethod_IntegrationAsync()
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tempFilePath, DiscriminatedUnionPropertySample.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        _tempFiles.Add(tempFilePath);
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Forecast", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+
+        var deserializerFunction = rootNS.FindChildByName<CodeFunction>("deserializeIntoWeatherSummary");
+        Assert.NotNull(deserializerFunction);
+        writer.Write(deserializerFunction);
+        var result = tw.ToString();
+
+        Assert.Contains("createWeatherForecastFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createRainyDayForecastFromDiscriminatorValue", result);
+        Assert.DoesNotContain("createSunnyDayForecastFromDiscriminatorValue", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
+
+    private async Task<CodeNamespace> GetRefinedNestedDiscriminatedUnionSampleAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, NestedDiscriminatedUnionPropertySample.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Invoices", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.TypeScript }, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        return rootNS;
+    }
+
+    private string WriteFunction(CodeNamespace rootNS, string functionName)
+    {
+        var function = rootNS.FindChildByName<CodeFunction>(functionName);
+        Assert.NotNull(function);
+        tw.GetStringBuilder().Clear();
+        writer.Write(function);
+        return tw.ToString();
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionProperty_NestedInUnionMember_UsesBaseFactoryMethodAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        var invoice = WriteFunction(rootNS, "deserializeIntoInvoice");
+        Assert.Contains("n.getCollectionOfObjectValues<InvoiceLine>(createInvoiceLineFromDiscriminatorValue)", invoice);
+        Assert.DoesNotContain("createNetLineFromDiscriminatorValue", invoice);
+        Assert.DoesNotContain("createGrossLineFromDiscriminatorValue", invoice);
+        AssertExtensions.CurlyBracesAreClosed(invoice, 1);
+
+        foreach (var member in new[] { "NetLine", "GrossLine" })
+        {
+            var line = WriteFunction(rootNS, $"deserializeInto{member}");
+            Assert.Contains("n.getObjectValue<LineVat>(createLineVatFromDiscriminatorValue)", line);
+            Assert.DoesNotContain("createStandardVatFromDiscriminatorValue", line);
+            Assert.DoesNotContain("createTaxFreeVatFromDiscriminatorValue", line);
+            AssertExtensions.CurlyBracesAreClosed(line, 1);
+        }
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedUnionProperty_ManyToOneMapping_DispatchesEveryValueAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        // The property defers to the union's factory, so every mapping value reaches its member,
+        // including the values that share one (export and exempt both map to TaxFreeVat).
+        var factory = WriteFunction(rootNS, "createLineVatFromDiscriminatorValue");
+        Assert.Contains("case \"export\":", factory);
+        Assert.Contains("case \"exempt\":", factory);
+        Assert.Contains("case \"standard\":", factory);
+        Assert.Equal(2, factory.Split("return deserializeIntoTaxFreeVat;").Length - 1);
+        Assert.Contains("return deserializeIntoStandardVat;", factory);
+
+        var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
+        Assert.Contains("\"payment\": n => { receipt.payment = n.getObjectValue<Receipt_payment>(createReceipt_paymentFromDiscriminatorValue); },", receipt);
+    }
+
+    [Fact]
+    public async Task Writes_UnionPropertyWithoutDiscriminator_KeepsMemberFactoriesAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        // Without a discriminator there is no mapping to dispatch on, so the property keeps
+        // reading each member in turn.
+        var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
+        Assert.Contains("n.getObjectValue<LinkNote>(createLinkNoteFromDiscriminatorValue) ?? n.getObjectValue<TextNote>(createTextNoteFromDiscriminatorValue)", receipt);
+        AssertExtensions.CurlyBracesAreClosed(receipt, 1);
+    }
+
+    [Fact]
+    public async Task Writes_DiscriminatedMixedOrAnyOfProperty_KeepsMemberReadersAsync()
+    {
+        var rootNS = await GetRefinedNestedDiscriminatedUnionSampleAsync();
+
+        // A factory cannot return a primitive, and an anyOf factory merges its members instead of
+        // dispatching, so these properties keep reading member by member despite their discriminator.
+        var receipt = WriteFunction(rootNS, "deserializeIntoReceipt");
+        Assert.Contains("n.getNumberValue()", receipt);
+        Assert.DoesNotContain("createReceipt_tipFromDiscriminatorValue", receipt);
+        Assert.DoesNotContain("createReceipt_settlementFromDiscriminatorValue", receipt);
+        Assert.Contains("\"settlement\": n => { receipt.settlement = n.getObjectValue<CardPayment>(createCardPaymentFromDiscriminatorValue) ?? n.getObjectValue<CashPayment>(createCashPaymentFromDiscriminatorValue);", receipt);
+        AssertExtensions.CurlyBracesAreClosed(receipt, 1);
+    }
 }
