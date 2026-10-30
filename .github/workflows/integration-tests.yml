@@ -96,6 +96,7 @@ jobs:
           - "./tests/Kiota.Builder.IntegrationTests/DiscriminatorSample.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/UnionWithoutDiscriminator.yaml"
           - "./tests/Kiota.Builder.IntegrationTests/ModelWithDefaultValues.json"
+          - "./tests/Kiota.Builder.IntegrationTests/RequestBodies.yaml"
           - "oas::petstore"
           - "https://api.twitter.com/2/openapi.json"
           - "https://developers.notion.com/openapi.json"
@@ -126,7 +127,7 @@ jobs:
       - run: chmod a+x ./publish/kiota
       # Common dependency needed to run MockServer
       - name: Set up JDK 17
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           java-version: "17"
           distribution: "temurin"
@@ -149,19 +150,19 @@ jobs:
           node-version: 24.x
       - name: Setup Ruby
         if: matrix.language == 'ruby'
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        uses: ruby/setup-ruby@b1da4809b005e0178fe08a1d57317bffc00b7b4c # v1.332.0
         with:
           ruby-version: "3.3"
           bundler-cache: true
       - name: Setup PHP
         if: matrix.language == 'php'
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: "8.2"
           coverage: xdebug
       - name: Setup Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
       - name: Setup Dart

@@ -265,6 +265,30 @@ public class RubyLanguageRefinerTests
         Assert.DoesNotContain(usersBuilder.Usings, x => x.Declaration?.TypeDefinition == graphNS);
     }
     [Fact]
+    public async Task RegistersTheJsonTextFormAndMultipartSerializationGemsAsync()
+    {
+        var defaults = new GenerationConfiguration();
+        var client = graphNS.AddClass(new CodeClass { Name = "graphClient", Kind = CodeClassKind.RequestBuilder }).First();
+        var constructor = client.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.ClientConstructor,
+            ReturnType = new CodeType { Name = "void" },
+            SerializerModules = new(defaults.Serializers, StringComparer.OrdinalIgnoreCase),
+            DeserializerModules = new(defaults.Deserializers, StringComparer.OrdinalIgnoreCase),
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(["FormSerializationWriterFactory", "JsonSerializationWriterFactory", "MultipartSerializationWriterFactory", "TextSerializationWriterFactory"], constructor.SerializerModules.Order());
+        Assert.Equal(["FormParseNodeFactory", "JsonParseNodeFactory", "TextParseNodeFactory"], constructor.DeserializerModules.Order());
+        foreach (var (gem, factory) in new[] {
+            ("microsoft_kiota_serialization_text", "TextSerializationWriterFactory"),
+            ("microsoft_kiota_serialization_text", "TextParseNodeFactory"),
+            ("microsoft_kiota_serialization_form", "FormSerializationWriterFactory"),
+            ("microsoft_kiota_serialization_form", "FormParseNodeFactory"),
+            ("microsoft_kiota_serialization_multipart", "MultipartSerializationWriterFactory") })
+            Assert.Contains(client.Usings, x => x.Name == factory && x.Declaration?.Name == gem && x.IsExternal);
+    }
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
