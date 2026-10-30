@@ -1252,8 +1252,11 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("@staticmethod", result);
         Assert.DoesNotContain("self", result);
     }
-    [Fact]
-    public void WritesModelFactoryBodyForInheritedModels()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(2436)]
+    public void WritesModelFactoryBodyForInheritedModels(int mappingCount)
     {
         setup();
         parentClass.Kind = CodeClassKind.Model;
@@ -1275,6 +1278,12 @@ public sealed class CodeMethodWriterTests : IDisposable
             Name = "childClass",
             TypeDefinition = childClass,
         });
+        for (var i = 1; i < mappingCount; i++)
+            parentClass.DiscriminatorInformation.AddDiscriminatorMapping($"ns.childclass{i}", new CodeType
+            {
+                Name = "childClass",
+                TypeDefinition = childClass,
+            });
         parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.type";
         AddCodeUsings();
         method.AddParameter(new CodeParameter
@@ -1299,10 +1308,20 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("mapping_value = child_node.get_str_value() if child_node else None", result);
         Assert.Contains("except AttributeError:", result);
         Assert.Contains("mapping_value = None", result);
-        Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.childclass\".casefold()", result);
+        var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(static line => line.Trim()).ToArray();
+        var guard = Assert.Single(lines, static line => line == "if not mapping_value:");
+        var guardIndex = Array.IndexOf(lines, guard);
+        Assert.Equal("return ParentClass()", lines[guardIndex + 1]);
+        Assert.Equal("if mapping_value.casefold() == \"ns.childclass\".casefold():", lines[guardIndex + 2]);
+        Assert.Equal("from .child_class import ChildClass", lines[guardIndex + 3]);
+        Assert.Equal("return ChildClass()", lines[guardIndex + 4]);
+        Assert.Equal(parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key)
+            .Select(static x => $"if mapping_value.casefold() == \"{x.Key}\".casefold():"),
+            lines.Where(static line => line.StartsWith("if mapping_value.casefold()", StringComparison.Ordinal)));
+        Assert.DoesNotContain("if mapping_value and", result);
         Assert.Contains("from .child_class import ChildClass", result);
         Assert.Contains("return ChildClass()", result);
-        Assert.Contains("return ParentClass()", result);
+        Assert.Equal("return ParentClass()", lines[^1]);
     }
     [Fact]
     public void EscapesModelFactoryBodyForInheritedModels()
@@ -1322,12 +1341,12 @@ public sealed class CodeMethodWriterTests : IDisposable
             TypeDefinition = parentClass,
         };
         method.IsStatic = true;
-        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld'\n\r\t\\$model", new CodeType
         {
             Name = "childClass",
             TypeDefinition = childClass,
         });
-        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe'\n\r\t\\$x";
         AddCodeUsings();
         method.AddParameter(new CodeParameter
         {
@@ -1346,8 +1365,10 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.ty\\\"pe\\nx\")", result);
-        Assert.Contains("if mapping_value and mapping_value.casefold() == \"ns.chi\\\"ld\\nmodel\".casefold()", result);
+        Assert.Contains("child_node = parse_node.get_child_node(\"@odata.ty\\\"pe'\\n\\r\\t\\\\$x\")", result);
+        Assert.Contains("if mapping_value.casefold() == \"ns.chi\\\"ld'\\n\\r\\t\\\\$model\".casefold()", result);
+        Assert.DoesNotContain("@odata.ty\"pe'\n\r\t\\$x", result);
+        Assert.DoesNotContain("ns.chi\"ld'\n\r\t\\$model", result);
     }
     [Fact]
     public void WritesModelFactoryBodyForUnionModels()
@@ -1497,10 +1518,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("if mapping_value_node:", result);
-        Assert.DoesNotContain("mapping_value = mapping_value_node.get_str_value", result);
-        Assert.DoesNotContain("if mapping_value == \"ns.childclass\"", result);
+        Assert.DoesNotContain("mapping_value", result);
         Assert.Contains("return ParentClass()", result);
     }
     [Fact]
@@ -1533,10 +1551,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         });
         writer.Write(method);
         var result = tw.ToString();
-        Assert.DoesNotContain("mapping_value_node = parse_node.get_child_node(\"@odata.type\")", result);
-        Assert.DoesNotContain("if mapping_value_node:", result);
-        Assert.DoesNotContain("mapping_value = mapping_value_node.get_str_value", result);
-        Assert.DoesNotContain("if mapping_value == \"ns.childclass\"", result);
+        Assert.DoesNotContain("mapping_value", result);
         Assert.Contains("return ParentClass()", result);
     }
     [Fact]
