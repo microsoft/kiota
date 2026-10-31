@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Python: check inherited-model discriminators once before type dispatch to avoid repeated truthiness checks that cause excessive CodeQL extraction work in large factories.
+
+## [1.37.0] - 2026-10-29
+
+### Added
+
 - Ruby: a deprecated operation, path, model, enum, property or parameter carries a YARD `@deprecated` tag with the description's deprecation text, date, removal date and version. Calling a deprecated method or navigating to a deprecated path also warns with `category: :deprecated`, which Ruby prints when `Warning[:deprecated]` is on, as it does for its own deprecations. [kiota-ruby#64](https://github.com/microsoft/kiota-ruby/issues/64)
 - Ruby: models generated with `--backing-store` keep their values in the runtime's backing store and send only the values changed since they were read, as the other languages do. Before, `--backing-store` generated Ruby that failed to load. Requires the runtime gems at 0.25.0. [kiota-ruby#53](https://github.com/microsoft/kiota-ruby/issues/53)
 - Ruby: generated clients register the text, form and multipart serializers, so `text/plain`, `application/x-www-form-urlencoded` and `multipart/form-data` bodies work, as in the other languages. Requires the runtime gems at 0.25.0. [kiota-ruby#52](https://github.com/microsoft/kiota-ruby/issues/52), [kiota-ruby#55](https://github.com/microsoft/kiota-ruby/issues/55), [kiota-ruby#57](https://github.com/microsoft/kiota-ruby/issues/57)
@@ -19,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The accessor to a child path is marked deprecated when that path is deprecated. It used to take the deprecation of its parent path instead, so a deprecated `/legacy` under a live `/api` was not flagged, and every child of a deprecated path was.
 - TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
+- TypeScript: resolve factory default deserializers in the declared model's namespace, preventing unresolved references to similarly named deserializers in child namespaces. Fixes [#8461](https://github.com/microsoft/kiota/issues/8461).
 - Ruby: `kiota info` lists the runtime gems at 0.25.0.
 - Prevented an IndexOutOfRangeException in StringExtensions.ToSnakeCase when handling trailing hyphens, generic arguments, and leading hyphens. Fixes [#8388](https://github.com/microsoft/kiota/issues/8388).
 
@@ -1944,3 +1953,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
