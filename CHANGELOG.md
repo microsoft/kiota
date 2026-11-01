@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Python: avoid querying empty discriminator child node when deserializing undiscriminated union models. Fixes [#6868](https://github.com/microsoft/kiota/issues/6868).
+
 ## [1.38.0] - 2026-11-02
 
 ### Added
