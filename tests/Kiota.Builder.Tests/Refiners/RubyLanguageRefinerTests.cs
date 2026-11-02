@@ -411,11 +411,38 @@ public class RubyLanguageRefinerTests
         Assert.Equal("def_escaped", pathParameter.Name);
         Assert.Equal("def", pathParameter.SerializationName);
     }
+    [Fact]
+    public async Task EscapesReservedPathParameterNamesWithoutCollisionsAsync()
+    {
+        var requestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "itemsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var constructor = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var keyword = new CodeParameter { Name = "class", Kind = CodeParameterKind.Path, Optional = true, Type = new CodeType { Name = "string", IsExternal = true } };
+        var taken = new CodeParameter { Name = "class_escaped", Kind = CodeParameterKind.Path, Optional = true, Type = new CodeType { Name = "string", IsExternal = true } };
+        var method = new CodeParameter { Name = "object_id", Kind = CodeParameterKind.Path, Optional = true, Type = new CodeType { Name = "string", IsExternal = true } };
+        constructor.AddParameter(keyword, taken, method);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("class_escaped_escaped", keyword.Name);
+        Assert.Equal("class", keyword.SerializationName);
+        Assert.Equal("class_escaped", taken.Name);
+        // a parameter can shadow a method, so only the names Ruby rejects are escaped
+        Assert.Equal("object_id", method.Name);
+    }
     [Theory]
     [InlineData("class", "class_escaped")]
     [InlineData("END", "e_n_d")]
     [InlineData("CLASS", "c_l_a_s_s")]
     [InlineData("baseRequestBuilder", "base_request_builder")]
+    [InlineData("objectId", "object_id")]
+    [InlineData("in", "in_escaped")]
     public async Task EscapesReservedIndexerParameterNamesAsync(string name, string rubyName)
     {
         var requestBuilder = graphNS.AddClass(new CodeClass
