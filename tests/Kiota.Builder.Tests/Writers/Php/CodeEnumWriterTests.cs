@@ -100,4 +100,19 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("public const OPTION1 = \"\\${env('HOME')}\";", result);
         Assert.DoesNotContain("\"${env('HOME')}\"", result);
     }
+
+    [Fact]
+    public async Task WritesNumericalEnumAsync()
+    {
+        var declaration = currentEnum.Parent as CodeNamespace;
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "active", SerializationName = "10" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "inactive", SerializationName = "20" });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, declaration, cancellationToken: TestContext.Current.CancellationToken);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains("class SomeEnum extends Enum {", result);
+        Assert.Contains("public const ACTIVE = 10;", result);
+        Assert.Contains("public const INACTIVE = 20;", result);
+    }
 }
