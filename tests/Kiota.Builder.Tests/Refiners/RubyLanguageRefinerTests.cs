@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 using Xunit;
@@ -410,8 +411,12 @@ public class RubyLanguageRefinerTests
         Assert.Equal("def_escaped", pathParameter.Name);
         Assert.Equal("def", pathParameter.SerializationName);
     }
-    [Fact]
-    public async Task EscapesReservedIndexerParameterNamesAsync()
+    [Theory]
+    [InlineData("class", "class_escaped")]
+    [InlineData("END", "e_n_d")]
+    [InlineData("CLASS", "c_l_a_s_s")]
+    [InlineData("baseRequestBuilder", "base_request_builder")]
+    public async Task EscapesReservedIndexerParameterNamesAsync(string name, string rubyName)
     {
         var requestBuilder = graphNS.AddClass(new CodeClass
         {
@@ -425,8 +430,8 @@ public class RubyLanguageRefinerTests
         }).First();
         var indexParameter = new CodeParameter
         {
-            Name = "class",
-            SerializationName = "class",
+            Name = name,
+            SerializationName = name,
             Type = new CodeType { Name = "string", IsExternal = true },
         };
         requestBuilder.AddIndexer(new CodeIndexer
@@ -438,10 +443,11 @@ public class RubyLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
         var parameter = Assert.Single(method.Parameters);
-        Assert.Equal("class_escaped", parameter.Name);
-        Assert.Equal("class", parameter.SerializationName);
-        Assert.Equal("class_escaped", indexParameter.Name);
-        Assert.Equal("class", indexParameter.SerializationName);
+        // the method declares its own parameter while its body reads the indexer's, so both must render the same
+        Assert.Equal(rubyName, parameter.Name.ToSnakeCase());
+        Assert.Equal(rubyName, indexParameter.Name.ToSnakeCase());
+        Assert.Equal(name, parameter.SerializationName);
+        Assert.Equal(name, indexParameter.SerializationName);
     }
     [Fact]
     public async Task EscapesInitializeAsync()

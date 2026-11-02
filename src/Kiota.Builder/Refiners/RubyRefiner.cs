@@ -274,7 +274,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
     {
         if (currentElement is CodeMethod currentMethod)
             foreach (var parameter in currentMethod.Parameters.Append(currentMethod.OriginalIndexer?.IndexParameter).OfType<CodeParameter>())
-                if (provider.ReservedNames.Contains(parameter.Name))
+                if (provider.ReservedNames.Contains(RubyConventionService.GetParameterName(parameter)))
                 {
                     if (string.IsNullOrEmpty(parameter.SerializationName))
                         parameter.SerializationName = parameter.Name;
