@@ -92,6 +92,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
+            ReplaceReservedParameterNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
             // Ruby inherits initialize, so a subclass needs one only for defaults of its own
             AddConstructorsForDefaultValues(
                 generatedCode,
@@ -268,6 +269,19 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
+    // ReplaceReservedNames doesn't reach parameters, so a path parameter named class wrote def by_class(class)
+    private static void ReplaceReservedParameterNames(CodeElement currentElement, IReservedNamesProvider provider, Func<string, string> replacement)
+    {
+        if (currentElement is CodeMethod currentMethod)
+            foreach (var parameter in currentMethod.Parameters.Append(currentMethod.OriginalIndexer?.IndexParameter).OfType<CodeParameter>())
+                if (provider.ReservedNames.Contains(parameter.Name))
+                {
+                    if (string.IsNullOrEmpty(parameter.SerializationName))
+                        parameter.SerializationName = parameter.Name;
+                    parameter.Name = replacement(parameter.Name);
+                }
+        CrawlTree(currentElement, x => ReplaceReservedParameterNames(x, provider, replacement));
+    }
     // a subclass with no fields of its own inherits the deserializer map unchanged
     private static void RemoveDeserializersThatOnlyCallSuper(CodeElement currentElement)
     {

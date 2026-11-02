@@ -385,6 +385,65 @@ public class RubyLanguageRefinerTests
         Assert.Contains("escaped", model.Name);
     }
     [Fact]
+    public async Task EscapesReservedPathParameterNamesAsync()
+    {
+        var requestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "searchRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var constructor = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var pathParameter = new CodeParameter
+        {
+            Name = "def",
+            Kind = CodeParameterKind.Path,
+            Optional = true,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        };
+        constructor.AddParameter(pathParameter);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("def_escaped", pathParameter.Name);
+        Assert.Equal("def", pathParameter.SerializationName);
+    }
+    [Fact]
+    public async Task EscapesReservedIndexerParameterNamesAsync()
+    {
+        var requestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "itemsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var itemRequestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "itemRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var indexParameter = new CodeParameter
+        {
+            Name = "class",
+            SerializationName = "class",
+            Type = new CodeType { Name = "string", IsExternal = true },
+        };
+        requestBuilder.AddIndexer(new CodeIndexer
+        {
+            Name = "indexer",
+            ReturnType = new CodeType { Name = itemRequestBuilder.Name, TypeDefinition = itemRequestBuilder },
+            IndexParameter = indexParameter,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
+        var parameter = Assert.Single(method.Parameters);
+        Assert.Equal("class_escaped", parameter.Name);
+        Assert.Equal("class", parameter.SerializationName);
+        Assert.Equal("class_escaped", indexParameter.Name);
+        Assert.Equal("class", indexParameter.SerializationName);
+    }
+    [Fact]
     public async Task EscapesInitializeAsync()
     {
         // the real-world case is an API path segment (e.g. /media/upload/initialize) becoming a
