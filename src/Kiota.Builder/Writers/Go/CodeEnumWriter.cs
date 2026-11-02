@@ -34,7 +34,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         writer.WriteLine(); // gofmt: exactly one blank line before each top-level declaration
         conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecation(codeElement, writer);
-        writer.WriteLines($"type {typeName} int",
+        var underlyingType = codeElement.IsNumeric && string.Equals(codeElement.Format, "int64", StringComparison.OrdinalIgnoreCase) ? "int64" : "int";
+        writer.WriteLines($"type {typeName} {underlyingType}",
                         string.Empty,
                         "const (");
         writer.IncreaseIndent();
@@ -51,7 +52,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                 if (item.Documentation.DescriptionAvailable)
                     conventions.WriteDescriptionItem(GoConventionService.RemoveInvalidDescriptionCharacters(item.Documentation.DescriptionTemplate), writer);
 
-                if (isMultiValue)
+                if (codeElement.IsNumeric)
+                    writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} {typeName} = {item.WireName}");
+                else if (isMultiValue)
                     writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
                 else
                     writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}{(power == 0 ? $" {typeName} = iota" : string.Empty)}");
@@ -76,7 +79,22 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         var enumOptions = codeElement.Options.ToList();
 
         writer.WriteLine(); // gofmt: exactly one blank line before each top-level declaration
-        if (isMultiValue)
+        if (codeElement.IsNumeric)
+        {
+            writer.StartBlock($"func (i {typeName}) String() string {{");
+            writer.StartBlock("switch i {");
+            foreach (var item in enumOptions)
+            {
+                writer.WriteLine($"case {item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}:");
+                writer.IncreaseIndent();
+                writer.WriteLine($"return \"{item.WireName.SanitizeDoubleQuote()}\"");
+                writer.DecreaseIndent();
+            }
+            writer.CloseBlock();
+            writer.WriteLine("return \"\"");
+            writer.CloseBlock();
+        }
+        else if (isMultiValue)
         {
             writer.StartBlock($"func (i {typeName}) String() string {{");
             writer.WriteLine("var values []string");

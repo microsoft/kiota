@@ -782,9 +782,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         if (codeProperty.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition &&
             enumDefinition.CodeEnumObject is not null)
         {
-            var codeEnumOption = enumDefinition.Options.First(x =>
+            var codeEnumOption = enumDefinition.Options.FirstOrDefault(x =>
                 x.SymbolName.Equals(codeProperty.DefaultValue.Trim('"').CleanupSymbolName(),
+                    StringComparison.OrdinalIgnoreCase) ||
+                x.WireName.Equals(codeProperty.DefaultValue.Trim('"'),
                     StringComparison.OrdinalIgnoreCase));
+            if (codeEnumOption is null) return string.Empty;
             var enumDefault = $"{enumDefinition.CodeEnumObject.Name.ToFirstCharacterUpperCase()}.{codeEnumOption.Name.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
             if (!string.IsNullOrEmpty(enumDefault) && !enumDefault.EqualsIgnoreCase("\"null\"") && IsCollectionOfEnum(codeProperty))
             {
