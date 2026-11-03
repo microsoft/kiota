@@ -193,6 +193,35 @@ public sealed partial class KiotaBuilderTests
         Assert.IsType<CodeComposedTypeBase>(value.Type, exactMatch: false);
     }
 
+    [Theory]
+    [InlineData("anyOf", false)]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    public async Task UnionOfAPrimitiveArrayReferenceAndANullableIntegerIsNotCollapsedAsync(string keyword, bool integerFirst)
+    {
+        var entries = integerFirst ?
+            """[{"type":["integer","null"]},{"$ref":"#/components/schemas/Strings"}]""" :
+            """[{"$ref":"#/components/schemas/Strings"},{"type":["integer","null"]}]""";
+        var codeModel = await CreateCodeModelForNullableReferencesAsync(ThingPath, """
+            "Strings":{"type":"array","items":{"type":"string"}},
+            "Thing":{"type":"object","properties":{"value":{"KEYWORD":ENTRIES}}}
+            """.Replace("KEYWORD", keyword).Replace("ENTRIES", entries));
+        var thing = codeModel.FindChildByName<CodeClass>("Thing");
+        Assert.NotNull(thing);
+        var value = Assert.IsType<CodeComposedTypeBase>(thing.FindChildByName<CodeProperty>("value", false)?.Type, exactMatch: false);
+        Assert.Collection(value.Types.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase),
+            static x =>
+            {
+                Assert.Equal("integer", x.Name, StringComparer.OrdinalIgnoreCase);
+                Assert.False(x.IsCollection);
+            },
+            static x =>
+            {
+                Assert.Equal("string", x.Name, StringComparer.OrdinalIgnoreCase);
+                Assert.True(x.IsCollection);
+            });
+    }
+
     private const string ThingPath = """
         "/thing":{"get":{"responses":{"200":{"description":"ok","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Thing"}}}}}}}
         """;
