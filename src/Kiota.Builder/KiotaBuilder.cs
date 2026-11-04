@@ -802,7 +802,7 @@ public partial class KiotaBuilder
                     LogPropertyTypeUndetermined(propIdentifier);
                     continue;
                 }
-                prop.Deprecation = currentNode.GetDeprecationInformation();
+                prop.Deprecation = child.GetDeprecationInformation();
                 if (!string.IsNullOrWhiteSpace(description))
                 {
                     prop.Documentation.DescriptionTemplate = description;

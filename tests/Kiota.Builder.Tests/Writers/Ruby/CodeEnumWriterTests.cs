@@ -92,4 +92,16 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.DoesNotContain("c\nd", result);
         Assert.DoesNotContain("g#{", result);
     }
+
+    [Fact]
+    public void WritesDeprecationComment()
+    {
+        currentEnum.AddOption(new CodeEnumOption { Name = "Option1" });
+        currentEnum.Deprecation = new("Use another enum", Version: "2.0");
+        writer.Write(currentEnum);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        var tag = Array.IndexOf(lines, "# @deprecated Use another enum as of 2.0");
+        Assert.True(tag >= 0, tw.ToString());
+        Assert.Equal("SomeEnum = {", lines[tag + 1]);
+    }
 }

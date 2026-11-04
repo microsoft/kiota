@@ -71,6 +71,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             RemoveUntypedNodeTypeValues(generatedCode);
             ReplaceBinaryByNativeType(generatedCode, "StringIO", "stringio", true);
+            CorrectCoreTypesForBackingStore(generatedCode, "MicrosoftKiotaAbstractions::BackingStoreFactorySingleton.instance.create_backing_store", false);
             CorrectCoreType(generatedCode, CorrectMethodType, CorrectPropertyType, CorrectImplements);
             cancellationToken.ThrowIfCancellationRequested();
             ReplacePropertyNames(generatedCode,
@@ -91,6 +92,7 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 true
             );
             ReplaceReservedNames(generatedCode, reservedNamesProvider, x => $"{x}_escaped");
+            EscapeKeywordParameterNames(generatedCode, x => $"{x}_escaped");
             // Ruby inherits initialize, so a subclass needs one only for defaults of its own
             AddConstructorsForDefaultValues(
                 generatedCode,
@@ -107,12 +109,17 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
                 generatedCode,
                 defaultConfiguration.Serializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization_json.JsonSerializationWriterFactory"});
+                    "microsoft_kiota_serialization_json.JsonSerializationWriterFactory",
+                    "microsoft_kiota_serialization_text.TextSerializationWriterFactory",
+                    "microsoft_kiota_serialization_form.FormSerializationWriterFactory",
+                    "microsoft_kiota_serialization_multipart.MultipartSerializationWriterFactory"});
             ReplaceDefaultDeserializationModules(
                 generatedCode,
                 defaultConfiguration.Deserializers,
                 new(StringComparer.OrdinalIgnoreCase) {
-                    "microsoft_kiota_serialization_json.JsonParseNodeFactory"});
+                    "microsoft_kiota_serialization_json.JsonParseNodeFactory",
+                    "microsoft_kiota_serialization_text.TextParseNodeFactory",
+                    "microsoft_kiota_serialization_form.FormParseNodeFactory"});
             AddSerializationModulesImport(generatedCode,
                                         ["microsoft_kiota_abstractions.ApiClientBuilder",
                                             "microsoft_kiota_abstractions.SerializationWriterFactoryRegistry"],
@@ -262,6 +269,39 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
         new (static x => x is CodeProperty prop && prop.IsOfKind(CodePropertyKind.BackingStore),
             "microsoft_kiota_abstractions", "BackingStore", "BackedModel", "BackingStoreFactorySingleton" ),
     };
+    // a parameter may shadow a method such as object_id, so only the names Ruby rejects are escaped
+    private static readonly HashSet<string> RubyKeywords = new(StringComparer.Ordinal) {
+        "alias", "and", "begin", "break", "case", "class", "def", "do", "else", "elsif", "end", "ensure", "false", "for", "if", "in",
+        "module", "next", "nil", "not", "or", "redo", "rescue", "retry", "return", "self", "super", "then", "true", "undef", "unless",
+        "until", "when", "while", "yield",
+    };
+    // ReplaceReservedNames doesn't reach parameters, so a path parameter named class wrote def by_class(class)
+    private static void EscapeKeywordParameterNames(CodeElement currentElement, Func<string, string> replacement)
+    {
+        if (currentElement is CodeMethod currentMethod)
+        {
+            var takenNames = currentMethod.Parameters.Select(RubyConventionService.GetParameterName).ToHashSet(StringComparer.Ordinal);
+            // an indexer method's parameter and the original one render alike, so they share the new name
+            var newNames = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var parameter in currentMethod.Parameters.Append(currentMethod.OriginalIndexer?.IndexParameter).OfType<CodeParameter>())
+            {
+                var rubyName = RubyConventionService.GetParameterName(parameter);
+                if (!RubyKeywords.Contains(rubyName))
+                    continue;
+                if (!newNames.TryGetValue(rubyName, out var newName))
+                {
+                    newName = replacement(rubyName);
+                    while (!takenNames.Add(newName))
+                        newName = replacement(newName);
+                    newNames[rubyName] = newName;
+                }
+                if (string.IsNullOrEmpty(parameter.SerializationName))
+                    parameter.SerializationName = parameter.Name;
+                parameter.Name = newName;
+            }
+        }
+        CrawlTree(currentElement, x => EscapeKeywordParameterNames(x, replacement));
+    }
     // a subclass with no fields of its own inherits the deserializer map unchanged
     private static void RemoveDeserializersThatOnlyCallSuper(CodeElement currentElement)
     {
@@ -341,5 +381,9 @@ public partial class RubyRefiner : CommonLanguageRefiner, ILanguageRefiner
             .Where(static x => "IAdditionalDataHolder".Equals(x.Name, StringComparison.OrdinalIgnoreCase))
             .ToList()
             .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::AdditionalDataHolder");
+        block.Implements
+            .Where(static x => x.Name is "BackedModel" or "IBackedModel")
+            .ToList()
+            .ForEach(static x => x.Name = "MicrosoftKiotaAbstractions::BackedModel");
     }
 }
