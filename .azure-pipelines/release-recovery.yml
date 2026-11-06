@@ -1,0 +1,1592 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Manual recovery pipeline for rebuilding the selected commit or an optional Kiota tag and redeploying only failed release targets.
+# All deployment targets default to off, and release versions are read from the checked-out source's VersionPrefix.
+
+name: $(BuildDefinitionName)_recovery_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger: none
+pr: none
+
+variables:
+  buildPlatform: "Any CPU"
+  buildConfiguration: "Release"
+  NuGetOrganizationName: "openapinet"
+  nodeVersion: "24.x"
+  ProductBinPath: '$(Build.SourcesDirectory)\src\kiota\bin\$(BuildConfiguration)'
+  REGISTRY: "msgraphprodregistry.azurecr.io"
+  IMAGE_NAME: "public/openapi/kiota"
+  # Recovery runs always publish the release VersionPrefix from the selected commit.
+  PREVIEW_BRANCH: "refs/heads/__release_recovery__"
+  TAG: "$(Build.BuildId)"
+  # Base URL for the authenticated Azure Artifacts feed (GraphDeveloperExperiences_Public) used to route
+  # package operations (version lookups + NuGet restore) through configured upstream sources instead of
+  # public registries. Defined once here and referenced as $(privateFeedBaseUrl) throughout the pipeline.
+  # NOTE: confirm this against the feed's "Connect to Feed" dialog if the feed/org/project changes.
+  privateFeedBaseUrl: "https://microsoftgraph.pkgs.visualstudio.com/0985d294-5762-4bc2-a565-161ef349ca3e/_packaging/GraphDeveloperExperiences_Public"
+
+parameters:
+  - name: kiotaTag
+    displayName: Kiota version tag to check out (optional)
+    type: string
+    default: ""
+  - name: deployVsMarketplace
+    displayName: Deploy VS Code extension to Marketplace
+    type: boolean
+    default: false
+  - name: deployGitHubRelease
+    displayName: Deploy GitHub release
+    type: boolean
+    default: false
+  - name: deployKiotaNuGet
+    displayName: Deploy Microsoft.OpenApi.Kiota to NuGet
+    type: boolean
+    default: false
+  - name: deployBuilderNuGet
+    displayName: Deploy Microsoft.OpenApi.Kiota.Builder to NuGet
+    type: boolean
+    default: false
+  - name: deployDocker
+    displayName: Deploy Docker image
+    type: boolean
+    default: false
+  - name: deployNpm
+    displayName: Deploy npm package
+    type: boolean
+    default: false
+  - name: distributions
+    type: object
+    default:
+      - architecture: "win-x86"
+        jobPrefix: "win_x86"
+        os: "windows"
+        image: "windows-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "win-x64"
+        jobPrefix: "win_x64"
+        os: "windows"
+        image: "windows-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "win-arm64"
+        jobPrefix: "win_arm64"
+        os: "windows"
+        image: windows-2025-arm64
+        pool: 1es-window2025-latest-arm
+        # arm64 is not currently available in the shared pool
+        hostArchitecture: "arm64"
+      - architecture: "linux-x64"
+        jobPrefix: "linux_x64"
+        os: "linux"
+        image: "ubuntu-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "linux-arm64"
+        jobPrefix: "linux_arm64"
+        os: "linux"
+        image: "ubuntu-latest"
+        pool: Azure-Pipelines-1ESPT-ExDShared
+      - architecture: "osx-x64"
+        jobPrefix: "osx_x64"
+        os: "macOS"
+        image: "macOS-latest"
+        pool: Azure Pipelines
+        # MacOS images aren't available in 1ES templates
+        # https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-docs/1es-pipeline-templates/onboarding/macos-support
+      - architecture: "osx-arm64"
+        jobPrefix: "osx_arm64"
+        os: "macOS"
+        image: "macOS-latest"
+        pool: Azure Pipelines
+
+resources:
+  repositories:
+    - repository: 1ESPipelineTemplates
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
+
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
+  parameters:
+    settings: {}
+      # Network isolation policy (currently disabled). The "Permissive" base allows all outbound
+      # connections except a few vetted-malicious endpoints; the "CFSClean" deny policy then blocks the
+      # public package feeds it governs (nuget.org, npmjs, pypi.org, Maven Central, yarnpkg, crates.io),
+      # forcing those restores through the authenticated Azure Artifacts feed. Registries CFSClean does
+      # not cover -- Dart (pub.dev), PHP (Packagist), Ruby (rubygems.org) -- and github.com /
+      # api.github.com stay reachable under Permissive, which the Dart/PHP/Ruby/Go version lookups rely
+      # on. (A "Preferred" base instead of "Permissive" is deny-by-default and would block those
+      # un-upstreamed registries, e.g. pub.dev.) To enable, remove the "{}" above and uncomment the line
+      # below. See https://aka.ms/1espt-networkisolation
+      # networkIsolationPolicy: Permissive,CFSClean
+    sdl:
+      sourceAnalysisPool:
+        name: Azure-Pipelines-1ESPT-ExDShared
+        os: windows
+        image: windows-latest
+    stages:
+      - stage: build
+        jobs:
+          - job: update_appsettings
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+            steps:
+              # Persist the ephemeral GitHub App token so the version-lookup step can reuse it.
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
+                  persistCredentials: true
+
+              # The it/ integration-test fixtures are not used by this pipeline and their per-language
+              # manifests trigger Component Governance to reach public registries under network isolation.
+              # Remove them right after checkout so no later scan/build sees them.
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
+              # Recover the short-lived GitHub token that persistCredentials wrote to the local git config
+              # (AUTHORIZATION: basic base64(x-access-token:<token>)) and expose it as a masked variable so
+              # update-versions.ps1 can authenticate api.github.com calls (5000/hr vs the shared-IP 60/hr
+              # anonymous limit). Emits an empty value when no credential is present, keeping GitHub lookups
+              # anonymous rather than failing.
+              - pwsh: |
+                  $token = ""
+                  # Resolve the extraheader git actually uses for this repo by matching against its own
+                  # remote URL. --get-urlmatch returns the single best match, so it finds the entry whether
+                  # checkout keyed it to the host or the full repo path, and never decodes a different
+                  # host's (e.g. the Azure Artifacts feed) credential.
+                  $remoteUrl = git -C "$(Build.SourcesDirectory)" remote get-url origin 2>$null
+                  if ([string]::IsNullOrWhiteSpace($remoteUrl)) { $remoteUrl = "https://github.com/" }
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader $remoteUrl 2>$null
+                  # git exits non-zero when no extraheader matches; that is a graceful (anonymous) outcome
+                  # here, so clear it rather than let the task surface it as a step failure.
+                  $global:LASTEXITCODE = 0
+                  if (-not [string]::IsNullOrWhiteSpace($header)) {
+                    try {
+                      $b64 = ($header.Trim() -split '\s+')[-1]
+                      $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
+                    } catch {
+                      Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    } finally {
+                      $credentialEntries = @(git -C "$(Build.SourcesDirectory)" config --local --get-regexp '^http\..*\.extraheader$' 2>$null)
+                      $global:LASTEXITCODE = 0
+                      $headerNames = @($credentialEntries | ForEach-Object {
+                        $entryParts = $_ -split '\s+', 2
+                        if ($entryParts.Count -eq 2 -and $entryParts[1].Trim() -eq $header.Trim()) {
+                          $entryParts[0]
+                        }
+                      } | Select-Object -Unique)
+                      if ($headerNames.Count -eq 0) {
+                        throw "Could not locate the persisted GitHub credential in the local Git config for removal."
+                      }
+                      foreach ($headerName in $headerNames) {
+                        git -C "$(Build.SourcesDirectory)" config --local --unset-all $headerName
+                        if ($LASTEXITCODE -ne 0) {
+                          throw "Could not remove the persisted GitHub credential from the local Git config."
+                        }
+                      }
+                      Write-Host "Removed the persisted GitHub credential from the local Git config."
+                    }
+                  }
+                  if ([string]::IsNullOrWhiteSpace($token)) {
+                    Write-Host "No GitHub token available; release lookups will use the anonymous rate limit."
+                  }
+                  Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
+                displayName: "Extract GitHub token for release lookups"
+
+              # Route package-version lookups through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
+              # NuGet, npm, PyPI and Maven Central are configured as upstream sources on that feed.
+              # PHP (Packagist), Dart (pub.dev), Go (api.github.com) and Ruby (rubygems.org) have no
+              # Azure Artifacts upstream type, so those lookups remain on public (allow-listed) registries.
+              - pwsh: >
+                  $(Build.SourcesDirectory)/scripts/update-versions.ps1
+                  -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                  -NpmRegistryUrl "$(privateFeedBaseUrl)/npm/registry"
+                  -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
+                  -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
+                displayName: "Update dependencies versions"
+                name: update_versions
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
+                  GITHUB_TOKEN: $(githubToken)
+
+              - pwsh: |
+                  New-Item -Path $(Build.ArtifactStagingDirectory)/AppSettings -ItemType Directory -Force -Verbose
+                  Copy-Item $(Build.SourcesDirectory)/src/kiota/appsettings.json $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json -Force -Verbose
+                displayName: Prepare staging folder for upload
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: AppSettings"
+                inputs:
+                  artifactName: AppSettings
+                  targetPath: "$(Build.ArtifactStagingDirectory)/AppSettings"
+
+              # upload the scripts directory as scripts artifact
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: scripts"
+                inputs:
+                  artifactName: scripts
+                  targetPath: $(Build.SourcesDirectory)/scripts
+
+              # upload the csproj file as csproj artifact
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/csproj
+                  sourceFolder: $(Build.SourcesDirectory)/src/kiota
+                  Contents: "*.csproj"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: csproj"
+                inputs:
+                  artifactName: csproj
+                  targetPath: "$(Build.ArtifactStagingDirectory)/csproj"
+
+              # upload the changelog file as changelog artifact
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/changelog
+                  sourceFolder: $(Build.SourcesDirectory)
+                  Contents: "CHANGELOG.md"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: changelog"
+                inputs:
+                  artifactName: changelog
+                  targetPath: "$(Build.ArtifactStagingDirectory)/changelog"
+
+          - job: build
+            condition: and(succeeded(), ${{ or(parameters.deployGitHubRelease, parameters.deployKiotaNuGet, parameters.deployBuilderNuGet) }})
+            dependsOn: [update_appsettings]
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: windows # needed for compliance tasks
+              image: windows-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: AppSettings
+                  targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
+            steps:
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
+
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
+              - pwsh: |
+                  Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
+                displayName: Copy the appsettings.json
+
+              - task: UseDotNet@2
+                displayName: "Use .NET SDK from global.json"
+                inputs:
+                  useGlobalJson: true
+                  workingDirectory: "$(Build.SourcesDirectory)"
+
+              # Pinned to a specific Go version for deterministic tool availability and formatting,
+              # so the integration tests can run gofmt against the generated Go code.
+              - task: GoTool@0
+                displayName: "Use Go 1.26.5"
+                inputs:
+                  version: "1.26.5"
+
+              # Install the nuget tool.
+              - task: NuGetToolInstaller@1
+                displayName: "Use NuGet >=6.11.0"
+                inputs:
+                  versionSpec: ">=6.11.0"
+                  checkLatest: true
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
+                displayName: "Set version suffix"
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/enable-shims-for-packaging.ps1
+                displayName: "Add PackAsToolShimRuntimeIdentifiers attributes for tool packaging"
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
+                displayName: "Set version suffix in csproj for generators"
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                displayName: "Get Kiota's version-number from .csproj"
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
+                condition: eq(variables['isPrerelease'], 'false')
+                displayName: "Get release notes from CHANGELOG.md"
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased
+                condition: eq(variables['isPrerelease'], 'true')
+
+              # Build the Product project
+              - task: NuGetAuthenticate@1
+                displayName: 'Authenticate to Azure Artifacts'
+
+              - pwsh: |
+                  @"
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <configuration>
+                    <packageSources>
+                      <clear />
+                      <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
+                    </packageSources>
+                  </configuration>
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
+                displayName: 'Create nuget.config (central feed)'
+              - task: DotNetCoreCLI@2
+                condition: eq(variables['isPrerelease'], 'true')
+                displayName: "build"
+                inputs:
+                  projects: '$(Build.SourcesDirectory)\kiota.slnx'
+                  arguments: '--configuration $(BuildConfiguration) --no-incremental --version-suffix "$(versionSuffix)"'
+
+              # Build the Product project
+              - task: DotNetCoreCLI@2
+                condition: eq(variables['isPrerelease'], 'false')
+                displayName: "build"
+                inputs:
+                  projects: '$(Build.SourcesDirectory)\kiota.slnx'
+                  arguments: "--configuration $(BuildConfiguration) --no-incremental"
+
+              # Run the Unit test
+              - task: DotNetCoreCLI@2
+                condition: succeeded()
+                displayName: "test"
+                inputs:
+                  command: test
+                  projects: '$(Build.SourcesDirectory)\kiota.slnx'
+                  arguments: "--configuration $(BuildConfiguration) --no-build --results-directory=$(Agent.TempDirectory) --coverlet --coverlet-output-format cobertura --coverlet-include '[Kiota.Builder]*' --coverlet-include '[kiota]*' --coverlet-exclude '[*.Tests]*' --report-azdo --publish-azdo-test-results"
+                  publishTestResults: false
+
+              - pwsh: dotnet tool install --global dotnet-reportgenerator-globaltool --configfile "$(Build.SourcesDirectory)/nuget.config"
+                condition: succeededOrFailed()
+                displayName: "Install ReportGenerator"
+                name: install_reportgenerator
+
+              - pwsh: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.*.xml -targetdir:$(Build.SourcesDirectory)/reports/coverage -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
+                condition: succeeded()
+                displayName: "Generate coverage report"
+
+              - task: PublishCodeCoverageResults@2
+                condition: succeeded()
+                displayName: "Publish code coverage"
+                inputs:
+                  summaryFileLocation: "$(Build.SourcesDirectory)/reports/coverage/Cobertura.xml"
+
+              - task: EsrpCodeSigning@6
+                displayName: "ESRP CodeSigning"
+                inputs:
+                  ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
+                  AppRegistrationClientId: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  AppRegistrationTenantId: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+                  AuthAKVName: "akv-prod-eastus"
+                  AuthCertName: "ReferenceLibraryPrivateCert"
+                  AuthSignCertName: "ReferencePackagePublisherCertificate"
+                  FolderPath: '$(Build.SourcesDirectory)\src'
+                  signConfigType: inlineSignParams
+                  UseMinimatch: true
+                  Pattern: |
+                    **\*.exe
+                    **\*.dll
+                  inlineOperation: |
+                    [
+                        {
+                            "keyCode": "CP-230012",
+                            "operationSetCode": "SigntoolSign",
+                            "parameters": [
+                            {
+                                "parameterName": "OpusName",
+                                "parameterValue": "Microsoft"
+                            },
+                            {
+                                "parameterName": "OpusInfo",
+                                "parameterValue": "http://www.microsoft.com"
+                            },
+                            {
+                                "parameterName": "FileDigest",
+                                "parameterValue": "/fd \"SHA256\""
+                            },
+                            {
+                                "parameterName": "PageHash",
+                                "parameterValue": "/NPH"
+                            },
+                            {
+                                "parameterName": "TimeStamp",
+                                "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                            }
+                            ],
+                            "toolName": "sign",
+                            "toolVersion": "1.0"
+                        },
+                        {
+                            "keyCode": "CP-230012",
+                            "operationSetCode": "SigntoolVerify",
+                            "parameters": [ ],
+                            "toolName": "sign",
+                            "toolVersion": "1.0"
+                        }
+                    ]
+                  SessionTimeout: 20
+                  MaxConcurrency: 50
+                  MaxRetryAttempts: 5
+                  PendingAnalysisWaitTimeoutMinutes: 5
+
+              # Pack
+              - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix "$(versionSuffix)"
+                condition: eq(variables['isPrerelease'], 'true')
+                displayName: "pack kiota"
+
+              - pwsh: dotnet pack $(Build.SourcesDirectory)/src/kiota/kiota.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+                condition: eq(variables['isPrerelease'], 'false')
+                displayName: "pack kiota"
+
+              - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg --version-suffix "$(versionSuffix)"
+                condition: eq(variables['isPrerelease'], 'true')
+                displayName: "pack kiota builder"
+
+              - pwsh: dotnet pack $(Build.SourcesDirectory)/src/Kiota.Builder/Kiota.Builder.csproj -o $(Build.ArtifactStagingDirectory) --configuration $(BuildConfiguration) --no-build --include-symbols --include-source /p:SymbolPackageFormat=snupkg
+                condition: eq(variables['isPrerelease'], 'false')
+                displayName: "pack kiota builder"
+
+              - task: EsrpCodeSigning@6
+                displayName: "ESRP CodeSigning Nuget Packages"
+                inputs:
+                  ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
+                  AppRegistrationClientId: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  AppRegistrationTenantId: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+                  AuthAKVName: "akv-prod-eastus"
+                  AuthCertName: "ReferenceLibraryPrivateCert"
+                  AuthSignCertName: "ReferencePackagePublisherCertificate"
+                  FolderPath: "$(Build.ArtifactStagingDirectory)"
+                  UseMinimatch: true
+                  Pattern: "*.nupkg"
+                  signConfigType: inlineSignParams
+                  inlineOperation: |
+                    [
+                        {
+                            "keyCode": "CP-401405",
+                            "operationSetCode": "NuGetSign",
+                            "parameters": [ ],
+                            "toolName": "sign",
+                            "toolVersion": "1.0"
+                        },
+                        {
+                            "keyCode": "CP-401405",
+                            "operationSetCode": "NuGetVerify",
+                            "parameters": [ ],
+                            "toolName": "sign",
+                            "toolVersion": "1.0"
+                        }
+                    ]
+                  SessionTimeout: 20
+                  MaxConcurrency: 50
+                  MaxRetryAttempts: 5
+                  PendingAnalysisWaitTimeoutMinutes: 5
+
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/Nugets
+                  sourceFolder: $(Build.ArtifactStagingDirectory)
+                  Contents: "*.*nupkg"
+
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: Nugets"
+                inputs:
+                  artifactName: Nugets
+                  targetPath: "$(Build.ArtifactStagingDirectory)/Nugets"
+
+          # using a loop instead of a matrix due to 1ES template limitations
+          # https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-docs/1es-pipeline-templates/faqs
+          - ${{ each distribution in parameters.distributions }}:
+              - job: ${{ distribution.jobPrefix }}_build_binaries
+                condition: and(succeeded(), ${{ or(parameters.deployVsMarketplace, parameters.deployGitHubRelease, parameters.deployNpm) }})
+                dependsOn: [update_appsettings]
+                pool:
+                  name: ${{ distribution.pool }}
+                  os: ${{ distribution.os }}
+                  image: ${{ distribution.image }}
+                  ${{ if eq(distribution.hostArchitecture, 'arm64') }}:
+                    hostArchitecture: ${{ distribution.hostArchitecture }}
+                templateContext:
+                  sdl:
+                    baseline:
+                      baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                    suppression:
+                      suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+                  inputs:
+                    - input: pipelineArtifact
+                      artifactName: AppSettings
+                      targetPath: $(Build.ArtifactStagingDirectory)/AppSettings
+
+                steps:
+                  - template: templates/checkout-kiota-recovery-source.yml
+                    parameters:
+                      tag: ${{ parameters.kiotaTag }}
+                  - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                    displayName: "Remove unused integration-test fixtures (it/)"
+                  - task: UseDotNet@2
+                    displayName: "Use .NET SDK from global.json"
+                    inputs:
+                      useGlobalJson: true
+                      workingDirectory: "$(Build.SourcesDirectory)"
+
+                  - task: UseDotNet@2
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                    displayName: "Use .NET 9"
+                    inputs:
+                      version: 9.x
+
+                  # On arm64 (Windows) PowerShell Core is not preinstalled, so it is acquired via
+                  # `dotnet tool install`. That restore must flow through the authenticated central feed,
+                  # so both NuGetAuthenticate and a nuget.config have to exist *before* this step. The
+                  # config is authored with cmd rather than pwsh because pwsh is not available yet on
+                  # this host (that is exactly what we are bootstrapping).
+                  - task: NuGetAuthenticate@1
+                    displayName: "Authenticate to Azure Artifacts"
+                  - script: |
+                      set "CFG=$(Build.SourcesDirectory)\nuget.config"
+                      > "%CFG%" echo ^<?xml version="1.0" encoding="utf-8"?^>
+                      >>"%CFG%" echo ^<configuration^>
+                      >>"%CFG%" echo   ^<packageSources^>
+                      >>"%CFG%" echo     ^<clear /^>
+                      >>"%CFG%" echo     ^<add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" /^>
+                      >>"%CFG%" echo   ^</packageSources^>
+                      >>"%CFG%" echo ^</configuration^>
+                      dotnet tool install --global PowerShell --configfile "%CFG%"
+                    displayName: "Install PowerShell"
+                    condition: and(succeeded(), eq('${{ distribution.hostArchitecture }}', 'arm64'))
+                    # powershell is not installed by default on arm64 images
+
+                  - pwsh: |
+                      Copy-Item $(Build.ArtifactStagingDirectory)/AppSettings/appsettings.json $(Build.SourcesDirectory)/src/kiota/appsettings.json -Force -Verbose
+                    displayName: Copy the appsettings.json
+
+                  - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
+                    displayName: "Set version suffix"
+
+                  - pwsh: $(Build.SourcesDirectory)/scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(versionSuffix)"
+                    displayName: "Set version suffix in csproj for generators"
+
+                  - pwsh: |
+                      @"
+                      <?xml version="1.0" encoding="utf-8"?>
+                      <configuration>
+                        <packageSources>
+                          <clear />
+                          <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
+                        </packageSources>
+                      </configuration>
+                      "@ | Set-Content -Path "$(Build.SourcesDirectory)/nuget.config" -Encoding UTF8
+                    displayName: 'Create nuget.config (central feed)'
+
+                  - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ distribution.architecture }} -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }} --version-suffix "$(versionSuffix)" -f net10.0
+                    condition: eq(variables['isPrerelease'], 'true')
+                    displayName: publish kiota as executable
+
+                  - pwsh: dotnet publish src/kiota/kiota.csproj -c Release --runtime ${{ distribution.architecture }} -p:PublishSingleFile=true --self-contained --output $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }} -f net10.0
+                    condition: eq(variables['isPrerelease'], 'false')
+                    displayName: publish kiota as executable
+
+                  - task: AzureKeyVault@2
+                    displayName: "Azure Key Vault: Get Secrets"
+                    inputs:
+                      azureSubscription: "Federated AKV Managed Identity Connection"
+                      KeyVaultName: akv-prod-eastus
+                      SecretsFilter: "graph-cli-apple-developer-certificate,graph-cli-apple-developer-certificate-password"
+                    condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
+                  - bash: |
+                      set -e
+                      security create-keychain -p pwd $(agent.tempdirectory)/buildagent.keychain
+                      security default-keychain -s $(agent.tempdirectory)/buildagent.keychain
+                      security unlock-keychain -p pwd $(agent.tempdirectory)/buildagent.keychain
+                      echo "$(graph-cli-apple-developer-certificate)" | base64 -D > $(agent.tempdirectory)/cert.p12
+                      security import $(agent.tempdirectory)/cert.p12 -k $(agent.tempdirectory)/buildagent.keychain -P "$(graph-cli-apple-developer-certificate-password)" -T /usr/bin/codesign
+                      security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k pwd $(agent.tempdirectory)/buildagent.keychain
+                      codesign -s 5F8M7Q8HYB --deep --force --options runtime --entitlements scripts/entitlements.plist $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}/kiota
+                    displayName: Set Hardened Entitlements
+                    condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
+
+                  - task: EsrpCodeSigning@6
+                    condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'win'))
+                    inputs:
+                      ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
+                      AppRegistrationClientId: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                      AppRegistrationTenantId: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+                      AuthAKVName: "akv-prod-eastus"
+                      AuthCertName: "ReferenceLibraryPrivateCert"
+                      AuthSignCertName: "ReferencePackagePublisherCertificate"
+                      FolderPath: $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}
+                      signConfigType: inlineSignParams
+                      UseMinimatch: true
+                      inlineOperation: |
+                        [
+                            {
+                                "keyCode": "CP-230012",
+                                "operationSetCode": "SigntoolSign",
+                                "parameters": [
+                                {
+                                    "parameterName": "OpusName",
+                                    "parameterValue": "Microsoft"
+                                },
+                                {
+                                    "parameterName": "OpusInfo",
+                                    "parameterValue": "http://www.microsoft.com"
+                                },
+                                {
+                                    "parameterName": "FileDigest",
+                                    "parameterValue": "/fd \"SHA256\""
+                                },
+                                {
+                                    "parameterName": "PageHash",
+                                    "parameterValue": "/NPH"
+                                },
+                                {
+                                    "parameterName": "TimeStamp",
+                                    "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                                }
+                                ],
+                                "toolName": "sign",
+                                "toolVersion": "1.0"
+                            },
+                            {
+                                "keyCode": "CP-230012",
+                                "operationSetCode": "SigntoolVerify",
+                                "parameters": [ ],
+                                "toolName": "sign",
+                                "toolVersion": "1.0"
+                            }
+                        ]
+                      SessionTimeout: 20
+                      MaxConcurrency: 50
+                      MaxRetryAttempts: 5
+                      PendingAnalysisWaitTimeoutMinutes: 5
+                      Pattern: |
+                        **\*.exe
+                        **\*.dll
+                  - pwsh: Remove-Item $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}/*.md -Verbose -Force -ErrorAction SilentlyContinue
+                  - task: ArchiveFiles@2
+                    displayName: Archive binaries
+                    inputs:
+                      rootFolderOrFile: $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}
+                      includeRootFolder: false
+                      archiveType: zip
+                      archiveFile: $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip
+                      replaceExistingArchive: true
+                  - task: EsrpCodeSigning@6
+                    condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
+                    timeoutInMinutes: 15
+                    retryCountOnTaskFailure: 4
+                    inputs:
+                      ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
+                      AppRegistrationClientId: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                      AppRegistrationTenantId: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+                      AuthAKVName: "akv-prod-eastus"
+                      AuthCertName: "ReferenceLibraryPrivateCert"
+                      AuthSignCertName: "ReferencePackagePublisherCertificate"
+                      FolderPath: $(Build.ArtifactStagingDirectory)/binaries
+                      signConfigType: inlineSignParams
+                      UseMinimatch: true
+                      inlineOperation: |
+                        [
+                            {
+                                "keyCode": "CP-401337-Apple",
+                                "OperationCode": "MacAppDeveloperSign",
+                                "Parameters": {
+                                  "Hardening": "--options=runtime"
+                                },
+                                "ToolName": "sign",
+                                "ToolVersion": "1.0"
+                            }
+                        ]
+                      SessionTimeout: 20
+                      MaxConcurrency: 50
+                      MaxRetryAttempts: 5
+                      PendingAnalysisWaitTimeoutMinutes: 5
+                      Pattern: |
+                        **/*.zip
+                  - task: EsrpCodeSigning@6
+                    condition: and(succeeded(), startsWith('${{ distribution.architecture }}', 'osx'))
+                    timeoutInMinutes: 15
+                    retryCountOnTaskFailure: 4
+                    inputs:
+                      ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
+                      AppRegistrationClientId: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                      AppRegistrationTenantId: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+                      AuthAKVName: "akv-prod-eastus"
+                      AuthCertName: "ReferenceLibraryPrivateCert"
+                      AuthSignCertName: "ReferencePackagePublisherCertificate"
+                      FolderPath: $(Build.ArtifactStagingDirectory)/binaries
+                      signConfigType: inlineSignParams
+                      UseMinimatch: true
+                      inlineOperation: |
+                        [
+                            {
+                                "keyCode": "CP-401337-Apple",
+                                "OperationCode": "MacAppNotarize",
+                                "Parameters": {
+                                  "BundleId": "com.microsoft.kiota"
+                                },
+                                "ToolName": "sign",
+                                "ToolVersion": "1.0"
+                            }
+                        ]
+                      SessionTimeout: 20
+                      MaxConcurrency: 50
+                      MaxRetryAttempts: 5
+                      PendingAnalysisWaitTimeoutMinutes: 5
+                      Pattern: |
+                        **/*.zip
+                  - task: 1ES.PublishPipelineArtifact@1
+                    displayName: "Publish Artifact: binaries"
+                    inputs:
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      sbomBuildDropPath: $(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}
+                      targetPath: "$(Build.ArtifactStagingDirectory)/binaries/${{ distribution.architecture }}.zip"
+
+          - job: build_vscode_extension
+            condition: and(succeeded(), ${{ or(parameters.deployVsMarketplace, parameters.deployGitHubRelease) }})
+            dependsOn: [build_npm_package]
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+            steps:
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+              - task: UseNode@1
+                inputs:
+                  version: "$(nodeVersion)"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH)
+                displayName: "Set version suffix"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                displayName: "Get Kiota's version-number from .csproj"
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+                displayName: "Update VSCode extension version-number"
+              # Route npm dependency resolution through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry. The .npmrc points
+              # npm at the feed's npm endpoint and npmAuthenticate injects a build-identity token scoped
+              # to that registry, so every subsequent npm command in this job (global tools + workspace
+              # installs) restores from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/vscode/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
+              - script: npm i -g @vscode/vsce rimraf --userconfig $(Build.SourcesDirectory)/vscode/.npmrc
+                displayName: "Install Global dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: |
+                  npm ci
+                  npm list
+                displayName: "Install vscode dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm i @microsoft/kiota@$(artifactVersion)$(versionSuffix) -w packages/microsoft-kiota
+                displayName: "Install current Kiota as a dependency"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm run build
+                displayName: "build npm package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: vsce package --pre-release
+                displayName: "Package VSCode extension as pre-release"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+                condition: eq(variables['isPrerelease'], 'true')
+              - script: vsce package
+                displayName: "Package VSCode extension as release"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+                condition: eq(variables['isPrerelease'], 'false')
+              - pwsh: |
+                  $extensionFiles = Get-ChildItem -Filter *.vsix -Recurse
+                  if ($extensionFiles.Count -ne 1) {
+                    Write-Error "Expected 1 extension file, found $($extensionFiles.Count)"
+                    exit 1
+                  }
+                  $extensionFileName = $extensionFiles[0].BaseName
+                  Write-Output "##vso[task.setvariable variable=extensionFileName;isOutput=true]$extensionFileName"
+                displayName: "Get extension file name"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+                name: getExtensionFileName
+              - script: vsce generate-manifest -i $(getExtensionFileName.extensionFileName).vsix -o $(getExtensionFileName.extensionFileName).manifest
+                displayName: "Generate extension manifest"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+              - script: cp $(getExtensionFileName.extensionFileName).manifest $(getExtensionFileName.extensionFileName).signature.p7s
+                displayName: "Prepare manifest for signing"
+                workingDirectory: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+              - task: EsrpCodeSigning@6
+                inputs:
+                  ConnectedServiceName: "Federated DevX ESRP Managed Identity Connection"
+                  AppRegistrationClientId: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  AppRegistrationTenantId: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+                  AuthAKVName: "akv-prod-eastus"
+                  AuthCertName: "ReferenceLibraryPrivateCert"
+                  AuthSignCertName: "ReferencePackagePublisherCertificate"
+                  FolderPath: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+                  UseMinimatch: true
+                  Pattern: '**\*.signature.p7s'
+                  signConfigType: inlineSignParams
+                  inlineOperation: |
+                    [
+                      {
+                        "keyCode": "CP-401405",
+                        "operationSetCode": "VSCodePublisherSign",
+                        "parameters" : [],
+                        "toolName": "sign",
+                        "toolVersion": "1.0"
+                      }
+                    ]
+                  SessionTimeout: 90
+                  MaxConcurrency: 25
+                  MaxRetryAttempts: 5
+                  PendingAnalysisWaitTimeoutMinutes: 5
+                displayName: "Sign extension"
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/VSCode
+                  sourceFolder: $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota
+                  contents: |
+                    *.vsix
+                    *.manifest
+                    *.signature.p7s
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: VSCode"
+                inputs:
+                  artifactName: VSCode
+                  targetPath: "$(Build.ArtifactStagingDirectory)/VSCode"
+          - job: build_npm_package
+            condition: and(succeeded(), ${{ or(parameters.deployVsMarketplace, parameters.deployGitHubRelease, parameters.deployNpm) }})
+            dependsOn:
+              [
+                win_x64_build_binaries,
+                win_x86_build_binaries,
+                win_arm64_build_binaries,
+                linux_x64_build_binaries,
+                linux_arm64_build_binaries,
+                osx_x64_build_binaries,
+                osx_arm64_build_binaries,
+              ]
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              sdl:
+                baseline:
+                  baselineFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnbaselines
+                suppression:
+                  suppressionFile: $(Build.SourcesDirectory)/guardian/SDL/common/.gdnsuppress
+              inputs:
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+                      targetPath: $(Build.ArtifactStagingDirectory)/Binaries
+            steps:
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+              - task: UseNode@1
+                inputs:
+                  version: "$(nodeVersion)"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH)
+                displayName: "Set version suffix"
+              - pwsh: $(Build.SourcesDirectory)/scripts/get-version-from-csproj.ps1
+                displayName: "Get Kiota's version-number from .csproj"
+              - pwsh: $(Build.SourcesDirectory)/scripts/update-vscode-releases.ps1 -version $(artifactVersion)$(versionSuffix) -packageJsonFilePath $(Build.SourcesDirectory)/vscode/packages/microsoft-kiota/package.json -runtimeFilePath $(Build.SourcesDirectory)/vscode/packages/npm-package/lib/runtime.json -binaryFolderPath $(Build.ArtifactStagingDirectory)/Binaries
+                displayName: "Update NPM package version-number"
+              # Route npm dependency resolution through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry. The .npmrc points
+              # npm at the feed's npm endpoint and npmAuthenticate injects a build-identity token scoped
+              # to that registry, so every subsequent npm command in this job (global tools + workspace
+              # installs) restores from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Build.SourcesDirectory)/vscode/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Build.SourcesDirectory)/vscode/.npmrc
+              - script: |
+                  npm i -g rimraf --userconfig $(Build.SourcesDirectory)/vscode/.npmrc
+                displayName: "Install Global dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm install
+                displayName: "Install package dependencies"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - script: npm run package:package
+                displayName: "Package"
+                workingDirectory: $(Build.SourcesDirectory)/vscode
+              - task: CopyFiles@2
+                displayName: Prepare staging folder for upload
+                inputs:
+                  targetFolder: $(Build.ArtifactStagingDirectory)/npm-package
+                  sourceFolder: $(Build.SourcesDirectory)/vscode/packages/npm-package
+                  contents: |
+                    *.tgz
+              - task: 1ES.PublishPipelineArtifact@1
+                displayName: "Publish Artifact: Npm Package"
+                inputs:
+                  artifactName: npm-package
+                  targetPath: "$(Build.ArtifactStagingDirectory)/npm-package"
+
+      - stage: deploy
+        condition: and(succeeded(), ${{ or(parameters.deployVsMarketplace, parameters.deployGitHubRelease, parameters.deployKiotaNuGet, parameters.deployBuilderNuGet, parameters.deployDocker, parameters.deployNpm) }})
+        dependsOn: build
+        variables:
+          kiotaSourceCommit: $[ stageDependencies.build.update_appsettings.outputs['resolveKiotaSource.sourceCommit'] ]
+        jobs:
+          - job: vs_marketplace
+            condition: and(succeeded(), ${{ parameters.deployVsMarketplace }})
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: VSCode
+                  targetPath: $(Pipeline.Workspace)/VSCode
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+            dependsOn: []
+            steps:
+              - task: UseNode@1
+                inputs:
+                  version: "$(nodeVersion)"
+              # Route the vsce tool install through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) instead of the public npm registry, so this
+              # release job resolves the global tool from the private feed's configured upstreams.
+              - pwsh: |
+                  @"
+                  registry=$(privateFeedBaseUrl)/npm/registry/
+                  always-auth=true
+                  "@ | Set-Content -Path "$(Pipeline.Workspace)/.npmrc" -Encoding UTF8
+                displayName: "Create .npmrc (central feed)"
+              - task: npmAuthenticate@0
+                displayName: "Authenticate npm to Azure Artifacts"
+                inputs:
+                  workingFile: $(Pipeline.Workspace)/.npmrc
+              - pwsh: npm i -g @vscode/vsce --userconfig "$(Pipeline.Workspace)/.npmrc"
+                displayName: "Install vsce (central feed)"
+                workingDirectory: $(Pipeline.Workspace)
+              - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH)
+                displayName: "Set version suffix"
+              - task: AzureCLI@2
+                inputs:
+                  azureSubscription: "kiota-vscode-marketplace-publish"
+                  scriptType: "pscore"
+                  scriptLocation: "inlineScript"
+                  inlineScript: |
+                    $aadToken = az account get-access-token --query accessToken --resource 499b84ac-1321-427f-aa17-267ca6975798 -o tsv
+                    Get-ChildItem -Path $(Pipeline.Workspace)/VSCode -Filter *.vsix -Recurse | ForEach-Object {
+                      $packagePath = $_.FullName
+                      $manifestPath = $packagePath.Replace("vsix", "manifest")
+                      $signaturePath = $packagePath.Replace("vsix", "signature.p7s")
+                      Write-Host "Publishing $packagePath"
+                      if ($Env:isPrerelease -eq "true") {
+                        Write-Host "Publishing $packagePath as a pre-release"
+                        $publishOutput = vsce publish --pat "$aadToken" --packagePath $packagePath --manifestPath $manifestPath --signaturePath $signaturePath --pre-release 2>&1
+                      }
+                      else {
+                        Write-Host "Publishing $packagePath as a release"
+                        $publishOutput = vsce publish --pat "$aadToken" --packagePath $packagePath --manifestPath $manifestPath --signaturePath $signaturePath 2>&1
+                      }
+                      $publishExit = $LASTEXITCODE
+                      Write-Host $publishOutput
+                      # Idempotency: a re-run for an already-published vsix version should not fail.
+                      if ($publishExit -ne 0) {
+                        if ("$publishOutput" -match "already exists") {
+                          Write-Host "Extension version for $packagePath already published; skipping (idempotent re-run)."
+                        }
+                        else {
+                          throw "vsce publish failed for $packagePath with exit code $publishExit"
+                        }
+                      }
+                    }
+                    # Reset the exit code so a handled "already exists" from vsce (which
+                    # leaves $LASTEXITCODE non-zero) does not fail the AzureCLI task; real
+                    # failures throw above and still surface as a non-zero exit.
+                    exit 0
+                env:
+                  isPrerelease: $(isPrerelease)
+          - deployment: github_release
+            condition: and(succeeded(), ${{ parameters.deployGitHubRelease }})
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: VSCode
+                  targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: Nugets
+                  targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+                - input: pipelineArtifact
+                  artifactName: csproj
+                  targetPath: "$(Pipeline.Workspace)/csproj"
+                - input: pipelineArtifact
+                  artifactName: changelog
+                  targetPath: "$(Pipeline.Workspace)/changelog"
+                - input: pipelineArtifact
+                  artifactName: npm-package
+                  targetPath: "$(Pipeline.Workspace)/npm-package"
+                - ${{ each distribution in parameters.distributions }}:
+                    - input: pipelineArtifact
+                      artifactName: Binaries_${{ distribution.jobPrefix }}
+            dependsOn: []
+            environment: kiota-github-releases
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH)
+                      displayName: "Set version suffix"
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-version-from-csproj.ps1 -csprojPath "$(Pipeline.Workspace)/csproj/kiota.csproj"
+                      displayName: "Get Kiota's version-number from .csproj"
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version $(artifactVersion) -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
+                      condition: eq(variables['isPrerelease'], 'false')
+                      displayName: "Get release notes from CHANGELOG.md"
+                    - pwsh: $(Pipeline.Workspace)/scripts/get-release-notes.ps1 -version Unreleased -createNotes -changelogPath "$(Pipeline.Workspace)/changelog/CHANGELOG.md"
+                      condition: eq(variables['isPrerelease'], 'true')
+                      displayName: "Get release notes from CHANGELOG.md"
+                    # Recovery must never create or move a tag. Require the derived tag to exist and point
+                    # to the selected Kiota source commit before checking whether its release already exists.
+                    - pwsh: |
+                        $tag = if ($env:ISPRERELEASE -eq 'true') { "v$(artifactVersion)$(versionSuffix)" } else { "v$(artifactVersion)" }
+                        $expectedCommit = $env:KIOTA_SOURCE_COMMIT
+                        if ($expectedCommit -notmatch '^[0-9a-fA-F]{40}$') {
+                          throw "Selected Kiota source commit '$expectedCommit' is not a full commit SHA."
+                        }
+                        $headers = @{ 'User-Agent' = 'kiota-azdo-pipeline'; 'Accept' = 'application/vnd.github+json' }
+                        $encodedTag = [Uri]::EscapeDataString($tag)
+                        $tagUri = "https://api.github.com/repos/microsoft/kiota/git/ref/tags/$encodedTag"
+                        try {
+                          $tagRef = Invoke-RestMethod -Uri $tagUri -Headers $headers
+                        } catch {
+                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+                            throw "Recovery requires existing tag '$tag'; refusing to create it."
+                          }
+                          throw
+                        }
+
+                        $tagObject = $tagRef.object
+                        for ($depth = 0; $tagObject.type -eq 'tag' -and $depth -lt 5; $depth++) {
+                          $tagObject = (Invoke-RestMethod -Uri "https://api.github.com/repos/microsoft/kiota/git/tags/$($tagObject.sha)" -Headers $headers).object
+                        }
+                        if ($tagObject.type -ne 'commit' -or [string]::IsNullOrWhiteSpace($tagObject.sha)) {
+                          throw "Tag '$tag' did not resolve to a commit."
+                        }
+                        if (-not $tagObject.sha.Equals($expectedCommit, [StringComparison]::OrdinalIgnoreCase)) {
+                          throw "Tag '$tag' points to '$($tagObject.sha)', not selected Kiota commit '$expectedCommit'."
+                        }
+                        Write-Host "Verified existing tag '$tag' points to selected Kiota commit '$expectedCommit'."
+
+                        $releaseUri = "https://api.github.com/repos/microsoft/kiota/releases/tags/$encodedTag"
+                        try {
+                          Invoke-RestMethod -Uri $releaseUri -Headers $headers | Out-Null
+                          Write-Host "Release '$tag' already exists; skipping GitHub release creation (idempotent re-run)."
+                          Write-Host "##vso[task.setvariable variable=releaseExists]true"
+                        } catch {
+                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+                            Write-Host "Release '$tag' does not exist; GitHub release will be created."
+                            Write-Host "##vso[task.setvariable variable=releaseExists]false"
+                          } else {
+                            throw
+                          }
+                        }
+                      displayName: "Verify tag and check whether GitHub release exists"
+                      env:
+                        ISPRERELEASE: $(isPrerelease)
+                        KIOTA_SOURCE_COMMIT: $(kiotaSourceCommit)
+                    - task: GitHubRelease@1
+                      condition: and(succeeded(), eq(variables['isPrerelease'], 'false'), ne(variables['releaseExists'], 'true'))
+                      inputs:
+                        gitHubConnection: "microsoftkiotarelease"
+                        tagSource: userSpecifiedTag
+                        tag: "v$(artifactVersion)"
+                        target: "$(kiotaSourceCommit)"
+                        title: "v$(artifactVersion)"
+                        releaseNotesSource: filePath
+                        releaseNotesFilePath: $(Pipeline.Workspace)/changelog/release-notes.txt
+                        assets: |
+                          $(Pipeline.Workspace)/*.zip
+                          $(Pipeline.Workspace)/*.vsix
+                          $(Pipeline.Workspace)/*.tgz
+                          $(Pipeline.Workspace)/*.nupkg
+                          $(Pipeline.Workspace)/*.snupkg
+                        addChangeLog: false
+                    - task: GitHubRelease@1
+                      condition: and(eq(variables['isPrerelease'], 'true'), ne(variables['releaseExists'], 'true'))
+                      inputs:
+                        gitHubConnection: "microsoftkiotarelease"
+                        tagSource: userSpecifiedTag
+                        tag: "v$(artifactVersion)$(versionSuffix)"
+                        target: "$(kiotaSourceCommit)"
+                        title: "v$(artifactVersion)$(versionSuffix)"
+                        releaseNotesSource: filePath
+                        releaseNotesFilePath: $(Pipeline.Workspace)/changelog/release-notes.txt
+                        assets: |
+                          $(Pipeline.Workspace)/*.zip
+                          $(Pipeline.Workspace)/*.vsix
+                          $(Pipeline.Workspace)/*.tgz
+                          $(Pipeline.Workspace)/*.nupkg
+                          $(Pipeline.Workspace)/*.snupkg
+                        addChangeLog: false
+                        isPreRelease: true
+
+          - deployment: deploy_kiota
+            condition: and(succeeded(), ${{ parameters.deployKiotaNuGet }})
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: Nugets
+                  targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            dependsOn: []
+            environment: nuget-org
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - pwsh: >
+                        $(Pipeline.Workspace)/scripts/check-nuget-package-published.ps1
+                        -PackageDirectory "$(Pipeline.Workspace)"
+                        -PackageId "Microsoft.OpenApi.Kiota"
+                        -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                      displayName: "Check whether NuGet package version already published (idempotent)"
+                      env:
+                        FEED_ACCESS_TOKEN: $(System.AccessToken)
+                    - task: CopyFiles@2
+                      displayName: "Stage Kiota NuGet packages for ESRP release"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
+                      inputs:
+                        SourceFolder: "$(Pipeline.Workspace)"
+                        Contents: |
+                          Microsoft.OpenApi.Kiota.*.nupkg
+                          Microsoft.OpenApi.Kiota.*.snupkg
+                          !Microsoft.OpenApi.Kiota.Builder.*
+                        TargetFolder: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/kiota"
+                        CleanTargetFolder: true
+                    - task: EsrpRelease@14
+                      displayName: "ESRP Release - Kiota NuGet"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
+                      inputs:
+                        connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                        usemanagedidentity: false
+                        keyvaultname: "akv-prod-eastus"
+                        authcertname: "ReferenceLibraryPrivateCert"
+                        signcertname: "ReferencePackagePublisherCertificate"
+                        clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                        intent: "packagedistribution"
+                        contenttype: "NuGet"
+                        organizationname: "$(NuGetOrganizationName)"
+                        contentsource: "Folder"
+                        folderlocation: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/kiota"
+                        waitforreleasecompletion: true
+                        owners: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        approvers: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        serviceendpointurl: "https://api.esrp.microsoft.com/"
+                        mainpublisher: "ESRPRELPACMAN"
+                        domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+
+          - deployment: deploy_builder
+            condition: and(succeeded(), ${{ parameters.deployBuilderNuGet }})
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: Nugets
+                  targetPath: "$(Pipeline.Workspace)"
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: linux
+              image: ubuntu-latest
+            dependsOn: []
+            environment: nuget-org
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - pwsh: >
+                        $(Pipeline.Workspace)/scripts/check-nuget-package-published.ps1
+                        -PackageDirectory "$(Pipeline.Workspace)"
+                        -PackageId "Microsoft.OpenApi.Kiota.Builder"
+                        -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                      displayName: "Check whether NuGet package version already published (idempotent)"
+                      env:
+                        FEED_ACCESS_TOKEN: $(System.AccessToken)
+                    - task: CopyFiles@2
+                      displayName: "Stage Builder NuGet packages for ESRP release"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
+                      inputs:
+                        SourceFolder: "$(Pipeline.Workspace)"
+                        Contents: |
+                          Microsoft.OpenApi.Kiota.Builder.*.nupkg
+                          Microsoft.OpenApi.Kiota.Builder.*.snupkg
+                        TargetFolder: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/builder"
+                        CleanTargetFolder: true
+                    - task: EsrpRelease@14
+                      displayName: "ESRP Release - Builder NuGet"
+                      condition: and(succeeded(), ne(variables['nugetAlreadyPublished'], 'true'))
+                      inputs:
+                        connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                        usemanagedidentity: false
+                        keyvaultname: "akv-prod-eastus"
+                        authcertname: "ReferenceLibraryPrivateCert"
+                        signcertname: "ReferencePackagePublisherCertificate"
+                        clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                        intent: "packagedistribution"
+                        contenttype: "NuGet"
+                        organizationname: "$(NuGetOrganizationName)"
+                        contentsource: "Folder"
+                        folderlocation: "$(Pipeline.Workspace)/nuget-packages/$(NuGetOrganizationName)/builder"
+                        waitforreleasecompletion: true
+                        owners: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        approvers: "christiano@microsoft.com,ramsess@microsoft.com,gavinbarron@microsoft.com,jingjingjia@microsoft.com,peombwa@microsoft.com,treicys@microsoft.com"
+                        serviceendpointurl: "https://api.esrp.microsoft.com/"
+                        mainpublisher: "ESRPRELPACMAN"
+                        domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"
+          - job: PushDockerImage
+            displayName: "Push Docker Image"
+            dependsOn: []
+            condition: and(succeeded(), ${{ parameters.deployDocker }})
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              image: ubuntu-latest
+              os: linux
+            steps:
+              # Persist the ephemeral GitHub App token so the version-lookup step can reuse it.
+              - template: templates/checkout-kiota-recovery-source.yml
+                parameters:
+                  tag: ${{ parameters.kiotaTag }}
+                  persistCredentials: true
+
+              - script: git -C "$(Build.SourcesDirectory)" rm -r --quiet --ignore-unmatch -- it
+                displayName: "Remove unused integration-test fixtures (it/)"
+
+              # Recover the short-lived GitHub token that persistCredentials wrote to the local git config
+              # (AUTHORIZATION: basic base64(x-access-token:<token>)) and expose it as a masked variable so
+              # update-versions.ps1 can authenticate api.github.com calls (5000/hr vs the shared-IP 60/hr
+              # anonymous limit). Emits an empty value when no credential is present, keeping GitHub lookups
+              # anonymous rather than failing.
+              - pwsh: |
+                  $token = ""
+                  # Resolve the extraheader git actually uses for this repo by matching against its own
+                  # remote URL. --get-urlmatch returns the single best match, so it finds the entry whether
+                  # checkout keyed it to the host or the full repo path, and never decodes a different
+                  # host's (e.g. the Azure Artifacts feed) credential.
+                  $remoteUrl = git -C "$(Build.SourcesDirectory)" remote get-url origin 2>$null
+                  if ([string]::IsNullOrWhiteSpace($remoteUrl)) { $remoteUrl = "https://github.com/" }
+                  $header = git -C "$(Build.SourcesDirectory)" config --local --get-urlmatch http.extraheader $remoteUrl 2>$null
+                  # git exits non-zero when no extraheader matches; that is a graceful (anonymous) outcome
+                  # here, so clear it rather than let the task surface it as a step failure.
+                  $global:LASTEXITCODE = 0
+                  if (-not [string]::IsNullOrWhiteSpace($header)) {
+                    try {
+                      $b64 = ($header.Trim() -split '\s+')[-1]
+                      $decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+                      $token = $decoded.Substring($decoded.IndexOf(':') + 1).Trim()
+                    } catch {
+                      Write-Host "Could not decode the persisted GitHub credential; GitHub lookups will be anonymous."
+                    } finally {
+                      $credentialEntries = @(git -C "$(Build.SourcesDirectory)" config --local --get-regexp '^http\..*\.extraheader$' 2>$null)
+                      $global:LASTEXITCODE = 0
+                      $headerNames = @($credentialEntries | ForEach-Object {
+                        $entryParts = $_ -split '\s+', 2
+                        if ($entryParts.Count -eq 2 -and $entryParts[1].Trim() -eq $header.Trim()) {
+                          $entryParts[0]
+                        }
+                      } | Select-Object -Unique)
+                      if ($headerNames.Count -eq 0) {
+                        throw "Could not locate the persisted GitHub credential in the local Git config for removal."
+                      }
+                      foreach ($headerName in $headerNames) {
+                        git -C "$(Build.SourcesDirectory)" config --local --unset-all $headerName
+                        if ($LASTEXITCODE -ne 0) {
+                          throw "Could not remove the persisted GitHub credential from the local Git config."
+                        }
+                      }
+                      Write-Host "Removed the persisted GitHub credential from the local Git config."
+                    }
+                  }
+                  if ([string]::IsNullOrWhiteSpace($token)) {
+                    Write-Host "No GitHub token available; release lookups will use the anonymous rate limit."
+                  }
+                  Write-Host "##vso[task.setvariable variable=githubToken;issecret=true]$token"
+                displayName: "Extract GitHub token for release lookups"
+
+              - pwsh: |
+                  $runNumber = "$(Build.BuildNumber)" -replace "^\d+\.", ""
+                  $truncatedNumber = $runNumber.Substring([Math]::Max(0, $runNumber.Length - 4))
+                  Write-Host "##vso[task.setvariable variable=truncatedRunNumber]$truncatedNumber"
+                displayName: "Get truncated run number"
+                condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+
+              - pwsh: |
+                  $result = ./scripts/get-prerelease-version.ps1 -currentBranch $(Build.SourceBranch) -previewBranch $(PREVIEW_BRANCH) -excludeHeadingDash
+                  Write-Host "##vso[task.setvariable variable=versionSuffix;isoutput=true]$result"
+                displayName: "Set version suffix"
+                name: getversionsuffix
+
+              - pwsh: |
+                  ./scripts/update-version-suffix-for-source-generator.ps1 -versionSuffix "$(getversionsuffix.versionSuffix)"
+                displayName: "Set version suffix in csproj for generators"
+                condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+
+              - pwsh: |
+                  $version = ./scripts/get-version-from-csproj.ps1
+                  Write-Host "Version found: $version" 
+                  Write-Host "##vso[task.setvariable variable=version;isoutput=true]$version"
+                displayName: "Get Kiota version number"
+                name: getversion
+
+              - task: AzureCLI@2
+                displayName: "Login to Azure Container Registry and check release tag"
+                inputs:
+                  azureSubscription: "ACR Images Push Service Connection"
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    set -euo pipefail
+                    az acr login --name $(REGISTRY)
+
+                    VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+                    TAG_EXISTS=$(az acr repository show-tags \
+                      --name $(REGISTRY) \
+                      --repository $(IMAGE_NAME) \
+                      --query "contains(@, '$VERSION')" \
+                      --output tsv)
+                    if [ "$TAG_EXISTS" = "true" ]; then
+                      echo "Docker image tag '$VERSION' already exists; skipping release image build and push (idempotent re-run)."
+                      echo "##vso[task.setvariable variable=dockerVersionExists]true"
+                    fi
+
+              # Route package-version lookups through the authenticated Azure Artifacts feed
+              # (GraphDeveloperExperiences_Public) so CI does not call public registries directly.
+              - pwsh: >
+                  ./scripts/update-versions.ps1
+                  -NuGetServiceIndexUrl "$(privateFeedBaseUrl)/nuget/v3/index.json"
+                  -NpmRegistryUrl "$(privateFeedBaseUrl)/npm/registry"
+                  -PyPiSimpleIndexUrl "$(privateFeedBaseUrl)/pypi/simple"
+                  -MavenRepositoryUrl "$(privateFeedBaseUrl)/maven/v1"
+                displayName: "Update dependencies versions"
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
+                  GITHUB_TOKEN: $(githubToken)
+
+              # Keep feed credentials out of the Docker build context and image layers.
+              - pwsh: |
+                  if ([string]::IsNullOrWhiteSpace($env:FEED_ACCESS_TOKEN)) {
+                    throw "No Azure Artifacts access token available for the Docker build."
+                  }
+                  $feedAccessToken = [System.Security.SecurityElement]::Escape($env:FEED_ACCESS_TOKEN)
+                  @"
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <configuration>
+                    <packageSources>
+                      <clear />
+                      <add key="GraphDeveloperExperiences_Public" value="$(privateFeedBaseUrl)/nuget/v3/index.json" />
+                    </packageSources>
+                    <packageSourceCredentials>
+                      <GraphDeveloperExperiences_Public>
+                        <add key="Username" value="AzureDevOps" />
+                        <add key="ClearTextPassword" value="$feedAccessToken" />
+                        <add key="ValidAuthenticationTypes" value="Basic" />
+                      </GraphDeveloperExperiences_Public>
+                    </packageSourceCredentials>
+                  </configuration>
+                  "@ | Set-Content -Path "$(Agent.TempDirectory)/kiota-docker.nuget.config" -Encoding UTF8
+                displayName: "Create Docker NuGet config (central feed)"
+                env:
+                  FEED_ACCESS_TOKEN: $(System.AccessToken)
+
+              - script: |
+                  docker run --privileged --rm msgraphprodregistry.azurecr.io/tonistiigi/binfmt --install all
+                displayName: "Enable multi-platform builds"
+
+              - script: |
+                  docker buildx create --use --name mybuilder
+                displayName: "Set up Docker BuildX"
+
+              - script: |
+                  docker buildx inspect --bootstrap
+                displayName: "Ensure BuildX is working"
+
+              - pwsh: |
+                  $date = Get-Date -Format "yyyyMMdd"
+                  Write-Host "##vso[task.setvariable variable=currentDate]$date"
+                displayName: "Get current date"
+                condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+
+              - bash: |
+                  # Debug version variable
+                  echo "Version is: $(getversion.version)"
+                  VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+                  echo "Cleaned version: $VERSION"
+
+                  # Debug other variables
+                  echo "Current date: $(currentDate)"
+                  echo "Truncated run number: $(truncatedRunNumber)"
+
+                  # Use explicit variable references and ensure proper context path
+                  docker buildx build \
+                    --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                    --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
+                    --push \
+                    -t $(REGISTRY)/$(IMAGE_NAME):nightly \
+                    -t $(REGISTRY)/$(IMAGE_NAME):$VERSION-preview.$(currentDate)$(truncatedRunNumber) \
+                    --build-arg version_suffix=preview.$(currentDate)$(truncatedRunNumber) \
+                    "$(Build.SourcesDirectory)"
+                displayName: "Build and Push Preview Image"
+                condition: eq(variables['Build.SourceBranch'], variables['PREVIEW_BRANCH'])
+
+              - bash: |
+                  # Debug version variable
+                  echo "Version is: $(getversion.version)"
+                  VERSION=$(echo "$(getversion.version)" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+                  echo "Cleaned version: $VERSION"
+
+                  # Use explicit variable references and ensure proper context path
+                  docker buildx build \
+                    --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
+                    --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
+                    --push \
+                    -t $(REGISTRY)/$(IMAGE_NAME):$VERSION \
+                    "$(Build.SourcesDirectory)"
+                displayName: "Build and Push Release Image"
+                condition: and(succeeded(), ne(variables['dockerVersionExists'], 'true'))
+
+              - pwsh: |
+                  $configPath = "$(Agent.TempDirectory)/kiota-docker.nuget.config"
+                  if (Test-Path $configPath) {
+                    Remove-Item $configPath -Force
+                  }
+                displayName: "Remove Docker NuGet config"
+                condition: always()
+          - job: deploy_npm
+            condition: and(succeeded(), ${{ parameters.deployNpm }})
+            pool:
+              name: Azure-Pipelines-1ESPT-ExDShared
+              os: windows
+              image: windows-2022
+            templateContext:
+              type: releaseJob
+              isProduction: true
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: npm-package
+                  targetPath: $(Pipeline.Workspace)/npm-package
+                - input: pipelineArtifact
+                  artifactName: scripts
+                  targetPath: "$(Pipeline.Workspace)/scripts"
+            dependsOn: []
+            steps:
+              - task: UseNode@1
+                inputs:
+                  version: "$(nodeVersion)"
+              - pwsh: |
+                  $pkg = Get-ChildItem -Path "$(Pipeline.Workspace)/npm-package" -Filter "*.tgz" | Select-Object -First 1
+                  if (-not $pkg) { throw "No npm .tgz package found to publish." }
+                  if ($pkg.Name -match '^microsoft-kiota-(.+)\.tgz$') {
+                    $version = $Matches[1]
+                  } else {
+                    throw "Could not parse version from $($pkg.Name)."
+                  }
+                  Write-Host "Checking npm registry for @microsoft/kiota@$version ..."
+                  $published = & npm view "@microsoft/kiota@$version" version 2>$null
+                  $npmExit = $LASTEXITCODE
+                  # npm view returns a non-zero exit code (E404) when the version is not
+                  # published; capture it above and reset so this step's own exit code is
+                  # not polluted by that lookup (the check itself succeeded).
+                  $global:LASTEXITCODE = 0
+                  if ($npmExit -eq 0 -and -not [string]::IsNullOrWhiteSpace($published)) {
+                    Write-Host "npm @microsoft/kiota@$version already published; skipping ESRP release (idempotent re-run)."
+                    Write-Host "##vso[task.setvariable variable=npmAlreadyPublished]true"
+                  } else {
+                    Write-Host "npm @microsoft/kiota@$version not found; will publish."
+                    Write-Host "##vso[task.setvariable variable=npmAlreadyPublished]false"
+                  }
+                  exit 0
+                displayName: "Check whether npm version already published (idempotent)"
+              - task: EsrpRelease@12
+                condition: and(succeeded(), ne(variables['npmAlreadyPublished'], 'true'))
+                inputs:
+                  connectedservicename: "Federated DevX ESRP Managed Identity Connection"
+                  usemanagedidentity: false
+                  keyvaultname: "akv-prod-eastus"
+                  authcertname: "ReferenceLibraryPrivateCert"
+                  signcertname: "ReferencePackagePublisherCertificate"
+                  clientid: "65035b7f-7357-4f29-bf25-c5ee5c3949f8"
+                  intent: "PackageDistribution"
+                  contenttype: "npm"
+                  contentsource: "Folder"
+                  folderlocation: "$(Pipeline.Workspace)/npm-package/"
+                  waitforreleasecompletion: true
+                  owners: $(NPM_OWNERS_LIST)
+                  approvers: $(NPM_APPROVERS_LIST)
+                  serviceendpointurl: "https://api.esrp.microsoft.com"
+                  mainpublisher: "ESRPRELPACMAN"
+                  domaintenantid: "cdc5aeea-15c5-4db6-b079-fcadd2505dc2"

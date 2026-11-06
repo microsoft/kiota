@@ -1,0 +1,54 @@
+parameters:
+  - name: tag
+    type: string
+  - name: persistCredentials
+    type: boolean
+    default: false
+
+steps:
+  - checkout: self
+    clean: true
+    submodules: false
+    fetchDepth: 0
+    fetchTags: true
+    persistCredentials: ${{ parameters.persistCredentials }}
+  - pwsh: |
+      $tag = $env:KIOTA_TAG
+      if ([string]::IsNullOrWhiteSpace($tag)) {
+        $sourceCommit = (git rev-parse HEAD).Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sourceCommit)) {
+          throw "Could not resolve the pipeline-selected Kiota commit."
+        }
+        Write-Host "No Kiota tag provided; using the pipeline-selected commit '$sourceCommit'."
+      }
+      else {
+        $sourceRef = "refs/tags/$tag"
+        git check-ref-format $sourceRef
+        if ($LASTEXITCODE -ne 0) {
+          throw "'$tag' is not a valid Git tag name."
+        }
+        $sourceCommit = git rev-parse --verify "$sourceRef^{commit}"
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sourceCommit)) {
+          throw "Could not resolve Kiota tag '$tag' to a commit."
+        }
+        $sourceCommit = $sourceCommit.Trim()
+      }
+
+      Write-Host "##vso[task.setvariable variable=sourceCommit;isOutput=true]$sourceCommit"
+      git checkout --detach $sourceCommit
+      if ($LASTEXITCODE -ne 0) {
+        throw "Could not check out Kiota commit '$sourceCommit'."
+      }
+      git submodule sync --recursive
+      if ($LASTEXITCODE -ne 0) {
+        throw "Could not synchronize Kiota submodules."
+      }
+      git submodule update --init --recursive
+      if ($LASTEXITCODE -ne 0) {
+        throw "Could not update Kiota submodules."
+      }
+      Write-Host "Checked out Kiota commit '$sourceCommit'."
+    displayName: "Check out Kiota recovery source"
+    name: resolveKiotaSource
+    env:
+      KIOTA_TAG: ${{ parameters.tag }}
