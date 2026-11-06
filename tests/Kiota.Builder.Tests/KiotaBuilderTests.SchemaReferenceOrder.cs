@@ -109,15 +109,17 @@ components:
     }
 
     [Theory]
-    [InlineData(false, 1, false)]
-    [InlineData(true, 1, false)]
-    [InlineData(false, 3, false)]
-    [InlineData(true, 3, false)]
-    [InlineData(false, 1, true)]
-    [InlineData(true, 1, true)]
-    [InlineData(false, 3, true)]
-    [InlineData(true, 3, true)]
-    public async Task PreservesDiscriminatedInheritanceWithAliasesAndCyclesAsync(bool derivedFirst, int parallelism, bool recursiveProperties)
+    [InlineData(false, 1, false, false)]
+    [InlineData(true, 1, false, false)]
+    [InlineData(false, 3, false, false)]
+    [InlineData(true, 3, false, false)]
+    [InlineData(false, 1, true, false)]
+    [InlineData(true, 1, true, false)]
+    [InlineData(false, 3, true, false)]
+    [InlineData(true, 3, true, false)]
+    [InlineData(true, 1, false, true)]
+    [InlineData(true, 3, true, true)]
+    public async Task PreservesDiscriminatedInheritanceWithAliasesAndCyclesAsync(bool derivedFirst, int parallelism, bool recursiveProperties, bool crlfSource)
     {
         var description = """
 openapi: 3.1.0
@@ -182,6 +184,9 @@ components:
         related:
           $ref: '#/components/schemas/Derived'
 """;
+        if (crlfSource)
+            description = description.ReplaceLineEndings("\r\n");
+        description = description.ReplaceLineEndings("\n");
         if (!recursiveProperties)
             description = description.Replace("""
         self:
@@ -190,8 +195,12 @@ components:
           $ref: '#/components/schemas/ModelAlias'
 """, string.Empty, StringComparison.Ordinal);
         if (derivedFirst)
+        {
             description = description.Replace("first:\n          $ref: '#/components/schemas/ModelAlias'", "first:\n          $ref: '#/components/schemas/Derived'", StringComparison.Ordinal)
                 .Replace("derived:\n          $ref: '#/components/schemas/Derived'", "alias:\n          $ref: '#/components/schemas/ModelAlias'", StringComparison.Ordinal);
+            Assert.Contains("first:\n          $ref: '#/components/schemas/Derived'", description);
+            Assert.DoesNotContain("derived:\n          $ref: '#/components/schemas/Derived'", description);
+        }
         await using var stream = await GetDocumentStreamAsync(description);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { Language = GenerationLanguage.CSharp, MaxDegreeOfParallelism = parallelism }, _httpClient);
         var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
