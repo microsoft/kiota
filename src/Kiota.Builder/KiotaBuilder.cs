@@ -69,18 +69,24 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
-        var workingDirectory = Directory.GetCurrentDirectory();
-        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
+        workspaceDirectory = Directory.GetCurrentDirectory();
+        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workspaceDirectory);
         this.useKiotaConfig = useKiotaConfig;
         openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
         settingsFileManagementService = settingsManagementService ?? new SettingsFileManagementService();
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
+    private readonly string workspaceDirectory;
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
+            if (useKiotaConfig && !config.NoWorkspace)
+            {
+                var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(config.OutputPath));
+                BaseApiConsumerConfiguration.ValidateOutputPath(relativeOutput, workspaceDirectory);
+            }
             LogCleaningOutputDirectory(config.OutputPath);
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))
