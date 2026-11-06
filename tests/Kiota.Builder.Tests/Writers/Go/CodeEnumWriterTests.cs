@@ -232,4 +232,34 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("return []string{\"line1\\\"\\nline2\"}[i]", result);
         Assert.Contains("case \"line1\\\"\\nline2\":", result);
     }
+
+    [Fact]
+    public void WritesNumericalEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "active", SerializationName = "10" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "inactive", SerializationName = "20" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int", result);
+        Assert.Contains("ACTIVE_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 10", result);
+        Assert.Contains("INACTIVE_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 20", result);
+        Assert.Contains("switch i {", result);
+        Assert.Contains("case ACTIVE_SOMEENUM:", result);
+        Assert.Contains("return \"10\"", result);
+    }
+
+    [Fact]
+    public void WritesNumericalEnumWithInt64Format()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.Format = "int64";
+        currentEnum.AddOption(new CodeEnumOption { Name = "bigValue", SerializationName = "9223372036854775807" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int64", result);
+        Assert.Contains("BIGVALUE_SOMEENUM SomeEnum = 9223372036854775807", result);
+    }
 }

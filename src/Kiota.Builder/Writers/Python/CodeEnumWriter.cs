@@ -14,7 +14,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
         ArgumentNullException.ThrowIfNull(writer);
         writer.WriteLine("from enum import Enum");
         writer.WriteLine();
-        writer.WriteLine($"class {codeElement.Name}(str, Enum):");
+        var baseType = codeElement.IsNumeric ? (string.Equals(codeElement.Format, "float", StringComparison.OrdinalIgnoreCase) || string.Equals(codeElement.Format, "double", StringComparison.OrdinalIgnoreCase) ? "float" : "int") : "str";
+        writer.WriteLine($"class {codeElement.Name}({baseType}, Enum):");
         conventions.WriteDeprecationWarning(codeElement, writer);
         writer.IncreaseIndent();
         if (!codeElement.Options.Any())
@@ -26,7 +27,14 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, PythonConventionServic
             codeElement.Options.ToList().ForEach(x =>
             {
                 conventions.WriteInLineDescription(x, writer);
-                writer.WriteLine($"{x.Name} = \"{x.WireName.SanitizeDoubleQuote()}\",");
+                if (codeElement.IsNumeric)
+                {
+                    writer.WriteLine($"{x.Name} = {x.WireName},");
+                }
+                else
+                {
+                    writer.WriteLine($"{x.Name} = \"{x.WireName.SanitizeDoubleQuote()}\",");
+                }
             });
         }
     }

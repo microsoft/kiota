@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +10,14 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
 #pragma warning restore CA2227
     public AccessModifier Access { get; set; } = AccessModifier.Public;
     public bool Flags
+    {
+        get; set;
+    }
+    public bool IsNumeric
+    {
+        get; set;
+    }
+    public string? Format
     {
         get; set;
     }

@@ -304,9 +304,10 @@ public static class OpenApiSchemaExtensions
     public static bool IsEnum(this IOpenApiSchema? schema)
     {
         if (schema is null || schema.Enum is null) return false;
-        return schema.Enum.Any(static x => x.GetValueKind() is JsonValueKind.String &&
+        return schema.Enum.Any(static x => (x.GetValueKind() is JsonValueKind.String &&
                                     x.GetValue<string>() is string value &&
-                                    !string.IsNullOrEmpty(value)); // number and boolean enums are not supported
+                                    !string.IsNullOrEmpty(value)) ||
+                                   x.GetValueKind() is JsonValueKind.Number);
     }
     public static bool IsComposedEnum(this IOpenApiSchema? schema)
     {

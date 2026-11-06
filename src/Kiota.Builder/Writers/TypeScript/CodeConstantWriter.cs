@@ -229,7 +229,14 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         codeEnum.Options.ToList().ForEach(x =>
         {
             conventions.WriteShortDescription(x, writer);
-            writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName.SanitizeDoubleQuote()}\",");
+            if (codeEnum.IsNumeric)
+            {
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: {x.WireName},");
+            }
+            else
+            {
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName.SanitizeDoubleQuote()}\",");
+            }
         });
         writer.CloseBlock("} as const;");
     }

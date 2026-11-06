@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add numerical enum generation support across C#, TypeScript, Python, Go, PHP, and Ruby language writers. [#5165](https://github.com/microsoft/kiota/issues/5165)
+
 ### Changed
 
 ## [1.38.0] - 2026-11-02
