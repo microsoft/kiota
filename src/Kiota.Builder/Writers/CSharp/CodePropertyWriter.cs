@@ -6,7 +6,12 @@ namespace Kiota.Builder.Writers.CSharp;
 
 public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventionService>
 {
-    public CodePropertyWriter(CSharpConventionService conventionService) : base(conventionService) { }
+    private readonly bool excludeBackwardCompatible;
+    public CodePropertyWriter(CSharpConventionService conventionService) : this(conventionService, false) { }
+    public CodePropertyWriter(CSharpConventionService conventionService, bool excludeBackwardCompatible) : base(conventionService)
+    {
+        this.excludeBackwardCompatible = excludeBackwardCompatible;
+    }
     public override void WriteCodeElement(CodeProperty codeElement, LanguageWriter writer)
     {
         ArgumentNullException.ThrowIfNull(codeElement);
@@ -60,7 +65,7 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                 writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} {propertyType} {codeElement.Name.ToFirstCharacterUpperCase()}");
                 writer.StartBlock();
                 writer.WriteLine($"get {{ return {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Get<{propertyType}>(\"{backingStoreKey}\"){defaultPropertyValue}; }}");
-                writer.WriteLine($"set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Set(\"{backingStoreKey}\", value); }}");
+                writer.WriteLine($"{(excludeBackwardCompatible ? setterAccessModifier : string.Empty)}set {{ {backingStoreProperty.Name.ToFirstCharacterUpperCase()}{nullableOp}.Set(\"{backingStoreKey}\", value); }}");
                 writer.CloseBlock();
                 break;
             case CodePropertyKind.ErrorMessageOverride when parentClass.IsErrorDefinition:

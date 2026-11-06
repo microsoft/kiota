@@ -107,6 +107,37 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("get { return BackingStore?.Get<global::" + rootNamespace.Name + ".SomeCustomClass>(\"propertyName\"); }", result);
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
+    [Theory]
+    [InlineData(false, false, false, AccessModifier.Public, false)]
+    [InlineData(false, false, true, AccessModifier.Public, true)]
+    [InlineData(false, true, false, AccessModifier.Public, false)]
+    [InlineData(false, true, true, AccessModifier.Public, false)]
+    [InlineData(true, false, false, AccessModifier.Public, false)]
+    [InlineData(true, false, true, AccessModifier.Public, true)]
+    [InlineData(true, true, false, AccessModifier.Public, false)]
+    [InlineData(true, true, true, AccessModifier.Public, true)]
+    [InlineData(false, true, true, AccessModifier.Private, false)]
+    [InlineData(true, true, true, AccessModifier.Private, false)]
+    public void WritesSetterAccessibility(bool excludeBackwardCompatible, bool usesBackingStore, bool readOnly, AccessModifier access, bool privateSetter)
+    {
+        var configuredWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName, usesBackingStore, excludeBackwardCompatible);
+        configuredWriter.SetTextWriter(tw);
+        if (usesBackingStore)
+            parentClass.AddBackingStoreProperty();
+        property.Kind = CodePropertyKind.Custom;
+        property.ReadOnly = readOnly;
+        property.Access = access;
+
+        configuredWriter.Write(property);
+
+        var result = tw.ToString();
+        if (usesBackingStore)
+            Assert.Contains($"{(privateSetter ? "private " : string.Empty)}set {{ BackingStore?.Set(\"propertyName\", value); }}", result);
+        else
+            Assert.Contains($"get; {(privateSetter ? "private " : string.Empty)}set;", result);
+        if (!privateSetter)
+            Assert.DoesNotContain("private set", result);
+    }
     [Fact]
     public void MapsAdditionalDataPropertiesToBackingStore()
     {
@@ -137,17 +168,23 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.DoesNotContain('\u2028', result);
         Assert.DoesNotContain('\u2029', result);
     }
-    [Fact]
-    public void MapsCustomPropertiesToBackingStoreWithEscapedKey()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MapsCustomPropertiesToBackingStoreWithEscapedKey(bool excludeBackwardCompatible)
     {
+        var configuredWriter = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, DefaultPath, DefaultName, true, excludeBackwardCompatible);
+        configuredWriter.SetTextWriter(tw);
         parentClass.AddBackingStoreProperty();
         property.Kind = CodePropertyKind.Custom;
-        property.SerializationName = "line1\"\nline2\u2028line3\u2029line4";
-        writer.Write(property);
+        property.ReadOnly = true;
+        property.SerializationName = "line1\"'\n\r\t\\$line2\u2028line3\u2029line4";
+        configuredWriter.Write(property);
         var result = tw.ToString();
-        var sanitizedWireName = property.WireName.SanitizeCSharpDoubleQuote();
+        var sanitizedWireName = "line1\\\"'\\n\\r\\t\\\\$line2\\u2028line3\\u2029line4";
         Assert.Contains($"BackingStore?.Get<global::{rootNamespace.Name}.SomeCustomClass>(\"{sanitizedWireName}\")", result);
-        Assert.Contains($"BackingStore?.Set(\"{sanitizedWireName}\", value);", result);
+        Assert.Contains($"{(excludeBackwardCompatible ? "private " : string.Empty)}set {{ BackingStore?.Set(\"{sanitizedWireName}\", value); }}", result);
+        Assert.DoesNotContain(property.SerializationName, result);
         Assert.DoesNotContain('\u2028', result);
         Assert.DoesNotContain('\u2029', result);
     }
