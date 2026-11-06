@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed the default Ruby serializers and deserializers of the VS Code extension, which made Ruby generation fail.
+
 ## [1.38.0] - 2026-11-02
 
 ### Added
