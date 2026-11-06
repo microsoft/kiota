@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed the Ruby links in the readmes to point to the kiota-ruby repository.
+
 ## [1.38.0] - 2026-11-02
 
 ### Added
