@@ -47,6 +47,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PhpConventionS
         }
         writer.WriteLine($"{conventions.DocCommentPrefix}@var {typeString}{(codeProperty.Type.IsNullable ? "|null" : string.Empty)} ${codeProperty.Name.ToFirstCharacterLowerCase()} " +
                             $"{(hasDescription ? propertyDescription : string.Empty)}");
+        var deprecation = conventions.GetDeprecationDescription(codeProperty);
+        if (!string.IsNullOrEmpty(deprecation))
+            writer.WriteLine($"{conventions.DocCommentPrefix}{deprecation}");
         writer.WriteLine(PhpConventionService.DocCommentEnd);
     }
 
