@@ -1412,6 +1412,99 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return result", result);
     }
     [Fact]
+    public void WritesModelFactoryBodyForUnionModelsWithoutDiscriminator()
+    {
+        setup();
+        var unionTypeWrapper = root.AddClass(new CodeClass
+        {
+            Name = "ScalarUnionTypeWrapper",
+            Kind = CodeClassKind.Model,
+            OriginalComposedType = new CodeUnionType
+            {
+                Name = "ScalarUnionTypeWrapper",
+            },
+        }).First();
+        var boolType = new CodeType { Name = "boolean" };
+        var intType = new CodeType { Name = "integer" };
+        var strType = new CodeType { Name = "string" };
+        unionTypeWrapper.OriginalComposedType.AddType(boolType);
+        unionTypeWrapper.OriginalComposedType.AddType(intType);
+        unionTypeWrapper.OriginalComposedType.AddType(strType);
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "boolean_value",
+            Type = boolType,
+            Kind = CodePropertyKind.Custom,
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "integer_value",
+            Type = intType,
+            Kind = CodePropertyKind.Custom,
+        });
+        unionTypeWrapper.AddProperty(new CodeProperty
+        {
+            Name = "string_value",
+            Type = strType,
+            Kind = CodePropertyKind.Custom,
+        });
+        var factoryMethod = unionTypeWrapper.AddMethod(new CodeMethod
+        {
+            Name = "factory",
+            Kind = CodeMethodKind.Factory,
+            ReturnType = new CodeType
+            {
+                Name = "ScalarUnionTypeWrapper",
+                TypeDefinition = unionTypeWrapper,
+            },
+        }).First();
+        factoryMethod.AddParameter(new CodeParameter
+        {
+            Name = "parse_node",
+            Kind = CodeParameterKind.ParseNode,
+            Type = new CodeType
+            {
+                Name = "ParseNode",
+            },
+        });
+        writer.Write(factoryMethod);
+        var result = tw.ToString();
+        Assert.DoesNotContain("get_child_node(\"\")", result);
+        Assert.DoesNotContain("mapping_value", result);
+        Assert.DoesNotContain("try:", result);
+        Assert.DoesNotContain("AttributeError", result);
+        Assert.Contains("result = ScalarUnionTypeWrapper()", result);
+        Assert.Contains("if (boolean_value_value := parse_node.get_bool_value()) is not None:", result);
+        Assert.Contains("result.boolean_value = boolean_value_value", result);
+        Assert.Contains("elif (integer_value_value := parse_node.get_int_value()) is not None:", result);
+        Assert.Contains("result.integer_value = integer_value_value", result);
+        Assert.Contains("elif (string_value_value := parse_node.get_str_value()) is not None:", result);
+        Assert.Contains("result.string_value = string_value_value", result);
+        Assert.Contains("return result", result);
+    }
+    [Fact]
+    public void WritesModelFactoryBodyForUnionModelsSkipsDiscriminatorWithoutPropertyName()
+    {
+        setup();
+        var complexType1 = root.AddClass(new CodeClass { Name = "ComplexType1", Kind = CodeClassKind.Model }).First();
+        parentClass.OriginalComposedType = new CodeUnionType { Name = "UnionType" };
+        parentClass.DiscriminatorInformation.DiscriminatorPropertyName = string.Empty;
+        parentClass.DiscriminatorInformation.AddDiscriminatorMapping("ComplexType1", new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 });
+        parentClass.AddProperty(new CodeProperty { Name = "complex_type1_value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "ComplexType1", TypeDefinition = complexType1 } });
+        parentClass.AddProperty(new CodeProperty { Name = "string_value", Kind = CodePropertyKind.Custom, Type = new CodeType { Name = "string" } });
+        method.Kind = CodeMethodKind.Factory;
+        method.ReturnType = new CodeType { Name = "ParentClass", TypeDefinition = parentClass };
+        method.AddParameter(new CodeParameter { Kind = CodeParameterKind.ParseNode, Name = "parse_node", Type = new CodeType { Name = "ParseNode" } });
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.DoesNotContain("get_child_node(\"\")", result);
+        Assert.DoesNotContain("mapping_value", result);
+        Assert.DoesNotContain("try:", result);
+        Assert.Contains("result = ParentClass()", result);
+        Assert.Contains("result.string_value = string_value_value", result);
+        Assert.Contains("return result", result);
+    }
+    [Fact]
     public void WritesModelFactoryBodyForIntersectionModels()
     {
         setup();
