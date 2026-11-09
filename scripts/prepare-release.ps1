@@ -31,24 +31,5 @@ $builderCsprojContent = [xml](Get-Content -Path $builderCSProjPath)
 $builderCsprojContent.Project.PropertyGroup[0].VersionPrefix = $version
 Format-XMLIndent -Content $builderCsprojContent | Set-Content -Path $builderCSProjPath -Encoding utf8
 
-$checkScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "get-release-notes.ps1"
-
-# checks we have unreleased changes
-& $checkScriptPath -version "Unreleased"
-
-# checks this version is not already released
-$changelogPath = Join-Path -Path $PSScriptRoot -ChildPath "../CHANGELOG.md"
-$changeLogContent = Get-Content $changelogPath -Raw
-
-if ($changeLogContent.Contains("## [$version]")) {
-    throw "Version $version already released, please bump the version"
-}
-
-# updates the changelog
-
-$splatReleaseNotes = $changeLogContent.Split("## [Unreleased]")
-$changeLogContent = $splatReleaseNotes[0] + "## [Unreleased]`n`n### Added`n`n### Changed`n`n## [$version] - $date" + $splatReleaseNotes[1]
-Set-Content -Path $changelogPath -Value $changeLogContent
-
-
-
+$mergeScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "merge-changelog-entries.ps1"
+& $mergeScriptPath -version $version -date $date
