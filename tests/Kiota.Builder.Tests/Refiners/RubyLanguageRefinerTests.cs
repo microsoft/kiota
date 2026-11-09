@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Extensions;
 using Kiota.Builder.Refiners;
 
 using Xunit;
@@ -26,6 +27,26 @@ public class RubyLanguageRefinerTests
         graphNS.AddClass(parentClass);
     }
     #region CommonLanguageRefinerTests
+    [Fact]
+    public async Task BacksAModelWithTheRuntimeStoreAsync()
+    {
+        var model = graphNS.AddClass(new CodeClass
+        {
+            Name = "user",
+            Kind = CodeClassKind.Model,
+        }).First();
+        model.StartBlock.AddImplements(new CodeType { Name = "IBackedModel", IsExternal = true });
+        model.AddProperty(new CodeProperty
+        {
+            Name = "backingStore",
+            Kind = CodePropertyKind.BackingStore,
+            DefaultValue = "BackingStoreFactorySingleton.Instance.CreateBackingStore()",
+            Type = new CodeType { Name = "IBackingStore", IsExternal = true },
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, UsesBackingStore = true }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Contains("MicrosoftKiotaAbstractions::BackedModel", model.StartBlock.Implements.Select(static x => x.Name));
+        Assert.Equal("MicrosoftKiotaAbstractions::BackingStoreFactorySingleton.instance.create_backing_store", model.GetPropertyOfKind(CodePropertyKind.BackingStore)!.DefaultValue);
+    }
     [Fact]
     public async Task OverridesTheMessageOfAnErrorAndKeepsAPropertyOfTheSameNameAsync()
     {
@@ -245,6 +266,30 @@ public class RubyLanguageRefinerTests
         Assert.DoesNotContain(usersBuilder.Usings, x => x.Declaration?.TypeDefinition == graphNS);
     }
     [Fact]
+    public async Task RegistersTheJsonTextFormAndMultipartSerializationGemsAsync()
+    {
+        var defaults = new GenerationConfiguration();
+        var client = graphNS.AddClass(new CodeClass { Name = "graphClient", Kind = CodeClassKind.RequestBuilder }).First();
+        var constructor = client.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.ClientConstructor,
+            ReturnType = new CodeType { Name = "void" },
+            SerializerModules = new(defaults.Serializers, StringComparer.OrdinalIgnoreCase),
+            DeserializerModules = new(defaults.Deserializers, StringComparer.OrdinalIgnoreCase),
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(["FormSerializationWriterFactory", "JsonSerializationWriterFactory", "MultipartSerializationWriterFactory", "TextSerializationWriterFactory"], constructor.SerializerModules.Order());
+        Assert.Equal(["FormParseNodeFactory", "JsonParseNodeFactory", "TextParseNodeFactory"], constructor.DeserializerModules.Order());
+        foreach (var (gem, factory) in new[] {
+            ("microsoft_kiota_serialization_text", "TextSerializationWriterFactory"),
+            ("microsoft_kiota_serialization_text", "TextParseNodeFactory"),
+            ("microsoft_kiota_serialization_form", "FormSerializationWriterFactory"),
+            ("microsoft_kiota_serialization_form", "FormParseNodeFactory"),
+            ("microsoft_kiota_serialization_multipart", "MultipartSerializationWriterFactory") })
+            Assert.Contains(client.Usings, x => x.Name == factory && x.Declaration?.Name == gem && x.IsExternal);
+    }
+    [Fact]
     public async Task DoesNotKeepCancellationParametersInRequestExecutorsAsync()
     {
         var model = root.AddClass(new CodeClass
@@ -339,6 +384,97 @@ public class RubyLanguageRefinerTests
         await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual("break", model.Name);
         Assert.Contains("escaped", model.Name);
+    }
+    [Fact]
+    public async Task EscapesReservedPathParameterNamesAsync()
+    {
+        var requestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "searchRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var constructor = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var pathParameter = new CodeParameter
+        {
+            Name = "def",
+            Kind = CodeParameterKind.Path,
+            Optional = true,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        };
+        constructor.AddParameter(pathParameter);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("def_escaped", pathParameter.Name);
+        Assert.Equal("def", pathParameter.SerializationName);
+    }
+    [Fact]
+    public async Task EscapesReservedPathParameterNamesWithoutCollisionsAsync()
+    {
+        var requestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "itemsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var constructor = requestBuilder.AddMethod(new CodeMethod
+        {
+            Name = "constructor",
+            Kind = CodeMethodKind.Constructor,
+            ReturnType = new CodeType { Name = "void" },
+        }).First();
+        var keyword = new CodeParameter { Name = "class", Kind = CodeParameterKind.Path, Optional = true, Type = new CodeType { Name = "string", IsExternal = true } };
+        var taken = new CodeParameter { Name = "class_escaped", Kind = CodeParameterKind.Path, Optional = true, Type = new CodeType { Name = "string", IsExternal = true } };
+        var method = new CodeParameter { Name = "object_id", Kind = CodeParameterKind.Path, Optional = true, Type = new CodeType { Name = "string", IsExternal = true } };
+        constructor.AddParameter(keyword, taken, method);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("class_escaped_escaped", keyword.Name);
+        Assert.Equal("class", keyword.SerializationName);
+        Assert.Equal("class_escaped", taken.Name);
+        // a parameter can shadow a method, so only the names Ruby rejects are escaped
+        Assert.Equal("object_id", method.Name);
+    }
+    [Theory]
+    [InlineData("class", "class_escaped")]
+    [InlineData("END", "e_n_d")]
+    [InlineData("CLASS", "c_l_a_s_s")]
+    [InlineData("baseRequestBuilder", "base_request_builder")]
+    [InlineData("objectId", "object_id")]
+    [InlineData("in", "in_escaped")]
+    public async Task EscapesReservedIndexerParameterNamesAsync(string name, string rubyName)
+    {
+        var requestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "itemsRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var itemRequestBuilder = graphNS.AddClass(new CodeClass
+        {
+            Name = "itemRequestBuilder",
+            Kind = CodeClassKind.RequestBuilder
+        }).First();
+        var indexParameter = new CodeParameter
+        {
+            Name = name,
+            SerializationName = name,
+            Type = new CodeType { Name = "string", IsExternal = true },
+        };
+        requestBuilder.AddIndexer(new CodeIndexer
+        {
+            Name = "indexer",
+            ReturnType = new CodeType { Name = itemRequestBuilder.Name, TypeDefinition = itemRequestBuilder },
+            IndexParameter = indexParameter,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Ruby, ClientNamespaceName = graphNS.Name }, root, cancellationToken: TestContext.Current.CancellationToken);
+        var method = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility));
+        var parameter = Assert.Single(method.Parameters);
+        // the method declares its own parameter while its body reads the indexer's, so both must render the same
+        Assert.Equal(rubyName, parameter.Name.ToSnakeCase());
+        Assert.Equal(rubyName, indexParameter.Name.ToSnakeCase());
+        Assert.Equal(name, parameter.SerializationName);
+        Assert.Equal(name, indexParameter.SerializationName);
     }
     [Fact]
     public async Task EscapesInitializeAsync()

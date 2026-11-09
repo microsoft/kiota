@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
+using System.IO;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
+using Kiota.Builder.Writers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -62,6 +64,7 @@ public sealed partial class KiotaBuilderTests
                     "multipart/form-data": {
                       "schema": {
                         "type": "object",
+                        "additionalProperties": false,
                         "required": ["resume", "files"],
                         "properties": {
                           "resume": { "type": "string", "format": "binary" },
@@ -102,7 +105,7 @@ public sealed partial class KiotaBuilderTests
             var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
             Assert.Contains(bodyClass.Properties, x => x.Name == "resume");
             Assert.Contains(bodyClass.Properties, x => x.Name == "files");
-            Assert.Contains(bodyClass.Properties, x => x.Kind == CodePropertyKind.AdditionalData);
+            Assert.DoesNotContain(bodyClass.Properties, x => x.Kind == CodePropertyKind.AdditionalData);
         }
         else
             Assert.Equal("MultipartBody", body.Type.Name);
@@ -200,10 +203,13 @@ public sealed partial class KiotaBuilderTests
         var body = Assert.Single(executor.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
         Assert.Equal("MultipartBody", body.Type.Name);
     }
-    [Fact]
-    public async Task KeepsMultipartBodyFallbackForAdditionalPropertiesAsync()
+    [Theory]
+    [InlineData(",\"additionalProperties\": { \"type\": \"string\" }")]
+    [InlineData(",\"additionalProperties\": true")]
+    [InlineData("")]
+    public async Task KeepsMultipartBodyFallbackForOpenSchemasAsync(string additionalProperties)
     {
-        const string description = """
+        var description = """
         {
           "openapi": "3.0.4",
           "info": { "title": "Multipart API", "version": "1.0.0" },
@@ -217,9 +223,117 @@ public sealed partial class KiotaBuilderTests
                         "type": "object",
                         "properties": {
                           "files": { "type": "array", "items": { "type": "string", "format": "binary" } }
-                        },
-                        "additionalProperties": { "type": "string" }
+                        }
+                        ADDITIONAL_PROPERTIES
                       }
+                    }
+                  }
+                },
+                "responses": { "204": { "description": "No Content" } }
+              }
+            }
+          }
+        }
+        """.Replace("ADDITIONAL_PROPERTIES", additionalProperties);
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance,
+            new GenerationConfiguration { Language = GenerationLanguage.CSharp }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var requestBuilder = model.FindChildByName<CodeClass>("FormsRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var executor = Assert.Single(requestBuilder.Methods, x => x.Kind == CodeMethodKind.RequestExecutor);
+        var body = Assert.Single(executor.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
+        Assert.Equal("MultipartBody", body.Type.Name);
+    }
+
+    [Theory]
+    [InlineData(",\"additionalProperties\": true")]
+    [InlineData("")]
+    [InlineData(",\"additionalProperties\": { \"type\": \"string\" }")]
+    public async Task KeepsParsableSerializationForOpenMultipartWithMultipleContentTypesAsync(string additionalProperties)
+    {
+        var description = """
+        {
+          "openapi": "3.0.4",
+          "info": { "title": "Multipart API", "version": "1.0.0" },
+          "paths": {
+            "/forms": {
+              "post": {
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": { "schema": { "$ref": "#/components/schemas/Upload" } },
+                    "application/json": { "schema": { "$ref": "#/components/schemas/Upload" } }
+                  }
+                },
+                "responses": { "204": { "description": "No Content" } }
+              }
+            }
+          },
+          "components": {
+            "schemas": {
+              "Upload": {
+                "type": "object",
+                "properties": {
+                  "files": { "type": "array", "items": { "type": "string", "format": "binary" } }
+                }
+                ADDITIONAL_PROPERTIES
+              }
+            }
+          }
+        }
+        """.Replace("ADDITIONAL_PROPERTIES", additionalProperties);
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var config = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            StructuredMimeTypes = new() { "multipart/form-data;q=1", "application/json;q=0.5" }
+        };
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, config, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await builder.ApplyLanguageRefinementAsync(config, model, TestContext.Current.CancellationToken);
+        var requestBuilder = model.FindChildByName<CodeClass>("FormsRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var generator = Assert.Single(requestBuilder.Methods, x => x.Kind == CodeMethodKind.RequestGenerator);
+        Assert.Equal("multipart/form-data", generator.RequestBodyContentType);
+        var body = Assert.Single(generator.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
+        var bodyClass = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(body.Type).TypeDefinition);
+        Assert.Contains(bodyClass.Properties, x => x.Kind == CodePropertyKind.AdditionalData);
+
+        using var output = new StringWriter();
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, "./", config.ClientNamespaceName);
+        writer.SetTextWriter(output);
+        writer.Write(generator);
+        var result = output.ToString();
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", body)", result);
+        Assert.DoesNotContain("new MultipartBody", result);
+        Assert.DoesNotContain("InvalidOperationException", result);
+    }
+
+    [Fact]
+    public async Task KeepsMultipartBodyFallbackForClosedBinaryCollectionWithExplicitEncodingAsync()
+    {
+        const string description = """
+        {
+          "openapi": "3.0.4",
+          "info": { "title": "Multipart API", "version": "1.0.0" },
+          "paths": {
+            "/forms": {
+              "post": {
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "files": { "type": "array", "items": { "type": "string", "format": "binary" } }
+                        }
+                      },
+                      "encoding": { "files": { "contentType": "application/pdf" } }
                     }
                   }
                 },

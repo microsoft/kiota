@@ -802,7 +802,7 @@ public partial class KiotaBuilder
                     LogPropertyTypeUndetermined(propIdentifier);
                     continue;
                 }
-                prop.Deprecation = currentNode.GetDeprecationInformation();
+                prop.Deprecation = child.GetDeprecationInformation();
                 if (!string.IsNullOrWhiteSpace(description))
                 {
                     prop.Documentation.DescriptionTemplate = description;
@@ -1699,6 +1699,7 @@ public partial class KiotaBuilder
     private static bool HasBinaryFileCollection(IOpenApiSchema schema)
     {
         if (schema.Properties?.Values is not { } properties ||
+            schema.AdditionalPropertiesAllowed ||
             schema.AdditionalProperties is not null ||
             schema.AllOf is { Count: > 0 } ||
             schema.AnyOf is { Count: > 0 } ||

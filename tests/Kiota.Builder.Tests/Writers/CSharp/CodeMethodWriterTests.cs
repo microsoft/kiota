@@ -563,11 +563,6 @@ public sealed class CodeMethodWriterTests : IDisposable
             Name = "files",
             Kind = CodePropertyKind.Custom,
             Type = new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
-        }, new CodeProperty
-        {
-            Name = "additionalData",
-            Kind = CodePropertyKind.AdditionalData,
-            Type = new CodeType { Name = "IDictionary<string, object>" },
         });
 
         writer.Write(method);
@@ -577,8 +572,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("AddOrReplacePart<byte[]>(\"resume\", \"application/octet-stream\", multipartResumeFile, \"resume.bin\")", result);
         Assert.Contains("AddOrReplacePart<byte[]>(\"files\", \"application/octet-stream\", multipartFilesFile, $\"files-{multipartFilesIndex}.bin\")", result);
         Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", multipartBody)", result);
-        Assert.Contains("if (b.AdditionalData?.Count > 0)", result);
-        Assert.Contains("AdditionalData cannot be serialized as multipart/form-data", result);
+        Assert.DoesNotContain("InvalidOperationException", result);
         Assert.Contains("var multipartResumeFile = b.Resume;", result);
         Assert.Contains("if (multipartResumeFile != null)", result);
         Assert.Contains("var multipartFilesFiles = b.Files;", result);

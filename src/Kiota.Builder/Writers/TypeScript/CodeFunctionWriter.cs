@@ -206,9 +206,9 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
     private void WriteSerializationFunctionForCodeUnionTypes(CodeComposedTypeBase composedType, CodeParameter composedParam, CodeFunction codeElement, LanguageWriter writer)
     {
         var discriminatorInfo = codeElement.OriginalMethodParentClass.DiscriminatorInformation;
-        var discriminatorPropertyName = discriminatorInfo.DiscriminatorPropertyName;
+        var discriminatorPropertyNames = GetDiscriminatorPropertyAccessorNames(composedType, discriminatorInfo.DiscriminatorPropertyName);
 
-        if (string.IsNullOrEmpty(discriminatorPropertyName))
+        if (discriminatorPropertyNames.Length == 0)
         {
             WriteBruteForceSerializationFunctionForCodeUnionType(composedType, composedParam, codeElement, writer);
             return;
@@ -216,7 +216,13 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
         var paramName = composedParam.Name.ToFirstCharacterLowerCase();
         writer.WriteLine($"if ({paramName} === undefined || {paramName} === null) return;");
-        WriteDiscriminatorSwitchBlock(discriminatorInfo, paramName, codeElement, writer);
+        foreach (var discriminatorPropertyName in discriminatorPropertyNames)
+        {
+            writer.StartBlock($"if (typeof {paramName} === \"object\" && \"{discriminatorPropertyName.SanitizeDoubleQuote()}\" in {paramName}) {{");
+            WriteDiscriminatorSwitchBlock(discriminatorInfo, discriminatorPropertyName, paramName, codeElement, writer);
+            writer.CloseBlock();
+        }
+        WriteBruteForceSerializationFunctionForCodeUnionType(composedType, composedParam, codeElement, writer);
     }
 
     /// <summary>
@@ -240,32 +246,37 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         WriteSerializationFunctionForCodeIntersectionType(composedType, composedParam, codeElement, writer);
     }
 
-    private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string paramName, CodeFunction codeElement, LanguageWriter writer)
+    private void WriteDiscriminatorSwitchBlock(DiscriminatorInformation discriminatorInfo, string discriminatorPropertyName, string paramName, CodeFunction codeElement, LanguageWriter writer)
     {
-        writer.StartBlock($"switch ({paramName}.{GetDiscriminatorPropertyAccessorName(discriminatorInfo)}) {{");
+        writer.StartBlock($"switch ({paramName}.{discriminatorPropertyName}) {{");
 
         foreach (var mappedType in discriminatorInfo.DiscriminatorMappings)
         {
             writer.StartBlock($"case \"{mappedType.Key.SanitizeDoubleQuote()}\":");
             writer.WriteLine($"{GetSerializerFunctionName(codeElement, mappedType.Value)}(writer, {paramName} as {mappedType.Value.AllTypes.First().Name.ToFirstCharacterUpperCase()});");
-            writer.WriteLine("break;");
+            writer.WriteLine("return;");
             writer.DecreaseIndent();
         }
 
         writer.CloseBlock();
     }
 
-    private static string GetDiscriminatorPropertyAccessorName(DiscriminatorInformation discriminatorInfo)
+    private static string[] GetDiscriminatorPropertyAccessorNames(CodeComposedTypeBase composedType, string discriminatorPropertyName)
     {
-        // the discriminator property name is the wire name, the property on the models is renamed by the refiner
-        return discriminatorInfo.DiscriminatorMappings
-                                .Select(static x => x.Value.TypeDefinition)
-                                .OfType<CodeClass>()
-                                .SelectMany(static x => x.GetInheritanceTree())
-                                .Select(x => x.Properties.FirstOrDefault(y => y.WireName.EqualsIgnoreCase(discriminatorInfo.DiscriminatorPropertyName)))
-                                .OfType<CodeProperty>()
-                                .Select(static x => x.Name.ToFirstCharacterLowerCase())
-                                .FirstOrDefault() ?? discriminatorInfo.DiscriminatorPropertyName.CleanupSymbolName();
+        if (string.IsNullOrEmpty(discriminatorPropertyName)) return [];
+        return composedType.Types
+            .Select(type => type.TypeDefinition switch
+            {
+                CodeInterface codeInterface => FindDiscriminatorPropertyBySerializationName(codeInterface, discriminatorPropertyName),
+                CodeClass codeClass => codeClass.GetInheritanceTree()
+                    .SelectMany(static x => x.Properties)
+                    .FirstOrDefault(x => x.WireName.EqualsIgnoreCase(discriminatorPropertyName)),
+                _ => null,
+            })
+            .OfType<CodeProperty>()
+            .Select(static property => property.Name.ToFirstCharacterLowerCase())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
     }
 
     private void WriteCaseStatementForPrimitiveTypeSerialization(CodeTypeBase type, string key, string modelParamName, CodeFunction method, LanguageWriter writer, String prefix)
@@ -349,14 +360,12 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
 
     private void WriteFactoryMethod(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)
     {
-        var returnType = conventions.GetTypeString(codeElement.OriginalLocalMethod.ReturnType, codeElement);
-
         if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType)
             WriteDefensiveStatements(codeElement.OriginalLocalMethod, writer);
-        WriteFactoryMethodBody(codeElement, returnType, codeFile, writer);
+        WriteFactoryMethodBody(codeElement, codeFile, writer);
     }
 
-    private void WriteFactoryMethodBody(CodeFunction codeElement, string returnType, CodeFile codeFile, LanguageWriter writer)
+    private void WriteFactoryMethodBody(CodeFunction codeElement, CodeFile codeFile, LanguageWriter writer)
     {
         var parseNodeParameter = codeElement.OriginalLocalMethod.Parameters.OfKind(CodeParameterKind.ParseNode);
         var composedType = GetOriginalComposedType(codeElement.OriginalLocalMethod.ReturnType);
@@ -370,25 +379,26 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             case CodeUnionType _ when parseNodeParameter != null:
                 WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
                 // The default discriminator is useful when the discriminator information is not provided.
-                WriteDefaultDiscriminator(codeElement, returnType, writer);
+                WriteDefaultDiscriminator(codeElement, writer);
                 break;
             case CodeIntersectionType _ when parseNodeParameter != null:
-                WriteDefaultDiscriminator(codeElement, returnType, writer);
+                WriteDefaultDiscriminator(codeElement, writer);
                 break;
             default:
                 if (codeElement.OriginalMethodParentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForInheritedType && parseNodeParameter != null)
                     WriteDiscriminatorInformation(codeElement, parseNodeParameter, writer);
 
-                WriteDefaultDiscriminator(codeElement, returnType, writer);
+                WriteDefaultDiscriminator(codeElement, writer);
                 break;
         }
     }
 
-    private void WriteDefaultDiscriminator(CodeFunction codeElement, string returnType, LanguageWriter writer)
+    private void WriteDefaultDiscriminator(CodeFunction codeElement, LanguageWriter writer)
     {
-        var nameSpace = codeElement.GetImmediateParentOfType<CodeNamespace>();
-        var deserializationFunction = GetFunctionName(codeElement, returnType, CodeMethodKind.Deserializer, nameSpace);
-        writer.WriteLine($"return {deserializationFunction.ToFirstCharacterLowerCase()};");
+        var deserializationFunction = codeElement.OriginalLocalMethod.ReturnType is CodeType { TypeDefinition: not null } returnType
+            ? GetDeserializerFunctionName(codeElement, returnType)
+            : string.Empty;
+        writer.WriteLine($"return {deserializationFunction};");
     }
 
     private void WriteDiscriminatorInformation(CodeFunction codeElement, CodeParameter parseNodeParameter, LanguageWriter writer)
@@ -416,34 +426,6 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
             writer.CloseBlock();
             writer.CloseBlock();
         }
-    }
-
-    private string GetFunctionName(CodeElement codeElement, string returnType, CodeMethodKind kind, CodeNamespace targetNamespace)
-    {
-        var functionName = kind switch
-        {
-            CodeMethodKind.Serializer => $"serialize{returnType}",
-            CodeMethodKind.Deserializer => $"deserializeInto{returnType}",
-            _ => throw new InvalidOperationException($"Unsupported function kind :: {kind}")
-        };
-
-        var codeFunction = FindCodeFunctionInParentNamespaces(functionName, targetNamespace);
-
-        return conventions.GetTypeString(new CodeType { TypeDefinition = codeFunction }, codeElement, false);
-    }
-
-    private static CodeFunction? FindCodeFunctionInParentNamespaces(string functionName, CodeNamespace? parentNamespace)
-    {
-        CodeFunction? codeFunction = null;
-
-        for (var currentNamespace = parentNamespace;
-            currentNamespace is not null && !functionName.Equals(codeFunction?.Name, StringComparison.Ordinal);
-            currentNamespace = currentNamespace.Parent?.GetImmediateParentOfType<CodeNamespace>())
-        {
-            codeFunction = currentNamespace.FindChildByName<CodeFunction>(functionName);
-        }
-
-        return codeFunction;
     }
 
     private string GetDeserializerFunctionName(CodeElement codeElement, CodeType returnType) =>
