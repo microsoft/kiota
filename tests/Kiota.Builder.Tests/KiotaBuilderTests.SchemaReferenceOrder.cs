@@ -188,12 +188,18 @@ components:
             description = description.ReplaceLineEndings("\r\n");
         description = description.ReplaceLineEndings("\n");
         if (!recursiveProperties)
-            description = description.Replace("""
+        {
+            // Normalize both sides: C# raw string literals inherit the source file's line endings.
+            var recursivePropertyBlock = """
         self:
           $ref: '#/components/schemas/Model'
         alias:
           $ref: '#/components/schemas/ModelAlias'
-""", string.Empty, StringComparison.Ordinal);
+""".ReplaceLineEndings("\n");
+            Assert.Contains(recursivePropertyBlock, description);
+            description = description.Replace(recursivePropertyBlock, string.Empty, StringComparison.Ordinal);
+            Assert.DoesNotContain(recursivePropertyBlock, description);
+        }
         if (derivedFirst)
         {
             description = description.Replace("first:\n          $ref: '#/components/schemas/ModelAlias'", "first:\n          $ref: '#/components/schemas/Derived'", StringComparison.Ordinal)
