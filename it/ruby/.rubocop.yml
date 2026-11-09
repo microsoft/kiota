@@ -72,3 +72,11 @@ Style/AccessorGrouping:
 # descriptions come from the API and may start with prose such as "Note:"
 Style/CommentAnnotation:
   Enabled: false
+
+# a request builder takes one parameter per parameter of its path, as Graph's functions have
+Metrics/ParameterLists:
+  Enabled: false
+
+# parameter names come from the API description, such as Graph's `q`
+Naming/MethodParameterName:
+  Enabled: false
