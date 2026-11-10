@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Generate typed C# request bodies for closed flat multipart schemas containing binary file collections and serialize their fields as multipart parts. Related to [#8080](https://github.com/microsoft/kiota/issues/8080).
+- Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
+- Ruby: fixed generation failing when a nested model is flattened onto the name of an existing one, as in Microsoft Graph beta.
+- Ruby: a request builder for a path with function parameters, such as Microsoft Graph's `search(q='{q}')`, puts their values in the URL. They were accepted and dropped, so the request went out with empty values.
+- Fixed the Ruby links in the readmes to point to the kiota-ruby repository.
 
 ## [1.38.0] - 2026-11-02
 
@@ -22,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Python: check inherited-model discriminators once before type dispatch to avoid repeated truthiness checks that cause excessive CodeQL extraction work in large factories.
-- Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
 
 ## [1.37.0] - 2026-10-29
 
