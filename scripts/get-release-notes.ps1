@@ -21,9 +21,9 @@ $versionLineNumber = $changeLogContent.IndexOf($headerLine)
 if ($version -ne "Unreleased" -and $versionLineNumber -lt 0) {
     throw "Version $version not found in CHANGELOG.md make sure you've updated the changelog"
 }
-$headerLineNumber = $changeLogContent.IndexOf("`n" , $versionLineNumber) + 3
-$endLineNumber = $changeLogContent.IndexOf("## [", $headerLineNumber) - 2
-$releaseNotes = $changeLogContent.Substring($headerLineNumber, $endLineNumber - $headerLineNumber)
+$headerLineNumber = $changeLogContent.IndexOf("`n" , $versionLineNumber) + 1
+$endLineNumber = $changeLogContent.IndexOf("## [", $headerLineNumber)
+$releaseNotes = $changeLogContent.Substring($headerLineNumber, $endLineNumber - $headerLineNumber).Trim()
 if ($version -eq "Unreleased" -and [string]::IsNullOrWhiteSpace($releaseNotes.Replace("### Changed", "").Replace("### Added", ""))) {
     throw "Version $version not found in CHANGELOG.md make sure you've updated the changelog"
 }

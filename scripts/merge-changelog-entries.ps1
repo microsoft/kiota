@@ -60,6 +60,10 @@ function Get-EntryFiles {
         if (-not (Test-Path -Path $folderPath)) {
             continue
         }
+        $nested = @(Get-ChildItem -Path $folderPath -Directory -Force)
+        if ($nested.Count -gt 0) {
+            throw "Changelog entries go directly in $folderPath, not in a subfolder: $($nested.FullName -join ', ')"
+        }
         $items = @(Get-ChildItem -Path $folderPath -File -Force | Where-Object { $_.Name -ne ".gitkeep" })
         $wrongType = @($items | Where-Object { $_.Extension -ne ".md" })
         if ($wrongType.Count -gt 0) {
@@ -129,8 +133,13 @@ for ($index = $start + 1; $index -lt $end; $index++) {
 
 $files = Get-EntryFiles
 foreach ($folder in $sections.Keys) {
+    $header = $sections[$folder]
     foreach ($file in $files[$folder]) {
-        $existing[$sections[$folder]] += Get-EntryText -path $file.FullName
+        $text = Get-EntryText -path $file.FullName
+        # skip entries a previous preview merge already added
+        if (-not ("`n" + ($existing[$header] -join "`n") + "`n").Contains("`n$text`n")) {
+            $existing[$header] += $text
+        }
     }
 }
 
@@ -162,7 +171,7 @@ $after = if ($end -lt $lines.Count) { $lines[$end..($lines.Count - 1)] } else { 
 if ($isRelease) {
     foreach ($folder in $sections.Keys) {
         foreach ($file in $files[$folder]) {
-            Remove-Item -Path $file.FullName
+            Remove-Item -LiteralPath $file.FullName
         }
     }
 }
