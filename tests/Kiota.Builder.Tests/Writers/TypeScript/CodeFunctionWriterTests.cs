@@ -134,6 +134,62 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("return deserializeIntoParentModel;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WritesModelFactoriesForSimilarlyNamedModelsInNestedNamespacesAsync(bool aliasReturnType)
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var securityNamespace = root.AddNamespace("ApiSdk.models.microsoft.graph.security");
+        var dlpNamespace = securityNamespace.AddNamespace($"{securityNamespace.Name}.dlp");
+        var models = new List<CodeClass>();
+        foreach (var recordKind in new[] { "Endpoint", "Exchange", "SharePoint" })
+        {
+            foreach (var (modelNamespace, modelName) in new[]
+            {
+                (securityNamespace, $"complianceDLP{recordKind}AuditRecord"),
+                (dlpNamespace, $"complianceDlp{recordKind}AuditRecord"),
+            })
+            {
+                var model = TestHelper.CreateModelClass(modelNamespace, modelName, true);
+                model.AddMethod(new CodeMethod
+                {
+                    Name = "factory",
+                    Kind = CodeMethodKind.Factory,
+                    ReturnType = new CodeType { Name = model.Name, TypeDefinition = model },
+                    IsStatic = true,
+                });
+                models.Add(model);
+            }
+        }
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        foreach (var model in models)
+        {
+            var modelNamespace = model.GetImmediateParentOfType<CodeNamespace>();
+            var modelFile = Assert.Single(modelNamespace.GetChildElements().OfType<CodeFile>());
+            var factoryFunction = Assert.Single(modelFile.GetChildElements().OfType<CodeFunction>(),
+                x => x.OriginalLocalMethod.Kind is CodeMethodKind.Factory && x.OriginalMethodParentClass == model);
+            if (aliasReturnType)
+            {
+                var returnType = Assert.IsType<CodeType>(factoryFunction.OriginalLocalMethod.ReturnType);
+                factoryFunction.AddUsing(new CodeUsing
+                {
+                    Name = modelNamespace.Name,
+                    Alias = $"Aliased{model.Name.ToFirstCharacterUpperCase()}",
+                    Declaration = new CodeType { Name = returnType.Name, TypeDefinition = returnType.TypeDefinition },
+                });
+            }
+            writer.Write(factoryFunction);
+            var result = tw.ToString();
+            Assert.Contains($"return deserializeInto{model.Name.ToFirstCharacterUpperCase()};", result);
+            var otherModel = models.Single(x => x != model && x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain($"return deserializeInto{otherModel.Name.ToFirstCharacterUpperCase()};", result);
+            tw.GetStringBuilder().Clear();
+        }
+    }
+
     [Fact]
     public async Task EscapesModelFactoryBodyAsync()
     {
@@ -155,12 +211,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             IsStatic = true,
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld'\n\r\t\\$model", new CodeType
         {
             Name = "childModel",
             TypeDefinition = childModel,
         });
-        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe'\n\r\t\\$x";
         factoryMethod.AddParameter(new CodeParameter
         {
             Name = "parseNode",
@@ -185,8 +241,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.ty\\\"pe\\nx\")", result);
-        Assert.Contains("case \"ns.chi\\\"ld\\nmodel\":", result);
+        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.ty\\\"pe'\\n\\r\\t\\\\$x\")", result);
+        Assert.Contains("case \"ns.chi\\\"ld'\\n\\r\\t\\\\$model\":", result);
+        Assert.DoesNotContain(parentModel.DiscriminatorInformation.DiscriminatorPropertyName, result);
+        Assert.DoesNotContain("ns.chi\"ld'\n\r\t\\$model", result);
     }
     [Fact]
     public async Task DoesntWriteFactorySwitchOnMissingParameterAsync()
@@ -1799,11 +1857,14 @@ public sealed class CodeFunctionWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
-    [Fact]
-    public async Task Writes_UnionOfObjects_SerializerFunctionsAsync()
+    [Theory]
+    [InlineData("Cat", "Cat")]
+    [InlineData("ca\"t'\n\r\t\\$", "ca\\\"t'\\n\\r\\t\\\\$")]
+    public async Task Writes_UnionOfObjects_SerializerFunctionsAsync(string discriminatorValue, string escapedDiscriminatorValue)
     {
         var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
         var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
         await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
         var mockLogger = new Mock<ILogger<KiotaBuilder>>();
         var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
@@ -1829,14 +1890,20 @@ public sealed class CodeFunctionWriterTests : IDisposable
 
         // Test Serializer function
         var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
-        Assert.True(serializerFunction is not null);
+        var discriminatorInfo = Assert.IsType<CodeFunction>(serializerFunction).OriginalMethodParentClass.DiscriminatorInformation;
+        var catType = Assert.IsType<CodeType>(discriminatorInfo.GetDiscriminatorMappingValue("Cat"));
+        discriminatorInfo.RemoveDiscriminatorMapping("Cat");
+        discriminatorInfo.AddDiscriminatorMapping(discriminatorValue, catType);
         writer.Write(serializerFunction);
         var serializerFunctionStr = tw.ToString();
         Assert.Contains("return", serializerFunctionStr);
         Assert.Contains("switch", serializerFunctionStr);
-        Assert.Contains("case \"Cat\":", serializerFunctionStr);
+        Assert.Contains($"case \"{escapedDiscriminatorValue}\":", serializerFunctionStr);
+        if (discriminatorValue != escapedDiscriminatorValue)
+            Assert.DoesNotContain(discriminatorValue, serializerFunctionStr);
         Assert.Contains("case \"Dog\":", serializerFunctionStr);
-        Assert.Contains("break", serializerFunctionStr);
+        Assert.DoesNotContain("break;", serializerFunctionStr);
+        Assert.Matches("case \"Dog\":\\s+serializeDog\\(writer, petsPatchRequestBody as Dog\\);\\s+return;", serializerFunctionStr);
         AssertExtensions.CurlyBracesAreClosed(serializerFunctionStr, 1);
     }
 
@@ -1869,6 +1936,72 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // the wire name is pet_type, the property on the generated interfaces is petType
         Assert.Contains(".petType) {", serializerFunctionStr);
         Assert.DoesNotContain(".pet_type", serializerFunctionStr);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Writes_UnionOfObjects_SerializerFunctionWithMissingDiscriminatorPropertyAsync(bool missingFromAllMembers)
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var tempFilePath = Path.GetTempFileName();
+        _tempFiles.Add(tempFilePath);
+        await File.WriteAllTextAsync(tempFilePath, PetsUnion.OpenApiYaml, cancellationToken: TestContext.Current.CancellationToken);
+        var builder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, new GenerationConfiguration { ClientClassName = "Pets", Serializers = ["none"], Deserializers = ["none"] }, _httpClient);
+        await using var fs = new FileStream(tempFilePath, FileMode.Open);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        builder.SetApiRootUrl();
+        var codeModel = builder.CreateSourceModel(node);
+        var rootNS = codeModel.FindNamespaceByName("ApiSdk");
+        Assert.NotNull(rootNS);
+        var petClass = rootNS.FindChildByName<CodeClass>("Pet");
+        Assert.NotNull(petClass);
+        if (missingFromAllMembers)
+        {
+            var discriminatorProperty = petClass.Properties.First(static x => x.WireName == "pet_type");
+            petClass.RemoveChildElement(discriminatorProperty);
+        }
+        else
+        {
+            var catClass = rootNS.FindChildByName<CodeClass>("Cat");
+            Assert.NotNull(catClass);
+            catClass.StartBlock.Inherits = null;
+            catClass.Properties.First(static x => x.Name == "age").DefaultValue = "18";
+        }
+        await ILanguageRefiner.RefineAsync(generationConfiguration, rootNS, cancellationToken: TestContext.Current.CancellationToken);
+        var modelsNS = rootNS.FindNamespaceByName("ApiSdk.pets");
+        Assert.NotNull(modelsNS);
+        var modelCodeFile = modelsNS.FindChildByName<CodeFile>("petsRequestBuilder", false);
+        Assert.NotNull(modelCodeFile);
+        var serializerFunction = modelCodeFile.GetChildElements().FirstOrDefault(static x => x is CodeFunction function && function.OriginalLocalMethod.Kind == CodeMethodKind.Serializer);
+        Assert.NotNull(serializerFunction);
+
+        writer.Write(serializerFunction);
+
+        var result = tw.ToString();
+        Assert.DoesNotContain(".pet_type", result);
+        Assert.Contains("serializeCat(writer,", result);
+        Assert.Contains("serializeDog(writer,", result);
+        if (missingFromAllMembers)
+        {
+            Assert.DoesNotContain("switch", result);
+            Assert.DoesNotContain(".petType", result);
+        }
+        else
+        {
+            Assert.Contains("if (typeof petsPatchRequestBody === \"object\" && \"petType\" in petsPatchRequestBody)", result);
+            Assert.Contains("switch (petsPatchRequestBody.petType)", result);
+            Assert.Matches("case \"Dog\":\\s+serializeDog\\(writer, petsPatchRequestBody as Dog\\);\\s+return;", result);
+            Assert.True(result.LastIndexOf("serializeCat(writer,", StringComparison.Ordinal) > result.LastIndexOf("return;", StringComparison.Ordinal));
+            Assert.True(result.LastIndexOf("serializeDog(writer,", StringComparison.Ordinal) > result.LastIndexOf("return;", StringComparison.Ordinal));
+            tw.GetStringBuilder().Clear();
+            var catSerializer = rootNS.FindChildByName<CodeFunction>("serializeCat");
+            Assert.NotNull(catSerializer);
+            writer.Write(catSerializer);
+            Assert.Contains("cat.age ?? 18", tw.ToString());
+        }
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
 
     [Fact]

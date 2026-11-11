@@ -31,6 +31,7 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
     [InlineData(GenerationLanguage.Dart, true)]
+    [InlineData(GenerationLanguage.Ruby, true)]
     [Theory]
     public async Task GeneratesTodoAsync(GenerationLanguage language, bool backingStore)
     {
@@ -60,6 +61,7 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
     [InlineData(GenerationLanguage.Dart, true)]
+    [InlineData(GenerationLanguage.Ruby, true)]
     [Theory]
     public async Task GeneratesModelWithDictionaryAsync(GenerationLanguage language, bool backingStore)
     {
@@ -89,6 +91,7 @@ public sealed class GenerateSample : IDisposable
     [InlineData(GenerationLanguage.PHP, false)]
     [InlineData(GenerationLanguage.TypeScript, true)]
     [InlineData(GenerationLanguage.Dart, true)]
+    [InlineData(GenerationLanguage.Ruby, true)]
     [Theory]
     public async Task GeneratesResponseWithMultipleReturnFormatsAsync(GenerationLanguage language, bool backingStore)
     {

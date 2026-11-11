@@ -142,4 +142,25 @@ public sealed class CodeClassDeclarationWriterTests : IDisposable
         Assert.Contains("include", result);
         Assert.Contains("test", result);
     }
+
+    [Fact]
+    public void WritesDeprecationComment()
+    {
+        parentClass.Documentation.DescriptionTemplate = "some description";
+        parentClass.Deprecation = new("This class is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", new CodeType { Name = "NewClass", IsExternal = true } } });
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        var description = Array.IndexOf(lines, "# some description");
+        Assert.True(description >= 0, tw.ToString());
+        Assert.Equal("# @deprecated This class is obsolete. Use NewClass instead.", lines[description + 1]);
+        Assert.Equal("class ParentClass", lines[description + 2]);
+    }
+    [Fact]
+    public void WritesDeprecationCommentWithoutADescription()
+    {
+        parentClass.Deprecation = new(null, DateTimeOffset.Parse("2026-01-01T00:00:00Z"));
+        codeElementWriter.WriteCodeElement(parentClass.StartBlock, writer);
+        var lines = tw.ToString().Split(Environment.NewLine).Select(static l => l.Trim()).ToArray();
+        Assert.Equal("class ParentClass", lines[Array.IndexOf(lines, "# @deprecated on 2026-01-01") + 1]);
+    }
 }

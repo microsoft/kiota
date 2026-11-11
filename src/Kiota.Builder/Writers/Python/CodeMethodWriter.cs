@@ -126,9 +126,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     private static readonly CodePropertyTypeComparer CodePropertyTypeBackwardComparer = new(true);
     private void WriteFactoryMethodBodyForInheritedModel(CodeClass parentClass, LanguageWriter writer)
     {
+        writer.StartBlock($"if not {DiscriminatorMappingVarName}:");
+        writer.WriteLine($"return {parentClass.Name}()");
+        writer.DecreaseIndent();
         foreach (var mappedType in parentClass.DiscriminatorInformation.DiscriminatorMappings.OrderBy(static x => x.Key))
         {
-            writer.StartBlock($"if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
+            writer.StartBlock($"if {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
             var mappedTypeName = mappedType.Value.AllTypes.First().Name;
             _codeUsingWriter.WriteDeferredImport(parentClass, mappedTypeName, writer);
             writer.WriteLine($"return {mappedTypeName}()");

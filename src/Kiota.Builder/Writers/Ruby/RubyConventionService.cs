@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net;
 
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
@@ -29,6 +31,20 @@ public class RubyConventionService : CommonLanguageConventionService
         ArgumentNullException.ThrowIfNull(writer);
         if (!writer.IsAtBlockStart) writer.WriteLine();
     }
+    // a model with a backing store keeps its values there instead of in instance variables
+    internal static string? GetBackingStoreVariable(CodeProperty property) =>
+        property.Kind is CodePropertyKind.Custom or CodePropertyKind.AdditionalData &&
+        property.Parent is CodeClass parentClass && parentClass.GetBackingStoreProperty() is CodeProperty store ?
+            $"@{store.NamePrefix}{store.Name.ToSnakeCase()}" :
+            null;
+    internal static string ReadProperty(CodeProperty property) =>
+        GetBackingStoreVariable(property) is string store ?
+            $"{store}.get({ToRubyStringLiteral(property.WireName)})" :
+            $"@{property.NamePrefix}{property.Name.ToSnakeCase()}";
+    internal static string AssignProperty(CodeProperty property, string value) =>
+        GetBackingStoreVariable(property) is string store ?
+            $"{store}.set({ToRubyStringLiteral(property.WireName)}, {value})" :
+            $"@{property.NamePrefix}{property.Name.ToSnakeCase()} = {value}";
     // a barrel is written, and required, only when it has something to autoload
     internal static bool HasAutoloadedMembers(CodeNamespace codeNamespace) =>
         codeNamespace.Classes.Any(IsAutoloaded) || codeNamespace.Enums.Any(IsAutoloaded);
@@ -169,6 +185,40 @@ public class RubyConventionService : CommonLanguageConventionService
         return $"{GetNormalizedNamespacePrefixForType(type)}{type.Name.ToFirstCharacterUpperCase()}";
     }
 #pragma warning restore CA1822 // Method should be static
+    /// <summary>
+    /// The one text of a deprecation, read by the YARD tag and the runtime warning alike: null when
+    /// the element is not deprecated, empty when it is deprecated without a word of explanation.
+    /// </summary>
+    internal string? GetDeprecationMessage(IDeprecableElement element)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        if (element.Deprecation is null || !element.Deprecation.IsDeprecated) return null;
+        var versionComment = string.IsNullOrEmpty(element.Deprecation.Version) ? string.Empty : $" as of {NormalizeDeprecationText(element.Deprecation.Version)}";
+        var dateComment = element.Deprecation.Date is null ? string.Empty : $" on {element.Deprecation.Date.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        var removalComment = element.Deprecation.RemovalDate is null ? string.Empty : $" and will be removed {element.Deprecation.RemovalDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+        var description = element.Deprecation.GetDescription(type => GetDeprecationTypeReference(type, (element as CodeElement)!), normalizationFunc: NormalizeDeprecationText);
+        return $"{description}{versionComment}{dateComment}{removalComment}".Trim();
+    }
+    // the description reader XML-escapes deprecation text, Ruby comments and strings want it as written
+    private static string NormalizeDeprecationText(string text) => RemoveInvalidDescriptionCharacters(WebUtility.HtmlDecode(text));
+    // a replacement method or property is named the way Ruby code calls it
+    private string GetDeprecationTypeReference(CodeTypeBase type, CodeElement targetElement) =>
+        type is CodeType { TypeDefinition: CodeMethod or CodeProperty } codeType ? codeType.TypeDefinition!.Name.ToSnakeCase() : GetTypeString(type, targetElement);
+    internal void WriteDeprecationComment(IDeprecableElement element, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (GetDeprecationMessage(element) is not string message) return;
+        writer.WriteLine($"{DocCommentPrefix}@deprecated {message}".TrimEnd());
+    }
+    // silent unless the program opts in with Warning[:deprecated] = true or -W:deprecated, like Ruby's own deprecations
+    internal void WriteDeprecationWarning(IDeprecableElement element, string rubyName, LanguageWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (GetDeprecationMessage(element) is not string message) return;
+        if (string.IsNullOrEmpty(message)) message = $"{rubyName} is deprecated";
+        // qualified, so a generated `warn` accessor (a sibling /warn path) cannot shadow it
+        writer.WriteLine($"::Kernel.warn({ToRubyStringLiteral(message)}, category: :deprecated, uplevel: 1)");
+    }
     internal static string RemoveInvalidDescriptionCharacters(string originalDescription) =>
         string.IsNullOrEmpty(originalDescription) ? string.Empty :
         originalDescription.Replace("\\", "#", StringComparison.OrdinalIgnoreCase)
