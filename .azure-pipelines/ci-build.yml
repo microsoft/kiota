@@ -1401,6 +1401,7 @@ extends:
 
                   # Use explicit variable references and ensure proper context path
                   docker buildx build \
+                    --pull \
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
                     --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
                     --push \
@@ -1419,6 +1420,7 @@ extends:
 
                   # Use explicit variable references and ensure proper context path
                   docker buildx build \
+                    --pull \
                     --platform linux/amd64,linux/arm64/v8,linux/arm/v7 \
                     --secret id=nuget_config,src="$(Agent.TempDirectory)/kiota-docker.nuget.config" \
                     --push \
