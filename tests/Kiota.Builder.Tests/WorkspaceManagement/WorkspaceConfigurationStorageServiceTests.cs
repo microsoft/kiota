@@ -517,7 +517,12 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     public void Dispose()
     {
         foreach (var link in directoryLinks.Where(static link => new DirectoryInfo(link).LinkTarget is not null))
-            Directory.Delete(link);
+        {
+            if (OperatingSystem.IsWindows())
+                Directory.Delete(link);
+            else
+                File.Delete(link);
+        }
         if (Directory.Exists(tempPath))
             Directory.Delete(tempPath, true);
         GC.SuppressFinalize(this);

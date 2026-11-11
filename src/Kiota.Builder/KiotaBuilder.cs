@@ -78,13 +78,23 @@ public partial class KiotaBuilder
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
     private readonly string workspaceDirectory;
+    /// <summary>
+    /// Validates that the output path is a subdirectory of the workspace directory.
+    /// </summary>
+    /// <param name="outputPath">The output path, absolute or relative to the current directory.</param>
+    /// <param name="workspaceDirectory">The workspace directory.</param>
+    /// <exception cref="InvalidOperationException">The output path is not a subdirectory of the workspace.</exception>
+    public static void ValidateWorkspaceOutputPath(string outputPath, string workspaceDirectory)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(outputPath);
+        ArgumentException.ThrowIfNullOrEmpty(workspaceDirectory);
+        var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(outputPath));
+        BaseApiConsumerConfiguration.ValidateOutputPath(relativeOutput, workspaceDirectory);
+    }
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
         if (useKiotaConfig && !config.NoWorkspace)
-        {
-            var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(config.OutputPath));
-            BaseApiConsumerConfiguration.ValidateOutputPath(relativeOutput, workspaceDirectory);
-        }
+            ValidateWorkspaceOutputPath(config.OutputPath, workspaceDirectory);
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
             LogCleaningOutputDirectory(config.OutputPath);
