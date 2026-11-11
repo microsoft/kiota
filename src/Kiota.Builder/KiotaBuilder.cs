@@ -80,13 +80,14 @@ public partial class KiotaBuilder
     private readonly string workspaceDirectory;
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
+        // validate before any filesystem change, even when the output is missing or cleanup is disabled
+        if (useKiotaConfig && !config.NoWorkspace)
+        {
+            var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(config.OutputPath));
+            BaseApiConsumerConfiguration.ValidateOutputPath(relativeOutput, workspaceDirectory);
+        }
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
-            if (useKiotaConfig && !config.NoWorkspace)
-            {
-                var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(config.OutputPath));
-                BaseApiConsumerConfiguration.ValidateOutputPath(relativeOutput, workspaceDirectory);
-            }
             LogCleaningOutputDirectory(config.OutputPath);
             // not using Directory.Delete on the main directory because it's locked when mapped in a container
             foreach (var subDir in Directory.EnumerateDirectories(config.OutputPath))

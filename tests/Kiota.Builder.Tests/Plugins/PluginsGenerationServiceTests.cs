@@ -167,7 +167,8 @@ paths:
             OpenAPIFilePath = simpleDescriptionPath,
             PluginTypes = [PluginType.APIPlugin, PluginType.APIManifest, PluginType.OpenAI],
             ClientClassName = "testPlugin",
-            IncludePatterns = ["test/id"]// this would filter out all paths
+            IncludePatterns = ["test/id"],// this would filter out all paths
+            NoWorkspace = true,
         };
         var kiotaBuilder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, generationConfiguration, _httpClient, true);
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await kiotaBuilder.GeneratePluginAsync(CancellationToken.None));

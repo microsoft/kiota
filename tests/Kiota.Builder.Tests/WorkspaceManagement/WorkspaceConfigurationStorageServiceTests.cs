@@ -351,6 +351,65 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         }
     }
     [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    public async Task GenerateClientRejectsMissingOutputBeneathSwappedLinkAsync(bool useJunction, bool cleanOutput)
+    {
+        var inside = Path.Join(workspace, "real");
+        Directory.CreateDirectory(inside);
+        Directory.CreateDirectory(outside);
+        var linkPath = Path.Join(workspace, "link");
+        var outputPath = Path.Join(linkPath, "new-client");
+        var descriptionPath = Path.Join(tempPath, "description.yaml");
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await File.WriteAllTextAsync(descriptionPath, """
+        openapi: 3.0.4
+        info:
+          title: Test API
+          version: 1.0.0
+        servers:
+          - url: https://example.org
+        paths:
+          /items:
+            get:
+              operationId: getItems
+              responses:
+                '200':
+                  description: Success
+        """, cancellationToken);
+        CreateDirectoryLink(linkPath, inside, useJunction);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new-client", workspace);
+        Directory.Delete(linkPath);
+        CreateDirectoryLink(linkPath, outside, useJunction);
+        using var httpClient = new HttpClient();
+        var originalDirectory = Directory.GetCurrentDirectory();
+        try
+        {
+            Directory.SetCurrentDirectory(workspace);
+            var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration
+            {
+                OutputPath = outputPath,
+                OpenAPIFilePath = descriptionPath,
+                ClientClassName = "TestClient",
+                CleanOutput = cleanOutput,
+                NoWorkspace = false,
+            }, httpClient, useKiotaConfig: true);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateClientAsync(cancellationToken));
+
+            var validationException = Assert.IsType<InvalidOperationException>(exception.InnerException);
+            Assert.Contains("subdirectory of the workspace", validationException.Message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(Path.Join(outside, "new-client")));
+            Assert.Empty(Directory.EnumerateFileSystemEntries(outside));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+        }
+    }
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task GeneratesOutsideWorkspaceWithCleanOutputWhenWorkspaceDisabledAsync(bool generatePlugin)
