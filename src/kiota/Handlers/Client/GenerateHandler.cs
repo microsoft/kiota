@@ -57,9 +57,7 @@ internal class GenerateHandler : BaseKiotaCommandHandler
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var className = className0.OrEmpty();
-        if (!IsWorkspaceOutputPathValid(Configuration.Generation))
-            return 1;
-        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             await CheckForNewVersionAsync(logger, cancellationToken).ConfigureAwait(false);
