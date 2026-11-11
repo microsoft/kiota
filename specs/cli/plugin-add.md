@@ -39,7 +39,7 @@ Requiring fields default as the following:
 | description_for_model | Defaults to `x-ai-description` extension from the OpenAPI document.  If the `x-ai-description` is not available, it defaults to `description_for_human` or `Description for {name_for_human}` if description is not available. |
 | namespace | Defaults to `{plugin-name}` sanitized to match [a-zA-Z0-9] format. |
 | logo_url | Defaults to `x-logo` extension from the OpenAPI document. If the `x-logo` is not available, the logo_url will not be added in the plugin. |
-| legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not availabe, the legal_info_url will not be added in the plugin. |
+| legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not available, the legal_info_url will not be added in the plugin. |
 | functions[n].name | Defaults to `paths[n].operationId` from the OpenAPI document. If the `operationId` is not available or does not match the format ^[a-zA-Z0-9_]*$, Kiota will generate the name based on path and operation. |
 | functions[n].description | Defaults to `paths[n].description` from the OpenAPI document. If there is no description, defaults to `paths[n].summary`. |
 | functions[n].parameters | Defaults to `paths[n].parameters` from the OpenAPI document. |
@@ -61,7 +61,7 @@ For `openai`, the generated plugin will be named `openai-plugins.json` and the m
 | description_for_model | Defaults to `x-ai-description` extension from the OpenAPI document.  If the `x-ai-description` is not available, it defaults to `description_for_human` or `Description for {name_for_human}`. |
 | contact_email | Defaults to the contact email from the OpenAPI document. If the contact email is not available, it defaults to `publisher-email@example.com`. |
 | logo_url | Defaults to `x-logo` extension from the OpenAPI document. If the `x-logo` is not available, the logo_url will not be added in the plugin. |
-| legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not availabe, the legal_info_url will not be added in the plugin. |
+| legal_info_url | Defaults to `x-legal-info-url` extension from the OpenAPI document. If the `x-legal-info-url` is not available, the legal_info_url will not be added in the plugin. |
 |  |  |
 
 See [openai-plugins.json example](../examples/openai-plugins.json) for reference.
