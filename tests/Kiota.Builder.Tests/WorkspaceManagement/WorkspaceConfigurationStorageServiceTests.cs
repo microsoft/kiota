@@ -295,7 +295,7 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     [InlineData(true, "indirect", false)]
     [InlineData(false, "workspace", true)]
     [InlineData(true, "workspace", true)]
-    public async Task GenerateClientRejectsSwappedOutputLinkBeforeDeletingFilesAsync(bool useJunction, string targetKind, bool changeWorkingDirectory)
+    public async Task GenerateClientPreservesFilesWhenOutputLinkLeavesWorkspaceAsync(bool useJunction, string targetKind, bool changeWorkingDirectory)
     {
         Directory.CreateDirectory(workspace);
         var originalDirectory = Directory.GetCurrentDirectory();
@@ -355,7 +355,7 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     [InlineData(true, true)]
     [InlineData(false, false)]
     [InlineData(true, false)]
-    public async Task GenerateClientRejectsMissingOutputBeneathSwappedLinkAsync(bool useJunction, bool cleanOutput)
+    public async Task GenerateClientRejectsNewOutputUnderLinkLeavingWorkspaceAsync(bool useJunction, bool cleanOutput)
     {
         var inside = Path.Join(workspace, "real");
         Directory.CreateDirectory(inside);

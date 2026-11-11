@@ -87,8 +87,8 @@ public abstract class BaseApiConsumerConfiguration
         {
             var fullPath = Path.GetFullPath(path);
             var current = Path.GetPathRoot(fullPath) ?? throw new IOException("The output path has no filesystem root.");
-            var segments = new Stack<string>(fullPath[current.Length..]
-                .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries).Reverse());
+            var segments = new Stack<string>(Enumerable.Reverse(fullPath[current.Length..]
+                .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries)));
             var linkCount = 0;
             while (segments.TryPop(out var segment))
             {
@@ -116,7 +116,7 @@ public abstract class BaseApiConsumerConfiguration
                     current = Path.GetPathRoot(target) ?? throw new IOException("The output path link has no filesystem root.");
                     target = target[current.Length..];
                 }
-                foreach (var targetSegment in target.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries).Reverse())
+                foreach (var targetSegment in Enumerable.Reverse(target.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries)))
                     segments.Push(targetSegment);
             }
             return Path.TrimEndingDirectorySeparator(current);
