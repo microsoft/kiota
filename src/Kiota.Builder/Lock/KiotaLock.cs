@@ -95,6 +95,14 @@ public class KiotaLock
     /// </summary>
     public HashSet<string> ExcludePatterns { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
+    /// Exact, case-sensitive component#property selectors to include.
+    /// </summary>
+    public HashSet<string> IncludeProperties { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>
+    /// Exact, case-sensitive component#property selectors to exclude.
+    /// </summary>
+    public HashSet<string> ExcludeProperties { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>
     /// The OpenAPI validation rules to disable during the generation.
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -124,6 +132,8 @@ public class KiotaLock
         config.StructuredMimeTypes = new(StructuredMimeTypes);
         config.IncludePatterns = IncludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.ExcludePatterns = ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        config.IncludeProperties = IncludeProperties.ToHashSet(StringComparer.Ordinal);
+        config.ExcludeProperties = ExcludeProperties.ToHashSet(StringComparer.Ordinal);
         config.OpenAPIFilePath = DescriptionLocation;
         config.DisabledValidationRules = DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         config.AllowedExternalOrigins = AllowedExternalOrigins.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -154,6 +164,8 @@ public class KiotaLock
         StructuredMimeTypes = config.StructuredMimeTypes.ToList();
         IncludePatterns = config.IncludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         ExcludePatterns = config.ExcludePatterns.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        IncludeProperties = config.IncludeProperties.ToHashSet(StringComparer.Ordinal);
+        ExcludeProperties = config.ExcludeProperties.ToHashSet(StringComparer.Ordinal);
         DescriptionLocation = config.OpenAPIFilePath;
         DisabledValidationRules = config.DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         AllowedExternalOrigins = config.AllowedExternalOrigins.ToHashSet(StringComparer.OrdinalIgnoreCase);

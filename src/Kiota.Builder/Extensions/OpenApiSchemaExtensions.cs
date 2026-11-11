@@ -40,7 +40,7 @@ public static class OpenApiSchemaExtensions
     internal static IEnumerable<IOpenApiSchema> FlattenSchemaIfRequired(this IList<IOpenApiSchema>? schemas, Func<IOpenApiSchema, IList<IOpenApiSchema>?> subsequentGetter)
     {
         if (schemas is null) return [];
-        return schemas.Count == 1 && !schemas[0].HasAnyProperty() && string.IsNullOrEmpty(schemas[0].GetReferenceId()) ?
+        return schemas.Count == 1 && !schemas[0].HasPropertyInformation() && string.IsNullOrEmpty(schemas[0].GetReferenceId()) ?
                     schemas.FlattenEmptyEntries(subsequentGetter, 1) :
                     schemas;
     }
@@ -79,6 +79,15 @@ public static class OpenApiSchemaExtensions
     public static bool HasAnyProperty(this IOpenApiSchema? schema)
     {
         return schema?.Properties is { Count: > 0 };
+    }
+    internal static bool HasPropertyInformation(this IOpenApiSchema? schema)
+    {
+        if (schema.HasAnyProperty()) return true;
+        // A trimmed object must not be reclassified as an unconstrained empty schema.
+        var source = schema is OpenApiSchemaReference reference ? reference.RecursiveTarget : schema;
+        return source?.Extensions is { } extensions &&
+            extensions.TryGetValue(OpenApiKiotaTrimmedPropertiesExtension.Name, out var extension) &&
+            extension is OpenApiKiotaTrimmedPropertiesExtension;
     }
     public static bool IsInclusiveUnion(this IOpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
@@ -317,7 +326,7 @@ public static class OpenApiSchemaExtensions
     public static bool IsSemanticallyMeaningful(this IOpenApiSchema schema, bool ignoreNullableObjects = false, bool ignoreEnums = false, bool ignoreArrays = false, bool ignoreType = false)
     {
         if (schema is null) return false;
-        return schema.HasAnyProperty() ||
+        return schema.HasPropertyInformation() ||
                 (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
                 (!ignoreArrays && schema.Items != null) ||
                 (!ignoreType && schema.Type is not null &&

@@ -29,6 +29,22 @@
             "baseUrl": {
               "type": "string"
             },
+            "includeProperties": {
+              "description": "Exact, case-sensitive component#property selectors to include; no glob expansion.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[^#]+#[\\s\\S]+$"
+              }
+            },
+            "excludeProperties": {
+              "description": "Exact, case-sensitive component#property selectors to exclude; no glob expansion.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[^#]+#[\\s\\S]+$"
+              }
+            },
             "language": {
               "type": "string"
             },

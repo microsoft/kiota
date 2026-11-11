@@ -76,7 +76,18 @@ public partial class WorkspaceManagementService
             var generationClientConfig = UpdateConsumerConfiguration(generationConfiguration, wsConfig);
             generationClientConfig.NormalizeDescriptionLocation(WorkingDirectory);
             var inputConfigurationHash = await GetConsumerConfigurationHashAsync(generationClientConfig, descriptionHash).ConfigureAwait(false);
-            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations, WorkingDirectory));
+            var dependency = generationConfiguration.ToApiDependency(inputConfigurationHash, templatesWithOperations, WorkingDirectory);
+            if (generationConfiguration.SkipGeneration && !generationConfiguration.IsPluginConfiguration)
+            {
+                // Saving configuration must not mark its output as already generated.
+                var extensions = dependency.Extensions ??= [];
+                extensions.Remove(GenerationConfiguration.KiotaHashManifestExtensionKey);
+                if (manifest.ApiDependencies.TryGetValue(generationConfiguration.ClientClassName, out var previousDependency) &&
+                    previousDependency.Extensions?.TryGetValue(GenerationConfiguration.KiotaHashManifestExtensionKey, out var previousHash) == true &&
+                    previousHash is not null)
+                    extensions.Add(GenerationConfiguration.KiotaHashManifestExtensionKey, previousHash.DeepClone());
+            }
+            manifest.ApiDependencies.AddOrReplace(generationConfiguration.ClientClassName, dependency);
             await workspaceConfigurationStorageService.UpdateWorkspaceConfigurationAsync(wsConfig, manifest, cancellationToken).ConfigureAwait(false);
             if (descriptionStream != Stream.Null)
                 await descriptionStorageService.UpdateDescriptionAsync(generationConfiguration.ClientClassName, descriptionStream, generationConfiguration.OpenAPIFilePath.GetFileExtension(), cancellationToken).ConfigureAwait(false);
@@ -212,8 +223,13 @@ public partial class WorkspaceManagementService
     private async Task<string> GetConsumerConfigurationHashAsync<T>(T apiClientConfiguration, string descriptionHash) where T : BaseApiConsumerConfiguration
     {
         using var stream = new MemoryStream();
-        if (apiClientConfiguration is ApiClientConfiguration)
-            await JsonSerializer.SerializeAsync(stream, apiClientConfiguration, context.ApiClientConfiguration).ConfigureAwait(false);
+        if (apiClientConfiguration is ApiClientConfiguration clientConfiguration)
+        {
+            var orderedConfiguration = (ApiClientConfiguration)clientConfiguration.Clone();
+            orderedConfiguration.IncludeProperties = clientConfiguration.IncludeProperties.Order(StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+            orderedConfiguration.ExcludeProperties = clientConfiguration.ExcludeProperties.Order(StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+            await JsonSerializer.SerializeAsync(stream, orderedConfiguration, context.ApiClientConfiguration).ConfigureAwait(false);
+        }
         else
             await JsonSerializer.SerializeAsync(stream, apiClientConfiguration, context.ApiPluginConfiguration).ConfigureAwait(false);
         await stream.WriteAsync(Encoding.UTF8.GetBytes(descriptionHash)).ConfigureAwait(false);

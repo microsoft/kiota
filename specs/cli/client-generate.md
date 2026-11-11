@@ -8,6 +8,8 @@ It's also possible to specify for which API and client the code should be genera
 
 In general cases, the `kiota client generate` command will generate the code for all the clients in the `workspace.json` file based on the cached OpenAPI description. If the `--refresh` parameter is provided, the command will refresh the cached OpenAPI description(s), update the different `x-ms-kiotaHash` in the API Manifest and then generate the code for the specified clients.
 
+Each client's saved `includeProperties` and `excludeProperties` arrays are preserved, including when refreshing its description. Use [client edit](client-edit.md) to replace or clear property rules; reordering or repeating a selector does not require regeneration, while changing its case or clearing the selection does.
+
 ## Parameters
 
 | Parameters | Required | Example | Description | Telemetry | 

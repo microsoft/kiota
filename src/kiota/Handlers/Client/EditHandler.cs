@@ -82,6 +82,18 @@ internal class EditHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> IncludePropertiesOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> ExcludePropertiesOption
+    {
+        get; init;
+    }
+    public required Option<bool> ClearPropertyFiltersOption
+    {
+        get; init;
+    }
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
@@ -167,6 +179,7 @@ internal class EditHandler : BaseKiotaCommandHandler
                     Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (excludePatterns is { Count: > 0 })
                     Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                ApplyPropertyFilters(Configuration.Generation, parseResult);
                 if (disabledValidationRules is { Count: > 0 })
                     Configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                             .Select(static x => x.TrimQuotes())
@@ -226,6 +239,19 @@ internal class EditHandler : BaseKiotaCommandHandler
                 if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
+    }
+
+    internal void ApplyPropertyFilters(GenerationConfiguration configuration, ParseResult parseResult)
+    {
+        if (parseResult.GetValue(ClearPropertyFiltersOption))
+        {
+            configuration.IncludeProperties.Clear();
+            configuration.ExcludeProperties.Clear();
+        }
+        if (parseResult.GetValue(IncludePropertiesOption) is { Count: > 0 })
+            configuration.IncludeProperties = parseResult.GetIncludedProperties(IncludePropertiesOption);
+        if (parseResult.GetValue(ExcludePropertiesOption) is { Count: > 0 } excludeProperties)
+            configuration.ExcludeProperties = excludeProperties.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.Ordinal);
     }
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, GenerationLanguage? language, bool? backingStore,

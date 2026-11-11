@@ -24,6 +24,23 @@ public class GenerationConfigurationTests
         Assert.NotEqual(generationConfiguration.ClientClassName, clone.ClientClassName);
     }
     [Fact]
+    public void ClonesPropertySelectionsWithoutSharingOrChangingCaseSensitivity()
+    {
+        var configuration = new GenerationConfiguration();
+        configuration.IncludeProperties.UnionWith(["User#name", "User#Name"]);
+        configuration.ExcludeProperties.UnionWith(["User#mail", "user#mail"]);
+
+        var clone = (GenerationConfiguration)configuration.Clone();
+        Assert.True(clone.IncludeProperties.SetEquals(configuration.IncludeProperties));
+        Assert.True(clone.ExcludeProperties.SetEquals(configuration.ExcludeProperties));
+        Assert.True(clone.IncludeProperties.Add("user#name"));
+        Assert.True(clone.ExcludeProperties.Add("User#Mail"));
+        clone.IncludeProperties.Clear();
+        clone.ExcludeProperties.Clear();
+        Assert.Equal(2, configuration.IncludeProperties.Count);
+        Assert.Equal(2, configuration.ExcludeProperties.Count);
+    }
+    [Fact]
     public void ToApiDependency()
     {
         var generationConfiguration = new GenerationConfiguration
