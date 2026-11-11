@@ -246,6 +246,23 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", aliasedWorkspace);
         BaseApiConsumerConfiguration.ValidateOutputPath("new/client", aliasedWorkspace);
     }
+    [Fact]
+    public void ValidateOutputPathAcceptsLinkTargetWithDifferentCasing()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Skip("Path comparisons already ignore casing on Windows.");
+        var inside = Path.Join(workspace, "real");
+        Directory.CreateDirectory(inside);
+        Directory.CreateDirectory(outside);
+        if (!Directory.Exists(inside.ToUpperInvariant()))
+            Assert.Skip("This test requires a case-insensitive file system.");
+        var workspaceDifferentCasing = Path.Join(tempPath, "WorkSpace");
+        CreateDirectoryLink(Path.Join(workspace, "link"), Path.Join(workspaceDifferentCasing, "REAL"), useJunction: false);
+        CreateDirectoryLink(Path.Join(workspace, "other"), Path.Join(tempPath, "OUTSIDE"), useJunction: false);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", workspace);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("other", workspace));
+    }
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

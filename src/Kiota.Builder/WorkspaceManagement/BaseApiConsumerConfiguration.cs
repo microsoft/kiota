@@ -104,7 +104,7 @@ public abstract class BaseApiConsumerConfiguration
                 var target = info.LinkTarget;
                 if (target is null)
                 {
-                    current = next;
+                    current = OperatingSystem.IsWindows() || !info.Exists ? next : Path.Join(current, GetOnDiskName(current, segment));
                     continue;
                 }
                 if (++linkCount > 40)
@@ -124,6 +124,30 @@ public abstract class BaseApiConsumerConfiguration
         catch (IOException ex)
         {
             throw new InvalidOperationException("The output path could not be resolved and cannot be validated.", ex);
+        }
+    }
+    private static string GetOnDiskName(string directory, string name)
+    {
+        // the entry exists under the requested name, a single entry differing only by casing means a case-insensitive file system
+        try
+        {
+            string? match = null;
+            foreach (var entryName in Directory.EnumerateFileSystemEntries(directory).Select(Path.GetFileName))
+            {
+                if (string.Equals(entryName, name, StringComparison.Ordinal))
+                    return name;
+                if (string.Equals(entryName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (match is not null)
+                        return name;
+                    match = entryName;
+                }
+            }
+            return match ?? name;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return name;
         }
     }
     private static bool IsRootedPath(string path)
