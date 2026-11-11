@@ -47,8 +47,9 @@ public abstract class BaseApiConsumerConfiguration
     public void NormalizeOutputPath(string targetDirectory)
     {
         if (Path.IsPathRooted(OutputPath))
-            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath).NormalizePathSeparators();
-        ValidateOutputPath(OutputPath, targetDirectory);
+            OutputPath = "./" + ValidateAbsoluteOutputPath(Path.GetFullPath(OutputPath), targetDirectory).NormalizePathSeparators();
+        else
+            ValidateOutputPath(OutputPath, targetDirectory);
     }
     internal static void ValidateOutputPath(string? outputPath, string targetDirectory)
     {
@@ -64,6 +65,24 @@ public abstract class BaseApiConsumerConfiguration
         if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison))
             throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
         ValidateNoReparsePointEscape(targetFullPath, outputFullPath, comparison);
+    }
+    /// <returns>The output path relative to the target directory.</returns>
+    internal static string ValidateAbsoluteOutputPath(string outputFullPath, string targetDirectory)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(outputFullPath);
+        ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
+        // Path.GetRelativePath ignores casing on macOS, even on case-sensitive volumes
+        var targetFullPath = Path.GetFullPath(targetDirectory);
+        var targetFullPathWithSeparator = Path.EndsInDirectorySeparator(targetFullPath) ? targetFullPath : targetFullPath + Path.DirectorySeparatorChar;
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison) &&
+            !(comparison == StringComparison.Ordinal &&
+              outputFullPath.StartsWith(targetFullPathWithSeparator, StringComparison.OrdinalIgnoreCase) &&
+              ResolveFinalPath(outputFullPath[..targetFullPathWithSeparator.Length], true).Equals(ResolveFinalPath(targetFullPath, true), StringComparison.Ordinal)))
+            throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+        var relativeOutputPath = outputFullPath[targetFullPathWithSeparator.Length..];
+        ValidateOutputPath(relativeOutputPath, targetFullPath);
+        return relativeOutputPath;
     }
     private enum ResolvedOutputPathState
     {

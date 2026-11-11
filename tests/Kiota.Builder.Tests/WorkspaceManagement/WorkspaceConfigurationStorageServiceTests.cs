@@ -273,6 +273,19 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
             Assert.Skip("This test requires a case-sensitive file system.");
         KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(workspace, "client"), workspace);
         Assert.Throws<InvalidOperationException>(() => KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(sibling, "client"), workspace));
+        Assert.Throws<InvalidOperationException>(() => new ApiClientConfiguration { OutputPath = Path.Join(sibling, "client") }.NormalizeOutputPath(workspace));
+    }
+    [Fact]
+    public void ValidateWorkspaceOutputPathAcceptsWorkspaceWithDifferentCasing()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Skip("Path comparisons already ignore casing on Windows.");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(outside);
+        if (!Directory.Exists(workspace.ToUpperInvariant()))
+            Assert.Skip("This test requires a case-insensitive file system.");
+        KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(tempPath, "WorkSpace", "client"), workspace);
+        Assert.Throws<InvalidOperationException>(() => KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(tempPath, "OUTSIDE", "client"), workspace));
     }
     [Theory]
     [InlineData(false)]

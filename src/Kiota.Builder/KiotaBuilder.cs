@@ -88,14 +88,7 @@ public partial class KiotaBuilder
     {
         ArgumentException.ThrowIfNullOrEmpty(outputPath);
         ArgumentException.ThrowIfNullOrEmpty(workspaceDirectory);
-        // Path.GetRelativePath ignores casing on macOS, even on case-sensitive volumes
-        var workspaceFullPath = Path.GetFullPath(workspaceDirectory);
-        var workspaceFullPathWithSeparator = Path.EndsInDirectorySeparator(workspaceFullPath) ? workspaceFullPath : workspaceFullPath + Path.DirectorySeparatorChar;
-        var outputFullPath = Path.GetFullPath(outputPath);
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        if (!outputFullPath.StartsWith(workspaceFullPathWithSeparator, comparison))
-            throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
-        BaseApiConsumerConfiguration.ValidateOutputPath(outputFullPath[workspaceFullPathWithSeparator.Length..], workspaceFullPath);
+        BaseApiConsumerConfiguration.ValidateAbsoluteOutputPath(Path.GetFullPath(outputPath), workspaceDirectory);
     }
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {

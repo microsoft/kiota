@@ -146,7 +146,7 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
             KiotaBuilder.ValidateWorkspaceOutputPath(GetAbsolutePath(generationConfiguration.OutputPath), Directory.GetCurrentDirectory());
             return true;
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
             DisplayError(ex.Message);
             return false;
