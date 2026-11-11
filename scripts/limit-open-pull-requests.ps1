@@ -56,16 +56,25 @@ if ($pullRequests.Count -le $Limit) {
     return
 }
 
+$keptPullRequestsList = if ($Limit -gt 0) {
+    "The following pull requests remain open:`n`n" + (($pullRequests | Select-Object -First $Limit | ForEach-Object { "- $($_.html_url)" }) -join "`n")
+}
+else {
+    'None of your pull requests remain open.'
+}
+
 $closingComment = @"
 Hi @$Username, thank you for your contribution!
 
 This pull request is being closed automatically because you currently have more than $Limit open pull requests across the Kiota repositories. Reviewing takes time, and having this many pull requests open at once overwhelms the reviewers. Please avoid having more than $Limit open pull requests at any given time.
 
+$keptPullRequestsList
+
 To move forward, you can either:
 
 - Wait for your existing pull requests to get merged, and make sure to respond timely to any feedback to help move things along.
 - Close older pull requests that are no longer relevant, and then re-open this one.
-"@
+"@ -replace "`r`n", "`n"
 
 $excessPullRequests = @($pullRequests | Select-Object -Skip $Limit)
 Write-Host "Keeping the $Limit oldest pull request(s); selected $($excessPullRequests.Count) newer pull request(s) for closure."
