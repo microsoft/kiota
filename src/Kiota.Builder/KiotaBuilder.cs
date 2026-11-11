@@ -80,7 +80,6 @@ public partial class KiotaBuilder
     private readonly string workspaceDirectory;
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
-        // validate before any filesystem change, even when the output is missing or cleanup is disabled
         if (useKiotaConfig && !config.NoWorkspace)
         {
             var relativeOutput = Path.GetRelativePath(workspaceDirectory, Path.GetFullPath(config.OutputPath));
