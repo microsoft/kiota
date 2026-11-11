@@ -263,6 +263,17 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", workspace);
         Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("other", workspace));
     }
+    [Fact]
+    public void ValidateWorkspaceOutputPathRejectsSiblingWithDifferentCasing()
+    {
+        var sibling = Path.Join(tempPath, "WORKSPACE");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(sibling);
+        if (Directory.GetDirectories(tempPath).Length < 2)
+            Assert.Skip("This test requires a case-sensitive file system.");
+        KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(workspace, "client"), workspace);
+        Assert.Throws<InvalidOperationException>(() => KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(sibling, "client"), workspace));
+    }
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
