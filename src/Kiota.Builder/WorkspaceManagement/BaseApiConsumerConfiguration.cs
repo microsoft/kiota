@@ -65,23 +65,39 @@ public abstract class BaseApiConsumerConfiguration
             throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
         ValidateNoReparsePointEscape(targetFullPath, outputFullPath, comparison);
     }
+    private enum ResolvedOutputPathState
+    {
+        Valid,
+        OutsideWorkspace,
+        WorkspaceRoot,
+    }
     private static void ValidateNoReparsePointEscape(string targetFullPath, string outputFullPath, StringComparison comparison)
     {
-        var realTarget = ResolveFinalPath(targetFullPath);
+        var state = GetResolvedOutputPathState(targetFullPath, outputFullPath, comparison, false);
+        // link targets may use different casing than the on-disk names on case-insensitive file systems, only pay for the lookup when needed
+        if (state == ResolvedOutputPathState.OutsideWorkspace && !OperatingSystem.IsWindows())
+            state = GetResolvedOutputPathState(targetFullPath, outputFullPath, comparison, true);
+        if (state == ResolvedOutputPathState.OutsideWorkspace)
+            throw new InvalidOperationException("The output path must be a subdirectory of the workspace and cannot traverse symbolic links or junctions outside of it.");
+        if (state == ResolvedOutputPathState.WorkspaceRoot)
+            throw new InvalidOperationException("The output path must resolve to a subdirectory of the workspace, not the workspace itself.");
+    }
+    private static ResolvedOutputPathState GetResolvedOutputPathState(string targetFullPath, string outputFullPath, StringComparison comparison, bool useOnDiskCasing)
+    {
+        var realTarget = ResolveFinalPath(targetFullPath, useOnDiskCasing);
         var realTargetWithSeparator = Path.EndsInDirectorySeparator(realTarget) ? realTarget : realTarget + Path.DirectorySeparatorChar;
         var relative = Path.GetRelativePath(targetFullPath, outputFullPath);
         var current = realTarget;
         foreach (var segment in relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                      .Where(static segment => !string.IsNullOrEmpty(segment) && segment != "."))
         {
-            current = ResolveFinalPath(Path.Join(current, segment));
+            current = ResolveFinalPath(Path.Join(current, segment), useOnDiskCasing);
             if (!current.Equals(realTarget, comparison) && !current.StartsWith(realTargetWithSeparator, comparison))
-                throw new InvalidOperationException("The output path must be a subdirectory of the workspace and cannot traverse symbolic links or junctions outside of it.");
+                return ResolvedOutputPathState.OutsideWorkspace;
         }
-        if (current.Equals(realTarget, comparison))
-            throw new InvalidOperationException("The output path must resolve to a subdirectory of the workspace, not the workspace itself.");
+        return current.Equals(realTarget, comparison) ? ResolvedOutputPathState.WorkspaceRoot : ResolvedOutputPathState.Valid;
     }
-    private static string ResolveFinalPath(string path)
+    private static string ResolveFinalPath(string path, bool useOnDiskCasing)
     {
         try
         {
@@ -104,7 +120,7 @@ public abstract class BaseApiConsumerConfiguration
                 var target = info.LinkTarget;
                 if (target is null)
                 {
-                    current = OperatingSystem.IsWindows() || !info.Exists ? next : Path.Join(current, GetOnDiskName(current, segment));
+                    current = useOnDiskCasing && info.Exists ? Path.Join(current, GetOnDiskName(current, segment)) : next;
                     continue;
                 }
                 if (++linkCount > 40)
