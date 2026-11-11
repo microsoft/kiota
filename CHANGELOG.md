@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruby: a request builder for a path with function parameters, such as Microsoft Graph's `search(q='{q}')`, puts their values in the URL. They were accepted and dropped, so the request went out with empty values.
 - Fixed the Ruby links in the readmes to point to the kiota-ruby repository.
 - Ruby is now a preview language.
+- Redirects returned while loading external references are now checked against `--allowed-external-origins`.
 
 ## [1.38.0] - 2026-11-02
 

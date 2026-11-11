@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -21,10 +22,16 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private const string AuthorityWildcardExpression = "[^/\\\\@:?#]*";
     private static readonly char[] AuthorityTerminators = ['/', '?', '#'];
 
+    private const int MaxRedirects = 10;
+    private readonly HttpClient httpClient;
+
+    /// <param name="httpClient">The client used to download external references. It must not follow redirects automatically, the loader follows them and validates every hop.</param>
+    /// <param name="allowedExternalOrigins">The origins external references can be loaded from.</param>
     public AllowedExternalOriginsStreamLoader(HttpClient httpClient, IEnumerable<string> allowedExternalOrigins) : base(httpClient)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(allowedExternalOrigins);
+        this.httpClient = httpClient;
         this.allowedExternalOrigins = allowedExternalOrigins
             .Select(static x => x.TrimQuotes())
             .Where(static x => !string.IsNullOrWhiteSpace(x))
@@ -42,7 +49,55 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         var targetUri = uri.IsAbsoluteUri || baseUrl is null ? uri : new Uri(baseUrl, uri);
         if (!IsAllowed(targetUri, uri))
             throw new InvalidOperationException($"The external reference {targetUri} is not allowed. Add it to --allowed-external-origins to load it.");
+        if (IsHttpUri(targetUri) && (baseUrl is null || !OpenApiConstants.BaseRegistryUri.Equals(baseUrl.AbsoluteUri, StringComparison.Ordinal)))
+            return LoadFromHttpAsync(targetUri, cancellationToken);
         return base.LoadAsync(baseUrl!, uri, cancellationToken);
+    }
+
+    private static bool IsHttpUri(Uri uri) =>
+        uri.IsAbsoluteUri && (Uri.UriSchemeHttps.Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase) || Uri.UriSchemeHttp.Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsRedirect(HttpStatusCode statusCode) => statusCode is
+        HttpStatusCode.MultipleChoices or
+        HttpStatusCode.MovedPermanently or
+        HttpStatusCode.Found or
+        HttpStatusCode.SeeOther or
+        HttpStatusCode.TemporaryRedirect or
+        HttpStatusCode.PermanentRedirect;
+
+    private async Task<Stream> LoadFromHttpAsync(Uri targetUri, CancellationToken cancellationToken)
+    {
+        var requestUri = targetUri;
+        for (var redirectCount = 0; ; redirectCount++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+            var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && !IsAllowed(respondingUri, respondingUri))
+                    throw new InvalidOperationException($"The external reference {targetUri} was served from {respondingUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
+                if (!IsRedirect(response.StatusCode) || response.Headers.Location is not { } location)
+                {
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                }
+                var redirectUri = location.IsAbsoluteUri ? location : new Uri(requestUri, location);
+                // same as the default handler: never follow a redirect to another scheme or from https to http
+                if (!IsHttpUri(redirectUri) || (Uri.UriSchemeHttps.Equals(requestUri.Scheme, StringComparison.OrdinalIgnoreCase) && !Uri.UriSchemeHttps.Equals(redirectUri.Scheme, StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not supported.");
+                if (!IsAllowed(redirectUri, redirectUri))
+                    throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
+                if (redirectCount >= MaxRedirects)
+                    throw new InvalidOperationException($"The external reference {targetUri} exceeded the maximum number of redirects ({MaxRedirects}).");
+                requestUri = redirectUri;
+            }
+            catch
+            {
+                response.Dispose();
+                throw;
+            }
+            response.Dispose();
+        }
     }
 
     private bool IsAllowed(Uri targetUri, Uri originalUri)
