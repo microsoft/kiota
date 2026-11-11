@@ -130,14 +130,28 @@ jobs:
           name: surface-area-explanations-${{ matrix.language }}
           path: surface-area-explanations-${{ matrix.language }}
 
+      # Uses the preinstalled gh CLI instead of the Docker-based comment action, whose image
+      # build ran apt during job setup and failed the job whenever the Ubuntu mirrors were unreachable.
       - name: Comment on the pull request
         if: ${{ hashFiles(format('surface-area-explanations-{0}/explanations.txt', matrix.language)) != '' }}
         continue-on-error: true
-        uses: microsoftgraph/kiota-dom-export-diff-tool/comment@e32a993776c40f03dce8c55ff7a607ed21011945
-        with:
-          comment: surface-area-explanations-${{ matrix.language }}/explanations.txt
-          prNumber: ${{ github.event.pull_request.number }}
+        shell: pwsh
+        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          COMMENT_PATH: surface-area-explanations-${{ matrix.language }}/explanations.txt
+        run: |
+          $marker = "<!--publicapi-->"
+          $commentIds = gh api --paginate "/repos/$($Env:GH_REPO)/issues/$($Env:PR_NUMBER)/comments" `
+            --jq ".[] | select(.user.login == ""github-actions[bot]"" and (.body | startswith(""$marker""))) | .id"
+          foreach ($commentId in $commentIds) {
+            Write-Host "Deleting comment $commentId"
+            gh api --method DELETE "/repos/$($Env:GH_REPO)/issues/comments/$commentId"
+          }
+          $bodyPath = Join-Path $Env:RUNNER_TEMP "surface-area-comment.md"
+          $marker + (Get-Content -Raw $Env:COMMENT_PATH) | Set-Content -Path $bodyPath -NoNewline
+          gh pr comment $Env:PR_NUMBER --body-file $bodyPath
 
   cleanup:
     runs-on: ubuntu-latest
