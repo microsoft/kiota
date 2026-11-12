@@ -12,6 +12,76 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Theory]
+    [InlineData("oneOf", "oneOf", false)]
+    [InlineData("oneOf", "oneOf", true)]
+    [InlineData("oneOf", "anyOf", false)]
+    [InlineData("oneOf", "anyOf", true)]
+    [InlineData("anyOf", "oneOf", false)]
+    [InlineData("anyOf", "oneOf", true)]
+    [InlineData("anyOf", "anyOf", false)]
+    [InlineData("anyOf", "anyOf", true)]
+    public async Task IndependentAllOfUnionsProtectRequiredDeclarationsAsync(string constraintsComposition, string fieldsComposition, bool allowlist)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Independent unions in allOf
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Result:
+                  allOf:
+                    - {{constraintsComposition}}:
+                        - required: [id]
+                        - required: [name]
+                          properties:
+                            id:
+                              type: string
+                            keep:
+                              type: string
+                    - $ref: '#/components/schemas/Fields'
+                Fields:
+                  {{fieldsComposition}}:
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                        optional:
+                          type: string
+                    - type: object
+                      properties:
+                        name:
+                          type: string
+                        optional:
+                          type: string
+            """);
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = allowlist ? ["Fields#optional", "Result#keep"] : ["Result#keep"],
+            ExcludeProperties = allowlist ? [] : ["Fields#id"],
+        };
+        var fields = document.Components!.Schemas!["Fields"];
+        var fieldBranches = fields.OneOf ?? fields.AnyOf!;
+        var constraints = document.Components.Schemas["Result"].AllOf![0];
+        var constraintBranches = constraints.OneOf ?? constraints.AnyOf!;
+        if (allowlist)
+        {
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            Assert.Contains("id", fieldBranches[0].Properties!.Keys);
+            Assert.Contains("name", fieldBranches[1].Properties!.Keys);
+            Assert.DoesNotContain("id", constraintBranches[1].Properties!.Keys);
+            Assert.Contains("keep", constraintBranches[1].Properties.Keys);
+        }
+        else
+        {
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Contains("id", fieldBranches[0].Properties!.Keys);
+            Assert.Contains("id", constraintBranches[1].Properties!.Keys);
+        }
+    }
+
     [Fact(Timeout = 30000)]
     public async Task SharedUnionLayersProcessAncestorRequirementsWithoutPathExpansionAsync()
     {

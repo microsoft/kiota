@@ -39,6 +39,7 @@ Comma lists are expanded before persistence; `*` patterns are stored and evaluat
 - Exclusions remove individual properties. When both filters name an ordinary property, exclusion wins.
 - Required and discriminator properties are always retained, including constraints applied through composition or inheritance. Omitting one from an include filter produces an informational diagnostic; excluding one fails generation even when matched by `*`.
 - Requirements inside a `oneOf`/`anyOf` branch protect that branch and any shared ancestor declarations they reference, not same-named optional fields in sibling branches. Constraints shared by the union or `allOf` still apply to their referenced declarations.
+- Independent unions combined through `allOf` share declaration contexts: requirements in one union can protect fields declared inside another, without mixing alternatives of the same union.
 - Protection is declaration-specific: omitting a name from an allowlist can retain its required inline declaration while trimming an optional same-named sibling declaration. Explicitly excluding that name fails if any targeted declaration is protected.
 - Unknown components/properties, patterns matching nothing, and malformed selectors fail generation rather than being ignored.
 - Named components and their inline composition fragments are supported. Select an inherited property on its declaring base component, not on a derived component. Standalone inline-object members and external component aliases are not selectable.

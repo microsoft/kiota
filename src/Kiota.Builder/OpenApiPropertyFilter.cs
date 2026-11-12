@@ -195,7 +195,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 string.IsNullOrEmpty(schema.Discriminator?.PropertyName)) return;
             if (!states.TryGetValue(schema, out var state))
             {
-                state = new ProtectionState(schema);
+                state = new ProtectionState(schema, owners);
                 states[schema] = state;
             }
             if (state.ProtectedNames.Count == 0 && state.Branches.Length == 0) return;
@@ -224,7 +224,8 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             state.NewAncestors.Clear();
             Protect(state, addedAncestors);
             IEnumerable<IOpenApiSchema> outgoing = addedAncestors;
-            if (!state.Initialized)
+            var initializing = !state.Initialized;
+            if (initializing)
             {
                 state.Initialized = true;
                 Protect(state, GetComposedSchemas(state.Schema));
@@ -234,7 +235,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             // Propagate each new ancestor fact once per edge, not once per reference path.
             var facts = outgoing.ToArray();
             foreach (var branch in state.Branches)
-                Enqueue(branch, facts);
+                Enqueue(branch.Schema, initializing ? facts.Concat(branch.IndependentDeclarations) : facts);
         }
         return protection;
     }
@@ -244,15 +245,33 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
 
     private sealed class ProtectionState
     {
-        internal ProtectionState(IOpenApiSchema schema)
+        internal ProtectionState(IOpenApiSchema schema, Dictionary<IOpenApiSchema, HashSet<string>> owners)
         {
             Schema = schema;
             Fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
             ProtectedNames = Fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
                 .Concat(Fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
                 .ToHashSet(StringComparer.Ordinal);
-            Branches = Fragments.SelectMany(static x => (x.AnyOf ?? []).Concat(x.OneOf ?? []))
-                .Select(GetCanonicalSchema).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray();
+            var unions = Fragments.SelectMany(static x => new[] { x.AnyOf, x.OneOf })
+                .Where(static x => x is { Count: > 0 })
+                .Select(static x => x!.Select(GetCanonicalSchema).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray())
+                .ToArray();
+            var declarations = unions.Length > 1 ? unions.Select(union => union
+                .SelectMany(static x => GetComposedSchemas(x))
+                .Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 })
+                .Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray()).ToArray() : [];
+            var branches = new Dictionary<IOpenApiSchema, HashSet<IOpenApiSchema>>(ReferenceEqualityComparer.Instance);
+            for (var i = 0; i < unions.Length; i++)
+                foreach (var branch in unions[i])
+                {
+                    if (!branches.TryGetValue(branch, out var context))
+                        branches[branch] = context = new(ReferenceEqualityComparer.Instance);
+                    // Independent unions are conjunctive; alternatives within one union are not.
+                    for (var j = 0; j < unions.Length; j++)
+                        if (i != j)
+                            context.UnionWith(declarations[j]);
+                }
+            Branches = branches.Select(static x => new ProtectionBranch(x.Key, x.Value.ToArray())).ToArray();
         }
         internal IOpenApiSchema Schema
         {
@@ -266,7 +285,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         {
             get;
         }
-        internal IOpenApiSchema[] Branches
+        internal ProtectionBranch[] Branches
         {
             get;
         }
@@ -277,6 +296,8 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             get; set;
         }
     }
+
+    private sealed record ProtectionBranch(IOpenApiSchema Schema, IOpenApiSchema[] IndependentDeclarations);
 
     private static IEnumerable<OpenApiSchema> GetOwnedFragments(IOpenApiSchema schema)
     {
