@@ -518,7 +518,7 @@
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/sinon": "^22.0.2",
-    "@types/vscode": "^1.144.0",
+    "@types/vscode": "^1.145.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
     "chai": "^6.3.0",
