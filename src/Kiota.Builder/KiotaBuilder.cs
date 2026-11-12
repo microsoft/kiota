@@ -1715,6 +1715,11 @@ public partial class KiotaBuilder
             (property.Items?.Type is JsonSchemaType.String or (JsonSchemaType.String | JsonSchemaType.Null)) &&
             string.Equals(property.Items?.Format, "binary", StringComparison.OrdinalIgnoreCase);
 
+        // Binary property defaults cannot be emitted as byte-array initializers, including on read-only properties.
+        if (properties.Any(property => property.Default is not null &&
+            GetPrimitiveType(property) is { Name: "binary" or "base64" or "base64url" }))
+            return false;
+
         return properties.Any(property => !property.ReadOnly && IsBinaryFileCollection(property)) &&
             properties.All(property => property.ReadOnly || IsBinaryFile(property) || IsBinaryFileCollection(property));
     }

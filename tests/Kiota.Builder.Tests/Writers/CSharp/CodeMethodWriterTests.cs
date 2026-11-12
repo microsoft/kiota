@@ -616,6 +616,40 @@ public sealed class CodeMethodWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
     [Fact]
+    public void EscapesWritableScalarAndCollectionMultipartLiterals()
+    {
+        setup();
+        method.Kind = CodeMethodKind.RequestGenerator;
+        method.HttpMethod = HttpMethod.Post;
+        method.RequestBodyContentType = "multipart/form-data";
+        AddRequestProperties();
+        AddRequestBodyParameters(true);
+        var bodyType = Assert.IsType<CodeType>(method.Parameters.First(static x => x.IsOfKind(CodeParameterKind.RequestBody)).Type);
+        var bodyClass = Assert.IsType<CodeClass>(bodyType.TypeDefinition);
+        bodyClass.AddProperty(new CodeProperty
+        {
+            Name = "files",
+            SerializationName = "files\"'\\\n\r\t${name}",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary", CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Array },
+        }, new CodeProperty
+        {
+            Name = "resume",
+            SerializationName = "resume\"'\\\n\r\t${name}",
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "binary" },
+        });
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("AddOrReplacePart<byte[]>(\"files\\\"'\\\\\\n\\r\\t${name}\"", result);
+        Assert.Contains("$\"files\\\"'\\\\\\n\\r\\t${{name}}-{multipartFilesIndex}.bin\"", result);
+        Assert.Contains("AddOrReplacePart<byte[]>(\"resume\\\"'\\\\\\n\\r\\t${name}\"", result);
+        Assert.Contains("\"resume\\\"'\\\\\\n\\r\\t${name}.bin\"", result);
+        Assert.DoesNotContain("files\"'\\\n\r\t${name}", result);
+        Assert.DoesNotContain("resume\"'\\\n\r\t${name}", result);
+    }
+    [Fact]
     public void DoesNotConvertInheritedMultipartModelsAsFlatBodies()
     {
         setup();

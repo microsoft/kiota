@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Writers;
@@ -109,6 +110,115 @@ public sealed partial class KiotaBuilderTests
         }
         else
             Assert.Equal("MultipartBody", body.Type.Name);
+    }
+
+    [Theory]
+    [InlineData("\"default\":\"seed\",", "", false, "binary")]
+    [InlineData("\"default\":\"seed\",\"readOnly\":true,", "", false, "binary")]
+    [InlineData("\"default\":\"seed\",\"readOnly\":true,", "", true, "binary")]
+    [InlineData("\"default\":\"c2VlZA==\",\"readOnly\":true,", "", false, "byte")]
+    [InlineData("\"default\":\"c2VlZA\",\"readOnly\":true,", "", false, "base64url")]
+    [InlineData("", "\"default\":[\"seed\"],", false, "binary")]
+    public async Task KeepsMultipartBodyFallbackForBinaryPropertyDefaultsAsync(string scalarDefault, string collectionDefault, bool omitScalarType, string scalarFormat)
+    {
+        var description = """
+        {
+          "openapi": "3.0.4",
+          "info": { "title": "Multipart defaults", "version": "1.0.0" },
+          "paths": {
+            "/forms": {
+              "post": {
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "resume": { SCALAR_DEFAULT SCALAR_TYPE "format": "SCALAR_FORMAT" },
+                          "files": {
+                            COLLECTION_DEFAULT "type": "array",
+                            "items": { "type": "string", "format": "binary" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": { "204": { "description": "No Content" } }
+              }
+            }
+          }
+        }
+        """.Replace("SCALAR_DEFAULT", scalarDefault).Replace("COLLECTION_DEFAULT", collectionDefault)
+            .Replace("SCALAR_TYPE", omitScalarType ? "" : "\"type\": \"string\",").Replace("SCALAR_FORMAT", scalarFormat);
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var config = new GenerationConfiguration { Language = GenerationLanguage.CSharp };
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, config, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await builder.ApplyLanguageRefinementAsync(config, model, TestContext.Current.CancellationToken);
+        var requestBuilder = model.FindChildByName<CodeClass>("FormsRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var generator = Assert.Single(requestBuilder.Methods, x => x.Kind == CodeMethodKind.RequestGenerator);
+        var body = Assert.Single(generator.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
+
+        using var output = new StringWriter();
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, "./", config.ClientNamespaceName);
+        writer.SetTextWriter(output);
+        if (body.Type is CodeType { TypeDefinition: CodeClass bodyClass })
+        {
+            foreach (var property in bodyClass.Properties)
+                writer.Write(property);
+            foreach (var constructor in bodyClass.Methods.Where(x => x.Kind == CodeMethodKind.Constructor))
+                writer.Write(constructor);
+        }
+        writer.Write(generator);
+        var result = output.ToString();
+        Assert.DoesNotContain("Resume = ", result);
+        Assert.Equal("MultipartBody", body.Type.Name);
+        Assert.Contains("SetContentFromParsable(RequestAdapter, \"multipart/form-data\", body)", result);
+        Assert.DoesNotContain("new MultipartBody", result);
+    }
+
+    [Theory]
+    [InlineData("string", "\"caption\"")]
+    [InlineData("integer", "3")]
+    [InlineData("boolean", "true")]
+    public async Task KeepsTypedMultipartBodyWithReadOnlyNonBinaryDefaultsAsync(string propertyType, string defaultValue)
+    {
+        var description = """
+        {"openapi":"3.0.4","info":{"title":"Multipart defaults","version":"1"},
+        "paths":{"/forms":{"post":{"requestBody":{"content":{"multipart/form-data":{
+        "schema":{"type":"object","additionalProperties":false,"properties":{
+        "files":{"type":"array","items":{"type":"string","format":"binary"}},
+        "serverOwned":{"type":"PROPERTY_TYPE","readOnly":true,"default":DEFAULT_VALUE}
+        }}}}},"responses":{"204":{"description":"No Content"}}}}}}
+        """.Replace("PROPERTY_TYPE", propertyType).Replace("DEFAULT_VALUE", defaultValue);
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var config = new GenerationConfiguration { Language = GenerationLanguage.CSharp };
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, config, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await builder.ApplyLanguageRefinementAsync(config, model, TestContext.Current.CancellationToken);
+        var requestBuilder = model.FindChildByName<CodeClass>("FormsRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var generator = Assert.Single(requestBuilder.Methods, x => x.Kind == CodeMethodKind.RequestGenerator);
+        var body = Assert.Single(generator.Parameters, x => x.Kind == CodeParameterKind.RequestBody);
+        var bodyClass = Assert.IsType<CodeClass>(Assert.IsType<CodeType>(body.Type).TypeDefinition);
+
+        using var output = new StringWriter();
+        var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, "./", config.ClientNamespaceName);
+        writer.SetTextWriter(output);
+        foreach (var constructor in bodyClass.Methods.Where(x => x.Kind == CodeMethodKind.Constructor))
+            writer.Write(constructor);
+        writer.Write(generator);
+        var result = output.ToString();
+        Assert.Contains($"ServerOwned = {defaultValue};", result);
+        Assert.Contains("new MultipartBody", result);
+        Assert.DoesNotContain("multipartServerOwned", result);
     }
 
     [Fact]
