@@ -77,18 +77,23 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         var excludes = ResolveSelectors(excludeSelectors);
 
         var protectedProperties = new HashSet<ModelPropertySelector>();
-        var protectionVisitor = new SchemaVisitor(schema =>
+        var protectionVisited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
+        void ProtectSchema(IOpenApiSchema schema)
         {
-            var fragments = GetComposedSchemas(schema).ToArray();
+            if (!protectionVisited.Add(schema)) return;
+            var fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
             var protectedNames = fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
                 .Concat(fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
                 .ToHashSet(StringComparer.Ordinal);
-            foreach (var fragment in fragments.Where(owners.ContainsKey))
+            foreach (var fragment in GetComposedSchemas(schema).Where(owners.ContainsKey))
                 foreach (var name in owners[fragment])
                     foreach (var property in fragment.Properties?.Keys.Where(protectedNames.Contains) ?? [])
                         protectedProperties.Add(new(name, property));
-        });
-        new OpenApiWalker(protectionVisitor).Walk(document);
+            // Union branches inherit shared constraints, but not their siblings' requirements.
+            foreach (var branch in fragments.SelectMany(static x => (x.AnyOf ?? []).Concat(x.OneOf ?? [])))
+                ProtectSchema(branch);
+        }
+        new OpenApiWalker(new SchemaVisitor(ProtectSchema)).Walk(document);
 
         foreach (var selector in excludes.OrderBy(static x => x.ToString(), StringComparer.Ordinal))
             if (protectedProperties.Contains(selector))
@@ -201,7 +206,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
     }
 
-    private static IEnumerable<IOpenApiSchema> GetComposedSchemas(IOpenApiSchema schema)
+    private static IEnumerable<IOpenApiSchema> GetComposedSchemas(IOpenApiSchema schema, bool includeUnions = true)
     {
         var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
         var pending = new Stack<IOpenApiSchema>();
@@ -216,7 +221,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 continue;
             }
             yield return current;
-            foreach (var child in GetCompositionChildren(current))
+            foreach (var child in includeUnions ? GetCompositionChildren(current) : current.AllOf ?? [])
                 pending.Push(child);
         }
     }

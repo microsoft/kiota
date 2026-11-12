@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
@@ -10,6 +11,94 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    private async Task<OpenApiDocument> ReadUnionProtectionDocumentAsync(string composition)
+    {
+        return await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Branch-local required properties
+              version: 1.0.0
+            paths:
+              /result:
+                get:
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Result'
+            components:
+              schemas:
+                Result:
+                  {{composition}}:
+                    - $ref: '#/components/schemas/A'
+                    - $ref: '#/components/schemas/B'
+                A:
+                  allOf:
+                    - type: object
+                      required: [id]
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                B:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+            """);
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public async Task RequiredUnionBranchDoesNotProtectSiblingPropertiesAsync(string composition, bool allowlist)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
+        {
+            IncludeProperties = allowlist ? ["B#name"] : [],
+            ExcludeProperties = allowlist ? [] : ["B#id"],
+        });
+        Assert.DoesNotContain("id", document.Components!.Schemas!["B"].Properties!.Keys);
+        Assert.Contains("name", document.Components.Schemas["B"].Properties!.Keys);
+        Assert.Contains("id", document.Components.Schemas["A"].AllOf![1].Properties!.Keys);
+    }
+
+    [Theory]
+    [InlineData("oneOf")]
+    [InlineData("anyOf")]
+    public async Task UnionBranchAllOfConstraintsRemainProtectedAsync(string composition)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["A#id"] }));
+        Assert.Contains("id", document.Components!.Schemas!["A"].AllOf![1].Properties!.Keys);
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public async Task UnionRootConstraintsStillProtectAllBranchesAsync(string composition, bool discriminator)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        var root = Assert.IsType<OpenApiSchema>(document.Components!.Schemas!["Result"]);
+        if (discriminator)
+            root.Discriminator = new OpenApiDiscriminator { PropertyName = "id" };
+        else
+            root.Required = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal) { "id" };
+        Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["B#id"] }));
+        Assert.Contains("id", document.Components.Schemas["B"].Properties!.Keys);
+    }
+
     [Theory]
     [InlineData("oneOf", false)]
     [InlineData("anyOf", false)]
