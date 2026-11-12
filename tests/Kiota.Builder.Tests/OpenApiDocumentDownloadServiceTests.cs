@@ -234,6 +234,7 @@ components:
     [InlineData("https://contoso.com/other/pet.yaml")]
     [InlineData("http://contoso.com/schemas/pet.yaml")]
     [InlineData("file:///schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/../private/pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderRejectsRedirects(string redirectTarget)
     {
         using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = redirectTarget });
@@ -265,6 +266,22 @@ components:
 
         Assert.NotNull(stream);
         Assert.Equal(["https://contoso.com/schemas/pet.yaml", "https://zap.contoso.com/schemas/pet.yaml", "https://zap.contoso.com/schemas/v2/pet.yaml"], handler.RequestedUris);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderFollowsAllowedRedirectsWithoutBaseUrl()
+    {
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = "https://contoso.com/schemas/v2/pet.yaml" });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri(OpenApiConstants.BaseRegistryUri),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+        Assert.Equal(["https://contoso.com/schemas/pet.yaml", "https://contoso.com/schemas/v2/pet.yaml"], handler.RequestedUris);
     }
 
     [Fact]
@@ -487,13 +504,18 @@ paths: {}
             var requestUri = request.RequestUri!.AbsoluteUri;
             RequestedUris.Add(requestUri);
             if (redirects?.TryGetValue(requestUri, out var location) == true)
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Found)
-                {
-                    Headers = { Location = new Uri(location, UriKind.RelativeOrAbsolute) },
-                });
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""
+                return Task.FromResult(CreateRedirectResponse(location));
+            return Task.FromResult(CreateOkResponse());
+        }
+
+        private static HttpResponseMessage CreateRedirectResponse(string location) => new(HttpStatusCode.Found)
+        {
+            Headers = { Location = new Uri(location, UriKind.RelativeOrAbsolute) },
+        };
+
+        private static HttpResponseMessage CreateOkResponse() => new(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""
 openapi: 3.0.0
 info:
   title: External ref
@@ -504,7 +526,6 @@ components:
     Pet:
       type: object
 """),
-            });
-        }
+        };
     }
 }

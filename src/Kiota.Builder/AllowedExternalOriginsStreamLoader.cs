@@ -49,10 +49,13 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         var targetUri = uri.IsAbsoluteUri || baseUrl is null ? uri : new Uri(baseUrl, uri);
         if (!IsAllowed(targetUri, uri))
             throw new InvalidOperationException($"The external reference {targetUri} is not allowed. Add it to --allowed-external-origins to load it.");
-        if (IsHttpUri(targetUri) && (baseUrl is null || !OpenApiConstants.BaseRegistryUri.Equals(baseUrl.AbsoluteUri, StringComparison.Ordinal)))
+        if (IsHttpUri(targetUri) && (uri.IsAbsoluteUri || baseUrl is null || !OpenApiConstants.BaseRegistryUri.Equals(baseUrl.AbsoluteUri, StringComparison.Ordinal)))
             return LoadFromHttpAsync(targetUri, cancellationToken);
         return base.LoadAsync(baseUrl!, uri, cancellationToken);
     }
+
+    // the original string can keep segments such as "..", which the request doesn't
+    private static Uri Canonicalize(Uri uri) => new(uri.AbsoluteUri);
 
     private static bool IsHttpUri(Uri uri) =>
         uri.IsAbsoluteUri && (Uri.UriSchemeHttps.Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase) || Uri.UriSchemeHttp.Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase));
@@ -74,7 +77,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             try
             {
-                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && !IsAllowed(respondingUri, respondingUri))
+                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && Canonicalize(respondingUri) is var canonicalRespondingUri && !IsAllowed(canonicalRespondingUri, canonicalRespondingUri))
                     throw new InvalidOperationException($"The external reference {targetUri} was served from {respondingUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
                 if (!IsRedirect(response.StatusCode) || response.Headers.Location is not { } location)
                 {
@@ -85,6 +88,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
                 // same as the default handler: never follow a redirect to another scheme or from https to http
                 if (!IsHttpUri(redirectUri) || (Uri.UriSchemeHttps.Equals(requestUri.Scheme, StringComparison.OrdinalIgnoreCase) && !Uri.UriSchemeHttps.Equals(redirectUri.Scheme, StringComparison.OrdinalIgnoreCase)))
                     throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not supported.");
+                redirectUri = Canonicalize(redirectUri);
                 if (!IsAllowed(redirectUri, redirectUri))
                     throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
                 if (redirectCount >= MaxRedirects)
