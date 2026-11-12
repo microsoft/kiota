@@ -55,11 +55,13 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
-    /// Exact, case-sensitive component#property selectors to include.
+    /// Case-sensitive component#property selectors to include, supporting * in either name.
+    /// Wildcard patterns are preserved and evaluated on regeneration.
     /// </summary>
     public HashSet<string> IncludeProperties { get; set; } = new(StringComparer.Ordinal);
     /// <summary>
-    /// Exact, case-sensitive component#property selectors to exclude.
+    /// Case-sensitive component#property selectors to exclude, supporting * in either name.
+    /// Wildcard patterns are preserved and evaluated on regeneration.
     /// </summary>
     public HashSet<string> ExcludeProperties { get; set; } = new(StringComparer.Ordinal);
     /// <summary>

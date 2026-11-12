@@ -30,7 +30,7 @@
               "type": "string"
             },
             "includeProperties": {
-              "description": "Exact, case-sensitive component#property selectors to include; no glob expansion.",
+              "description": "Case-sensitive component#property selectors to include. '*' matches zero or more characters in either name; patterns are preserved and evaluated on regeneration.",
               "type": "array",
               "items": {
                 "type": "string",
@@ -38,7 +38,7 @@
               }
             },
             "excludeProperties": {
-              "description": "Exact, case-sensitive component#property selectors to exclude; no glob expansion.",
+              "description": "Case-sensitive component#property selectors to exclude. '*' matches zero or more characters in either name; patterns are preserved and evaluated on regeneration.",
               "type": "array",
               "items": {
                 "type": "string",
