@@ -38,7 +38,7 @@ Comma lists are expanded before persistence; `*` patterns are stored and evaluat
 - An include filter retains only the selected properties of each matched component. A component is filtered only when it owns at least one matching property; components with no matching property are unchanged.
 - Exclusions remove individual properties. When both filters name an ordinary property, exclusion wins.
 - Required and discriminator properties are always retained, including constraints applied through composition or inheritance. Omitting one from an include filter produces an informational diagnostic; excluding one fails generation even when matched by `*`.
-- Requirements inside a `oneOf`/`anyOf` branch protect that branch, not same-named optional fields in sibling branches. Constraints shared by the union or `allOf` still apply to their referenced declarations.
+- Requirements inside a `oneOf`/`anyOf` branch protect that branch and any shared ancestor declarations they reference, not same-named optional fields in sibling branches. Constraints shared by the union or `allOf` still apply to their referenced declarations.
 - Unknown components/properties, patterns matching nothing, and malformed selectors fail generation rather than being ignored.
 - Named components and their inline composition fragments are supported. Select an inherited property on its declaring base component, not on a derived component. Standalone inline-object members and external component aliases are not selectable.
 - Selection is global per component: all endpoints using a model see the same generated surface. Enum members, composition branches, and whole models cannot be explicitly selected.

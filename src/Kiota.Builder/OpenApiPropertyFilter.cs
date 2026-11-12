@@ -78,22 +78,31 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
 
         var protectedProperties = new HashSet<ModelPropertySelector>();
         var protectionVisited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
-        void ProtectSchema(IOpenApiSchema schema)
+        var protectionPath = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
+        void ProtectSchema(IOpenApiSchema schema, IOpenApiSchema[] ancestors)
         {
-            if (!protectionVisited.Add(schema)) return;
-            var fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
-            var protectedNames = fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
-                .Concat(fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
-                .ToHashSet(StringComparer.Ordinal);
-            foreach (var fragment in GetComposedSchemas(schema).Where(owners.ContainsKey))
-                foreach (var name in owners[fragment])
-                    foreach (var property in fragment.Properties?.Keys.Where(protectedNames.Contains) ?? [])
-                        protectedProperties.Add(new(name, property));
-            // Union branches inherit shared constraints, but not their siblings' requirements.
-            foreach (var branch in fragments.SelectMany(static x => (x.AnyOf ?? []).Concat(x.OneOf ?? [])))
-                ProtectSchema(branch);
+            if ((ancestors.Length == 0 && !protectionVisited.Add(schema)) || !protectionPath.Add(schema)) return;
+            try
+            {
+                var fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
+                var protectedNames = fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
+                    .Concat(fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
+                    .ToHashSet(StringComparer.Ordinal);
+                foreach (var fragment in GetComposedSchemas(schema).Concat(ancestors).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).Where(owners.ContainsKey))
+                    foreach (var name in owners[fragment])
+                        foreach (var property in fragment.Properties?.Keys.Where(protectedNames.Contains) ?? [])
+                            protectedProperties.Add(new(name, property));
+                // Branch constraints can name shared ancestor fields, but not sibling-only declarations.
+                var sharedDeclarations = ancestors.Concat(fragments).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray();
+                foreach (var branch in fragments.SelectMany(static x => (x.AnyOf ?? []).Concat(x.OneOf ?? [])))
+                    ProtectSchema(branch, sharedDeclarations);
+            }
+            finally
+            {
+                protectionPath.Remove(schema);
+            }
         }
-        new OpenApiWalker(new SchemaVisitor(ProtectSchema)).Walk(document);
+        new OpenApiWalker(new SchemaVisitor(schema => ProtectSchema(schema, []))).Walk(document);
 
         foreach (var selector in excludes.OrderBy(static x => x.ToString(), StringComparer.Ordinal))
             if (protectedProperties.Contains(selector))

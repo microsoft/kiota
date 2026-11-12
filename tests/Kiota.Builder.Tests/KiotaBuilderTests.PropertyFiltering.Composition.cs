@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Kiota.Builder.CodeDOM;
@@ -11,6 +12,97 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public async Task UnionAlternativeRequirementsProtectSharedAncestorFieldsAsync(string composition, bool allowlist)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Shared properties with alternative requirements
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Result:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    optional:
+                      type: string
+                  {{composition}}:
+                    - required: [id]
+                    - required: [name]
+            """);
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = allowlist ? ["Result#optional"] : [],
+            ExcludeProperties = allowlist ? [] : ["Result#id"],
+        };
+        if (allowlist)
+        {
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            Assert.Equal(3, document.Components!.Schemas!["Result"].Properties!.Count);
+        }
+        else
+        {
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Equal(3, document.Components!.Schemas!["Result"].Properties!.Count);
+        }
+    }
+
+    [Theory]
+    [InlineData("oneOf")]
+    [InlineData("anyOf")]
+    public async Task NestedUnionRequirementsProtectAncestorButNotSiblingDeclarationsAsync(string composition)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        var root = Assert.IsType<OpenApiSchema>(document.Components!.Schemas!["Result"]);
+        root.Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+        {
+            ["shared"] = new OpenApiSchema { Type = JsonSchemaType.String },
+        };
+        var branchA = Assert.IsType<OpenApiSchema>(document.Components.Schemas["A"]);
+        branchA.AnyOf =
+        [
+            new OpenApiSchema { Required = new HashSet<string>(StringComparer.Ordinal) { "shared" } },
+            new OpenApiSchema { Type = JsonSchemaType.Object },
+        ];
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { ExcludeProperties = ["B#id"] });
+        Assert.DoesNotContain("id", document.Components.Schemas["B"].Properties!.Keys);
+        Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["Result#shared"] }));
+    }
+
+    [Theory]
+    [InlineData("oneOf")]
+    [InlineData("anyOf")]
+    public async Task UnionBranchDiscriminatorProtectsAncestorAcrossRecursiveReferencesAsync(string composition)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        var root = Assert.IsType<OpenApiSchema>(document.Components!.Schemas!["Result"]);
+        root.Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+        {
+            ["kind"] = new OpenApiSchema { Type = JsonSchemaType.String },
+        };
+        var branchA = Assert.IsType<OpenApiSchema>(document.Components.Schemas["A"]);
+        branchA.Discriminator = new OpenApiDiscriminator { PropertyName = "kind" };
+        branchA.AnyOf =
+        [
+            new OpenApiSchemaReference("Result", document),
+            new OpenApiSchema { Type = JsonSchemaType.Object },
+        ];
+        Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["Result#kind"] }));
+        Assert.Contains("kind", root.Properties.Keys);
+    }
+
     private async Task<OpenApiDocument> ReadUnionProtectionDocumentAsync(string composition)
     {
         return await ReadPropertyFilterDocumentAsync($$"""
