@@ -235,17 +235,58 @@ components:
     [InlineData("http://contoso.com/schemas/pet.yaml")]
     [InlineData("file:///schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/../private/pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderRejectsRedirects(string redirectTarget)
     {
         using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = redirectTarget });
         using var httpClient = new HttpClient(handler);
-        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*", "http://contoso.com/schemas/*", "file:///schemas/*"]);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*", "https://contoso.com:443/schemas/*", "http://contoso.com/schemas/*", "file:///schemas/*"]);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
             new Uri("https://example.com/openapi.yaml"),
             new Uri("https://contoso.com/schemas/pet.yaml"),
             TestContext.Current.CancellationToken));
         Assert.Equal(["https://contoso.com/schemas/pet.yaml"], handler.RequestedUris);
+    }
+
+    [Theory]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com:443/schemas/v2/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com/schemas/v2/pet.yaml")]
+    [InlineData("https://contoso.com", "https://contoso.com")]
+    [InlineData("https://contoso.com?version=*", "https://contoso.com?version=2")]
+    public async Task AllowedExternalOriginsStreamLoaderFollowsRedirectsMatchingEquivalentOrigins(string allowedOrigin, string redirectTarget)
+    {
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = redirectTarget });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/pet.yaml", allowedOrigin]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+        Assert.Equal(2, handler.RequestedUris.Count);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderAppliesTimeoutToAllRedirects()
+    {
+        using var handler = new ResponseHandler(new()
+        {
+            ["https://contoso.com/schemas/pet.yaml"] = "https://contoso.com/schemas/1.yaml",
+            ["https://contoso.com/schemas/1.yaml"] = "https://contoso.com/schemas/2.yaml",
+            ["https://contoso.com/schemas/2.yaml"] = "https://contoso.com/schemas/3.yaml",
+            ["https://contoso.com/schemas/3.yaml"] = "https://contoso.com/schemas/4.yaml",
+        }, TimeSpan.FromMilliseconds(300));
+        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(700) };
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+        Assert.True(handler.RequestedUris.Count < 5);
     }
 
     [Fact]
@@ -496,16 +537,18 @@ paths: {}
         return stream;
     }
 
-    private sealed class ResponseHandler(Dictionary<string, string> redirects = null) : HttpMessageHandler
+    private sealed class ResponseHandler(Dictionary<string, string> redirects = null, TimeSpan delay = default) : HttpMessageHandler
     {
         public List<string> RequestedUris { get; } = [];
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var requestUri = request.RequestUri!.AbsoluteUri;
             RequestedUris.Add(requestUri);
+            if (delay > TimeSpan.Zero)
+                await Task.Delay(delay, cancellationToken);
             if (redirects?.TryGetValue(requestUri, out var location) == true)
-                return Task.FromResult(CreateRedirectResponse(location));
-            return Task.FromResult(CreateOkResponse());
+                return CreateRedirectResponse(location);
+            return CreateOkResponse();
         }
 
         private static HttpResponseMessage CreateRedirectResponse(string location) => new(HttpStatusCode.Found)

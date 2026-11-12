@@ -70,6 +70,22 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
 
     private async Task<Stream> LoadFromHttpAsync(Uri targetUri, CancellationToken cancellationToken)
     {
+        // the timeout covers the whole redirect chain, like it does when the client follows redirects
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (httpClient.Timeout != Timeout.InfiniteTimeSpan)
+            timeoutSource.CancelAfter(httpClient.Timeout);
+        try
+        {
+            return await FollowRedirectsAsync(targetUri, timeoutSource.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested && timeoutSource.IsCancellationRequested)
+        {
+            throw new TaskCanceledException($"The external reference {targetUri} was not loaded within {httpClient.Timeout.TotalSeconds} seconds.", new TimeoutException(ex.Message, ex));
+        }
+    }
+
+    private async Task<Stream> FollowRedirectsAsync(Uri targetUri, CancellationToken cancellationToken)
+    {
         var requestUri = targetUri;
         for (var redirectCount = 0; ; redirectCount++)
         {
@@ -139,11 +155,44 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
 
     private static bool MatchesAnyUriCandidate(string pattern, IEnumerable<string> candidates)
     {
+        var normalizedPattern = NormalizeUriPattern(pattern);
         if (!pattern.Contains('*', StringComparison.Ordinal))
-            return candidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+            return candidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase) || normalizedPattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
 
         var expression = BuildUriPatternExpression(pattern);
-        return candidates.Any(candidate => Regex.IsMatch(candidate, expression, RegexOptions.IgnoreCase, RegexTimeout));
+        var normalizedExpression = BuildUriPatternExpression(normalizedPattern);
+        return candidates.Any(candidate =>
+            Regex.IsMatch(candidate, expression, RegexOptions.IgnoreCase, RegexTimeout) ||
+            Regex.IsMatch(candidate, normalizedExpression, RegexOptions.IgnoreCase, RegexTimeout));
+    }
+
+    /// <summary>
+    /// Writes an http or https pattern the way <see cref="Uri.AbsoluteUri"/> writes the addresses it matches:
+    /// without the default port and with a slash after the authority.
+    /// </summary>
+    private static string NormalizeUriPattern(string pattern)
+    {
+        var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
+        if (schemeSeparatorIndex < 0)
+            return pattern;
+        var scheme = pattern[..schemeSeparatorIndex];
+        var defaultPort = scheme.ToLowerInvariant() switch
+        {
+            "https" => ":443",
+            "http" => ":80",
+            _ => null,
+        };
+        if (defaultPort is null)
+            return pattern;
+        var authorityStartIndex = schemeSeparatorIndex + SchemeSeparator.Length;
+        var authorityEndIndex = pattern.IndexOfAny(AuthorityTerminators, authorityStartIndex);
+        var authority = authorityEndIndex < 0 ? pattern[authorityStartIndex..] : pattern[authorityStartIndex..authorityEndIndex];
+        var remainder = authorityEndIndex < 0 ? string.Empty : pattern[authorityEndIndex..];
+        if (authority.EndsWith(defaultPort, StringComparison.Ordinal))
+            authority = authority[..^defaultPort.Length];
+        if (!remainder.StartsWith('/'))
+            remainder = $"/{remainder}";
+        return $"{pattern[..authorityStartIndex]}{authority}{remainder}";
     }
 
     /// <summary>
