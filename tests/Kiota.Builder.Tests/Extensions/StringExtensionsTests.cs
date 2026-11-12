@@ -85,6 +85,7 @@ public class StringExtensionsTests
         Assert.Equal("_", "-".ToSnakeCase());
         Assert.Equal("__", "--".ToSnakeCase());
         Assert.Equal("test_", "test-<Value>".ToSnakeCase());
+        Assert.Equal("test.value", "test.Value".ToSnakeCase('.'));
     }
     [Fact]
     public void NormalizeNameSpaceName()
