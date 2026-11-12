@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
+- Ruby: fixed generation failing when a nested model is flattened onto the name of an existing one, as in Microsoft Graph beta.
+- Ruby: a request builder for a path with function parameters, such as Microsoft Graph's `search(q='{q}')`, puts their values in the URL. They were accepted and dropped, so the request went out with empty values.
+- Fixed the Ruby links in the readmes to point to the kiota-ruby repository.
+- Ruby is now a preview language.
 - A nullable reference to a component that is not a model, such as a `oneOf` or `anyOf` with a `$ref` to a string, integer, number, boolean, numeric enum or primitive array schema and a `{"type": "null"}` branch, generated an empty model for the component, so the value was dropped when reading and written back as `{}`. It now maps to the same type as a direct reference to the component, such as `string?`, `int?` or `List<string>`. [#8353](https://github.com/microsoft/kiota/issues/8353)
 
 ## [1.38.0] - 2026-11-02
@@ -22,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Python: check inherited-model discriminators once before type dispatch to avoid repeated truthiness checks that cause excessive CodeQL extraction work in large factories.
-- Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
 
 ## [1.37.0] - 2026-10-29
 
