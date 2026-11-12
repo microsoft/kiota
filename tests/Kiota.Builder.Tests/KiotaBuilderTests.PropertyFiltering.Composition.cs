@@ -12,6 +12,170 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Fact(Timeout = 30000)]
+    public async Task SharedUnionLayersProcessAncestorRequirementsWithoutPathExpansionAsync()
+    {
+        var document = await ReadPropertyFilterDocumentAsync("""
+            openapi: 3.0.3
+            info:
+              title: Shared union layers
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Constraint:
+                  required: [shared]
+                Root:
+                  type: object
+                  properties:
+                    shared:
+                      type: string
+                    optional:
+                      type: string
+                Target:
+                  type: object
+                  properties:
+                    keep:
+                      type: string
+                    remove:
+                      type: string
+            """);
+        const int depth = 24;
+        var root = Assert.IsType<OpenApiSchema>(document.Components!.Schemas!["Root"]);
+        root.AnyOf =
+        [
+            new OpenApiSchemaReference("Layer0A", document),
+            new OpenApiSchemaReference("Layer0B", document),
+        ];
+        for (var i = 0; i < depth; i++)
+        {
+            var nextA = i == depth - 1 ? "Constraint" : $"Layer{i + 1}A";
+            var nextB = i == depth - 1 ? "Constraint" : $"Layer{i + 1}B";
+            foreach (var suffix in new[] { "A", "B" })
+                document.AddComponent($"Layer{i}{suffix}", new OpenApiSchema
+                {
+                    AnyOf =
+                    [
+                        new OpenApiSchemaReference(nextA, document),
+                        new OpenApiSchemaReference(nextB, document),
+                    ],
+                });
+        }
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await Task.Run(() =>
+        {
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["Target#keep"] });
+            Assert.DoesNotContain("remove", document.Components.Schemas["Target"].Properties!.Keys);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["Root#optional"] });
+            Assert.Contains("shared", root.Properties!.Keys);
+            Assert.Contains("optional", root.Properties.Keys);
+        }, cancellationToken).WaitAsync(cancellationToken);
+    }
+
+    [Theory]
+    [InlineData("oneOf")]
+    [InlineData("anyOf")]
+    public async Task SharedConstraintProtectsEachAncestorWithoutProtectingInlineSiblingsAsync(string composition)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Shared constraint contexts
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Constraint:
+                  required: [id]
+                ParentA:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    keep:
+                      type: string
+                  {{composition}}:
+                    - $ref: '#/components/schemas/Constraint'
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                ParentB:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    keep:
+                      type: string
+                  {{composition}}:
+                    - $ref: '#/components/schemas/Constraint'
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+            """);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
+        {
+            IncludeProperties = ["ParentA#keep", "ParentB#keep"],
+        });
+        foreach (var name in new[] { "ParentA", "ParentB" })
+        {
+            var parent = document.Components!.Schemas![name];
+            Assert.Contains("id", parent.Properties!.Keys);
+            var branches = parent.OneOf ?? parent.AnyOf!;
+            Assert.DoesNotContain("id", branches[1].Properties!.Keys);
+        }
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public async Task InlineUnionProtectionIsPerDeclarationAsync(string composition, bool exclude)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Inline declaration protection
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Result:
+                  {{composition}}:
+                    - type: object
+                      required: [id]
+                      properties:
+                        id:
+                          type: string
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+            """);
+        var branches = document.Components!.Schemas!["Result"].OneOf ?? document.Components.Schemas["Result"].AnyOf!;
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["Result#name"],
+            ExcludeProperties = exclude ? ["Result#id"] : [],
+        };
+        if (exclude)
+        {
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Contains("id", branches[1].Properties!.Keys);
+        }
+        else
+        {
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            Assert.Contains("id", branches[0].Properties!.Keys);
+            Assert.DoesNotContain("id", branches[1].Properties!.Keys);
+            Assert.Contains("name", branches[1].Properties.Keys);
+        }
+    }
+
     [Theory]
     [InlineData("oneOf", false)]
     [InlineData("oneOf", true)]

@@ -76,36 +76,10 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         var includes = ResolveSelectors(includeSelectors);
         var excludes = ResolveSelectors(excludeSelectors);
 
-        var protectedProperties = new HashSet<ModelPropertySelector>();
-        var protectionVisited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
-        var protectionPath = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
-        void ProtectSchema(IOpenApiSchema schema, IOpenApiSchema[] ancestors)
-        {
-            if ((ancestors.Length == 0 && !protectionVisited.Add(schema)) || !protectionPath.Add(schema)) return;
-            try
-            {
-                var fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
-                var protectedNames = fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
-                    .Concat(fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
-                    .ToHashSet(StringComparer.Ordinal);
-                foreach (var fragment in GetComposedSchemas(schema).Concat(ancestors).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).Where(owners.ContainsKey))
-                    foreach (var name in owners[fragment])
-                        foreach (var property in fragment.Properties?.Keys.Where(protectedNames.Contains) ?? [])
-                            protectedProperties.Add(new(name, property));
-                // Branch constraints can name shared ancestor fields, but not sibling-only declarations.
-                var sharedDeclarations = ancestors.Concat(fragments).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray();
-                foreach (var branch in fragments.SelectMany(static x => (x.AnyOf ?? []).Concat(x.OneOf ?? [])))
-                    ProtectSchema(branch, sharedDeclarations);
-            }
-            finally
-            {
-                protectionPath.Remove(schema);
-            }
-        }
-        new OpenApiWalker(new SchemaVisitor(schema => ProtectSchema(schema, []))).Walk(document);
+        var protectedDeclarations = GetProtectedDeclarations(document, owners);
 
         foreach (var selector in excludes.OrderBy(static x => x.ToString(), StringComparer.Ordinal))
-            if (protectedProperties.Contains(selector))
+            if (declarations[selector].Any(fragment => IsProtected(protectedDeclarations, fragment, selector.Property)))
                 throw new InvalidOperationException($"Cannot exclude required or discriminator property '{selector}'.");
 
         var includedComponents = includes.Select(static x => x.Component).ToHashSet(StringComparer.Ordinal);
@@ -114,13 +88,14 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         {
             var omit = excludes.Contains(selector) || includedComponents.Contains(selector.Component) && !includes.Contains(selector);
             if (!omit) continue;
-            if (protectedProperties.Contains(selector))
-            {
-                if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("Retaining required or discriminator property {PropertySelector}", selector.ToString());
-                continue;
-            }
             foreach (var fragment in fragments)
+            {
+                if (IsProtected(protectedDeclarations, fragment, selector.Property))
+                {
+                    if (logger.IsEnabled(LogLevel.Information))
+                        logger.LogInformation("Retaining required or discriminator property {PropertySelector}", selector.ToString());
+                    continue;
+                }
                 if (fragment.Properties is { } properties && properties.Remove(selector.Property))
                 {
                     removed++;
@@ -132,6 +107,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                         fragment.Extensions[OpenApiKiotaTrimmedPropertiesExtension.Name] = OpenApiKiotaTrimmedPropertiesExtension.Instance;
                     }
                 }
+            }
         }
         if (!logger.IsEnabled(LogLevel.Information)) return;
         logger.LogInformation("Removed {PropertyCount} schema property declarations", removed);
@@ -199,6 +175,107 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         foreach (var component in includes.Union(excludes).Select(static x => x.Component).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
             if (!usedComponents.Contains(component) && logger.IsEnabled(LogLevel.Information))
                 logger.LogInformation("Property selection targets component {Component} not referenced by the selected operations", component);
+    }
+
+    private static bool IsProtected(Dictionary<IOpenApiSchema, HashSet<string>> protection, IOpenApiSchema fragment, string property) =>
+        protection.TryGetValue(fragment, out var names) && names.Contains(property);
+
+    private static Dictionary<IOpenApiSchema, HashSet<string>> GetProtectedDeclarations(
+        OpenApiDocument document, Dictionary<IOpenApiSchema, HashSet<string>> owners)
+    {
+        var protection = new Dictionary<IOpenApiSchema, HashSet<string>>(ReferenceEqualityComparer.Instance);
+        var states = new Dictionary<IOpenApiSchema, ProtectionState>(ReferenceEqualityComparer.Instance);
+        var queued = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
+        var pending = new Queue<ProtectionState>();
+        void Enqueue(IOpenApiSchema schema, IEnumerable<IOpenApiSchema> ancestors)
+        {
+            schema = GetCanonicalSchema(schema);
+            if (schema.AllOf is not { Count: > 0 } && schema.AnyOf is not { Count: > 0 } &&
+                schema.OneOf is not { Count: > 0 } && schema.Required is not { Count: > 0 } &&
+                string.IsNullOrEmpty(schema.Discriminator?.PropertyName)) return;
+            if (!states.TryGetValue(schema, out var state))
+            {
+                state = new ProtectionState(schema);
+                states[schema] = state;
+            }
+            if (state.ProtectedNames.Count == 0 && state.Branches.Length == 0) return;
+            foreach (var ancestor in ancestors)
+                if (state.Ancestors.Add(ancestor))
+                    state.NewAncestors.Add(ancestor);
+            if ((!state.Initialized || state.NewAncestors.Count != 0) && queued.Add(schema))
+                pending.Enqueue(state);
+        }
+        new OpenApiWalker(new SchemaVisitor(schema => Enqueue(schema, []))).Walk(document);
+        void Protect(ProtectionState state, IEnumerable<IOpenApiSchema> targets)
+        {
+            if (state.ProtectedNames.Count == 0) return;
+            foreach (var fragment in targets.Where(owners.ContainsKey))
+                foreach (var property in fragment.Properties?.Keys.Where(state.ProtectedNames.Contains) ?? [])
+                {
+                    if (!protection.TryGetValue(fragment, out var names))
+                        protection[fragment] = names = new(StringComparer.Ordinal);
+                    names.Add(property);
+                }
+        }
+        while (pending.TryDequeue(out var state))
+        {
+            queued.Remove(state.Schema);
+            var addedAncestors = state.NewAncestors.ToArray();
+            state.NewAncestors.Clear();
+            Protect(state, addedAncestors);
+            IEnumerable<IOpenApiSchema> outgoing = addedAncestors;
+            if (!state.Initialized)
+            {
+                state.Initialized = true;
+                Protect(state, GetComposedSchemas(state.Schema));
+                outgoing = outgoing.Concat(state.Fragments.Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 }))
+                    .Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
+            }
+            // Propagate each new ancestor fact once per edge, not once per reference path.
+            var facts = outgoing.ToArray();
+            foreach (var branch in state.Branches)
+                Enqueue(branch, facts);
+        }
+        return protection;
+    }
+
+    private static IOpenApiSchema GetCanonicalSchema(IOpenApiSchema schema) =>
+        schema is OpenApiSchemaReference { RecursiveTarget: { } target } ? target : schema;
+
+    private sealed class ProtectionState
+    {
+        internal ProtectionState(IOpenApiSchema schema)
+        {
+            Schema = schema;
+            Fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
+            ProtectedNames = Fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
+                .Concat(Fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
+                .ToHashSet(StringComparer.Ordinal);
+            Branches = Fragments.SelectMany(static x => (x.AnyOf ?? []).Concat(x.OneOf ?? []))
+                .Select(GetCanonicalSchema).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray();
+        }
+        internal IOpenApiSchema Schema
+        {
+            get;
+        }
+        internal IOpenApiSchema[] Fragments
+        {
+            get;
+        }
+        internal HashSet<string> ProtectedNames
+        {
+            get;
+        }
+        internal IOpenApiSchema[] Branches
+        {
+            get;
+        }
+        internal HashSet<IOpenApiSchema> Ancestors { get; } = new(ReferenceEqualityComparer.Instance);
+        internal HashSet<IOpenApiSchema> NewAncestors { get; } = new(ReferenceEqualityComparer.Instance);
+        internal bool Initialized
+        {
+            get; set;
+        }
     }
 
     private static IEnumerable<OpenApiSchema> GetOwnedFragments(IOpenApiSchema schema)

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Process shared union graphs incrementally for property protection and retain protected fields per inline declaration rather than protecting optional same-named sibling fields.
 - Keep required fields scoped to their union branch when applying property filters, while protecting shared ancestor fields referenced by branch constraints and preserving shared union/inheritance constraints.
 - Preserve empty object base classes, derived inheritance, and object union branches when property trimming removes their last property.
 - Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
