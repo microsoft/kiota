@@ -76,6 +76,15 @@ public static class OpenApiSchemaExtensions
     {
         return schema is { Type: JsonSchemaType.Object or (JsonSchemaType.Object | JsonSchemaType.Null) };
     }
+    internal static bool IsNullOnly(this IOpenApiSchema? schema)
+    {
+        return schema is not null &&
+            (schema.Type is JsonSchemaType.Null ||
+             schema.Enum is { Count: > 0 } && schema.Enum.All(static x =>
+                 x is null ||
+                 x.GetValueKind() is JsonValueKind.Null ||
+                 x is System.Text.Json.Nodes.JsonValue value && value.IsJsonNullSentinel()));
+    }
     public static bool HasAnyProperty(this IOpenApiSchema? schema)
     {
         return schema?.Properties is { Count: > 0 };
