@@ -112,6 +112,33 @@ public class PhpLanguageRefinerTests
     }
 
     [Fact]
+    public async Task AddsQueryParameterImportAfterRenamingAsync()
+    {
+        var queryParameters = root.AddClass(new CodeClass
+        {
+            Name = "ThingsRequestBuilderGetQueryParameters",
+            Kind = CodeClassKind.QueryParameters,
+        }).First();
+        var property = queryParameters.AddProperty(new CodeProperty
+        {
+            Name = "category_id",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType { Name = "string" },
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(
+            new GenerationConfiguration { Language = GenerationLanguage.PHP },
+            root,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("categoryId", property.Name);
+        Assert.Equal("category_id", property.SerializationName);
+        Assert.Contains(queryParameters.StartBlock.Usings, static x =>
+            x.Name.Equals("QueryParameter", System.StringComparison.Ordinal) &&
+            x.Declaration?.Name.Equals(@"Microsoft\Kiota\Abstractions", System.StringComparison.Ordinal) is true);
+    }
+
+    [Fact]
     public async Task AddsExceptionInheritanceOnErrorClassesAsync()
     {
         var model = root.AddClass(new CodeClass
