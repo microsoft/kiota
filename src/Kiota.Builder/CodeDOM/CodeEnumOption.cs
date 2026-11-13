@@ -1,4 +1,4 @@
-﻿using Kiota.Builder.Extensions;
+using Kiota.Builder.Extensions;
 
 namespace Kiota.Builder.CodeDOM;
 
@@ -6,6 +6,7 @@ public class CodeEnumOption : CodeElement, IDocumentedElement, ITypeDefinition, 
 {
     /// <inheritdoc/>
     public string SerializationName { get; set; } = string.Empty;
+    public bool IsNumeric { get; set; }
     public CodeDocumentation Documentation { get; set; } = new();
     /// <inheritdoc/>
     public bool IsNameEscaped

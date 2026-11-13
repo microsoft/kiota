@@ -131,4 +131,17 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = Kiota.Builder.Writers.Python.PythonConventionService.RemoveInvalidDescriptionCharacters(input!);
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void WritesNumericalEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Active", SerializationName = "10" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "Inactive", SerializationName = "20" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("(int, Enum):", result);
+        Assert.Contains("Active = 10,", result);
+        Assert.Contains("Inactive = 20,", result);
+    }
 }

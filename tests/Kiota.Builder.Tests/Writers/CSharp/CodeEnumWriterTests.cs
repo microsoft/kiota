@@ -168,4 +168,44 @@ public sealed class CodeEnumWriterTests : IDisposable
         AssertExtensions.CurlyBracesAreClosed(result, 1);
         Assert.Contains(Option.Name, result);
     }
+
+    [Fact]
+    public void WritesNumericalEnumWithExplicitValues()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Active", SerializationName = "10" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "Inactive", SerializationName = "20" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "Suspended", SerializationName = "30" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("public enum SomeEnum", result);
+        Assert.Contains("Active = 10,", result);
+        Assert.Contains("Inactive = 20,", result);
+        Assert.Contains("Suspended = 30,", result);
+        Assert.Contains("[EnumMember(Value = \"10\")]", result);
+    }
+
+    [Fact]
+    public void WritesNumericalEnumWithInt64Format()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.Format = "int64";
+        currentEnum.AddOption(new CodeEnumOption { Name = "BigValue", SerializationName = "9223372036854775807" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("public enum SomeEnum : long", result);
+        Assert.Contains("BigValue = 9223372036854775807,", result);
+    }
+
+    [Fact]
+    public void WritesNumericalEnumWithNegativeValues()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "MinusOne", SerializationName = "-1" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "Zero", SerializationName = "0" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("MinusOne = -1,", result);
+        Assert.Contains("Zero = 0,", result);
+    }
 }

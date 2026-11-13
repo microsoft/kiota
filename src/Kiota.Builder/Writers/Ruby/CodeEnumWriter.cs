@@ -23,7 +23,7 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, RubyConventionService>
         conventions.WriteDeprecationComment(codeElement, writer);
         writer.StartBlock($"{codeElement.Name.ToFirstCharacterUpperCase()} = {{");
         // the value is what goes on the wire, the key is what Ruby code looks the member up by
-        var options = codeElement.Options.Select(static x => $"{x.Name.ToFirstCharacterUpperCase()}: {RubyConventionService.ToRubyStringLiteral(x.WireName)}").ToArray();
+        var options = codeElement.Options.Select(x => $"{x.Name.ToFirstCharacterUpperCase()}: {(codeElement.IsNumeric ? x.WireName : RubyConventionService.ToRubyStringLiteral(x.WireName))}").ToArray();
         for (var i = 0; i < options.Length; i++)
             writer.WriteLine(i < options.Length - 1 ? $"{options[i]}," : options[i]);
         writer.CloseBlock("}.freeze");

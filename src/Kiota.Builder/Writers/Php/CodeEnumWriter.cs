@@ -45,7 +45,7 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
         {
             writer.WriteLine(string.Empty);
         }
-        writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} extends Enum {{");
+        writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()} extends Enum {{");
         writer.IncreaseIndent();
         var reservedNames = enumProperties.Select(static option => GetEnumValueName(option.Name)).ToHashSet(StringComparer.Ordinal);
         var emittedNames = new HashSet<string>(StringComparer.Ordinal);
@@ -60,7 +60,14 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
                     candidate = $"{constantName}_{++suffix}";
                 constantName = candidate;
             }
-            writer.WriteLine($"public const {constantName} = \"{PhpConventionService.SanitizePhpDoubleQuoteLiteral(enumProperty.WireName)}\";");
+            if (codeElement?.IsNumeric ?? false)
+            {
+                writer.WriteLine($"public const {constantName} = {enumProperty.WireName};");
+            }
+            else
+            {
+                writer.WriteLine($"public const {constantName} = \"{PhpConventionService.SanitizePhpDoubleQuoteLiteral(enumProperty.WireName)}\";");
+            }
         }
     }
     [GeneratedRegex(@"([A-Z]{1})", RegexOptions.Singleline, 500)]

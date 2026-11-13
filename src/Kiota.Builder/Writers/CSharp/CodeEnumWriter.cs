@@ -38,7 +38,18 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} enum {codeElement.Name.ToFirstCharacterUpperCase()}");
+        var numericTypeSuffix = codeElement.IsNumeric && !string.IsNullOrEmpty(codeElement.Format) ? codeElement.Format.ToLowerInvariant() switch
+        {
+            "int64" => " : long",
+            "int8" => " : sbyte",
+            "uint8" => " : byte",
+            "int16" => " : short",
+            "uint16" => " : ushort",
+            "uint32" => " : uint",
+            "uint64" => " : ulong",
+            _ => string.Empty,
+        } : string.Empty;
+        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} enum {codeElement.Name.ToFirstCharacterUpperCase()}{numericTypeSuffix}");
         if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
         writer.StartBlock();
         var idx = 0;
@@ -51,7 +62,14 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
                 writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName.SanitizeCSharpDoubleQuote()}\")]");
             }
             if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-            writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+            if (codeElement.IsNumeric)
+            {
+                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()} = {option.SerializationName},");
+            }
+            else
+            {
+                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+            }
             if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
             idx++;
         }

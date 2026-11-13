@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add numerical enum generation support across C#, TypeScript, Python, Go, PHP, and Ruby language writers. [#5165](https://github.com/microsoft/kiota/issues/5165)
+
 ### Changed
 
 - Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
