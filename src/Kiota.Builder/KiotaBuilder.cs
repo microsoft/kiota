@@ -1955,6 +1955,9 @@ public partial class KiotaBuilder
         // meaningful entry plus a { "type": "null" } branch. Both patterns must be squished to the target
         // type so we don't create an unnecessary union type/wrapper for what is just a nullable reference.
         var unionEntries = schema.AnyOf is { Count: > 0 } ? schema.AnyOf : schema.OneOf;
+        // Only an exact { "type": "null" } branch makes this a nullable reference to a primitive component.
+        // A branch such as { "type": ["integer", "null"] } also allows another value, so the union is kept.
+        var hasNullOnlyEntry = unionEntries?.Any(static x => x.Type is JsonSchemaType.Null) ?? false;
         if (typesCount == 2 && (unionEntries?.Any(static x => // nullable on a schema in the anyOf/oneOf
                                                         (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null &&
                                                         !x.HasAnyProperty() &&
@@ -1964,8 +1967,13 @@ public partial class KiotaBuilder
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
                                                         !x.IsReferencedSchema()) ?? false) &&
-            unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+            unionEntries?.FirstOrDefault(x => !string.IsNullOrEmpty(x.GetSchemaName()) || (hasNullOnlyEntry && x.IsReferencedSchema() && MapsToPrimitiveType(x))) is { } targetSchema)
         {
+            // A nullable reference to a component that is not a model, such as a string, an integer, a date-time,
+            // a numeric enum or an array of primitives, maps the same way a direct $ref to it does.
+            // Declaring a model for it would generate an empty class that drops the value.
+            if (hasNullOnlyEntry && MapsToPrimitiveType(targetSchema))
+                return CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
             // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
@@ -2048,6 +2056,18 @@ public partial class KiotaBuilder
         }
         return unionType;
     }
+    /// <summary>
+    /// Whether the schema maps to a primitive type or a collection of primitives instead of a model or an enum.
+    /// A union whose members include an object or a reference keeps mapping to a model.
+    /// A single allOf wrapper around a primitive, such as { "allOf": [{ "type": "string" }] }, maps to that primitive.
+    /// </summary>
+    private static bool MapsToPrimitiveType(IOpenApiSchema schema) =>
+        !schema.IsObjectType() &&
+        !schema.HasAnyProperty() &&
+        !schema.IsEnum() &&
+        !(schema.AnyOf ?? []).Union(schema.OneOf ?? []).Union(schema.AllOf ?? []).Any(static x => x.IsReferencedSchema() || x.IsObjectType() || x.HasAnyProperty()) &&
+        (GetPrimitiveType(schema) is not null ||
+        (!schema.IsIntersection() && schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) is { } allOfEntry && MapsToPrimitiveType(allOfEntry)));
     private void AddTypeArrayMemberToComposedType(IOpenApiSchema schema, JsonSchemaType typeToScan, CodeComposedTypeBase codeComposedTypeBase)
     {
         if (!schema.Type.HasValue || (schema.Type.Value & typeToScan) != typeToScan) return;
