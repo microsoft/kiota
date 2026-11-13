@@ -1998,7 +1998,7 @@ public partial class KiotaBuilder
         if (schema.GetReferenceId() is string refId && !string.IsNullOrEmpty(refId))
             unionType.TargetNamespace = codeNamespace.GetRootNamespace().FindOrAddNamespace(GetModelsNamespaceNameFromReferenceId(refId));
         unionType.DiscriminatorInformation.DiscriminatorPropertyName = schema.GetDiscriminatorPropertyName();
-        // Same guard as AddDiscriminatorMethodIfNeeded: a component schema with no explicit mapping maps to
+        // Composed types are not published as classes here. A component with no explicit mapping maps to
         // itself, so resolving that mapping re-enters this method for the same schema and never terminates.
         var composedRefId = schema.GetReferenceId();
         var composedVisited = schemasBeingProcessedForDiscriminators.Value!;
@@ -2341,6 +2341,7 @@ public partial class KiotaBuilder
     }
     private ConcurrentDictionary<string, ModelClassBuildLifecycle> classLifecycles = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ThreadLocal<HashSet<string>> schemasBeingProcessedForDiscriminators = new(() => new(StringComparer.OrdinalIgnoreCase));
+    private static readonly ThreadLocal<HashSet<CodeClass>> classesBeingProcessedForDiscriminators = new(() => new(ReferenceEqualityComparer.Instance));
     private CodeElement AddModelDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiOperation? currentOperation, IOpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, CodeClass? inheritsFrom = null)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
@@ -2513,16 +2514,11 @@ public partial class KiotaBuilder
         var lookupSchema = schema.GetMergedSchemaOriginalReferenceId() is string originalName ?
             new OpenApiSchemaReference(originalName, openApiDocument) :
             schema;
-        // Recurse into the discriminator & generate its referenced types, guarding against same-thread circular
-        // references for schemas with a reference ID. Inline schemas (no ref ID) bypass this guard but are
-        // covered by the depth guard in CreatePropertiesForModelClass.
-        var schemaRefId = lookupSchema.GetReferenceId();
-        var discriminatorVisited = schemasBeingProcessedForDiscriminators.Value!;
-        if (!string.IsNullOrEmpty(schemaRefId) && !discriminatorVisited.Add(schemaRefId))
-        {
-            // This schema's discriminators are already being resolved up the call stack — skip to break the cycle
+        // Aliases can use the same lookup schema for different classes. Only skip reentry into the
+        // same published class: its outer call will finish the factory and discriminator mappings.
+        var discriminatorVisited = classesBeingProcessedForDiscriminators.Value!;
+        if (!discriminatorVisited.Add(newClass))
             return newClass;
-        }
         try
         {
             var mappings = GetDiscriminatorMappings(currentNode, lookupSchema, currentNamespace, newClass, currentOperation)
@@ -2533,8 +2529,7 @@ public partial class KiotaBuilder
         }
         finally
         {
-            if (!string.IsNullOrEmpty(schemaRefId))
-                discriminatorVisited.Remove(schemaRefId);
+            discriminatorVisited.Remove(newClass);
         }
         return newClass;
     }
