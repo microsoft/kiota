@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- NOTE: This version constraint (4.8.0.0) MUST match the earliest version supported for .NET 8 to prevent compatibility issues with the SDK.
+    <!-- NOTE: This version constraint (4.8.0.0) must remain compatible with the compiler in the SDK specified by global.json.
             Updating this version might cause runtime errors due to unsupported dependencies in older SDK versions.
-            Please avoid upgrading this dependency unless the target framework version is changed or until confirmed compatible with .NET 8.
+            Please avoid upgrading this dependency unless confirmed compatible with the required SDK.
             If Dependabot suggests an upgrade, it should be ignored. -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp"
       ExcludeAssets="runtime" />
