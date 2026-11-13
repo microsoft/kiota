@@ -11,8 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added opt-in model property trimming with repeatable, case-sensitive `--include-property` and `--exclude-property` selectors for client generation. Both support `*` in component and property names; `--include-property component#field1,field2` groups includes without repeating the component. Workspace and legacy lock files preserve selections, and `kiota client edit --clear-property-filters` clears saved rules.
+
 ### Changed
 
+- Protect fields declared inside independent `allOf` unions when another union requires them, without protecting optional declarations in sibling alternatives.
+- Process shared union graphs incrementally for property protection and retain protected fields per inline declaration rather than protecting optional same-named sibling fields.
+- Keep required fields scoped to their union branch when applying property filters, while protecting shared ancestor fields referenced by branch constraints and preserving shared union/inheritance constraints.
+- Preserve empty object base classes, derived inheritance, and object union branches when property trimming removes their last property.
 - Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
 - Ruby: fixed generation failing when a nested model is flattened onto the name of an existing one, as in Microsoft Graph beta.
 - Ruby: a request builder for a path with function parameters, such as Microsoft Graph's `search(q='{q}')`, puts their values in the URL. They were accepted and dropped, so the request went out with empty values.

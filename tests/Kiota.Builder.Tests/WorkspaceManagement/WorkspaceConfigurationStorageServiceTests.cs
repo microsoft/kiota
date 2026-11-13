@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
 using Xunit;
 
@@ -8,6 +9,48 @@ namespace Kiota.Builder.Tests.WorkspaceManagement;
 
 public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
 {
+    [Theory]
+    [InlineData("")]
+    [InlineData(""","includeProperties":[],"excludeProperties":[]""")]
+    [InlineData(""","includeProperties":["User#name","User#Name","User#name"],"excludeProperties":["User#mail","user#mail"]""")]
+    public async Task RoundTripsPropertySelectionsAndClearsAbsentClientSettingsAsync(string propertySettings)
+    {
+        var path = Path.Combine(Directory.GetCurrentDirectory(), ".property-filter-workspace-tests-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var service = new WorkspaceConfigurationStorageService(path);
+            Directory.CreateDirectory(service.TargetDirectory);
+            var configurationPath = Path.Combine(service.TargetDirectory, WorkspaceConfigurationStorageService.ConfigurationFileName);
+            await File.WriteAllTextAsync(configurationPath, $$"""
+                {
+                  "clients": {
+                    "Filtered": { "outputPath": "./filtered"{{propertySettings}} },
+                    "Unfiltered": { "outputPath": "./unfiltered" }
+                  }
+                }
+                """, TestContext.Current.CancellationToken);
+            var (workspace, _) = await service.GetWorkspaceConfigurationAsync(TestContext.Current.CancellationToken);
+            Assert.NotNull(workspace);
+            var generation = new GenerationConfiguration();
+            workspace.Clients["Filtered"].UpdateGenerationConfigurationFromApiClientConfiguration(generation, "Filtered");
+            var expectedCount = propertySettings.Contains("User#name", StringComparison.Ordinal) ? 2 : 0;
+            Assert.Equal(expectedCount, generation.IncludeProperties.Count);
+            Assert.Equal(expectedCount, generation.ExcludeProperties.Count);
+            await service.UpdateWorkspaceConfigurationAsync(workspace, null, TestContext.Current.CancellationToken);
+            var (roundTrip, _) = await service.GetWorkspaceConfigurationAsync(TestContext.Current.CancellationToken);
+            Assert.NotNull(roundTrip);
+            Assert.Equal(workspace.Clients["Filtered"], roundTrip.Clients["Filtered"], new ApiClientConfigurationComparer());
+            workspace.Clients["Unfiltered"].UpdateGenerationConfigurationFromApiClientConfiguration(generation, "Unfiltered");
+            Assert.Empty(generation.IncludeProperties);
+            Assert.Empty(generation.ExcludeProperties);
+        }
+        finally
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, true);
+        }
+    }
+
     [Fact]
     public async Task DefensiveProgrammingAsync()
     {

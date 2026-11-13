@@ -10,6 +10,8 @@ This library builds on top of the [Microsoft.OpenAPI.NET](https://github.com/mic
 
 ### Generating SDKs
 
+To reduce generated models beyond path filtering, see [trimming model properties](docs/model-property-trimming.md).
+
 1. Install required tools and dependencies. (refer to the [Supported Languages](#supported-languages) table under the **Required tools & dependencies** column)
 1. Get Kiota using one of the [available options](https://learn.microsoft.com/openapi/kiota/install).
 1. Generate your API client, checkout the [Parameters reference](https://learn.microsoft.com/openapi/kiota/using) for the different options.

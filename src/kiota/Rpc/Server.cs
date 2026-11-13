@@ -186,6 +186,7 @@ internal partial class Server : IServer
             configuration.ClientNamespaceName = clientNamespaceName;
         try
         {
+            await RestorePropertyFiltersAsync(configuration, IsConfigPreviewEnabled.Value, Directory.GetCurrentDirectory(), cancellationToken);
             var result = await GenerateClientAsync(configuration, logger, cancellationToken);
             if (result)
                 logger.LogInformation("Generation of {clientClassName} client for {language} at {outputPath} completed", configuration.ClientClassName, configuration.Language, configuration.OutputPath);
@@ -197,6 +198,33 @@ internal partial class Server : IServer
             logger.LogCritical("error generating the client: {exceptionMessage}", ex.Message);
         }
         return logger.LogEntries;
+    }
+    internal static async Task RestorePropertyFiltersAsync(GenerationConfiguration configuration, bool useWorkspaceConfiguration, string workingDirectory, CancellationToken cancellationToken)
+    {
+        configuration.IncludeProperties = new(StringComparer.Ordinal);
+        configuration.ExcludeProperties = new(StringComparer.Ordinal);
+        if (configuration.Operation == ConsumerOperation.Add)
+            return;
+
+        if (useWorkspaceConfiguration)
+        {
+            var storage = new WorkspaceConfigurationStorageService(workingDirectory);
+            var (workspace, _) = await storage.GetWorkspaceConfigurationAsync(cancellationToken);
+            if (workspace?.Clients.TryGetValue(configuration.ClientClassName, out var client) == true)
+            {
+                configuration.IncludeProperties = client.IncludeProperties.ToHashSet(StringComparer.Ordinal);
+                configuration.ExcludeProperties = client.ExcludeProperties.ToHashSet(StringComparer.Ordinal);
+            }
+        }
+        else
+        {
+            var savedLock = await new LockManagementService().GetLockFromDirectoryAsync(configuration.OutputPath, cancellationToken);
+            if (savedLock is not null && savedLock.ClientClassName.Equals(configuration.ClientClassName, StringComparison.OrdinalIgnoreCase))
+            {
+                configuration.IncludeProperties = savedLock.IncludeProperties.ToHashSet(StringComparer.Ordinal);
+                configuration.ExcludeProperties = savedLock.ExcludeProperties.ToHashSet(StringComparer.Ordinal);
+            }
+        }
     }
     public async Task<List<LogEntry>> GeneratePluginAsync(string openAPIFilePath, string outputPath, PluginType[] pluginTypes, string[] includePatterns,
         string[] excludePatterns, string clientClassName, bool cleanOutput, bool clearCache, string[] disabledValidationRules,

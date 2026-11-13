@@ -75,6 +75,14 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
     {
         get; init;
     }
+    public required Option<List<string>> IncludePropertiesOption
+    {
+        get; init;
+    }
+    public required Option<List<string>> ExcludePropertiesOption
+    {
+        get; init;
+    }
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         // Span start time
@@ -98,6 +106,8 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         List<string> deserializer = parseResult.GetValue(DeserializerOption).OrEmpty();
         List<string>? includePatterns0 = parseResult.GetValue(IncludePatternsOption);
         List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
+        var includeProperties = parseResult.GetIncludedProperties(IncludePropertiesOption);
+        List<string>? excludeProperties = parseResult.GetValue(ExcludePropertiesOption);
         List<string>? disabledValidationRules0 = parseResult.GetValue(DisabledValidationRulesOption);
         bool cleanOutput = parseResult.GetValue(CleanOutputOption);
         List<string>? structuredMimeTypes0 = parseResult.GetValue(StructuredMimeTypesOption);
@@ -142,6 +152,8 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
             Configuration.Generation.IncludePatterns = includePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (excludePatterns.Count != 0)
             Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        Configuration.Generation.IncludeProperties = includeProperties;
+        Configuration.Generation.ExcludeProperties = excludeProperties.OrEmpty().Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.Ordinal);
         if (disabledValidationRules.Count != 0)
             Configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                     .Select(static x => x.TrimQuotes())

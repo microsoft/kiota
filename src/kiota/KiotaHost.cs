@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Text.RegularExpressions;
+using kiota.Extension;
 using kiota.Handlers;
 using kiota.Rpc;
 using Kiota.Builder;
@@ -589,6 +590,8 @@ public static partial class KiotaHost
 
         var (includePatterns, excludePatterns) = GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
 
+        var (includeProperties, excludeProperties) = GetPropertyFilterOptions();
+
         var dvrOption = GetDisableValidationRulesOption();
 
         var clearCacheOption = GetClearCacheOption(defaultConfiguration.ClearCache);
@@ -614,6 +617,8 @@ public static partial class KiotaHost
             structuredMimeTypesOption,
             includePatterns,
             excludePatterns,
+            includeProperties,
+            excludeProperties,
             dvrOption,
             clearCacheOption,
             disableSSLValidationOption,
@@ -638,6 +643,8 @@ public static partial class KiotaHost
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            IncludePropertiesOption = includeProperties,
+            ExcludePropertiesOption = excludeProperties,
             DisabledValidationRulesOption = dvrOption,
             ClearCacheOption = clearCacheOption,
             DisableSSLValidationOption = disableSSLValidationOption,
@@ -692,6 +699,34 @@ public static partial class KiotaHost
         };
         excludePatterns.Aliases.Add("-e");
         return (includePatterns, excludePatterns);
+    }
+    internal static (Option<List<string>>, Option<List<string>>) GetPropertyFilterOptions()
+    {
+        var includeProperties = new Option<List<string>>("--include-property")
+        {
+            Description = "Case-sensitive component#property selectors to include. Supports * in both names and comma-separated properties per component. Repeat this option for multiple entries.",
+            Arity = ArgumentArity.OneOrMore,
+            HelpName = "component#property1,property2",
+        };
+        var excludeProperties = new Option<List<string>>("--exclude-property")
+        {
+            Description = "Case-sensitive component#property selectors to exclude. Supports * in both names. Repeat this option for multiple entries.",
+            Arity = ArgumentArity.OneOrMore,
+            HelpName = "component#property",
+        };
+        includeProperties.Validators.Add(result =>
+        {
+            foreach (var group in result.GetValueOrDefault<List<string>>() ?? [])
+                try
+                {
+                    PropertyFilterExtensions.ExpandPropertyGroup(group);
+                }
+                catch (FormatException exception)
+                {
+                    result.AddError(exception.Message);
+                }
+        });
+        return (includeProperties, excludeProperties);
     }
     internal static Option<List<string>> GetAllowedExternalOriginsOption(HashSet<string> defaultValue)
     {

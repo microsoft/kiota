@@ -48,6 +48,7 @@ public static class KiotaClientCommands
         var additionalDataOption = KiotaHost.GetAdditionalDataOption(defaultConfiguration.IncludeAdditionalData);
         var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([.. defaultConfiguration.StructuredMimeTypes]);
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions(defaultConfiguration.IncludePatterns, defaultConfiguration.ExcludePatterns);
+        var (includeProperties, excludeProperties) = KiotaHost.GetPropertyFilterOptions();
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
@@ -67,6 +68,8 @@ public static class KiotaClientCommands
             structuredMimeTypesOption,
             includePatterns,
             excludePatterns,
+            includeProperties,
+            excludeProperties,
             dvrOption,
             skipGenerationOption,
             allowedExternalOriginsOption,
@@ -86,6 +89,8 @@ public static class KiotaClientCommands
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            IncludePropertiesOption = includeProperties,
+            ExcludePropertiesOption = excludeProperties,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
             AllowedExternalOriginsOption = allowedExternalOriginsOption,
@@ -127,6 +132,11 @@ public static class KiotaClientCommands
         var additionalDataOption = KiotaHost.GetOptionalAdditionalDataOption();
         var structuredMimeTypesOption = KiotaHost.GetStructuredMimeTypesOption([]);
         var (includePatterns, excludePatterns) = KiotaHost.GetIncludeAndExcludeOptions([], []);
+        var (includeProperties, excludeProperties) = KiotaHost.GetPropertyFilterOptions();
+        var clearPropertyFilters = new Option<bool>("--clear-property-filters")
+        {
+            Description = "Clears saved property include/exclude selectors before applying supplied property options.",
+        };
         var dvrOption = KiotaHost.GetDisableValidationRulesOption();
         var skipGenerationOption = GetSkipGenerationOption();
         var clientNameOption = GetClientNameOption();
@@ -146,6 +156,9 @@ public static class KiotaClientCommands
             structuredMimeTypesOption,
             includePatterns,
             excludePatterns,
+            includeProperties,
+            excludeProperties,
+            clearPropertyFilters,
             dvrOption,
             skipGenerationOption,
             allowedExternalOriginsOption,
@@ -165,6 +178,9 @@ public static class KiotaClientCommands
             StructuredMimeTypesOption = structuredMimeTypesOption,
             IncludePatternsOption = includePatterns,
             ExcludePatternsOption = excludePatterns,
+            IncludePropertiesOption = includeProperties,
+            ExcludePropertiesOption = excludeProperties,
+            ClearPropertyFiltersOption = clearPropertyFilters,
             DisabledValidationRulesOption = dvrOption,
             SkipGenerationOption = skipGenerationOption,
             AllowedExternalOriginsOption = allowedExternalOriginsOption,

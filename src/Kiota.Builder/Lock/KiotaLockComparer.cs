@@ -12,6 +12,7 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
 {
     private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
     private readonly StringComparer _stringComparer;
+    private static readonly StringIEnumerableDeepComparer PropertySelectorComparer = new(StringComparer.Ordinal);
 
     public KiotaLockComparer(StringComparer? stringComparer = null)
     {
@@ -42,6 +43,8 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
                && _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes)
                && _stringIEnumerableDeepComparer.Equals(x.IncludePatterns, y.IncludePatterns)
                && _stringIEnumerableDeepComparer.Equals(x.ExcludePatterns, y.ExcludePatterns)
+               && PropertySelectorComparer.Equals(x.IncludeProperties, y.IncludeProperties)
+               && PropertySelectorComparer.Equals(x.ExcludeProperties, y.ExcludeProperties)
                && _stringIEnumerableDeepComparer.Equals(x.AllowedExternalOrigins, y.AllowedExternalOrigins);
     }
     /// <inheritdoc/>
@@ -67,6 +70,8 @@ public class KiotaLockComparer : IEqualityComparer<KiotaLock>
         hash.Add(obj.StructuredMimeTypes, _stringIEnumerableDeepComparer);
         hash.Add(obj.IncludePatterns, _stringIEnumerableDeepComparer);
         hash.Add(obj.ExcludePatterns, _stringIEnumerableDeepComparer);
+        hash.Add(obj.IncludeProperties, PropertySelectorComparer);
+        hash.Add(obj.ExcludeProperties, PropertySelectorComparer);
         hash.Add(obj.AllowedExternalOrigins, _stringIEnumerableDeepComparer);
         return hash.ToHashCode();
     }
