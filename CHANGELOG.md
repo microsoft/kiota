@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The accessor to a child path is marked deprecated when that path is deprecated. It used to take the deprecation of its parent path instead, so a deprecated `/legacy` under a live `/api` was not flagged, and every child of a deprecated path was.
 - TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
 - Ruby: `kiota info` lists the runtime gems at 0.25.0.
-- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. [#7802](https://github.com/microsoft/kiota/issues/7802)
+- Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. A nullable array used as the items of another array keeps its union wrapper, so both array dimensions are preserved. [#7802](https://github.com/microsoft/kiota/issues/7802)
+- C#: a string request body is only rejected when it is null, so an empty string can be sent.
 
 ## [1.36.1] - 2026-10-12
 

@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Nullable inline union API
+  version: 0.1.0
+paths:
+  /things:
+    post:
+      operationId: createThing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: string
+                - type: 'null'
+      responses:
+        '200':
+          description: The thing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thing'
+components:
+  schemas:
+    Thing:
+      type: object
+      properties:
+        tags:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: 'null'
+        nestedTags:
+          type: array
+          items:
+            anyOf:
+              - type: array
+                items:
+                  type: string
+              - type: 'null'

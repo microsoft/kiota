@@ -3831,6 +3831,37 @@ components:
 
     [Theory]
     [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public void KeepsBothDimensionsForArrayOfNullableInlineArrays(string keyword, bool nullFirst)
+    {
+        // { "type": "array", "items": { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }] } }
+        // the code model only carries one collection level per type, so the nullable inner array must stay a wrapper
+        // for the outer collection; otherwise [["x"]] would be (de)serialized as a flat list of strings.
+        var codeModel = CreateCodeModelForParentProperties(new Dictionary<string, IOpenApiSchema>
+        {
+            ["nestedTags"] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Array,
+                Items = NullableInlineUnion(keyword, nullFirst, new OpenApiSchema { Type = JsonSchemaType.Array, Items = new OpenApiSchema { Type = JsonSchemaType.String } }),
+            },
+        });
+        var parentClass = codeModel.FindChildByName<CodeClass>("parent");
+        Assert.NotNull(parentClass);
+        var property = parentClass.FindChildByName<CodeProperty>("nestedTags", false);
+        Assert.NotNull(property);
+        // outer dimension: a collection of the wrapper
+        var wrapperType = Assert.IsAssignableFrom<CodeComposedTypeBase>(property.Type);
+        Assert.True(wrapperType.IsCollection);
+        // inner dimension: the wrapper holds a collection of strings
+        var innerType = Assert.Single(wrapperType.Types, static x => x.IsCollection);
+        Assert.Equal("string", innerType.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.True(innerType.IsExternal);
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
     [InlineData("anyOf", true)]
     public void SquishesNullableInlineObjectAndEnumUnionProperty(string keyword, bool nullFirst)
     {

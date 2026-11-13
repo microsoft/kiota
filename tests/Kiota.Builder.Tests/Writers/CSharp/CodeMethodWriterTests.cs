@@ -1426,6 +1426,23 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.Contains("return requestInfo;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+    [Theory]
+    [InlineData(CodeMethodKind.RequestGenerator)]
+    [InlineData(CodeMethodKind.RequestExecutor)]
+    public void WritesNullOnlyGuardForStringRequestBody(CodeMethodKind kind)
+    {
+        // "" is a valid string request body, so the guard must only reject null
+        setup();
+        method.Kind = kind;
+        method.HttpMethod = HttpMethod.Post;
+        AddRequestProperties();
+        AddRequestBodyParameters();
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("if(ReferenceEquals(b, null)) throw new ArgumentNullException(nameof(b));", result);
+        Assert.DoesNotContain("string.IsNullOrEmpty(b)", result);
+        AssertExtensions.CurlyBracesAreClosed(result, 1);
+    }
     [Fact]
     public void WritesRequestGeneratorBodyForScalar()
     {
