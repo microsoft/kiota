@@ -136,6 +136,22 @@ internal abstract class BaseKiotaCommandHandler : AsynchronousCommandLineAction,
     }
     public override abstract Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default);
     private readonly List<IDisposable> disposables = [];
+    protected bool IsWorkspaceOutputPathValid(GenerationConfiguration generationConfiguration)
+    {
+        ArgumentNullException.ThrowIfNull(generationConfiguration);
+        if (generationConfiguration.NoWorkspace)
+            return true;
+        try
+        {
+            KiotaBuilder.ValidateWorkspaceOutputPath(GetAbsolutePath(generationConfiguration.OutputPath), Directory.GetCurrentDirectory());
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            DisplayError(ex.Message);
+            return false;
+        }
+    }
     protected (ILoggerFactory, ILogger<T>) GetLoggerAndFactory<T>(ParseResult parseResult, string logFileRootPath = "")
     {
         LogLevel logLevel = parseResult.GetValue(LogLevelOption);

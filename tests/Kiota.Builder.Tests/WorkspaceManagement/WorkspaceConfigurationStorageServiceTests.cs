@@ -1,11 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Kiota.Builder.Configuration;
 using Kiota.Builder.WorkspaceManagement;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Kiota.Builder.Tests.WorkspaceManagement;
 
+[Collection(nameof(WorkspaceConfigurationStorageServiceTestsCollection))]
 public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
 {
     [Fact]
@@ -16,6 +23,14 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
         await Assert.ThrowsAsync<ArgumentNullException>(() => service.UpdateWorkspaceConfigurationAsync(null, null, cancellationToken: TestContext.Current.CancellationToken));
     }
     private readonly string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+    private readonly string workspace;
+    private readonly string outside;
+    private readonly List<string> directoryLinks = [];
+    public WorkspaceConfigurationStorageServiceTests()
+    {
+        workspace = Path.Join(tempPath, "workspace");
+        outside = Path.Join(tempPath, "outside");
+    }
     [Fact]
     public async Task InitializesAsync()
     {
@@ -157,6 +172,383 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWorkspaceConfigurationAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathRejectsDirectoryLinkEscapingWorkspace(bool useJunction)
+    {
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(Path.Join(outside, "client"));
+        CreateDirectoryLink(Path.Join(workspace, "link"), outside, useJunction);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace));
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("link/client", workspace));
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", workspace));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathAcceptsDirectoryLinkInsideWorkspace(bool useJunction)
+    {
+        var inside = Path.Join(workspace, "real");
+        Directory.CreateDirectory(inside);
+        CreateDirectoryLink(Path.Join(workspace, "link"), inside, useJunction);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", workspace);
+    }
+    [Fact]
+    public void ValidateOutputPathAcceptsPlainSubdirectory()
+    {
+        Directory.CreateDirectory(workspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("src/client", workspace);
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathRejectsDirectoryLinkToWorkspaceRoot(bool useJunction)
+    {
+        Directory.CreateDirectory(workspace);
+        CreateDirectoryLink(Path.Join(workspace, "link"), workspace, useJunction);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathAcceptsDescendantThroughWorkspaceRootLink(bool useJunction)
+    {
+        Directory.CreateDirectory(Path.Join(workspace, "client"));
+        CreateDirectoryLink(Path.Join(workspace, "link"), workspace, useJunction);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/client", workspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", workspace);
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathRejectsLinkTargetWithLinkedParent(bool useJunction)
+    {
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(Path.Join(outside, "client"));
+        CreateDirectoryLink(Path.Join(workspace, "escape"), outside, useJunction);
+        CreateDirectoryLink(Path.Join(workspace, "output"), Path.Join(workspace, "escape", "client"), useJunction);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("output", workspace));
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("output/new/client", workspace));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathAcceptsWorkspaceWithLinkedAncestor(bool useJunction)
+    {
+        var inside = Path.Join(workspace, "real");
+        Directory.CreateDirectory(inside);
+        CreateDirectoryLink(Path.Join(tempPath, "alias"), tempPath, useJunction);
+        CreateDirectoryLink(Path.Join(workspace, "link"), inside, useJunction);
+        var aliasedWorkspace = Path.Join(tempPath, "alias", "workspace");
+        BaseApiConsumerConfiguration.ValidateOutputPath("link", aliasedWorkspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", aliasedWorkspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("new/client", aliasedWorkspace);
+    }
+    [Fact]
+    public void ValidateOutputPathAcceptsLinkTargetWithDifferentCasing()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Skip("Path comparisons already ignore casing on Windows.");
+        var inside = Path.Join(workspace, "real");
+        Directory.CreateDirectory(inside);
+        Directory.CreateDirectory(outside);
+        if (!Directory.Exists(inside.ToUpperInvariant()))
+            Assert.Skip("This test requires a case-insensitive file system.");
+        var workspaceDifferentCasing = Path.Join(tempPath, "WorkSpace");
+        CreateDirectoryLink(Path.Join(workspace, "link"), Path.Join(workspaceDifferentCasing, "REAL"), useJunction: false);
+        CreateDirectoryLink(Path.Join(workspace, "other"), Path.Join(tempPath, "OUTSIDE"), useJunction: false);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new/client", workspace);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("other", workspace));
+    }
+    [Fact]
+    public void ValidateWorkspaceOutputPathRejectsSiblingWithDifferentCasing()
+    {
+        var sibling = Path.Join(tempPath, "WORKSPACE");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(sibling);
+        if (Directory.GetDirectories(tempPath).Length < 2)
+            Assert.Skip("This test requires a case-sensitive file system.");
+        KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(workspace, "client"), workspace);
+        Assert.Throws<InvalidOperationException>(() => KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(sibling, "client"), workspace));
+        Assert.Throws<InvalidOperationException>(() => new ApiClientConfiguration { OutputPath = Path.Join(sibling, "client") }.NormalizeOutputPath(workspace));
+    }
+    [Fact]
+    public void ValidateWorkspaceOutputPathAcceptsWorkspaceWithDifferentCasing()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Skip("Path comparisons already ignore casing on Windows.");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(outside);
+        if (!Directory.Exists(workspace.ToUpperInvariant()))
+            Assert.Skip("This test requires a case-insensitive file system.");
+        KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(tempPath, "WorkSpace", "client"), workspace);
+        Assert.Throws<InvalidOperationException>(() => KiotaBuilder.ValidateWorkspaceOutputPath(Path.Join(tempPath, "OUTSIDE", "client"), workspace));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ValidateOutputPathRejectsDirectoryLinkCycle(bool useJunction)
+    {
+        Directory.CreateDirectory(workspace);
+        var first = Path.Join(workspace, "first");
+        var second = Path.Join(workspace, "second");
+        Directory.CreateDirectory(second);
+        CreateDirectoryLink(first, second, useJunction);
+        Directory.Delete(second);
+        CreateDirectoryLink(second, first, useJunction);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("first", workspace));
+    }
+    [Theory]
+    [InlineData("real", true)]
+    [InlineData("../outside", false)]
+    [InlineData(".", false)]
+    public void ValidateOutputPathHandlesRelativeSymbolicLinkTargets(string target, bool isAllowed)
+    {
+        Directory.CreateDirectory(Path.Join(workspace, "real"));
+        Directory.CreateDirectory(outside);
+        CreateDirectoryLink(Path.Join(workspace, "link"), target, useJunction: false);
+        if (isAllowed)
+            BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace);
+        else
+            Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("link", workspace));
+    }
+    [Fact]
+    public void ValidateOutputPathRejectsRelativeTargetTraversingLinkedParentOnUnix()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Skip("This test exercises Unix symbolic link parent traversal.");
+        Directory.CreateDirectory(workspace);
+        Directory.CreateDirectory(Path.Join(outside, "child"));
+        Directory.CreateDirectory(Path.Join(outside, "client"));
+        CreateDirectoryLink(Path.Join(workspace, "redirect"), Path.Join(outside, "child"), useJunction: false);
+        CreateDirectoryLink(Path.Join(workspace, "output"), "redirect/../client", useJunction: false);
+        Assert.Throws<InvalidOperationException>(() => BaseApiConsumerConfiguration.ValidateOutputPath("output", workspace));
+    }
+    [Theory]
+    [InlineData(false, "external", false)]
+    [InlineData(true, "external", false)]
+    [InlineData(false, "workspace", false)]
+    [InlineData(true, "workspace", false)]
+    [InlineData(false, "indirect", false)]
+    [InlineData(true, "indirect", false)]
+    [InlineData(false, "workspace", true)]
+    [InlineData(true, "workspace", true)]
+    public async Task GenerateClientPreservesFilesWhenOutputLinkLeavesWorkspaceAsync(bool useJunction, string targetKind, bool changeWorkingDirectory)
+    {
+        Directory.CreateDirectory(workspace);
+        var originalDirectory = Directory.GetCurrentDirectory();
+        var outputPath = Path.Join(workspace, "output");
+        var targetPath = targetKind switch
+        {
+            "external" => outside,
+            "workspace" => workspace,
+            "indirect" => Path.Join(outside, "client"),
+            _ => throw new ArgumentOutOfRangeException(nameof(targetKind)),
+        };
+        var nestedDirectory = Directory.CreateDirectory(Path.Join(targetPath, "data")).FullName;
+        var looseFile = Path.Join(targetPath, "keep.txt");
+        var nestedFile = Path.Join(nestedDirectory, "keep.txt");
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await File.WriteAllTextAsync(looseFile, "loose file", cancellationToken);
+        await File.WriteAllTextAsync(nestedFile, "nested file", cancellationToken);
+        using var httpClient = new HttpClient();
+        try
+        {
+            Directory.SetCurrentDirectory(workspace);
+            var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration
+            {
+                OutputPath = outputPath,
+                OpenAPIFilePath = Path.Join(tempPath, "missing.yaml"),
+                CleanOutput = true,
+                NoWorkspace = false,
+            }, httpClient, useKiotaConfig: true);
+            Directory.CreateDirectory(outputPath);
+            BaseApiConsumerConfiguration.ValidateOutputPath("output", workspace);
+            Directory.Delete(outputPath);
+            if (targetKind == "indirect")
+            {
+                CreateDirectoryLink(Path.Join(workspace, "escape"), outside, useJunction);
+                targetPath = Path.Join(workspace, "escape", "client");
+            }
+            CreateDirectoryLink(outputPath, targetPath, useJunction);
+            if (changeWorkingDirectory)
+                Directory.SetCurrentDirectory(tempPath);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateClientAsync(cancellationToken));
+
+            var validationException = Assert.IsType<InvalidOperationException>(exception.InnerException);
+            Assert.Contains("subdirectory of the workspace", validationException.Message, StringComparison.Ordinal);
+            Assert.Equal("loose file", await File.ReadAllTextAsync(looseFile, cancellationToken));
+            Assert.Equal("nested file", await File.ReadAllTextAsync(nestedFile, cancellationToken));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            if (Directory.Exists(outputPath) || new DirectoryInfo(outputPath).LinkTarget is not null)
+                Directory.Delete(outputPath);
+        }
+    }
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    public async Task GenerateClientRejectsNewOutputUnderLinkLeavingWorkspaceAsync(bool useJunction, bool cleanOutput)
+    {
+        var inside = Path.Join(workspace, "real");
+        Directory.CreateDirectory(inside);
+        Directory.CreateDirectory(outside);
+        var linkPath = Path.Join(workspace, "link");
+        var outputPath = Path.Join(linkPath, "new-client");
+        var descriptionPath = Path.Join(tempPath, "description.yaml");
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await File.WriteAllTextAsync(descriptionPath, """
+        openapi: 3.0.4
+        info:
+          title: Test API
+          version: 1.0.0
+        servers:
+          - url: https://example.org
+        paths:
+          /items:
+            get:
+              operationId: getItems
+              responses:
+                '200':
+                  description: Success
+        """, cancellationToken);
+        CreateDirectoryLink(linkPath, inside, useJunction);
+        BaseApiConsumerConfiguration.ValidateOutputPath("link/new-client", workspace);
+        Directory.Delete(linkPath);
+        CreateDirectoryLink(linkPath, outside, useJunction);
+        using var httpClient = new HttpClient();
+        var originalDirectory = Directory.GetCurrentDirectory();
+        try
+        {
+            Directory.SetCurrentDirectory(workspace);
+            var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration
+            {
+                OutputPath = outputPath,
+                OpenAPIFilePath = descriptionPath,
+                ClientClassName = "TestClient",
+                CleanOutput = cleanOutput,
+                NoWorkspace = false,
+            }, httpClient, useKiotaConfig: true);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => builder.GenerateClientAsync(cancellationToken));
+
+            var validationException = Assert.IsType<InvalidOperationException>(exception.InnerException);
+            Assert.Contains("subdirectory of the workspace", validationException.Message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(Path.Join(outside, "new-client")));
+            Assert.Empty(Directory.EnumerateFileSystemEntries(outside));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+        }
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GeneratesOutsideWorkspaceWithCleanOutputWhenWorkspaceDisabledAsync(bool generatePlugin)
+    {
+        Directory.CreateDirectory(workspace);
+        var nestedDirectory = Directory.CreateDirectory(Path.Join(outside, "data")).FullName;
+        var looseFile = Path.Join(outside, "old.txt");
+        var nestedFile = Path.Join(nestedDirectory, "old.txt");
+        var descriptionPath = Path.Join(tempPath, "description.yaml");
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await File.WriteAllTextAsync(looseFile, "old file", cancellationToken);
+        await File.WriteAllTextAsync(nestedFile, "old nested file", cancellationToken);
+        await File.WriteAllTextAsync(descriptionPath, """
+        openapi: 3.0.4
+        info:
+          title: Test API
+          version: 1.0.0
+        servers:
+          - url: https://example.org
+        paths:
+          /items:
+            get:
+              operationId: getItems
+              responses:
+                '200':
+                  description: Success
+        """, cancellationToken);
+        using var httpClient = new HttpClient();
+        var originalDirectory = Directory.GetCurrentDirectory();
+        try
+        {
+            Directory.SetCurrentDirectory(workspace);
+            var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration
+            {
+                OutputPath = outside,
+                OpenAPIFilePath = descriptionPath,
+                ClientClassName = "TestClient",
+                PluginTypes = generatePlugin ? [PluginType.APIPlugin] : [],
+                CleanOutput = true,
+                NoWorkspace = true,
+            }, httpClient, useKiotaConfig: true);
+
+            var generated = generatePlugin
+                ? await builder.GeneratePluginAsync(cancellationToken)
+                : await builder.GenerateClientAsync(cancellationToken);
+
+            Assert.True(generated);
+            Assert.False(File.Exists(looseFile));
+            Assert.False(Directory.Exists(nestedDirectory));
+            Assert.True(File.Exists(Path.Join(outside, generatePlugin ? "testclient-apiplugin.json" : "TestClient.cs")));
+            Assert.False(Directory.Exists(Path.Join(workspace, WorkspaceConfigurationStorageService.KiotaDirectorySegment)));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+        }
+    }
+    private void CreateDirectoryLink(string linkPath, string targetPath, bool useJunction)
+    {
+        if (useJunction)
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Skip("Directory junctions are only supported on Windows.");
+            var startInfo = new ProcessStartInfo("cmd.exe")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            };
+            startInfo.ArgumentList.Add("/c");
+            startInfo.ArgumentList.Add("mklink");
+            startInfo.ArgumentList.Add("/J");
+            startInfo.ArgumentList.Add(linkPath);
+            startInfo.ArgumentList.Add(targetPath);
+            using var process = Process.Start(startInfo);
+            Assert.NotNull(process);
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            Assert.True(process.ExitCode == 0, $"Junction creation failed: {output}{error}");
+            directoryLinks.Add(linkPath);
+            Assert.NotNull(new DirectoryInfo(linkPath).LinkTarget);
+            return;
+        }
+        try
+        {
+            Directory.CreateSymbolicLink(linkPath, targetPath);
+            directoryLinks.Add(linkPath);
+        }
+        catch (UnauthorizedAccessException ex) when (OperatingSystem.IsWindows())
+        {
+            Assert.Skip($"Symbolic link creation is not permitted: {ex.Message}");
+        }
+        catch (IOException ex) when (OperatingSystem.IsWindows() && (ex.HResult & 0xFFFF) == 1314)
+        {
+            Assert.Skip($"Symbolic link creation requires a privilege not held by this process: {ex.Message}");
+        }
+    }
     private async Task WriteWorkspaceConfigurationAsync(string content)
     {
         var configurationDirectory = Path.Combine(tempPath, WorkspaceConfigurationStorageService.KiotaDirectorySegment);
@@ -165,8 +557,20 @@ public sealed class WorkspaceConfigurationStorageServiceTests : IDisposable
     }
     public void Dispose()
     {
+        foreach (var link in directoryLinks.Where(static link => new DirectoryInfo(link).LinkTarget is not null))
+        {
+            if (OperatingSystem.IsWindows())
+                Directory.Delete(link);
+            else
+                File.Delete(link);
+        }
         if (Directory.Exists(tempPath))
             Directory.Delete(tempPath, true);
         GC.SuppressFinalize(this);
+    }
+
+    [CollectionDefinition(nameof(WorkspaceConfigurationStorageServiceTestsCollection), DisableParallelization = true)]
+    public sealed class WorkspaceConfigurationStorageServiceTestsCollection
+    {
     }
 }

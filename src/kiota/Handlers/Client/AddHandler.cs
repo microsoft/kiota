@@ -155,6 +155,8 @@ internal class AddHandler : BaseKiotaCommandHandler
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
         Configuration.Generation.ApiManifestPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.ApiManifestPath));
 
+        if (!IsWorkspaceOutputPathValid(Configuration.Generation))
+            return 1;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
