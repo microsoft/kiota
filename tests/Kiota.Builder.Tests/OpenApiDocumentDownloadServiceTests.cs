@@ -384,12 +384,31 @@ components:
     }
 
     [Theory]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/%2e%2e/private/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com:443/schemas/../private/pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsReferencesLeavingAllowedPath(string allowedOrigin, string externalReference)
+    {
+        using var handler = new ResponseHandler();
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri(externalReference),
+            TestContext.Current.CancellationToken));
+        Assert.Empty(handler.RequestedUris);
+    }
+
+    [Theory]
     [InlineData("https://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*.contoso.com/*", "https://zap.nested.contoso.com/schemas/pet.yaml")]
     [InlineData("HTTPS://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*/schemas/*", "https://anything.example.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/v1/../v2/pet.yaml")]
     [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
     // wildcards from the path onwards keep matching any character, the destination is already pinned by then
     [InlineData("https://*.contoso.com/schemas/pet.yaml?version=*", "https://zap.contoso.com/schemas/pet.yaml?version=2")]

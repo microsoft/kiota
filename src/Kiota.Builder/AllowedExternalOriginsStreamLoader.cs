@@ -136,6 +136,9 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static IEnumerable<string> GetUriCandidates(Uri targetUri, Uri originalUri)
     {
         yield return targetUri.AbsoluteUri;
+        // the original string can keep segments such as "..", which the request doesn't
+        if (IsHttpUri(targetUri))
+            yield break;
         yield return targetUri.OriginalString;
         yield return originalUri.OriginalString;
     }
