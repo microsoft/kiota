@@ -388,6 +388,7 @@ components:
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/%2e%2e/private/pet.yaml")]
     [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
     [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com:443/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com/my schemas/*", "https://contoso.com/my schemas/../private/pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderRejectsReferencesLeavingAllowedPath(string allowedOrigin, string externalReference)
     {
         using var handler = new ResponseHandler();
@@ -409,6 +410,14 @@ components:
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/v1/../v2/pet.yaml")]
+    // exact entries match the resolved reference
+    [InlineData("https://contoso.com/schemas/v1/../v2/pet.yaml", "https://contoso.com/schemas/v1/../v2/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/pet model.yaml", "https://contoso.com/schemas/pet model.yaml")]
+    [InlineData("https://contoso.com/schemas/pét.yaml", "https://contoso.com/schemas/pét.yaml")]
+    // wildcard entries match the resolved reference too
+    [InlineData("https://contoso.com/my schemas/*", "https://contoso.com/my schemas/pet.yaml")]
+    [InlineData("https://contoso.com/pét/*", "https://contoso.com/pét/pet.yaml")]
+    [InlineData("https://*.contoso.com/my schemas/*", "https://zap.contoso.com/my schemas/pet.yaml")]
     [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
     // wildcards from the path onwards keep matching any character, the destination is already pinned by then
     [InlineData("https://*.contoso.com/schemas/pet.yaml?version=*", "https://zap.contoso.com/schemas/pet.yaml?version=2")]

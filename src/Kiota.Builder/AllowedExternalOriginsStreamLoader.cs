@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +23,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     // the delimiters that separate the scheme, the user information, the host and the port from the rest of the URI.
     private const string AuthorityWildcardExpression = "[^/\\\\@:?#]*";
     private static readonly char[] AuthorityTerminators = ['/', '?', '#'];
+    private const string UriEscapedCharacters = " \"<>^`{|}";
 
     private const int MaxRedirects = 10;
     private readonly HttpClient httpClient;
@@ -58,7 +61,10 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static Uri Canonicalize(Uri uri) => new(uri.AbsoluteUri);
 
     private static bool IsHttpUri(Uri uri) =>
-        uri.IsAbsoluteUri && (Uri.UriSchemeHttps.Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase) || Uri.UriSchemeHttp.Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase));
+        uri.IsAbsoluteUri && IsHttpScheme(uri.Scheme);
+
+    private static bool IsHttpScheme(string scheme) =>
+        Uri.UriSchemeHttps.Equals(scheme, StringComparison.OrdinalIgnoreCase) || Uri.UriSchemeHttp.Equals(scheme, StringComparison.OrdinalIgnoreCase);
 
     private static bool IsRedirect(HttpStatusCode statusCode) => statusCode is
         HttpStatusCode.MultipleChoices or
@@ -160,13 +166,50 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     {
         var normalizedPattern = NormalizeUriPattern(pattern);
         if (!pattern.Contains('*', StringComparison.Ordinal))
-            return candidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase) || normalizedPattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+        {
+            // exact entries are written the way the resolved candidates are, e.g. "pet model.yaml" as "pet%20model.yaml"
+            var canonicalPattern = Uri.TryCreate(pattern, UriKind.Absolute, out var patternUri) && IsHttpUri(patternUri) ? patternUri.AbsoluteUri : normalizedPattern;
+            return candidates.Any(candidate =>
+                pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                normalizedPattern.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                canonicalPattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+        }
 
         var expression = BuildUriPatternExpression(pattern);
         var normalizedExpression = BuildUriPatternExpression(normalizedPattern);
+        var escapedExpression = BuildUriPatternExpression(EscapeUriPattern(normalizedPattern));
         return candidates.Any(candidate =>
             Regex.IsMatch(candidate, expression, RegexOptions.IgnoreCase, RegexTimeout) ||
-            Regex.IsMatch(candidate, normalizedExpression, RegexOptions.IgnoreCase, RegexTimeout));
+            Regex.IsMatch(candidate, normalizedExpression, RegexOptions.IgnoreCase, RegexTimeout) ||
+            Regex.IsMatch(candidate, escapedExpression, RegexOptions.IgnoreCase, RegexTimeout));
+    }
+
+    /// <summary>
+    /// Percent-encodes the characters <see cref="Uri.AbsoluteUri"/> encodes after the authority of an http or https pattern,
+    /// e.g. "my schemas/*" as "my%20schemas/*", without resolving dot segments or touching the wildcards.
+    /// </summary>
+    private static string EscapeUriPattern(string pattern)
+    {
+        var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
+        if (schemeSeparatorIndex < 0 || !IsHttpScheme(pattern[..schemeSeparatorIndex]))
+            return pattern;
+        var authorityEndIndex = pattern.IndexOfAny(AuthorityTerminators, schemeSeparatorIndex + SchemeSeparator.Length);
+        if (authorityEndIndex < 0)
+            return pattern;
+        var builder = new StringBuilder(pattern[..authorityEndIndex]);
+        Span<byte> utf8 = stackalloc byte[4];
+        foreach (var rune in pattern[authorityEndIndex..].EnumerateRunes())
+        {
+            if (rune.Value > 0x7F || UriEscapedCharacters.Contains((char)rune.Value, StringComparison.Ordinal))
+            {
+                var length = rune.EncodeToUtf8(utf8);
+                foreach (var b in utf8[..length])
+                    builder.Append(CultureInfo.InvariantCulture, $"%{b:X2}");
+            }
+            else
+                builder.Append(rune.ToString());
+        }
+        return builder.ToString();
     }
 
     /// <summary>
