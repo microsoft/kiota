@@ -207,7 +207,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
                     builder.Append(CultureInfo.InvariantCulture, $"%{b:X2}");
             }
             else
-                builder.Append(rune.ToString());
+                builder.Append((char)rune.Value);
         }
         return builder.ToString();
     }
