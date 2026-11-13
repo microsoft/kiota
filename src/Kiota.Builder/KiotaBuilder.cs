@@ -1967,19 +1967,22 @@ public partial class KiotaBuilder
             unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
         {
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
-            var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
+            var modelSchema = targetSchema.IsArray() && targetSchema.Items is { } itemsSchema ? itemsSchema : targetSchema;
+            var shortestNamespace = GetShortestNamespace(codeNamespace, modelSchema);
             // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
             // CreateModelDeclarations so the allOf entries get merged. Calling AddModelDeclarationIfDoesntExist
             // directly with the raw schema would only set the base class (from the single allOf $ref) but drop
             // the inline allOf member's properties, producing an empty model that then wins the name-based dedup.
-            if ((targetSchema.IsInherited() || targetSchema.IsIntersection()) &&
-                CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType inheritedType)
+            if ((modelSchema.IsInherited() || modelSchema.IsIntersection()) &&
+                CreateModelDeclarations(currentNode, modelSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody) is CodeType inheritedType)
             {
+                if (targetSchema.IsArray())
+                    inheritedType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 return inheritedType;
             }
             return new CodeType
             {
-                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, targetSchema, className, shortestNamespace),
+                TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, modelSchema, className, shortestNamespace),
                 CollectionKind = targetSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
             };// so we don't create unnecessary union types when anyOf was used only for nullable.
         }
@@ -2018,8 +2021,11 @@ public partial class KiotaBuilder
         if (schemas is not null)
             foreach (var currentSchema in schemas)
             {
-                var shortestNamespace = GetShortestNamespace(codeNamespace, currentSchema);
-                var className = currentSchema.GetSchemaName().CleanupSymbolName();
+                var memberSchema = currentSchema.IsArray() && currentSchema.Items is { } itemsSchema ? itemsSchema : currentSchema;
+                var shortestNamespace = GetShortestNamespace(codeNamespace, memberSchema);
+                var isAllOfMember = memberSchema.IsInherited() || memberSchema.IsIntersection();
+                // An inline allOf must not reuse the referenced base model's name.
+                var className = memberSchema.GetSchemaName(directOnly: isAllOfMember).CleanupSymbolName();
                 if (string.IsNullOrEmpty(className))
                     if (GetPrimitiveType(currentSchema) is CodeType primitiveType && !string.IsNullOrEmpty(primitiveType.Name))
                     {
@@ -2031,11 +2037,14 @@ public partial class KiotaBuilder
                     }
                     else
                         className = $"{unionType.Name}Member{++membersWithNoName}";
-                var declarationType = new CodeType
+                var declarationType = isAllOfMember &&
+                    CreateModelDeclarations(currentNode, memberSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: className, isRequestBody: isRequestBody) is CodeType inheritedMemberType ?
+                    inheritedMemberType : new CodeType
                 {
-                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, currentSchema, className, shortestNamespace, null),
-                    CollectionKind = currentSchema.IsArray() ? CodeTypeBase.CodeTypeCollectionKind.Complex : default
+                    TypeDefinition = AddModelDeclarationIfDoesntExist(currentNode, operation, memberSchema, className, shortestNamespace, null),
                 };
+                if (currentSchema.IsArray())
+                    declarationType.CollectionKind = CodeTypeBase.CodeTypeCollectionKind.Complex;
                 if (!unionType.ContainsType(declarationType))
                     unionType.AddType(declarationType);
             }
