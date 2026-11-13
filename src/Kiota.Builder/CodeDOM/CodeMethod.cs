@@ -132,7 +132,7 @@ public class CodeMethod : CodeTerminalWithKind<CodeMethodKind>, ICloneable, IDoc
         if (AcceptedResponseTypes is List<string> list)
             list.AddRange(types);
     }
-    public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Any();
+    public bool ShouldAddAcceptHeader => AcceptedResponseTypes.Count != 0;
     public string AcceptHeaderValue => string.Join(", ", AcceptedResponseTypes);
     public AccessModifier Access { get; set; } = AccessModifier.Public;
 #nullable disable // exposing property is required

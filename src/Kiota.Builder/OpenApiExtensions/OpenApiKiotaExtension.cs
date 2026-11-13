@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Text.Json.Nodes;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Extensions;
@@ -21,7 +20,7 @@ public class OpenApiKiotaExtension : IOpenApiExtension
     {
         ArgumentNullException.ThrowIfNull(writer);
         if (LanguagesInformation != null &&
-            LanguagesInformation.Any())
+            LanguagesInformation.Count != 0)
         {
             writer.WriteStartObject();
             writer.WriteRequiredObject(nameof(LanguagesInformation).ToFirstCharacterLowerCase(), LanguagesInformation, static (w, x) => x.SerializeAsV3(w));

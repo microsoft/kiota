@@ -482,7 +482,7 @@ public partial class KiotaBuilder
                 doc.Paths.Remove(path.Key);
         }
 
-        if (!doc.Paths.Any())
+        if (doc.Paths.Count == 0)
             LogNoPathsFoundMatchingPatterns();
     }
     internal void SetApiRootUrl()

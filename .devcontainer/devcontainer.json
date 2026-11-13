@@ -54,6 +54,9 @@
   },
   "remoteUser": "vscode",
   "features": {
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "11.0"
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers-extra/features/gradle-sdkman:2": {},
     "ghcr.io/devcontainers/features/python:1": {},
