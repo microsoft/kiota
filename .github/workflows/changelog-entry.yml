@@ -37,19 +37,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_REPOSITORY: ${{ github.repository }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
 
-          $baseContent = gh api "repos/$env:BASE_REPOSITORY/contents/CHANGELOG.md?ref=$env:BASE_SHA" --jq .content
-          $headContent = gh api "repos/$env:HEAD_REPOSITORY/contents/CHANGELOG.md?ref=$env:HEAD_SHA" --jq .content
-          [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($baseContent -join ""))) | Set-Content -Path base_CHANGELOG.md -NoNewline
-          [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($headContent -join ""))) | Set-Content -Path head_CHANGELOG.md -NoNewline
-
-          $hasEntry = ./scripts/check-changelog-entry.ps1 -baseChangelogPath base_CHANGELOG.md -headChangelogPath head_CHANGELOG.md
+          $addedFiles = @(gh api --paginate "repos/$env:BASE_REPOSITORY/pulls/$env:PR_NUMBER/files" --jq '.[] | select(.status == "added" and .additions > 0) | .filename')
+          $hasEntry = ./scripts/check-changelog-entry.ps1 -addedFiles $addedFiles
           "has_entry=$($hasEntry.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
       - name: Comment on missing changelog entry
@@ -61,4 +55,4 @@ jobs:
         shell: pwsh
         run: |
           gh api --method POST "repos/$env:BASE_REPOSITORY/issues/$env:PR_NUMBER/comments" `
-            -f body='Thanks for opening this pull request! Please add a changelog entry under `## [Unreleased]` in `CHANGELOG.md`, before the first released version section, so users can see what changed. Add bug fixes under `### Changed` and new features under `### Added`.'
+            -f body='Thanks for opening this pull request! Please add a changelog entry so users can see what changed: a new Markdown file in `changelog.d/changed/` for a bug fix or a change in behavior, or in `changelog.d/added/` for a new feature, holding one line written for users. See [changelog.d/README.md](https://github.com/microsoft/kiota/blob/main/changelog.d/README.md) for an example.'
