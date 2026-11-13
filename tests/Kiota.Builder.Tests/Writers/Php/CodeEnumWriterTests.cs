@@ -39,6 +39,68 @@ public sealed class CodeEnumWriterTests : IDisposable
         tw?.Dispose();
         GC.SuppressFinalize(this);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritesDocumentationForCurrentEnums(bool explicitlyCurrent)
+    {
+        currentEnum.Documentation.DescriptionTemplate = "Available statuses */ \\next";
+        currentEnum.Documentation.DocumentationLink = new Uri("https://example.com/status");
+        currentEnum.Documentation.DocumentationLabel = "Status reference";
+        if (explicitlyCurrent)
+            currentEnum.Deprecation = new DeprecationInformation("Current", IsDeprecated: false);
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        Assert.Contains(" * Available statuses * / /next", result);
+        Assert.Contains(" * @link https://example.com/status Status reference", result);
+        Assert.DoesNotContain("Available statuses */", result);
+        Assert.DoesNotContain("@deprecated", result);
+    }
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void ResolvesTypeReferencesInEnumTemplates(bool deprecated, bool duplicated)
+    {
+        var root = currentEnum.GetImmediateParentOfType<CodeNamespace>();
+        var models = root.AddNamespace("Models");
+        var model = models.AddClass(new CodeClass { Name = "message" }).First();
+        var reference = new CodeType { Name = model.Name, TypeDefinition = model };
+        currentEnum.AddUsing(new CodeUsing { Name = models.Name, Declaration = reference });
+        if (duplicated)
+        {
+            var otherModels = root.AddNamespace("OtherModels");
+            var otherModel = otherModels.AddClass(new CodeClass { Name = "message" }).First();
+            currentEnum.AddUsing(new CodeUsing
+            {
+                Name = otherModels.Name,
+                Declaration = new CodeType { Name = otherModel.Name, TypeDefinition = otherModel },
+            });
+        }
+        if (deprecated)
+            currentEnum.Deprecation = new DeprecationInformation("See {model}",
+                TypeReferences: new()
+                {
+                    ["model"] = reference
+                });
+        else
+        {
+            currentEnum.Documentation.DescriptionTemplate = "See {model}";
+            currentEnum.Documentation.TypeReferences["model"] = reference;
+        }
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        var result = tw.ToString();
+        var expectedType = duplicated ? "\\Microsoft\\Graph\\Models\\Message" : "Message";
+        Assert.Contains($"See {expectedType}", result);
+        Assert.Equal(deprecated, result.Contains("@deprecated", StringComparison.Ordinal));
+    }
+    [Fact]
+    public void DoesNotWriteEmptyDocumentationForCurrentEnums()
+    {
+        _codeEnumWriter.WriteCodeElement(currentEnum, writer);
+        Assert.DoesNotContain("/**", tw.ToString());
+    }
     [Fact]
     public void DisambiguatesEnumConstantsWithoutStealingExistingNames()
     {
