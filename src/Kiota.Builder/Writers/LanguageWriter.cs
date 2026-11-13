@@ -228,7 +228,7 @@ public abstract class LanguageWriter(string indentationChar = " ", int indentati
     {
         return language switch
         {
-            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName),
+            GenerationLanguage.CSharp => new CSharpWriter(outputPath, clientNamespaceName, excludeBackwardCompatible),
             GenerationLanguage.Java => new JavaWriter(outputPath, clientNamespaceName),
             GenerationLanguage.TypeScript => new TypeScriptWriter(outputPath, clientNamespaceName),
             GenerationLanguage.Ruby => new RubyWriter(outputPath, clientNamespaceName),
