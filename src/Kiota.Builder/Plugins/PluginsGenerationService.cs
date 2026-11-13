@@ -328,7 +328,7 @@ public partial class PluginsGenerationService
         {
             // Initialize the list of functions to run for if it's null or empty
             runtime.RunForFunctions ??= new List<string>();
-            if (!runtime.RunForFunctions.Any())
+            if (runtime.RunForFunctions.Count == 0)
             {
                 // Add all current functions in the first manifest if not already referenced
                 runtime.RunForFunctions.AddRange(
