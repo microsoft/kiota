@@ -623,4 +623,63 @@ components:
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task GeneratesWireNameForReservedQueryParameterInToMap()
+    {
+        const string description = """
+openapi: 3.0.3
+info:
+  title: Test
+  version: 1.0.0
+servers:
+  - url: https://example.com
+paths:
+  /foo:
+    get:
+      parameters:
+        - name: bar
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+""";
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.Dart,
+            ClientNamespaceName = "client",
+        };
+        var logger = new FakeLogger<KiotaBuilder>();
+        using var client = new HttpClient();
+        var builder = new KiotaBuilder(logger, configuration, client);
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(description));
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var root = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await builder.ApplyLanguageRefinementAsync(configuration, root, TestContext.Current.CancellationToken);
+
+        var queryParamsClass = root.FindChildByName<CodeClass>("FooRequestBuilderGetQueryParameters", true);
+        Assert.NotNull(queryParamsClass);
+
+        var path = Path.GetTempFileName();
+        try
+        {
+            var writer = LanguageWriter.GetLanguageWriter(GenerationLanguage.Dart, Path.GetDirectoryName(path), "client");
+            await CodeRenderer.GetCodeRender(configuration).RenderCodeNamespaceToSingleFileAsync(writer, queryParamsClass, path, TestContext.Current.CancellationToken);
+            var result = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
+            Assert.Contains("'bar' : bar,", result);
+            Assert.Contains("'type' : type_,", result);
+            Assert.Contains("/// @QueryParameter('type')", result);
+            Assert.DoesNotContain("/// @QueryParameter('bar')", result);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }
