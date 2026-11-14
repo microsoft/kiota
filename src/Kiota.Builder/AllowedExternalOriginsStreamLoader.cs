@@ -238,7 +238,23 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
             authority = authority[..^defaultPort.Length];
         if (!remainder.StartsWith('/'))
             remainder = $"/{remainder}";
-        return $"{pattern[..authorityStartIndex]}{authority}{remainder}";
+        return $"{pattern[..authorityStartIndex]}{authority}{DecodeUnreservedCharacters(remainder)}";
+    }
+
+    [GeneratedRegex("%([0-9A-Fa-f]{2})", RegexOptions.None, 500)]
+    private static partial Regex PercentEncodedCharacterRegex();
+
+    /// <summary>
+    /// Decodes the percent-encoded unreserved characters (letters, digits, "-", ".", "_" and "~") the same way
+    /// <see cref="Uri.AbsoluteUri"/> does, e.g. "%73chemas" as "schemas", and keeps every other encoded character.
+    /// </summary>
+    private static string DecodeUnreservedCharacters(string value)
+    {
+        return PercentEncodedCharacterRegex().Replace(value, static match =>
+        {
+            var character = (char)Convert.ToByte(match.Groups[1].Value, 16);
+            return char.IsAsciiLetterOrDigit(character) || character is '-' or '.' or '_' or '~' ? character.ToString() : match.Value;
+        });
     }
 
     /// <summary>
