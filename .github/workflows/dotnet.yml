@@ -75,6 +75,10 @@ jobs:
           global-json-file: global.json
       - name: Restore dependencies
         run: dotnet restore kiota.slnx
+      - name: Test private credential storage
+        run: |
+          dotnet test --project ./tests/Kiota.Builder.Tests/Kiota.Builder.Tests.csproj -c Release --filter-class "Kiota.Builder.Tests.SearchProviders.GitHub.Authentication.*"
+          dotnet test --project ./tests/Kiota.Tests/Kiota.Tests.csproj -c Release --filter-class "Kiota.Tests.GitHubLogoutTests"
       - name: Publish ${{ matrix.os }}
         run: dotnet publish ./src/kiota/kiota.csproj -c Release -p:PublishSingleFile=true -o ./${{ matrix.os }} -f net10.0
 
