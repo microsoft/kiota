@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,11 +23,18 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     // the delimiters that separate the scheme, the user information, the host and the port from the rest of the URI.
     private const string AuthorityWildcardExpression = "[^/\\\\@:?#]*";
     private static readonly char[] AuthorityTerminators = ['/', '?', '#'];
+    private const string UriEscapedCharacters = " \"<>^`{|}";
 
+    private const int MaxRedirects = 10;
+    private readonly HttpClient httpClient;
+
+    /// <param name="httpClient">The client used to download external references. It must not follow redirects automatically, the loader follows them and validates every hop.</param>
+    /// <param name="allowedExternalOrigins">The origins external references can be loaded from.</param>
     public AllowedExternalOriginsStreamLoader(HttpClient httpClient, IEnumerable<string> allowedExternalOrigins) : base(httpClient)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(allowedExternalOrigins);
+        this.httpClient = httpClient;
         this.allowedExternalOrigins = allowedExternalOrigins
             .Select(static x => x.TrimQuotes())
             .Where(static x => !string.IsNullOrWhiteSpace(x))
@@ -42,7 +52,78 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         var targetUri = uri.IsAbsoluteUri || baseUrl is null ? uri : new Uri(baseUrl, uri);
         if (!IsAllowed(targetUri, uri))
             throw new InvalidOperationException($"The external reference {targetUri} is not allowed. Add it to --allowed-external-origins to load it.");
+        if (IsHttpUri(targetUri) && (uri.IsAbsoluteUri || baseUrl is null || !OpenApiConstants.BaseRegistryUri.Equals(baseUrl.AbsoluteUri, StringComparison.Ordinal)))
+            return LoadFromHttpAsync(targetUri, cancellationToken);
         return base.LoadAsync(baseUrl!, uri, cancellationToken);
+    }
+
+    // the original string can keep segments such as "..", which the request doesn't
+    private static Uri Canonicalize(Uri uri) => new(uri.AbsoluteUri);
+
+    private static bool IsHttpUri(Uri uri) =>
+        uri.IsAbsoluteUri && IsHttpScheme(uri.Scheme);
+
+    private static bool IsHttpScheme(string scheme) =>
+        Uri.UriSchemeHttps.Equals(scheme, StringComparison.OrdinalIgnoreCase) || Uri.UriSchemeHttp.Equals(scheme, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsRedirect(HttpStatusCode statusCode) => statusCode is
+        HttpStatusCode.MultipleChoices or
+        HttpStatusCode.MovedPermanently or
+        HttpStatusCode.Found or
+        HttpStatusCode.SeeOther or
+        HttpStatusCode.TemporaryRedirect or
+        HttpStatusCode.PermanentRedirect;
+
+    private async Task<Stream> LoadFromHttpAsync(Uri targetUri, CancellationToken cancellationToken)
+    {
+        // the timeout covers the whole redirect chain, like it does when the client follows redirects
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (httpClient.Timeout != Timeout.InfiniteTimeSpan)
+            timeoutSource.CancelAfter(httpClient.Timeout);
+        try
+        {
+            return await FollowRedirectsAsync(targetUri, timeoutSource.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested && timeoutSource.IsCancellationRequested)
+        {
+            throw new TaskCanceledException($"The external reference {targetUri} was not loaded within {httpClient.Timeout.TotalSeconds} seconds.", new TimeoutException(ex.Message, ex));
+        }
+    }
+
+    private async Task<Stream> FollowRedirectsAsync(Uri targetUri, CancellationToken cancellationToken)
+    {
+        var requestUri = targetUri;
+        for (var redirectCount = 0; ; redirectCount++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+            var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && Canonicalize(respondingUri) is var canonicalRespondingUri && !IsAllowed(canonicalRespondingUri, canonicalRespondingUri))
+                    throw new InvalidOperationException($"The external reference {targetUri} was served from {respondingUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
+                if (!IsRedirect(response.StatusCode) || response.Headers.Location is not { } location)
+                {
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                }
+                var redirectUri = location.IsAbsoluteUri ? location : new Uri(requestUri, location);
+                // same as the default handler: never follow a redirect to another scheme or from https to http
+                if (!IsHttpUri(redirectUri) || (Uri.UriSchemeHttps.Equals(requestUri.Scheme, StringComparison.OrdinalIgnoreCase) && !Uri.UriSchemeHttps.Equals(redirectUri.Scheme, StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not supported.");
+                redirectUri = Canonicalize(redirectUri);
+                if (!IsAllowed(redirectUri, redirectUri))
+                    throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
+                if (redirectCount >= MaxRedirects)
+                    throw new InvalidOperationException($"The external reference {targetUri} exceeded the maximum number of redirects ({MaxRedirects}).");
+                requestUri = redirectUri;
+            }
+            catch
+            {
+                response.Dispose();
+                throw;
+            }
+            response.Dispose();
+        }
     }
 
     private bool IsAllowed(Uri targetUri, Uri originalUri)
@@ -61,6 +142,9 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static IEnumerable<string> GetUriCandidates(Uri targetUri, Uri originalUri)
     {
         yield return targetUri.AbsoluteUri;
+        // the original string can keep segments such as "..", which the request doesn't
+        if (IsHttpUri(targetUri))
+            yield break;
         yield return targetUri.OriginalString;
         yield return originalUri.OriginalString;
     }
@@ -80,11 +164,97 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
 
     private static bool MatchesAnyUriCandidate(string pattern, IEnumerable<string> candidates)
     {
+        var normalizedPattern = NormalizeUriPattern(pattern);
         if (!pattern.Contains('*', StringComparison.Ordinal))
-            return candidates.Any(candidate => pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+        {
+            // exact entries are written the way the resolved candidates are, e.g. "pet model.yaml" as "pet%20model.yaml"
+            var canonicalPattern = Uri.TryCreate(pattern, UriKind.Absolute, out var patternUri) && IsHttpUri(patternUri) ? patternUri.AbsoluteUri : normalizedPattern;
+            return candidates.Any(candidate =>
+                pattern.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                normalizedPattern.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                canonicalPattern.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+        }
 
         var expression = BuildUriPatternExpression(pattern);
-        return candidates.Any(candidate => Regex.IsMatch(candidate, expression, RegexOptions.IgnoreCase, RegexTimeout));
+        var normalizedExpression = BuildUriPatternExpression(normalizedPattern);
+        var escapedExpression = BuildUriPatternExpression(EscapeUriPattern(normalizedPattern));
+        return candidates.Any(candidate =>
+            Regex.IsMatch(candidate, expression, RegexOptions.IgnoreCase, RegexTimeout) ||
+            Regex.IsMatch(candidate, normalizedExpression, RegexOptions.IgnoreCase, RegexTimeout) ||
+            Regex.IsMatch(candidate, escapedExpression, RegexOptions.IgnoreCase, RegexTimeout));
+    }
+
+    /// <summary>
+    /// Percent-encodes the characters <see cref="Uri.AbsoluteUri"/> encodes after the authority of an http or https pattern,
+    /// e.g. "my schemas/*" as "my%20schemas/*", without resolving dot segments or touching the wildcards.
+    /// </summary>
+    private static string EscapeUriPattern(string pattern)
+    {
+        var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
+        if (schemeSeparatorIndex < 0 || !IsHttpScheme(pattern[..schemeSeparatorIndex]))
+            return pattern;
+        var authorityEndIndex = pattern.IndexOfAny(AuthorityTerminators, schemeSeparatorIndex + SchemeSeparator.Length);
+        if (authorityEndIndex < 0)
+            return pattern;
+        var builder = new StringBuilder(pattern[..authorityEndIndex]);
+        Span<byte> utf8 = stackalloc byte[4];
+        foreach (var rune in pattern[authorityEndIndex..].EnumerateRunes())
+        {
+            if (rune.Value > 0x7F || UriEscapedCharacters.Contains((char)rune.Value, StringComparison.Ordinal))
+            {
+                var length = rune.EncodeToUtf8(utf8);
+                foreach (var b in utf8[..length])
+                    builder.Append(CultureInfo.InvariantCulture, $"%{b:X2}");
+            }
+            else
+                builder.Append((char)rune.Value);
+        }
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// Writes an http or https pattern the way <see cref="Uri.AbsoluteUri"/> writes the addresses it matches:
+    /// without the default port and with a slash after the authority.
+    /// </summary>
+    private static string NormalizeUriPattern(string pattern)
+    {
+        var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
+        if (schemeSeparatorIndex < 0)
+            return pattern;
+        var scheme = pattern[..schemeSeparatorIndex];
+        var defaultPort = scheme.ToLowerInvariant() switch
+        {
+            "https" => ":443",
+            "http" => ":80",
+            _ => null,
+        };
+        if (defaultPort is null)
+            return pattern;
+        var authorityStartIndex = schemeSeparatorIndex + SchemeSeparator.Length;
+        var authorityEndIndex = pattern.IndexOfAny(AuthorityTerminators, authorityStartIndex);
+        var authority = authorityEndIndex < 0 ? pattern[authorityStartIndex..] : pattern[authorityStartIndex..authorityEndIndex];
+        var remainder = authorityEndIndex < 0 ? string.Empty : pattern[authorityEndIndex..];
+        if (authority.EndsWith(defaultPort, StringComparison.Ordinal))
+            authority = authority[..^defaultPort.Length];
+        if (!remainder.StartsWith('/'))
+            remainder = $"/{remainder}";
+        return $"{pattern[..authorityStartIndex]}{authority}{DecodeUnreservedCharacters(remainder)}";
+    }
+
+    [GeneratedRegex("%([0-9A-Fa-f]{2})", RegexOptions.None, 500)]
+    private static partial Regex PercentEncodedCharacterRegex();
+
+    /// <summary>
+    /// Decodes the percent-encoded unreserved characters (letters, digits, "-", ".", "_" and "~") the same way
+    /// <see cref="Uri.AbsoluteUri"/> does, e.g. "%73chemas" as "schemas", and keeps every other encoded character.
+    /// </summary>
+    private static string DecodeUnreservedCharacters(string value)
+    {
+        return PercentEncodedCharacterRegex().Replace(value, static match =>
+        {
+            var character = (char)Convert.ToByte(match.Groups[1].Value, 16);
+            return char.IsAsciiLetterOrDigit(character) || character is '-' or '.' or '_' or '~' ? character.ToString() : match.Value;
+        });
     }
 
     /// <summary>
