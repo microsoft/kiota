@@ -34,12 +34,18 @@ public class MissingDiscriminator : ValidationRule<OpenApiDocument>
     }
     private static void ValidateSchema(IOpenApiSchema schema, IValidationContext context, ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> idx, string address)
     {
-        if (!schema.IsInclusiveUnion() && !schema.IsExclusiveUnion())
+        if (!(schema.AnyOf?.Count(IsNonNullAlternative) > 1) &&
+            !(schema.OneOf?.Count(IsNonNullAlternative) > 1) &&
+            !schema.IsArrayOfTypes())
             return;
         if ((schema.AnyOf is null || schema.AnyOf.All(static x => !x.IsObjectType())) &&
             (schema.OneOf is null || schema.OneOf.All(static x => !x.IsObjectType())))
             return;
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName()) || !schema.GetDiscriminatorMappings(idx).Any())
             context.CreateWarning(nameof(MissingDiscriminator), $"The schema {address} is a polymorphic type but does not define a discriminator. This will result in serialization errors.");
+    }
+    private static bool IsNonNullAlternative(IOpenApiSchema schema)
+    {
+        return schema.IsSemanticallyMeaningful(ignoreNullableObjects: true) && !schema.IsNullOnly();
     }
 }
