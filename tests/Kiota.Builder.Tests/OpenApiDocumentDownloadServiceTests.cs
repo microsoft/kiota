@@ -599,7 +599,9 @@ paths: {}
     private sealed class StalledBodyHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StalledContent() });
+            Task.FromResult(CreateStalledResponse());
+
+        private static HttpResponseMessage CreateStalledResponse() => new(HttpStatusCode.OK) { Content = new StalledContent() };
 
         private sealed class StalledContent : HttpContent
         {
