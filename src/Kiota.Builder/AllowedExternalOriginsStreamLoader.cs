@@ -66,6 +66,10 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static bool IsHttpScheme(string scheme) =>
         Uri.UriSchemeHttps.Equals(scheme, StringComparison.OrdinalIgnoreCase) || Uri.UriSchemeHttp.Equals(scheme, StringComparison.OrdinalIgnoreCase);
 
+    // a scheme wildcard such as "*" or "http*" also matches http and https addresses, so the pattern is written the same way
+    private static bool IsHttpOrWildcardScheme(string scheme) =>
+        Matches(scheme, Uri.UriSchemeHttps) || Matches(scheme, Uri.UriSchemeHttp);
+
     private static bool IsRedirect(HttpStatusCode statusCode) => statusCode is
         HttpStatusCode.MultipleChoices or
         HttpStatusCode.MovedPermanently or
@@ -104,7 +108,20 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
                 if (!IsRedirect(response.StatusCode) || response.Headers.Location is not { } location)
                 {
                     response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                    // the body is read before returning so the timeout also covers it
+                    var content = new MemoryStream();
+                    try
+                    {
+                        await response.Content.CopyToAsync(content, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        await content.DisposeAsync().ConfigureAwait(false);
+                        throw;
+                    }
+                    content.Position = 0;
+                    response.Dispose();
+                    return content;
                 }
                 var redirectUri = location.IsAbsoluteUri ? location : new Uri(requestUri, location);
                 // same as the default handler: never follow a redirect to another scheme or from https to http
@@ -142,6 +159,9 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     private static IEnumerable<string> GetUriCandidates(Uri targetUri, Uri originalUri)
     {
         yield return targetUri.AbsoluteUri;
+        // the absolute URI drops the default port, which a pattern with a port wildcard still expects
+        if (IsHttpUri(targetUri) && targetUri.IsDefaultPort)
+            yield return targetUri.GetComponents(UriComponents.AbsoluteUri | UriComponents.StrongPort, UriFormat.UriEscaped);
         // the original string can keep segments such as "..", which the request doesn't
         if (IsHttpUri(targetUri))
             yield break;
@@ -185,13 +205,13 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     }
 
     /// <summary>
-    /// Percent-encodes the characters <see cref="Uri.AbsoluteUri"/> encodes after the authority of an http or https pattern,
+    /// Percent-encodes the characters <see cref="Uri.AbsoluteUri"/> encodes after the authority of an http, https or wildcard scheme pattern,
     /// e.g. "my schemas/*" as "my%20schemas/*", without resolving dot segments or touching the wildcards.
     /// </summary>
     private static string EscapeUriPattern(string pattern)
     {
         var schemeSeparatorIndex = pattern.IndexOf(SchemeSeparator, StringComparison.Ordinal);
-        if (schemeSeparatorIndex < 0 || !IsHttpScheme(pattern[..schemeSeparatorIndex]))
+        if (schemeSeparatorIndex < 0 || !IsHttpOrWildcardScheme(pattern[..schemeSeparatorIndex]))
             return pattern;
         var authorityEndIndex = pattern.IndexOfAny(AuthorityTerminators, schemeSeparatorIndex + SchemeSeparator.Length);
         if (authorityEndIndex < 0)
@@ -213,7 +233,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     }
 
     /// <summary>
-    /// Writes an http or https pattern the way <see cref="Uri.AbsoluteUri"/> writes the addresses it matches:
+    /// Writes an http, https or wildcard scheme pattern the way <see cref="Uri.AbsoluteUri"/> writes the addresses it matches:
     /// without the default port and with a slash after the authority.
     /// </summary>
     private static string NormalizeUriPattern(string pattern)
@@ -222,19 +242,19 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         if (schemeSeparatorIndex < 0)
             return pattern;
         var scheme = pattern[..schemeSeparatorIndex];
+        if (!IsHttpOrWildcardScheme(scheme))
+            return pattern;
         var defaultPort = scheme.ToLowerInvariant() switch
         {
             "https" => ":443",
             "http" => ":80",
             _ => null,
         };
-        if (defaultPort is null)
-            return pattern;
         var authorityStartIndex = schemeSeparatorIndex + SchemeSeparator.Length;
         var authorityEndIndex = pattern.IndexOfAny(AuthorityTerminators, authorityStartIndex);
         var authority = authorityEndIndex < 0 ? pattern[authorityStartIndex..] : pattern[authorityStartIndex..authorityEndIndex];
         var remainder = authorityEndIndex < 0 ? string.Empty : pattern[authorityEndIndex..];
-        if (authority.EndsWith(defaultPort, StringComparison.Ordinal))
+        if (defaultPort is not null && authority.EndsWith(defaultPort, StringComparison.Ordinal))
             authority = authority[..^defaultPort.Length];
         if (!remainder.StartsWith('/'))
             remainder = $"/{remainder}";

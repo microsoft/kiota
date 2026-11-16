@@ -290,6 +290,19 @@ components:
     }
 
     [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderAppliesTimeoutToResponseBody()
+    {
+        using var handler = new StalledBodyHandler();
+        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(500) };
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task AllowedExternalOriginsStreamLoaderFollowsAllowedRedirects()
     {
         using var handler = new ResponseHandler(new()
@@ -390,6 +403,8 @@ components:
     [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com:443/schemas/../private/pet.yaml")]
     [InlineData("https://contoso.com/my schemas/*", "https://contoso.com/my schemas/../private/pet.yaml")]
     [InlineData("https://contoso.com/schemas/%2E%2E/*", "https://contoso.com/private/pet.yaml")]
+    [InlineData("*://contoso.com/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com:443/schemas/../private/pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderRejectsReferencesLeavingAllowedPath(string allowedOrigin, string externalReference)
     {
         using var handler = new ResponseHandler();
@@ -425,6 +440,16 @@ components:
     [InlineData("https://contoso.com/%73chemas/*", "https://contoso.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/pet%2E*", "https://contoso.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/%7Euser/*", "https://contoso.com/~user/pet.yaml")]
+    // a port wildcard also matches the default port, which the resolved reference drops
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com:443/schemas/pet.yaml")]
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com/schemas/pet.yaml")]
+    [InlineData("http://contoso.com:*/schemas/*", "http://contoso.com:80/schemas/pet.yaml")]
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
+    // a scheme wildcard is written like an http or https pattern
+    [InlineData("*://contoso.com/my schemas/*", "https://contoso.com/my schemas/pet.yaml")]
+    [InlineData("*://contoso.com/%73chemas/*", "http://contoso.com/schemas/pet.yaml")]
+    [InlineData("http*://contoso.com/my schemas/*", "https://contoso.com/my schemas/pet.yaml")]
+    [InlineData("*://contoso.com", "https://contoso.com")]
     // wildcards from the path onwards keep matching any character, the destination is already pinned by then
     [InlineData("https://*.contoso.com/schemas/pet.yaml?version=*", "https://zap.contoso.com/schemas/pet.yaml?version=2")]
     // a query or a fragment can follow the authority without a path, and its wildcard is not bounded either
@@ -569,6 +594,25 @@ paths: {}
         writer.Flush();
         stream.Position = 0;
         return stream;
+    }
+
+    private sealed class StalledBodyHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StalledContent() });
+
+        private sealed class StalledContent : HttpContent
+        {
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context) =>
+                SerializeToStreamAsync(stream, context, CancellationToken.None);
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context, CancellationToken cancellationToken) =>
+                Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            protected override bool TryComputeLength(out long length)
+            {
+                length = 0;
+                return false;
+            }
+        }
     }
 
     private sealed class ResponseHandler(Dictionary<string, string> redirects = null, TimeSpan delay = default) : HttpMessageHandler
