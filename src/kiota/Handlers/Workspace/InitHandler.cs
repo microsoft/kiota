@@ -38,7 +38,7 @@ internal class InitHandler : BaseKiotaCommandHandler
         instrumentation?.CreateCommandExecutionCounter().Add(1, tl);
 
         var workspaceStorageService = new WorkspaceConfigurationStorageService(Directory.GetCurrentDirectory());
-        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceConfigurationStorageService>(parseResult, Configuration.Generation.OutputPath);
+        var (loggerFactory, logger) = GetLoggerAndFactory<WorkspaceConfigurationStorageService>(parseResult, $"./{DescriptionStorageService.KiotaDirectorySegment}");
         using (loggerFactory)
         {
             try

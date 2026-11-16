@@ -119,6 +119,8 @@ internal class AddHandler : BaseKiotaCommandHandler
         AssignAllowedExternalOrigins(allowedExternalOrigins);
         Configuration.Generation.OpenAPIFilePath = GetAbsolutePath(Configuration.Generation.OpenAPIFilePath);
         Configuration.Generation.OutputPath = NormalizeSlashesInPath(GetAbsolutePath(Configuration.Generation.OutputPath));
+        if (!IsWorkspaceOutputPathValid(Configuration.Generation))
+            return 1;
         var (loggerFactory, logger) = GetLoggerAndFactory<KiotaBuilder>(parseResult, Configuration.Generation.OutputPath);
         using (loggerFactory)
         {
