@@ -209,7 +209,7 @@ internal partial class Server : IServer
     {
         configuration.IncludeProperties = new(StringComparer.Ordinal);
         configuration.ExcludeProperties = new(StringComparer.Ordinal);
-        if (configuration.Operation == ConsumerOperation.Add)
+        if (configuration.NoWorkspace || configuration.Operation == ConsumerOperation.Add)
             return;
 
         if (useWorkspaceConfiguration)

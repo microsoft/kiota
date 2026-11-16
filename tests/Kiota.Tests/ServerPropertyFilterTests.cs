@@ -80,6 +80,41 @@ public sealed class ServerPropertyFilterTests : IDisposable
         Assert.Empty(configuration.ExcludeProperties);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task NoWorkspaceClearsFiltersWithoutRestoringSavedRulesAsync(bool useWorkspaceConfiguration)
+    {
+        var configuration = new GenerationConfiguration
+        {
+            ClientClassName = "Client",
+            OutputPath = Path.Combine(workspacePath, "client"),
+            Operation = ConsumerOperation.Generate,
+        };
+        configuration.IncludeProperties.Add("User#name");
+        configuration.ExcludeProperties.Add("User#mail");
+        if (useWorkspaceConfiguration)
+        {
+            var workspace = new WorkspaceConfiguration();
+            workspace.Clients.Add(configuration.ClientClassName, new(configuration) { OutputPath = "./client" });
+            await new WorkspaceConfigurationStorageService(workspacePath).UpdateWorkspaceConfigurationAsync(workspace, null, TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            Directory.CreateDirectory(configuration.OutputPath);
+            await new LockManagementService().WriteLockFileAsync(configuration.OutputPath, new(configuration), TestContext.Current.CancellationToken);
+        }
+
+        await Server.RestorePropertyFiltersAsync(configuration, useWorkspaceConfiguration, workspacePath, TestContext.Current.CancellationToken);
+        Assert.True(configuration.IncludeProperties.SetEquals(["User#name"]));
+        Assert.True(configuration.ExcludeProperties.SetEquals(["User#mail"]));
+
+        configuration.NoWorkspace = true;
+        await Server.RestorePropertyFiltersAsync(configuration, useWorkspaceConfiguration, workspacePath, TestContext.Current.CancellationToken);
+        Assert.Empty(configuration.IncludeProperties);
+        Assert.Empty(configuration.ExcludeProperties);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(workspacePath))
