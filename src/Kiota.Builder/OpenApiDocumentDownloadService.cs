@@ -30,6 +30,26 @@ internal partial class OpenApiDocumentDownloadService
         HttpClient = httpClient;
         Logger = logger;
     }
+    /// <summary>
+    /// Handler used to download external references instead of a default one, it must not follow redirects automatically.
+    /// </summary>
+    internal HttpMessageHandler? ExternalReferencesHandler
+    {
+        get; init;
+    }
+    private HttpClient CreateExternalReferencesClient(GenerationConfiguration config)
+    {
+        if (ExternalReferencesHandler is not null)
+            return new HttpClient(ExternalReferencesHandler, false);
+        // redirects are followed by the loader so every hop can be validated against the allowed origins
+        // the handler is disposed with the client, and certificate revocation matches the client used for the description
+#pragma warning disable CA2000, CA5400
+        var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        if (config.DisableSSLValidation)
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return new HttpClient(handler, true) { Timeout = HttpClient.Timeout };
+#pragma warning restore CA2000, CA5400
+    }
     private static readonly AsyncKeyedLocker<string> localFilesLock = new(o =>
     {
         o.PoolSize = 20;
@@ -119,8 +139,9 @@ internal partial class OpenApiDocumentDownloadService
             LoadExternalRefs = true,
             LeaveStreamOpen = true,
         };
-        if (!config.AllowedExternalOrigins.Contains("*"))
-            settings.CustomExternalLoader = new AllowedExternalOriginsStreamLoader(HttpClient, config.AllowedExternalOrigins);
+        using var externalReferencesClient = config.AllowedExternalOrigins.Contains("*") ? null : CreateExternalReferencesClient(config);
+        if (externalReferencesClient is not null)
+            settings.CustomExternalLoader = new AllowedExternalOriginsStreamLoader(externalReferencesClient, config.AllowedExternalOrigins);
 
         // Add all extensions for generation
         settings.AddGenerationExtensions();
