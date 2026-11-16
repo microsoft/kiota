@@ -251,6 +251,28 @@ public sealed class TempFolderTokenStorageServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task OpenReadRejectsSymbolicLinksAsync()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("Unix no-follow open flags.");
+            return;
+        }
+        await CreateStorage().SetTokenAsync("original", TestContext.Current.CancellationToken);
+        var sentinel = Path.Combine(root, "sentinel.txt");
+        File.Move(TokenPath, sentinel);
+        using (var stream = TokenCacheSecurity.OpenRead(sentinel))
+        using (var reader = new StreamReader(stream))
+            Assert.Equal("original", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
+        File.CreateSymbolicLink(TokenPath, sentinel);
+        Assert.Throws<IOException>(() =>
+        {
+            using var stream = TokenCacheSecurity.OpenRead(TokenPath);
+        });
+        Assert.Equal("original", await File.ReadAllTextAsync(sentinel, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task RejectsLinkedDirectoryAndPreservesDestinationAsync()
     {
         var storage = CreateStorage();

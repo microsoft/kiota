@@ -93,7 +93,8 @@ internal static class TokenCacheSecurity
         }
 
         // O_NOFOLLOW rejects the final link; the validated private parent prevents cross-account path replacement.
-        var flags = OperatingSystem.IsLinux() ? 0x20000 | 0x80000 : 0x100 | 0x1000000;
+        var noFollow = RuntimeInformation.ProcessArchitecture is Architecture.Arm or Architecture.Arm64 ? 0x8000 : 0x20000;
+        var flags = OperatingSystem.IsLinux() ? noFollow | 0x80000 : 0x100 | 0x1000000;
         var descriptor = Open(path, flags);
         if (descriptor < 0)
             throw new IOException("Unable to open the private credential cache.", new Win32Exception(Marshal.GetLastPInvokeError()));
