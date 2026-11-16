@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improved GitHub sign-in state handling and authentication command error reporting. Existing users must sign in again after upgrading.
+  The old temporary credential cache is no longer read or cleared by logout. Before signing in again, revoke any PAT used with Kiota in GitHub **Settings > Developer settings > Personal access tokens**, and revoke Kiota's device-code authorization in **Settings > Applications > Authorized GitHub Apps** (**Authorized OAuth Apps** for a custom OAuth client). Remove your old token files (`pat-api.github.com.txt` and `<app-id>-api.github.com.txt`) from the system temporary directory's `kiota/auth` folder (`%TEMP%\kiota\auth` on Windows; `$TMPDIR/kiota/auth`, or `/tmp/kiota/auth`, on Unix). Verify that the directory and files belong to you and are not symbolic links or junctions; do not recursively delete a shared temporary directory. Revocation invalidates credentials even if the old files cannot be safely removed.
 - Fixed false-positive missing-discriminator warnings for unions of a single model and a null-only alternative.
 - Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
 - Ruby: fixed generation failing when a nested model is flattened onto the name of an existing one, as in Microsoft Graph beta.
