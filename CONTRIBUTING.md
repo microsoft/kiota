@@ -7,7 +7,7 @@ Thanks for your interest in contributing to Kiota! We welcome contributions from
 To get started, you'll need to have the following tools installed:
 
 - [.NET SDK 11.0](https://get.dot.net/11), as specified in `global.json`.
-- [.NET runtime 10.0](https://get.dot.net/10) to run tests for both supported target frameworks, `net10.0` and `net11.0`.
+- [.NET runtime 10.0](https://get.dot.net/10) to run the generator with `-f net10.0`. Tests target `net11.0` and use the runtime included with the .NET 11 SDK.
 
 ## Recommended tools
 
