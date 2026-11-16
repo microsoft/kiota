@@ -12610,4 +12610,231 @@ components:
         Assert.NotNull(patchGenerator);
         Assert.False(patchGenerator.HasUrlTemplateOverride);
     }
+
+    public static TheoryData<bool, string, bool, bool, bool, bool> NullableEnumCollectionCases
+    {
+        get
+        {
+            var data = new TheoryData<bool, string, bool, bool, bool, bool>();
+            foreach (var useJson in new[] { false, true })
+                foreach (var unionKind in new[] { "anyOf", "oneOf" })
+                    foreach (var nullFirst in new[] { false, true })
+                        foreach (var includeNullable in new[] { false, true })
+                            foreach (var inlineEnum in new[] { false, true })
+                                foreach (var nullableCollection in new[] { false, true })
+                                    if (!nullableCollection || (!useJson && unionKind == "anyOf" && !nullFirst))
+                                        data.Add(useJson, unionKind, nullFirst, includeNullable, inlineEnum, nullableCollection);
+            return data;
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(NullableEnumCollectionCases))]
+    public async Task HandlesNullableEnumCollectionsWithNullOnlyEnumBranchAsync(bool useJson, string unionKind, bool nullFirst, bool includeNullable, bool inlineEnum, bool nullableCollection)
+    {
+        string description;
+        if (useJson)
+        {
+            var enumBranch = inlineEnum
+                ? """{"type":"string","enum":["approve","deny"]}"""
+                : """{"$ref":"#/components/schemas/Decision"}""";
+            var nullBranch = includeNullable
+                ? """{"enum":[null],"nullable":true}"""
+                : """{"enum":[null]}""";
+            var branches = nullFirst ? $"{nullBranch},{enumBranch}" : $"{enumBranch},{nullBranch}";
+            var collectionNullableJson = nullableCollection ? """
+                ,"nullable":true
+                """ : string.Empty;
+            var decisionComponent = inlineEnum ? string.Empty : """
+                ,"Decision":{"type":"string","enum":["approve","deny"]}
+                """;
+            description = $$"""
+            {
+              "openapi": "3.0.4",
+              "info": { "title": "Nullable enum collection reproduction", "version": "1.0.0" },
+              "servers": [{ "url": "https://example.invalid" }],
+              "paths": {
+                "/things": {
+                  "get": {
+                    "operationId": "listThings",
+                    "responses": {
+                      "200": {
+                        "description": "A thing",
+                        "content": {
+                          "application/json": {
+                            "schema": { "$ref": "#/components/schemas/Thing" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "components": {
+                "schemas": {
+                  "Thing": {
+                    "type": "object",
+                    "properties": {
+                      "decisions": {
+                        "type": "array"{{collectionNullableJson}},
+                        "items": {
+                          "{{unionKind}}": [{{branches}}]
+                        }
+                      }
+                    }
+                  }{{decisionComponent}}
+                }
+              }
+            }
+            """;
+        }
+        else
+        {
+            var enumBranch = inlineEnum
+                ? "- type: string\n  enum: [approve, deny]"
+                : "- $ref: '#/components/schemas/Decision'";
+            var nullBranch = includeNullable
+                ? "- enum: [null]\n  nullable: true"
+                : "- enum: [null]";
+            var branches = nullFirst
+                ? $"{nullBranch}\n{enumBranch}"
+                : $"{enumBranch}\n{nullBranch}";
+            var collectionNullableYaml = nullableCollection ? "\n          nullable: true" : string.Empty;
+            var decisionComponent = inlineEnum ? string.Empty : "\n    Decision:\n      type: string\n      enum: [approve, deny]";
+            description = $$"""
+            openapi: 3.0.4
+            info:
+              title: Nullable enum collection reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Thing:
+                  type: object
+                  properties:
+                    decisions:
+                      type: array{{collectionNullableYaml}}
+                      items:
+                        {{unionKind}}:
+                          {{branches.Replace("\n", "\n              ")}}{{decisionComponent}}
+            """;
+        }
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            ClientClassName = "ReproClient",
+            ClientNamespaceName = "EnumRepro",
+            UsesBackingStore = true,
+        };
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+
+        var expectedEnumName = inlineEnum ? "Thing_decisions" : "Decision";
+        var enumType = Assert.Single(modelsNS.Enums, x => x.Name.Equals(expectedEnumName, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(new[] { "approve", "deny" }, enumType.Options.Select(static x => x.SerializationName));
+
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+        var decisionsProp = Assert.Single(thingClass.Properties, static x => x.Name == "decisions");
+        var decisionsType = Assert.IsType<CodeType>(decisionsProp.Type);
+        Assert.Same(enumType, decisionsType.TypeDefinition);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, decisionsType.CollectionKind);
+        Assert.True(decisionsType.IsNullable);
+
+        await builder.ApplyLanguageRefinementAsync(configuration, codeModel, TestContext.Current.CancellationToken);
+        var tempFile = Path.GetTempFileName();
+        _tempFiles.Add(tempFile);
+        var writer = Builder.Writers.LanguageWriter.GetLanguageWriter(GenerationLanguage.CSharp, Path.GetDirectoryName(tempFile)!, "EnumRepro");
+        await Builder.CodeRenderers.CodeRenderer.GetCodeRender(configuration).RenderCodeNamespaceToSingleFileAsync(writer, thingClass, tempFile, TestContext.Current.CancellationToken);
+        var renderedThing = await File.ReadAllTextAsync(tempFile, TestContext.Current.CancellationToken);
+
+        Assert.Contains($"public List<global::EnumRepro.Models.{expectedEnumName}?>? Decisions", renderedThing);
+        Assert.Contains($"public List<global::EnumRepro.Models.{expectedEnumName}?> Decisions", renderedThing);
+        Assert.Contains($"n.GetCollectionOfEnumValues<global::EnumRepro.Models.{expectedEnumName}>()?.AsList()", renderedThing);
+        Assert.Contains($"writer.WriteCollectionOfEnumValues<global::EnumRepro.Models.{expectedEnumName}>(\"decisions\", Decisions)", renderedThing);
+        Assert.DoesNotContain("List<string>", renderedThing);
+    }
+
+    [Theory]
+    [InlineData("oneOf", "- type: integer\n- enum: [null]\n  nullable: true")]
+    [InlineData("anyOf", "- type: integer\n- enum: [null]\n  nullable: true")]
+    [InlineData("oneOf", "- enum: [null, other]")]
+    [InlineData("anyOf", "- enum: [null, other]")]
+    [InlineData("oneOf", "- enum: ['null']")]
+    public async Task DoesNotCollapseGenuineMixedUnionsWithNullOnlyEnumBranchAsync(string unionKind, string extraBranches)
+    {
+        var description = $$"""
+            openapi: 3.0.4
+            info:
+              title: Mixed union reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Thing:
+                  type: object
+                  properties:
+                    value:
+                      {{unionKind}}:
+                        - $ref: '#/components/schemas/Decision'
+                        {{extraBranches.Replace("\n", "\n            ")}}
+                    itemsValue:
+                      type: array
+                      items:
+                        {{unionKind}}:
+                          - $ref: '#/components/schemas/Decision'
+                          {{extraBranches.Replace("\n", "\n              ")}}
+                Decision:
+                  type: string
+                  enum: [approve, deny]
+            """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { ClientClassName = "ReproClient", ClientNamespaceName = "EnumRepro" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+        var valueProp = Assert.Single(thingClass.Properties, static x => x.Name == "value");
+        var composedType = Assert.IsAssignableFrom<CodeComposedTypeBase>(valueProp.Type);
+        Assert.Equal(2, composedType.Types.Count());
+        Assert.Contains(composedType.Types, static x => x.Name == "Decision" && x.TypeDefinition is CodeEnum);
+        Assert.Null(codeModel.FindChildByName<CodeClass>("Thing_valueMember1"));
+
+        var itemsProp = Assert.Single(thingClass.Properties, static x => x.Name == "itemsValue");
+        Assert.False(itemsProp.Type is CodeType { TypeDefinition: CodeEnum });
+    }
 }

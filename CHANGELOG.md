@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed nullable enum collections using `anyOf` or `oneOf` with a null-only `enum: [null]` branch generating primitive string collections instead of nullable enum collections.
+
 ## [1.39.0] - 2026-11-17
 
 ### Added

@@ -69,7 +69,7 @@ public static class OpenApiSchemaExtensions
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
             schema.Items.IsSemanticallyMeaningful() ||
-            FlattenEmptyEntries([schema.Items], static x => (x.AnyOf ?? []).Union(x.AllOf ?? []).Union(x.OneOf ?? []).ToList(), 1).FirstOrDefault() is IOpenApiSchema flat && flat.IsSemanticallyMeaningful());
+            FlattenEmptyEntries([schema.Items], static x => (x.AnyOf ?? []).Union(x.AllOf ?? []).Union(x.OneOf ?? []).ToList(), 1).Any(static x => x.IsSemanticallyMeaningful()));
     }
 
     public static bool IsObjectType(this IOpenApiSchema? schema)
@@ -78,12 +78,23 @@ public static class OpenApiSchemaExtensions
     }
     internal static bool IsNullOnly(this IOpenApiSchema? schema)
     {
-        return schema is not null &&
-            (schema.Type is JsonSchemaType.Null ||
-             schema.Enum is { Count: > 0 } && schema.Enum.All(static x =>
-                 x is null ||
-                 x.GetValueKind() is JsonValueKind.Null ||
-                 x is System.Text.Json.Nodes.JsonValue value && value.IsJsonNullSentinel()));
+        if (schema is null ||
+            schema.Type is not (null or JsonSchemaType.Null) ||
+            schema.HasAnyProperty() ||
+            schema.Items is not null ||
+            !string.IsNullOrEmpty(schema.Format) ||
+            !string.IsNullOrEmpty(schema.GetReferenceId()) ||
+            !string.IsNullOrEmpty(schema.DynamicRef) ||
+            schema.AnyOf is { Count: > 0 } ||
+            schema.OneOf is { Count: > 0 } ||
+            schema.AllOf is { Count: > 0 })
+            return false;
+        if (schema.Enum is { Count: > 0 })
+            return schema.Enum.All(static x =>
+                x is null ||
+                x.GetValueKind() is JsonValueKind.Null ||
+                x is System.Text.Json.Nodes.JsonValue value && value.IsJsonNullSentinel());
+        return schema.Type is JsonSchemaType.Null;
     }
     public static bool HasAnyProperty(this IOpenApiSchema? schema)
     {
@@ -283,15 +294,15 @@ public static class OpenApiSchemaExtensions
     {
         return schema.IsExclusiveUnion() &&
                 schema.OneOf is { Count: 3 } &&
-                schema.OneOf.Count(static x => x.Enum is { Count: > 0 }) == 1 &&
+                schema.OneOf.Count(static x => x.Enum is { Count: > 0 } && !x.IsNullOnly()) == 1 &&
                 schema.OneOf.Count(isODataType) == 1 &&
-                schema.OneOf.Count(isStringType) == 1
+                schema.OneOf.Count(static x => isStringType(x) && x.Enum is not { Count: > 0 }) == 1
                 ||
             schema.IsInclusiveUnion() &&
                 schema.AnyOf is { Count: 3 } &&
-                schema.AnyOf.Count(static x => x.Enum is { Count: > 0 }) == 1 &&
+                schema.AnyOf.Count(static x => x.Enum is { Count: > 0 } && !x.IsNullOnly()) == 1 &&
                 schema.AnyOf.Count(isODataType) == 1 &&
-                schema.AnyOf.Count(isStringType) == 1;
+                schema.AnyOf.Count(static x => isStringType(x) && x.Enum is not { Count: > 0 }) == 1;
     }
     public static bool IsODataPrimitiveType(this IOpenApiSchema schema)
     {
@@ -313,19 +324,20 @@ public static class OpenApiSchemaExtensions
     public static bool IsEnum(this IOpenApiSchema? schema)
     {
         if (schema is null || schema.Enum is null) return false;
-        return schema.Enum.Any(static x => x.GetValueKind() is JsonValueKind.String &&
+        return schema.Enum.OfType<System.Text.Json.Nodes.JsonValue>().Any(static x => !x.IsJsonNullSentinel() &&
+                                    x.GetValueKind() is JsonValueKind.String &&
                                     x.GetValue<string>() is string value &&
                                     !string.IsNullOrEmpty(value)); // number and boolean enums are not supported
     }
     public static bool IsComposedEnum(this IOpenApiSchema? schema)
     {
         if (schema is null) return false;
-        return schema.AnyOf?.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.AnyOf.Count(static x => x.IsEnum()) == 1 ||
-                schema.OneOf?.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.OneOf.Count(static x => x.IsEnum()) == 1;
+        return schema.AnyOf is { Count: 2 } && schema.AnyOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.AnyOf.Count(static x => x.IsEnum()) == 1 ||
+                schema.OneOf is { Count: 2 } && schema.OneOf.Count(static x => !x.IsSemanticallyMeaningful(true)) == 1 && schema.OneOf.Count(static x => x.IsEnum()) == 1;
     }
     public static bool IsSemanticallyMeaningful(this IOpenApiSchema schema, bool ignoreNullableObjects = false, bool ignoreEnums = false, bool ignoreArrays = false, bool ignoreType = false)
     {
-        if (schema is null) return false;
+        if (schema is null || schema.IsNullOnly()) return false;
         return schema.HasAnyProperty() ||
                 (!ignoreEnums && schema.Enum is { Count: > 0 }) ||
                 (!ignoreArrays && schema.Items != null) ||

@@ -1341,7 +1341,7 @@ public partial class KiotaBuilder
         normalizedDefaultValue = $"\"{defaultValue}\"";
         return true;
     }
-    private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Object, JsonSchemaType.Array, JsonSchemaType.Object | JsonSchemaType.Null, JsonSchemaType.Array | JsonSchemaType.Null];
+    private static readonly HashSet<JsonSchemaType> typeNamesToSkip = [JsonSchemaType.Null, JsonSchemaType.Object, JsonSchemaType.Array, JsonSchemaType.Object | JsonSchemaType.Null, JsonSchemaType.Array | JsonSchemaType.Null];
     internal static readonly HashSet<string> numericFormats = new(StringComparer.OrdinalIgnoreCase) { "int8", "uint8", "int16", "uint16", "int32", "int64", "float", "double", "decimal" };
     private static CodeType? GetPrimitiveType(IOpenApiSchema? typeSchema, string? childType = default)
     {
@@ -2031,7 +2031,7 @@ public partial class KiotaBuilder
             }
         var membersWithNoName = 0;
         if (schemas is not null)
-            foreach (var currentSchema in schemas)
+            foreach (var currentSchema in schemas.Where(static x => !x.IsNullOnly()))
             {
                 var shortestNamespace = GetShortestNamespace(codeNamespace, currentSchema);
                 var className = currentSchema.GetSchemaName().CleanupSymbolName();
