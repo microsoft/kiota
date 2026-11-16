@@ -8,7 +8,7 @@ namespace Kiota.Builder.Tests.Lock;
 
 public sealed class LockManagementServiceTests : IDisposable
 {
-    private readonly string _testDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+    private readonly string _testDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
     public LockManagementServiceTests()
     {
         Directory.CreateDirectory(_testDirectory);
@@ -32,7 +32,7 @@ public sealed class LockManagementServiceTests : IDisposable
     public async Task IdentityAsync()
     {
         var lockManagementService = new LockManagementService();
-        var descriptionPath = Path.Combine(_testDirectory, "description.yml");
+        var descriptionPath = Path.Join(_testDirectory, "description.yml");
         var lockFile = new KiotaLock
         {
             ClientClassName = "foo",
@@ -51,14 +51,14 @@ public sealed class LockManagementServiceTests : IDisposable
     {
         var tmpPath = _testDirectory;
         var lockManagementService = new LockManagementService();
-        var descriptionPath = Path.Combine(tmpPath, "information", "description.yml");
+        var descriptionPath = Path.Join(tmpPath, "information", "description.yml");
         var descriptionDirectory = Path.GetDirectoryName(descriptionPath);
         Directory.CreateDirectory(descriptionDirectory);
         var lockFile = new KiotaLock
         {
             DescriptionLocation = descriptionPath,
         };
-        var outputDirectory = Path.Combine(tmpPath, "output");
+        var outputDirectory = Path.Join(tmpPath, "output");
         Directory.CreateDirectory(outputDirectory);
         await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("../information/description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
@@ -67,7 +67,7 @@ public sealed class LockManagementServiceTests : IDisposable
     public async Task DeletesALockAsync()
     {
         var lockManagementService = new LockManagementService();
-        var descriptionPath = Path.Combine(_testDirectory, "description.yml");
+        var descriptionPath = Path.Join(_testDirectory, "description.yml");
         var lockFile = new KiotaLock
         {
             ClientClassName = "foo",
