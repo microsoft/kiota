@@ -41,6 +41,59 @@ public sealed class TempFolderTokenStorageServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task MissingCacheDoesNotCreateDirectoriesAsync()
+    {
+        var storage = CreateStorage();
+        foreach (var directory in new[] { root, Path.Combine(root, "kiota"), CacheDirectory })
+        {
+            Assert.False(Directory.Exists(directory));
+            Assert.Null(await storage.GetTokenAsync(TestContext.Current.CancellationToken));
+            Assert.False(await storage.IsTokenPresentAsync(TestContext.Current.CancellationToken));
+            Assert.False(await storage.DeleteTokenAsync(TestContext.Current.CancellationToken));
+            Assert.False(Directory.Exists(directory));
+            TokenCacheSecurity.EnsureDirectory(directory, true);
+        }
+    }
+
+    [Fact]
+    public async Task MissingApplicationDataInReadOnlyDirectoryIsAbsentAsync()
+    {
+        TokenCacheSecurity.EnsureDirectory(root, true);
+        var directory = new DirectoryInfo(root);
+        DirectorySecurity originalSecurity = null;
+        if (OperatingSystem.IsWindows())
+        {
+            originalSecurity = directory.GetAccessControl();
+            var security = directory.GetAccessControl();
+            using var identity = WindowsIdentity.GetCurrent();
+            security.AddAccessRule(new FileSystemAccessRule(identity.User!, FileSystemRights.CreateDirectories, AccessControlType.Deny));
+            directory.SetAccessControl(security);
+        }
+        else
+            File.SetUnixFileMode(root, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        try
+        {
+            var applicationDataPath = Path.Combine(root, "application-data");
+            var storage = new TempFolderTokenStorageService(applicationDataPath)
+            {
+                Logger = new Mock<ILogger>().Object,
+                FileName = "test-token",
+            };
+            Assert.Null(await storage.GetTokenAsync(TestContext.Current.CancellationToken));
+            Assert.False(await storage.IsTokenPresentAsync(TestContext.Current.CancellationToken));
+            Assert.False(await storage.DeleteTokenAsync(TestContext.Current.CancellationToken));
+            Assert.False(Directory.Exists(applicationDataPath));
+        }
+        finally
+        {
+            if (OperatingSystem.IsWindows())
+                directory.SetAccessControl(originalSecurity!);
+            else
+                File.SetUnixFileMode(root, TokenCacheSecurity.DirectoryMode);
+        }
+    }
+
+    [Fact]
     public async Task CreatesPrivateDirectoryAndFileAsync()
     {
         await CreateStorage().SetTokenAsync("dummy-token", TestContext.Current.CancellationToken);

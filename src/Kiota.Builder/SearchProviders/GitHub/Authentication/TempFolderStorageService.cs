@@ -27,13 +27,13 @@ public class TempFolderTokenStorageService : ITokenStorageService
     {
         get; init;
     }
-    private string GetTokenCacheFilePath()
+    private string? GetTokenCacheFilePath(bool createDirectory = false)
     {
         if (string.IsNullOrWhiteSpace(FileName) || FileName is "." or ".." ||
             FileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
             FileName.Contains('/', StringComparison.Ordinal) || FileName.Contains('\\', StringComparison.Ordinal) ||
             FileName.EndsWith('.') || FileName.EndsWith(' '))
-            throw new ArgumentException("The credential cache key must be a safe filename.", nameof(FileName));
+            throw new ArgumentException("The credential cache key (FileName) must be a safe filename.");
 
         var root = applicationDataPath ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify);
         if (string.IsNullOrEmpty(root) || !Path.IsPathFullyQualified(root))
@@ -46,21 +46,25 @@ public class TempFolderTokenStorageService : ITokenStorageService
             if (string.IsNullOrEmpty(profile) || !Path.IsPathFullyQualified(profile) ||
                 Path.IsPathRooted(relative) || relative == ".." || relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
                 throw new IOException("Credential storage must be within the current user's profile.");
-            TokenCacheSecurity.EnsureDirectory(profile, false);
+            if (!TokenCacheSecurity.EnsureDirectory(profile, false, createDirectory))
+                return null;
             var current = profile;
             foreach (var segment in relative.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
             {
                 current = Path.Combine(current, segment);
-                TokenCacheSecurity.EnsureDirectory(current, false);
+                if (!TokenCacheSecurity.EnsureDirectory(current, false, createDirectory))
+                    return null;
             }
         }
-        else
-            TokenCacheSecurity.EnsureDirectory(root, true);
+        else if (!TokenCacheSecurity.EnsureDirectory(root, true, createDirectory))
+            return null;
 
         var cacheDirectory = Path.Combine(root, Constants.TempDirectoryName);
-        TokenCacheSecurity.EnsureDirectory(cacheDirectory, true);
+        if (!TokenCacheSecurity.EnsureDirectory(cacheDirectory, true, createDirectory))
+            return null;
         cacheDirectory = Path.Combine(cacheDirectory, "auth");
-        TokenCacheSecurity.EnsureDirectory(cacheDirectory, true);
+        if (!TokenCacheSecurity.EnsureDirectory(cacheDirectory, true, createDirectory))
+            return null;
         return Path.Combine(cacheDirectory, $"{FileName}.txt");
     }
 
@@ -81,7 +85,7 @@ public class TempFolderTokenStorageService : ITokenStorageService
     {
         cancellationToken.ThrowIfCancellationRequested();
         var target = GetTokenCacheFilePath();
-        if (!ValidateExistingFile(target))
+        if (target is null || !ValidateExistingFile(target))
             return null;
         if (File.GetLastWriteTimeUtc(target).AddMonths(6) < DateTime.UtcNow)
         {
@@ -98,7 +102,7 @@ public class TempFolderTokenStorageService : ITokenStorageService
     {
         ArgumentException.ThrowIfNullOrEmpty(value);
         cancellationToken.ThrowIfCancellationRequested();
-        var target = GetTokenCacheFilePath();
+        var target = GetTokenCacheFilePath(true)!;
         ValidateExistingFile(target);
         var temporaryPath = Path.Combine(Path.GetDirectoryName(target)!, Path.GetRandomFileName());
         var created = false;
@@ -143,7 +147,7 @@ public class TempFolderTokenStorageService : ITokenStorageService
     {
         cancellationToken.ThrowIfCancellationRequested();
         var target = GetTokenCacheFilePath();
-        if (!ValidateExistingFile(target))
+        if (target is null || !ValidateExistingFile(target))
             return Task.FromResult(false);
         File.Delete(target);
         return Task.FromResult(true);

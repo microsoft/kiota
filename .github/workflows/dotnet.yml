@@ -76,6 +76,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore kiota.slnx
       - name: Test private credential storage
+        shell: bash
         run: |
           dotnet test --project ./tests/Kiota.Builder.Tests/Kiota.Builder.Tests.csproj -c Release --filter-class "Kiota.Builder.Tests.SearchProviders.GitHub.Authentication.*"
           dotnet test --project ./tests/Kiota.Tests/Kiota.Tests.csproj -c Release --filter-class "Kiota.Tests.GitHubLogoutTests"

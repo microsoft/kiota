@@ -16,11 +16,29 @@ internal static class TokenCacheSecurity
     internal const UnixFileMode DirectoryMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
     internal const UnixFileMode FileMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
 
-    internal static void EnsureDirectory(string path, bool privateDirectory)
+    internal static bool EnsureDirectory(string path, bool privateDirectory, bool createIfMissing = true)
     {
+        if (!createIfMissing)
+        {
+            FileAttributes attributes;
+            try
+            {
+                attributes = File.GetAttributes(path);
+            }
+            catch (FileNotFoundException)
+            {
+                return false;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return false;
+            }
+            if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != FileAttributes.Directory)
+                throw UnsafeStorage();
+        }
         if (OperatingSystem.IsWindows())
         {
-            if (!Directory.Exists(path))
+            if (createIfMissing && !Directory.Exists(path))
             {
                 var security = new DirectorySecurity();
                 security.SetOwner(CurrentUser);
@@ -33,7 +51,8 @@ internal static class TokenCacheSecurity
         }
         else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
         {
-            Directory.CreateDirectory(path, DirectoryMode);
+            if (createIfMissing)
+                Directory.CreateDirectory(path, DirectoryMode);
             ValidateUnix(GetUnixStatus(path), true, privateDirectory);
         }
         else
@@ -41,6 +60,7 @@ internal static class TokenCacheSecurity
 
         if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
             throw UnsafeStorage();
+        return true;
     }
 
     internal static void ValidateFile(string path)
