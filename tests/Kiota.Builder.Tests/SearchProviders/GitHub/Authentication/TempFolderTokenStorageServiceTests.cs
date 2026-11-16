@@ -94,6 +94,63 @@ public sealed class TempFolderTokenStorageServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SupportsRelocatedApplicationDataDirectoryAsync()
+    {
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var relocatedRoot = Path.Combine(profile, $"kiota-relocated-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var otherProfile = Path.Combine(profile, "other-profile");
+            Assert.False(TempFolderTokenStorageService.EnsureApplicationDataDirectory(relocatedRoot, otherProfile, false));
+            Assert.False(Directory.Exists(relocatedRoot));
+            Assert.True(TempFolderTokenStorageService.EnsureApplicationDataDirectory(relocatedRoot, otherProfile, true));
+            var storage = new TempFolderTokenStorageService(relocatedRoot)
+            {
+                Logger = new Mock<ILogger>().Object,
+                FileName = "relocated-token",
+            };
+            await storage.SetTokenAsync("relocated", TestContext.Current.CancellationToken);
+            Assert.Equal("relocated", await storage.GetTokenAsync(TestContext.Current.CancellationToken));
+            Assert.True(await storage.DeleteTokenAsync(TestContext.Current.CancellationToken));
+            if (OperatingSystem.IsWindows())
+            {
+                var directory = new DirectoryInfo(relocatedRoot);
+                var security = directory.GetAccessControl();
+                security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    FileSystemRights.DeleteSubdirectoriesAndFiles, AccessControlType.Allow));
+                directory.SetAccessControl(security);
+            }
+            else
+                File.SetUnixFileMode(relocatedRoot, TokenCacheSecurity.DirectoryMode | UnixFileMode.OtherWrite);
+            Assert.Throws<IOException>(() => TempFolderTokenStorageService.EnsureApplicationDataDirectory(relocatedRoot, otherProfile, false));
+        }
+        finally
+        {
+            if (Directory.Exists(relocatedRoot))
+                Directory.Delete(relocatedRoot, true);
+        }
+    }
+
+    [Fact]
+    public void AllowsInheritOnlyRulesOnWindowsAncestors()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Skip("Windows ACL inheritance validation.");
+            return;
+        }
+        TokenCacheSecurity.EnsureDirectory(root, true);
+        var directory = new DirectoryInfo(root);
+        var security = directory.GetAccessControl();
+        security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.CreatorOwnerSid, null),
+            FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.InheritOnly, AccessControlType.Allow));
+        directory.SetAccessControl(security);
+        Assert.True(TokenCacheSecurity.EnsureDirectory(root, false, false));
+        Assert.Throws<IOException>(() => TokenCacheSecurity.EnsureDirectory(root, true, false));
+    }
+
+    [Fact]
     public async Task CreatesPrivateDirectoryAndFileAsync()
     {
         await CreateStorage().SetTokenAsync("dummy-token", TestContext.Current.CancellationToken);

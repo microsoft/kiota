@@ -42,19 +42,8 @@ public class TempFolderTokenStorageService : ITokenStorageService
         if (applicationDataPath is null)
         {
             var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var relative = Path.GetRelativePath(profile, root);
-            if (string.IsNullOrEmpty(profile) || !Path.IsPathFullyQualified(profile) ||
-                Path.IsPathRooted(relative) || relative == ".." || relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-                throw new IOException("Credential storage must be within the current user's profile.");
-            if (!TokenCacheSecurity.EnsureDirectory(profile, false, createDirectory))
+            if (!EnsureApplicationDataDirectory(root, profile, createDirectory))
                 return null;
-            var current = profile;
-            foreach (var segment in relative.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
-            {
-                current = Path.Combine(current, segment);
-                if (!TokenCacheSecurity.EnsureDirectory(current, false, createDirectory))
-                    return null;
-            }
         }
         else if (!TokenCacheSecurity.EnsureDirectory(root, true, createDirectory))
             return null;
@@ -66,6 +55,28 @@ public class TempFolderTokenStorageService : ITokenStorageService
         if (!TokenCacheSecurity.EnsureDirectory(cacheDirectory, true, createDirectory))
             return null;
         return Path.Combine(cacheDirectory, $"{FileName}.txt");
+    }
+
+    internal static bool EnsureApplicationDataDirectory(string root, string profile, bool createDirectory)
+    {
+        if (string.IsNullOrEmpty(profile) || !Path.IsPathFullyQualified(profile))
+            throw new IOException("A user profile is required for credential storage.");
+        var relative = Path.GetRelativePath(profile, root);
+        var withinProfile = !Path.IsPathRooted(relative) && relative != ".." &&
+            !relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal);
+        var current = withinProfile ? profile : Path.GetPathRoot(root)!;
+        if (!TokenCacheSecurity.EnsureDirectory(current, false, false))
+            return false;
+        relative = Path.GetRelativePath(current, root);
+        foreach (var segment in relative.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (segment == ".")
+                continue;
+            current = Path.Combine(current, segment);
+            if (!TokenCacheSecurity.EnsureDirectory(current, false, createDirectory))
+                return false;
+        }
+        return true;
     }
 
     private static bool ValidateExistingFile(string path)

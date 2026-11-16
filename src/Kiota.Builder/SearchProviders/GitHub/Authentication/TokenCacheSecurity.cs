@@ -114,7 +114,7 @@ internal static class TokenCacheSecurity
     {
         var expectedType = directory ? 0x4000 : 0x8000;
         var permissions = status.Mode & 0xFFF;
-        if (status.UserId != GetEffectiveUserId() ||
+        if ((status.UserId != GetEffectiveUserId() && (privateEntry || status.UserId != 0)) ||
             (status.Mode & 0xF000) != expectedType ||
             (!directory && status.LinkCount != 1) ||
             (privateEntry && permissions != (int)(directory ? DirectoryMode : FileMode)) ||
@@ -135,22 +135,31 @@ internal static class TokenCacheSecurity
     [SupportedOSPlatform("windows")]
     private static void ValidateWindows(FileSystemSecurity security, bool privateEntry)
     {
-        if (!CurrentUser.Equals(security.GetOwner(typeof(SecurityIdentifier))))
+        var owner = (SecurityIdentifier?)security.GetOwner(typeof(SecurityIdentifier));
+        if (owner is null || (!CurrentUser.Equals(owner) &&
+            (privateEntry || !IsTrustedWindowsIdentity(owner))))
             throw UnsafeStorage();
         foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
         {
             if (rule.AccessControlType != AccessControlType.Allow ||
+                (!privateEntry && (rule.PropagationFlags & PropagationFlags.InheritOnly) != 0) ||
                 CurrentUser.Equals(rule.IdentityReference) ||
-                rule.IdentityReference is SecurityIdentifier sid &&
-                (sid.IsWellKnown(WellKnownSidType.LocalSystemSid) || sid.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid)))
+                rule.IdentityReference is SecurityIdentifier sid && IsTrustedWindowsIdentity(sid))
                 continue;
             var prohibited = privateEntry ? FileSystemRights.FullControl :
-                FileSystemRights.Write | FileSystemRights.Delete | FileSystemRights.DeleteSubdirectoriesAndFiles |
+                (FileSystemRights.Write & ~FileSystemRights.CreateDirectories) | FileSystemRights.Delete | FileSystemRights.DeleteSubdirectoriesAndFiles |
                 FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
             if ((rule.FileSystemRights & prohibited) != 0)
                 throw UnsafeStorage();
         }
     }
+
+    [SupportedOSPlatform("windows")]
+    private static bool IsTrustedWindowsIdentity(SecurityIdentifier identity) =>
+        identity.IsWellKnown(WellKnownSidType.LocalSystemSid) ||
+        identity.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid) ||
+        // Windows volume roots can be owned by the Windows Modules Installer service.
+        identity.Value == "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464";
 
     private static IOException UnsafeStorage() => new("The credential cache has unsafe ownership, permissions, or links. Use a private per-user application-data directory and sign in again.");
 
