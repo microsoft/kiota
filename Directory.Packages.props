@@ -39,6 +39,6 @@
     <PackageVersion Include="StreamJsonRpc" Version="2.26.150" />
     <PackageVersion Include="System.CommandLine" Version="2.0.14" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>
 </Project>
