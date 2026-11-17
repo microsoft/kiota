@@ -184,8 +184,7 @@ components:
         related:
           $ref: '#/components/schemas/Derived'
 """;
-        if (crlfSource)
-            description = description.ReplaceLineEndings("\r\n");
+        // Normalize raw-string literals for the reference-order rewrites first.
         description = description.ReplaceLineEndings("\n");
         if (!recursiveProperties)
         {
@@ -206,6 +205,14 @@ components:
                 .Replace("derived:\n          $ref: '#/components/schemas/Derived'", "alias:\n          $ref: '#/components/schemas/ModelAlias'", StringComparison.Ordinal);
             Assert.Contains("first:\n          $ref: '#/components/schemas/Derived'", description);
             Assert.DoesNotContain("derived:\n          $ref: '#/components/schemas/Derived'", description);
+        }
+        // Feed genuinely CRLF YAML to the parser in these cases, after the
+        // LF-specific string rewrites. This must not be normalized away again.
+        if (crlfSource)
+        {
+            description = description.ReplaceLineEndings("\r\n");
+            Assert.Contains("\r\n", description);
+            Assert.DoesNotContain("\n", description.Replace("\r\n", string.Empty, StringComparison.Ordinal));
         }
         await using var stream = await GetDocumentStreamAsync(description);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { Language = GenerationLanguage.CSharp, MaxDegreeOfParallelism = parallelism }, _httpClient);

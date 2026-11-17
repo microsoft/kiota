@@ -2531,8 +2531,8 @@ public partial class KiotaBuilder
             schema;
         // Aliases can use the same lookup schema for different classes. Only skip reentry into the
         // same published class: its outer call will finish the factory and discriminator mappings.
-        var discriminatorVisited = classesBeingProcessedForDiscriminators.Value!;
-        if (!discriminatorVisited.Add(newClass))
+        var classesInProgressForDiscriminators = classesBeingProcessedForDiscriminators.Value!;
+        if (!classesInProgressForDiscriminators.Add(newClass))
             return newClass;
         try
         {
@@ -2544,7 +2544,7 @@ public partial class KiotaBuilder
         }
         finally
         {
-            discriminatorVisited.Remove(newClass);
+            classesInProgressForDiscriminators.Remove(newClass);
         }
         return newClass;
     }
