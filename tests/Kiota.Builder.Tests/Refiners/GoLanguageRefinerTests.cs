@@ -459,6 +459,84 @@ public class GoLanguageRefinerTests
         Assert.NotNull(model.Methods.SingleOrDefault(static x => x.IsOfKind(CodeMethodKind.IndexerBackwardCompatibility) && x.Name.Equals("ById") && x.OriginalIndexer != null && x.OriginalIndexer.IndexParameter.Type.Name.Equals("string", StringComparison.OrdinalIgnoreCase)));
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task DisambiguatesFlattenedInlineComposedResponsesAsync(bool composedSibling, bool referencedResponse)
+    {
+        var blockResponseSchema = """{"oneOf":[{"type":"object","properties":{"id":{"type":"string"}}},{"type":"object","properties":{"title":{"type":"string"}}}]}""";
+        var blockResponseType = referencedResponse
+            ? """{"$ref":"#/components/schemas/BlockResponse"}"""
+            : blockResponseSchema;
+        var siblingSchema = composedSibling
+            ? """{"oneOf":[{"type":"object","properties":{"name":{"type":"string"}}},{"type":"object","properties":{"count":{"type":"integer"}}}]}"""
+            : """{"type":"object","properties":{"created":{"type":"boolean"}}}""";
+        await using var stream = await KiotaBuilderTests.GetDocumentStreamAsync($$$$"""
+        {
+          "openapi": "3.0.1",
+          "info": {"title": "Meeting notes", "version": "1.0.0"},
+          "paths": {
+            "/v1/blocks/meeting_notes": {
+              "post": {
+                "responses": {
+                  "200": {
+                    "description": "A block",
+                    "content": {
+                      "application/json": {
+                        "schema": {{{{blockResponseType}}}}
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/v1/meeting_notes": {
+              "post": {
+                "responses": {
+                  "200": {
+                    "description": "A page",
+                    "content": {"application/json": {"schema": {{{{siblingSchema}}}}}}
+                  }
+                }
+              }
+            }
+          },
+          "components": {"schemas": {"BlockResponse": {{{{blockResponseSchema}}}}}}
+        }
+        """);
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.Go,
+            ClientNamespaceName = "ApiSdk",
+            OpenAPIFilePath = "openapi.json",
+            ExcludeBackwardCompatible = true,
+        };
+        using var httpClient = new HttpClient();
+        var builder = new KiotaBuilder(new Mock<ILogger<KiotaBuilder>>().Object, configuration, httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        await ILanguageRefiner.RefineAsync(configuration, codeModel, cancellationToken: TestContext.Current.CancellationToken);
+
+        var blockResponseName = referencedResponse ? "BlockResponse" : "BlocksMeeting_notesPostResponse";
+        var blockResponse = codeModel.FindChildByName<CodeClass>(blockResponseName);
+        Assert.NotNull(blockResponse);
+        Assert.NotNull(blockResponse.OriginalComposedType);
+        if (referencedResponse)
+            Assert.Equal("ApiSdk.models", blockResponse.GetImmediateParentOfType<CodeNamespace>().Name);
+        var pageResponse = codeModel.FindChildByName<CodeClass>("Meeting_notesPostResponse");
+        Assert.NotNull(pageResponse);
+        Assert.NotSame(blockResponse, pageResponse);
+        Assert.Equal(composedSibling, pageResponse.OriginalComposedType is not null);
+        var blockBuilder = codeModel.FindChildByName<CodeClass>("BlocksMeeting_notesRequestBuilder");
+        var pageBuilder = codeModel.FindChildByName<CodeClass>("Meeting_notesRequestBuilder");
+        Assert.NotNull(blockBuilder);
+        Assert.NotNull(pageBuilder);
+        Assert.Equal($"{blockResponseName}able", blockBuilder.Methods.Single(static x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ReturnType.Name, ignoreCase: true);
+        Assert.Equal("Meeting_notesPostResponseable", pageBuilder.Methods.Single(static x => x.IsOfKind(CodeMethodKind.RequestExecutor)).ReturnType.Name, ignoreCase: true);
+    }
+
     [Fact]
     public async Task ValidatesNamingOfRequestBuilderDoesNotRepeatIdCharacterAsync()
     {
