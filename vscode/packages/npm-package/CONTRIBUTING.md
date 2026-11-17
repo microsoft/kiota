@@ -40,4 +40,4 @@ npm test
  
 ### Debugging the Kiota npm package
 
-See [Debugging the package](https://github.com/microsoft/kiota/blob/main/vscode/npm-package/debugging.md)
+See [Debugging the package](https://github.com/microsoft/kiota/blob/main/vscode/packages/npm-package/debugging.md)
