@@ -80,8 +80,14 @@ internal partial class Server : IServer
         }
         return logger.LogEntries;
     }
+    private static void ValidateWorkspaceOutputPath(GenerationConfiguration config)
+    {
+        if (IsConfigPreviewEnabled.Value && !config.NoWorkspace)
+            KiotaBuilder.ValidateWorkspaceOutputPath(config.OutputPath, Directory.GetCurrentDirectory());
+    }
     private static async Task<bool> GenerateClientAsync(GenerationConfiguration config, ILogger<KiotaBuilder> globalLogger, CancellationToken cancellationToken)
     {
+        ValidateWorkspaceOutputPath(config);
         using var fileLogger = new FileLogLogger<KiotaBuilder>(config.OutputPath, LogLevel.Warning);
         var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
         return await new KiotaBuilder(logger, config, httpClient, IsConfigPreviewEnabled.Value).GenerateClientAsync(cancellationToken);
@@ -232,6 +238,7 @@ internal partial class Server : IServer
 
         try
         {
+            ValidateWorkspaceOutputPath(configuration);
             using var fileLogger = new FileLogLogger<KiotaBuilder>(configuration.OutputPath, LogLevel.Warning);
             var logger = new AggregateLogger<KiotaBuilder>(globalLogger, fileLogger);
             var result = await new KiotaBuilder(logger, configuration, httpClient, IsConfigPreviewEnabled.Value).GeneratePluginAsync(cancellationToken);
