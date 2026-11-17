@@ -47,8 +47,9 @@ public abstract class BaseApiConsumerConfiguration
     public void NormalizeOutputPath(string targetDirectory)
     {
         if (Path.IsPathRooted(OutputPath))
-            OutputPath = "./" + Path.GetRelativePath(targetDirectory, OutputPath).NormalizePathSeparators();
-        ValidateOutputPath(OutputPath, targetDirectory);
+            OutputPath = "./" + ValidateAbsoluteOutputPath(Path.GetFullPath(OutputPath), targetDirectory).NormalizePathSeparators();
+        else
+            ValidateOutputPath(OutputPath, targetDirectory);
     }
     internal static void ValidateOutputPath(string? outputPath, string targetDirectory)
     {
@@ -63,6 +64,126 @@ public abstract class BaseApiConsumerConfiguration
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison))
             throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+        ValidateNoReparsePointEscape(targetFullPath, outputFullPath, comparison);
+    }
+    /// <returns>The output path relative to the target directory.</returns>
+    internal static string ValidateAbsoluteOutputPath(string outputFullPath, string targetDirectory)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(outputFullPath);
+        ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
+        // Path.GetRelativePath ignores casing on macOS, even on case-sensitive volumes
+        var targetFullPath = Path.GetFullPath(targetDirectory);
+        var targetFullPathWithSeparator = Path.EndsInDirectorySeparator(targetFullPath) ? targetFullPath : targetFullPath + Path.DirectorySeparatorChar;
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!outputFullPath.StartsWith(targetFullPathWithSeparator, comparison) &&
+            !(comparison == StringComparison.Ordinal &&
+              outputFullPath.StartsWith(targetFullPathWithSeparator, StringComparison.OrdinalIgnoreCase) &&
+              ResolveFinalPath(outputFullPath[..targetFullPathWithSeparator.Length], true).Equals(ResolveFinalPath(targetFullPath, true), StringComparison.Ordinal)))
+            throw new InvalidOperationException("The output path must be a subdirectory of the workspace.");
+        var relativeOutputPath = outputFullPath[targetFullPathWithSeparator.Length..];
+        ValidateOutputPath(relativeOutputPath, targetFullPath);
+        return relativeOutputPath;
+    }
+    private enum ResolvedOutputPathState
+    {
+        Valid,
+        OutsideWorkspace,
+        WorkspaceRoot,
+    }
+    private static void ValidateNoReparsePointEscape(string targetFullPath, string outputFullPath, StringComparison comparison)
+    {
+        var state = GetResolvedOutputPathState(targetFullPath, outputFullPath, comparison, false);
+        // link targets may use different casing than the on-disk names on case-insensitive file systems, only pay for the lookup when needed
+        if (state == ResolvedOutputPathState.OutsideWorkspace && !OperatingSystem.IsWindows())
+            state = GetResolvedOutputPathState(targetFullPath, outputFullPath, comparison, true);
+        if (state == ResolvedOutputPathState.OutsideWorkspace)
+            throw new InvalidOperationException("The output path must be a subdirectory of the workspace and cannot traverse symbolic links or junctions outside of it.");
+        if (state == ResolvedOutputPathState.WorkspaceRoot)
+            throw new InvalidOperationException("The output path must resolve to a subdirectory of the workspace, not the workspace itself.");
+    }
+    private static ResolvedOutputPathState GetResolvedOutputPathState(string targetFullPath, string outputFullPath, StringComparison comparison, bool useOnDiskCasing)
+    {
+        var realTarget = ResolveFinalPath(targetFullPath, useOnDiskCasing);
+        var realTargetWithSeparator = Path.EndsInDirectorySeparator(realTarget) ? realTarget : realTarget + Path.DirectorySeparatorChar;
+        var relative = Path.GetRelativePath(targetFullPath, outputFullPath);
+        var current = realTarget;
+        foreach (var segment in relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                     .Where(static segment => !string.IsNullOrEmpty(segment) && segment != "."))
+        {
+            current = ResolveFinalPath(Path.Join(current, segment), useOnDiskCasing);
+            if (!current.Equals(realTarget, comparison) && !current.StartsWith(realTargetWithSeparator, comparison))
+                return ResolvedOutputPathState.OutsideWorkspace;
+        }
+        return current.Equals(realTarget, comparison) ? ResolvedOutputPathState.WorkspaceRoot : ResolvedOutputPathState.Valid;
+    }
+    private static string ResolveFinalPath(string path, bool useOnDiskCasing)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var current = Path.GetPathRoot(fullPath) ?? throw new IOException("The output path has no filesystem root.");
+            var segments = new Stack<string>(Enumerable.Reverse(fullPath[current.Length..]
+                .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries)));
+            var linkCount = 0;
+            while (segments.TryPop(out var segment))
+            {
+                if (segment == ".")
+                    continue;
+                if (segment == "..")
+                {
+                    current = Path.GetDirectoryName(current) ?? current;
+                    continue;
+                }
+                var next = Path.Join(current, segment);
+                FileSystemInfo info = Directory.Exists(next) ? new DirectoryInfo(next) : new FileInfo(next);
+                var target = info.LinkTarget;
+                if (target is null)
+                {
+                    current = useOnDiskCasing && info.Exists ? Path.Join(current, GetOnDiskName(current, segment)) : next;
+                    continue;
+                }
+                if (++linkCount > 40)
+                    throw new IOException("Too many symbolic links in the output path.");
+                if (OperatingSystem.IsWindows())
+                    target = info.ResolveLinkTarget(false)?.FullName ?? throw new IOException("The output path link could not be resolved.");
+                if (Path.IsPathRooted(target))
+                {
+                    current = Path.GetPathRoot(target) ?? throw new IOException("The output path link has no filesystem root.");
+                    target = target[current.Length..];
+                }
+                foreach (var targetSegment in Enumerable.Reverse(target.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries)))
+                    segments.Push(targetSegment);
+            }
+            return Path.TrimEndingDirectorySeparator(current);
+        }
+        catch (IOException ex)
+        {
+            throw new InvalidOperationException("The output path could not be resolved and cannot be validated.", ex);
+        }
+    }
+    private static string GetOnDiskName(string directory, string name)
+    {
+        // the entry exists under the requested name, a single entry differing only by casing means a case-insensitive file system
+        try
+        {
+            string? match = null;
+            foreach (var entryName in Directory.EnumerateFileSystemEntries(directory).Select(Path.GetFileName))
+            {
+                if (string.Equals(entryName, name, StringComparison.Ordinal))
+                    return name;
+                if (string.Equals(entryName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (match is not null)
+                        return name;
+                    match = entryName;
+                }
+            }
+            return match ?? name;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return name;
+        }
     }
     private static bool IsRootedPath(string path)
     {
