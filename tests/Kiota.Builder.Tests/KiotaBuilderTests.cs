@@ -13098,4 +13098,72 @@ components:
         Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, nullItemsProp.Type.CollectionKind);
         Assert.Equal(KiotaBuilder.UntypedNodeName, nullItemsProp.Type.Name);
     }
+
+    [Theory]
+    [InlineData("anyOf")]
+    [InlineData("oneOf")]
+    public async Task PreservesWrapperOwnEnumWhenCombiningRefWithNullOnlyBranchAsync(string unionKind)
+    {
+        var description = $$"""
+            openapi: 3.0.4
+            info:
+              title: Wrapper own enum reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Identifier:
+                  type: string
+                Thing:
+                  type: object
+                  properties:
+                    decision:
+                      type: string
+                      enum: [approve, deny]
+                      {{unionKind}}:
+                        - $ref: '#/components/schemas/Identifier'
+                        - enum: [null]
+                    decisions:
+                      type: array
+                      items:
+                        type: string
+                        enum: [approve, deny]
+                        {{unionKind}}:
+                          - $ref: '#/components/schemas/Identifier'
+                          - enum: [null]
+            """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { ClientClassName = "ReproClient", ClientNamespaceName = "EnumRepro" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+
+        var decisionProp = Assert.Single(thingClass.Properties, static x => x.Name == "decision");
+        var decisionType = Assert.IsType<CodeType>(decisionProp.Type);
+        var decisionEnum = Assert.IsType<CodeEnum>(decisionType.TypeDefinition);
+        Assert.Equal(new[] { "approve", "deny" }, decisionEnum.Options.Select(static x => x.SerializationName));
+
+        var decisionsProp = Assert.Single(thingClass.Properties, static x => x.Name == "decisions");
+        var decisionsType = Assert.IsType<CodeType>(decisionsProp.Type);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, decisionsType.CollectionKind);
+        var decisionsEnum = Assert.IsType<CodeEnum>(decisionsType.TypeDefinition);
+        Assert.Equal(new[] { "approve", "deny" }, decisionsEnum.Options.Select(static x => x.SerializationName));
+    }
 }

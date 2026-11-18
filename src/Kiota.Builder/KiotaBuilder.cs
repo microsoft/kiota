@@ -2100,6 +2100,7 @@ public partial class KiotaBuilder
         // and self-referential properties like "innerError" or "parent" cause infinite recursion.
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName())
             && !schema.HasAnyProperty()
+            && !schema.IsEnum()
             && string.IsNullOrEmpty(schema.Format)
             && schema.AllOf is not { Count: > 0 }
             && (GetSingleNonNullReference(schema.AnyOf, schema.OneOf) ?? GetSingleNonNullReference(schema.OneOf, schema.AnyOf)) is { } innerRef)
