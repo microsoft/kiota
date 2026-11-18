@@ -12835,6 +12835,141 @@ components:
         Assert.Null(codeModel.FindChildByName<CodeClass>("Thing_valueMember1"));
 
         var itemsProp = Assert.Single(thingClass.Properties, static x => x.Name == "itemsValue");
-        Assert.False(itemsProp.Type is CodeType { TypeDefinition: CodeEnum });
+        var itemsComposed = Assert.IsAssignableFrom<CodeComposedTypeBase>(itemsProp.Type);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, itemsComposed.CollectionKind);
+        Assert.Equal(2, itemsComposed.Types.Count());
+        Assert.Contains(itemsComposed.Types, static x => x.Name == "Decision" && x.TypeDefinition is CodeEnum);
+        if (extraBranches.Contains("type: integer", StringComparison.Ordinal))
+            Assert.Contains(itemsComposed.Types, static x => x.Name == "integer");
+    }
+
+    [Theory]
+    [InlineData("anyOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("oneOf", false)]
+    public async Task PreservesMixedUnionMemberTypesInNullableCollectionsAsync(string unionKind, bool nullFirst)
+    {
+        var nullBranch = "- type: 'null'";
+        var otherBranches = "- $ref: '#/components/schemas/Decision'\n- type: integer";
+        var branches = nullFirst ? $"{nullBranch}\n{otherBranches}" : $"{otherBranches}\n{nullBranch}";
+        var description = $$"""
+            openapi: 3.1.0
+            info:
+              title: Mixed union collection reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Thing:
+                  type: object
+                  properties:
+                    decisions:
+                      type: array
+                      items:
+                        {{unionKind}}:
+                          {{branches.Replace("\n", "\n              ")}}
+                Decision:
+                  type: string
+                  enum: [approve, deny]
+            """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { ClientClassName = "ReproClient", ClientNamespaceName = "EnumRepro" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+        var decisionsProp = Assert.Single(thingClass.Properties, static x => x.Name == "decisions");
+        var composedType = Assert.IsAssignableFrom<CodeComposedTypeBase>(decisionsProp.Type);
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, composedType.CollectionKind);
+        Assert.Equal(2, composedType.Types.Count());
+        Assert.Contains(composedType.Types, static x => x.Name == "Decision" && x.TypeDefinition is CodeEnum);
+        Assert.Contains(composedType.Types, static x => x.Name == "integer");
+        Assert.Null(codeModel.FindChildByName<CodeClass>("Thing_decisionsMember1"));
+    }
+
+    [Theory]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    public async Task UnwrapsNullableObjectUnionReferencingAllOfDerivedSchemaAsync(string unionKind, bool nullFirst)
+    {
+        var refBranch = "- $ref: '#/components/schemas/Derived'";
+        var nullBranch = "- type: 'null'";
+        var branches = nullFirst ? $"{nullBranch}\n{refBranch}" : $"{refBranch}\n{nullBranch}";
+        var description = $$"""
+            openapi: 3.1.0
+            info:
+              title: Nullable derived ref reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Base:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                Derived:
+                  allOf:
+                    - $ref: '#/components/schemas/Base'
+                    - type: object
+                      properties:
+                        extra:
+                          type: string
+                Thing:
+                  type: object
+                  properties:
+                    child:
+                      type: [object, 'null']
+                      {{unionKind}}:
+                        {{branches.Replace("\n", "\n            ")}}
+            """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { ClientClassName = "ReproClient", ClientNamespaceName = "EnumRepro" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+        var childProp = Assert.Single(thingClass.Properties, static x => x.Name == "child");
+        var childType = Assert.IsType<CodeType>(childProp.Type);
+        var derivedClass = Assert.IsType<CodeClass>(childType.TypeDefinition);
+        Assert.Equal("Derived", derivedClass.Name);
+        Assert.Equal("Base", derivedClass.StartBlock.Inherits?.Name);
+        Assert.Single(derivedClass.Properties, static x => x.Name == "extra");
+        Assert.Null(codeModel.FindChildByName<CodeClass>("Thing_child"));
     }
 }

@@ -2092,17 +2092,16 @@ public partial class KiotaBuilder
             typeNameForInlineSchema = string.Empty;
         }
 
-        // Unwrap single-entry anyOf/oneOf wrappers that contain only a $ref and no discriminator or own properties.
-        // This covers the OpenAPI 3.1 nullable reference pattern (e.g. { type: [object, null], anyOf: [$ref: X] })
-        // as well as degenerate single-entry unions. Without unwrapping, the wrapper gets treated as an inline
-        // object, and self-referential properties like "innerError" or "parent" cause infinite recursion because
-        // each iteration creates a uniquely-named inline class.
+        // Unwrap single-entry anyOf/oneOf wrappers (or single non-null reference + null-only branches)
+        // that contain only a $ref and no discriminator or own properties.
+        // This covers the OpenAPI 3.1 nullable reference pattern (e.g. { type: [object, null], anyOf: [$ref: X] }
+        // or { type: [object, null], oneOf: [$ref: X, { type: null }] }) as well as degenerate single-entry unions.
+        // Without unwrapping, the wrapper gets treated as an inline object (dropping inherited allOf properties),
+        // and self-referential properties like "innerError" or "parent" cause infinite recursion.
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName())
             && !schema.HasAnyProperty()
-            && ((schema.AnyOf is { Count: 1 } && schema.AnyOf[0].IsReferencedSchema())
-                || (schema.OneOf is { Count: 1 } && schema.OneOf[0].IsReferencedSchema())))
+            && (GetSingleNonNullReference(schema.AnyOf, schema.OneOf) ?? GetSingleNonNullReference(schema.OneOf, schema.AnyOf)) is { } innerRef)
         {
-            var innerRef = schema.AnyOf is { Count: 1 } ? schema.AnyOf[0] : schema.OneOf![0];
             return CreateModelDeclarations(currentNode, innerRef, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isViaDiscriminator);
         }
 
@@ -2319,6 +2318,21 @@ public partial class KiotaBuilder
                schema.AnyOf?.Any(x => ContainsDynamicReference(x, visited)) == true ||
                schema.OneOf?.Any(x => ContainsDynamicReference(x, visited)) == true;
     }
+    private static IOpenApiSchema? GetSingleNonNullReference(IList<IOpenApiSchema>? primary, IList<IOpenApiSchema>? secondary)
+    {
+        if (primary is not { Count: > 0 } || secondary is { Count: > 0 })
+            return null;
+        IOpenApiSchema? candidate = null;
+        foreach (var entry in primary)
+        {
+            if (entry.IsNullOnly())
+                continue;
+            if (candidate is not null)
+                return null;
+            candidate = entry;
+        }
+        return candidate is not null && candidate.IsReferencedSchema() ? candidate : null;
+    }
     private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string suffixForInlineSchema, IOpenApiResponse? response, string typeNameForInlineSchema, bool isRequestBody)
     {
         var shouldPush = schema.Definitions?.Values.Any(static d => !string.IsNullOrEmpty(d.DynamicAnchor)) == true;
@@ -2328,7 +2342,9 @@ public partial class KiotaBuilder
         {
             CodeTypeBase? type = GetPrimitiveType(schema.Items);
             var isEnumOrComposedCollectionType = schema.Items.IsEnum()
-                                        || schema.Items.IsComposedEnum() && string.IsNullOrEmpty(schema.Items?.Format);
+                                        || (schema.Items.IsComposedEnum()
+                                            || ((schema.Items.IsInclusiveUnion() || schema.Items.IsExclusiveUnion()) && schema.Items?.IsODataPrimitiveType() is not true))
+                                           && string.IsNullOrEmpty(schema.Items?.Format);
             if ((string.IsNullOrEmpty(type?.Name)
                    || isEnumOrComposedCollectionType)
                    && schema.Items != null)
