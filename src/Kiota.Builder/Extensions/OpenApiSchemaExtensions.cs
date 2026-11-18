@@ -68,8 +68,9 @@ public static class OpenApiSchemaExtensions
         return schema is { Type: JsonSchemaType.Array or (JsonSchemaType.Array | JsonSchemaType.Null) } && schema.Items is not null &&
             (schema.Items.IsComposedEnum() ||
             schema.Items.IsEnum() ||
+            schema.Items.IsNullOnly() ||
             schema.Items.IsSemanticallyMeaningful() ||
-            FlattenEmptyEntries([schema.Items], static x => (x.AnyOf ?? []).Union(x.AllOf ?? []).Union(x.OneOf ?? []).ToList(), 1).Any(static x => x.IsSemanticallyMeaningful()));
+            FlattenEmptyEntries([schema.Items], static x => (x.AnyOf ?? []).Union(x.AllOf ?? []).Union(x.OneOf ?? []).ToList(), 1).Any(static x => x.IsSemanticallyMeaningful() || x.IsNullOnly()));
     }
 
     public static bool IsObjectType(this IOpenApiSchema? schema)

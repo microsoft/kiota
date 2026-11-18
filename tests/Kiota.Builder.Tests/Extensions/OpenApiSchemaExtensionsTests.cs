@@ -1200,4 +1200,26 @@ public class OpenApiSchemaExtensionsTests
         Assert.Equal(!useOneOf, schema.IsInclusiveUnion());
         Assert.Equal(useOneOf, schema.IsExclusiveUnion());
     }
+    [Fact]
+    public void IsArrayTrueOnNullOnlyItems()
+    {
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Items = new OpenApiSchema { Type = JsonSchemaType.Null },
+        }.IsArray());
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Items = new OpenApiSchema { Enum = [null!] },
+        }.IsArray());
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Items = new OpenApiSchema
+            {
+                AnyOf = [new OpenApiSchema { Type = JsonSchemaType.Null }],
+            },
+        }.IsArray());
+    }
 }

@@ -12972,4 +12972,130 @@ components:
         Assert.Single(derivedClass.Properties, static x => x.Name == "extra");
         Assert.Null(codeModel.FindChildByName<CodeClass>("Thing_child"));
     }
+
+    [Theory]
+    [InlineData("anyOf")]
+    [InlineData("oneOf")]
+    public async Task PreservesFormatAndAllOfConstraintsWhenNullableUnionHasSingleReferenceAsync(string unionKind)
+    {
+        var description = $$"""
+            openapi: 3.1.0
+            info:
+              title: Sibling format and allOf reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Identifier:
+                  type: string
+                Base:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                Other:
+                  type: object
+                  properties:
+                    otherProp:
+                      type: string
+                Thing:
+                  type: object
+                  properties:
+                    correlationId:
+                      type: string
+                      format: uuid
+                      {{unionKind}}:
+                        - $ref: '#/components/schemas/Identifier'
+                        - type: 'null'
+                    composed:
+                      allOf:
+                        - $ref: '#/components/schemas/Base'
+                        - type: object
+                          properties:
+                            extra:
+                              type: string
+                      {{unionKind}}:
+                        - $ref: '#/components/schemas/Other'
+                        - type: 'null'
+            """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { ClientClassName = "ReproClient", ClientNamespaceName = "EnumRepro" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+
+        var correlationProp = Assert.Single(thingClass.Properties, static x => x.Name == "correlationId");
+        Assert.Equal("Guid", correlationProp.Type.Name);
+
+        var composedProp = Assert.Single(thingClass.Properties, static x => x.Name == "composed");
+        var composedType = Assert.IsType<CodeType>(composedProp.Type);
+        var composedClass = Assert.IsType<CodeClass>(composedType.TypeDefinition);
+        Assert.Equal("Base", composedClass.StartBlock.Inherits?.Name);
+        Assert.Single(composedClass.Properties, static x => x.Name == "extra");
+    }
+
+    [Theory]
+    [InlineData("3.1.0", "type: 'null'")]
+    [InlineData("3.0.4", "enum: [null]")]
+    public async Task PreservesCollectionShapeForArraysWithNullOnlyItemsAsync(string openApiVersion, string itemsYaml)
+    {
+        var description = $$"""
+            openapi: {{openApiVersion}}
+            info:
+              title: Null-only array items reproduction
+              version: 1.0.0
+            servers:
+              - url: https://example.invalid
+            paths:
+              /things:
+                get:
+                  operationId: listThings
+                  responses:
+                    '200':
+                      description: A thing
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Thing'
+            components:
+              schemas:
+                Thing:
+                  type: object
+                  properties:
+                    nullItems:
+                      type: array
+                      items:
+                        {{itemsYaml}}
+            """;
+
+        await using var stream = await GetDocumentStreamAsync(description);
+        var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration { ClientClassName = "ReproClient", ClientNamespaceName = "EnumRepro" }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(stream, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(document);
+
+        var codeModel = builder.CreateSourceModel(builder.CreateUriSpace(document));
+        var modelsNS = codeModel.FindNamespaceByName("EnumRepro.models");
+        Assert.NotNull(modelsNS);
+        var thingClass = Assert.Single(modelsNS.Classes, static x => x.Name == "Thing");
+        var nullItemsProp = Assert.Single(thingClass.Properties, static x => x.Name == "nullItems");
+        Assert.Equal(CodeTypeBase.CodeTypeCollectionKind.Complex, nullItemsProp.Type.CollectionKind);
+        Assert.Equal(KiotaBuilder.UntypedNodeName, nullItemsProp.Type.Name);
+    }
 }
