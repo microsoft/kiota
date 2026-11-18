@@ -644,6 +644,7 @@ public class GoRefiner : CommonLanguageRefiner
             var newClassName = string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
 
             var nextNameSpace = findNameSpaceAtLevel(rootNameSpace, currentNamespace, 1);
+            FlattenComposedTypeNames(codeClass);
             currentNamespace.RemoveChildElement(codeClass);
             codeClass.Name = newClassName;
             codeClass.Parent = nextNameSpace;
@@ -651,6 +652,23 @@ public class GoRefiner : CommonLanguageRefiner
         }
 
         CrawlTree(currentElement, FlattenFileNames);
+    }
+
+    private void FlattenComposedTypeNames(CodeClass codeClass)
+    {
+        var composedTypes = codeClass.Methods
+            .SelectMany(static x => x.Parameters.Select(static p => p.Type)
+                .Concat(x.ErrorMappings.Select(static e => e.Value))
+                .Append(x.ReturnType))
+            .Concat(codeClass.Properties.Select(static x => x.Type))
+            .OfType<CodeComposedTypeBase>()
+            .Where(static x => x.TargetNamespace is null)
+            .Distinct();
+        foreach (var composedType in composedTypes)
+        {
+            var nameSegments = getPathsName(codeClass, composedType.Name);
+            composedType.Name = string.Join(string.Empty, nameSegments.Count > 1 ? nameSegments.Skip(1) : nameSegments);
+        }
     }
 
     private static void FixConstructorClashes(CodeElement currentElement, Func<string, string> nameCorrection)
