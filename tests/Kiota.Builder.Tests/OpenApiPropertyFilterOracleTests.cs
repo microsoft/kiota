@@ -39,7 +39,7 @@ public sealed class OpenApiPropertyFilterOracleTests : IDisposable
         new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
         {
             IncludeProperties = declarations.Select(static i => $"N{i}#keep").ToHashSet(StringComparer.Ordinal),
-        });
+        }, TestContext.Current.CancellationToken);
         foreach (var declaration in declarations)
             Assert.True(expected.Contains(declaration) == document.Components!.Schemas![$"N{declaration}"].Properties!.ContainsKey("id"),
                 $"{caseName}: inclusion protection differs for N{declaration}#id.");
@@ -50,12 +50,12 @@ public sealed class OpenApiPropertyFilterOracleTests : IDisposable
             var configuration = new GenerationConfiguration { ExcludeProperties = [$"N{declaration}#id"] };
             if (expected.Contains(declaration))
             {
-                Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+                Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
                 Assert.All(declarations, i => Assert.Contains("id", document.Components!.Schemas![$"N{i}"].Properties!.Keys));
             }
             else
             {
-                new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+                new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
                 Assert.DoesNotContain("id", document.Components!.Schemas![$"N{declaration}"].Properties!.Keys);
             }
         }

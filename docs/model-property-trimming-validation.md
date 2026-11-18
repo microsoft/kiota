@@ -46,6 +46,8 @@ A Windows x64/.NET 10.0.15 run produced the following results (three samples, me
 
 The pinned description's SHA-256 is `6d9bbb20d8865b01464028937f2403954ad46598b4ebd3513dcb1a15b1a84aa7`. Its selector removes four optional declarations while preserving required fields. Results vary with runtime and hardware; CI publishes fresh raw measurements rather than enforcing these timings as thresholds.
 
+A separate Windows x64 Release sample used [Microsoft Graph v1.0 at `ab170ed`](https://github.com/microsoftgraph/msgraph-metadata/blob/ab170ed19a075b7b9df5a95bc4e08d9d49af56bd/openapi/v1.0/openapi.yaml), with 5,341 components. Selecting `microsoft.graph.user#displayName` removed 135 declarations in 826 ms, allocating 253 MiB during filtering and reaching a 605 MiB whole-process peak (517 MiB without filtering). This sample measured filtering of the full description, not client generation.
+
 ## Generated-client compilation and runtime checks
 
 ```powershell

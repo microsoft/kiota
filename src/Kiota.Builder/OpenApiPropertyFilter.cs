@@ -242,13 +242,39 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             {
                 var target = GetState(child);
                 state.Children.Add(target);
-                target.HasParent = true;
+                target.Parents.Add(state);
             }
+        }
+        HashSet<ProtectionState> Reach(IEnumerable<ProtectionState> seeds, Func<ProtectionState, IEnumerable<ProtectionState>> neighbors)
+        {
+            var reached = seeds.ToHashSet();
+            var pending = new Queue<ProtectionState>(reached);
+            while (pending.TryDequeue(out var current))
+                foreach (var neighbor in neighbors(current))
+                {
+                    budget.Step();
+                    if (reached.Add(neighbor))
+                        pending.Enqueue(neighbor);
+                }
+            return reached;
         }
         var candidateNames = candidates.Values.SelectMany(static names => names).ToHashSet(StringComparer.Ordinal);
         if (!states.Values.Any(state => state.ProtectedNames.Any(candidateNames.Contains) ||
             state.DependentRequired?.Values.Any(candidateNames.Overlaps) == true))
             return protection;
+        var declarations = candidates.Keys.Select(key => states[key]).ToArray();
+        var relevant = Reach(declarations, static state => state.Children.Concat(state.Parents));
+        var roots = relevant;
+        if (!relevant.Any(state => state.DependentRequired?.Values.Any(candidateNames.Overlaps) == true))
+        {
+            // Only roots that reach a declaration can protect it. Keep paths from those
+            // roots to declarations or matching constraints, without exploring other branches.
+            roots = Reach(declarations, static state => state.Parents);
+            var reachable = Reach(roots, static state => state.Children);
+            var constraints = reachable.Where(state => state.ProtectedNames.Any(candidateNames.Contains)).ToArray();
+            if (constraints.Length == 0) return protection;
+            relevant = Reach(declarations.Concat(constraints), state => state.Parents.Where(reachable.Contains));
+        }
 
         var ordered = new List<ProtectionState>();
         var visited = new HashSet<ProtectionState>();
@@ -264,21 +290,23 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 foreach (var child in current.Children)
                 {
                     budget.Step();
-                    if (visited.Add(child))
+                    if (relevant.Contains(child) && visited.Add(child))
                         pending.Enqueue(child);
                 }
             }
         }
-        foreach (var root in states.Values.Where(static x => !x.HasParent))
+        foreach (var root in states.Values.Where(state => state.Parents.Count == 0 && relevant.Contains(state)))
             Visit(root);
         foreach (var state in states.Values)
-            Visit(state);
+            if (relevant.Contains(state))
+                Visit(state);
 
         // Shared union occurrences use the same choice variables. Keep reachability symbolic
         // so redundant wrappers cannot mix alternatives or expand every reference path.
         var conditions = new ProtectionConditions(budget);
         // Every schema can be an entry point, including different members of a composition cycle.
-        var rootConditions = conditions.CreateChoices(ordered.Count);
+        var orderedRoots = ordered.Where(roots.Contains).ToArray();
+        var rootConditions = conditions.CreateChoices(orderedRoots.Length);
         var work = new Queue<ProtectionState>();
         void Activate(ProtectionState state, int condition)
         {
@@ -291,18 +319,20 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 work.Enqueue(state);
             }
         }
-        for (var i = 0; i < ordered.Count; i++)
-            Activate(ordered[i], rootConditions[i]);
+        for (var i = 0; i < orderedRoots.Length; i++)
+            Activate(orderedRoots[i], rootConditions[i]);
         foreach (var state in ordered)
         {
             foreach (var child in state.AllOf)
-                state.Edges.Add((GetState(child), ProtectionConditions.True));
+                if (relevant.Contains(states[child]))
+                    state.Edges.Add((states[child], ProtectionConditions.True));
             foreach (var union in state.Unions)
             {
-                if (union is not { Count: > 0 }) continue;
+                if (union is not { Count: > 0 } || !union.Any(child => relevant.Contains(states[child]))) continue;
                 var choices = conditions.CreateChoices(union.Count);
                 for (var i = 0; i < union.Count; i++)
-                    state.Edges.Add((GetState(union[i]), choices[i]));
+                    if (relevant.Contains(states[union[i]]))
+                        state.Edges.Add((states[union[i]], choices[i]));
             }
         }
         while (work.TryDequeue(out var state))
@@ -466,10 +496,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
         internal List<ProtectionState> Children { get; } = [];
         internal List<(ProtectionState Target, int Condition)> Edges { get; } = [];
-        internal bool HasParent
-        {
-            get; set;
-        }
+        internal List<ProtectionState> Parents { get; } = [];
         internal bool Queued
         {
             get; set;

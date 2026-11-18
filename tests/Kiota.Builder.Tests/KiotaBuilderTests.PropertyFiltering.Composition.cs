@@ -74,9 +74,9 @@ public sealed partial class KiotaBuilderTests
             ExcludeProperties = excludedProperty is null ? [] : [$"User#{excludedProperty}"],
         };
         if (excludedProperty is not null)
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
         else
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         Assert.Equal(4, document.Components!.Schemas!["User"].Properties!.Count);
     }
 
@@ -158,9 +158,9 @@ public sealed partial class KiotaBuilderTests
             ExcludeProperties = exclude ? ["V#id"] : [],
         };
         if (exclude)
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
         else
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         Assert.Contains("id", document.Components!.Schemas!["V"].Properties!.Keys);
         Assert.Contains("keep", document.Components.Schemas["V"].Properties.Keys);
     }
@@ -196,7 +196,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = exclude ? [] : ["B#name", "C#name"],
             ExcludeProperties = exclude ? ["B#id", "C#id"] : [],
-        });
+        }, TestContext.Current.CancellationToken);
         foreach (var name in new[] { "B", "C" })
         {
             Assert.DoesNotContain("id", document.Components.Schemas[name].Properties!.Keys);
@@ -225,7 +225,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = exclude ? [] : ["B#name"],
             ExcludeProperties = exclude ? ["B#id"] : [],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.DoesNotContain("id", document.Components!.Schemas!["B"].Properties!.Keys);
         Assert.Contains("name", document.Components.Schemas["B"].Properties.Keys);
         Assert.Contains("id", document.Components.Schemas["A"].AllOf![1].Properties!.Keys);
@@ -287,9 +287,9 @@ public sealed partial class KiotaBuilderTests
             ExcludeProperties = exclude ? ["A#id"] : [],
         };
         if (exclude)
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
         else
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         foreach (var name in new[] { "A", "B" })
         {
             Assert.Contains("id", document.Components!.Schemas![name].Properties!.Keys);
@@ -346,9 +346,9 @@ public sealed partial class KiotaBuilderTests
             ExcludeProperties = exclude ? ["A#id"] : [],
         };
         if (exclude)
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
         else
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         foreach (var name in new[] { "A", "B" })
         {
             Assert.Contains("id", document.Components!.Schemas![name].Properties!.Keys);
@@ -402,7 +402,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = exclude ? [] : ["B#name"],
             ExcludeProperties = exclude ? ["B#id"] : [],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Contains("id", document.Components!.Schemas!["A"].Properties!.Keys);
         Assert.DoesNotContain("id", document.Components.Schemas["B"].Properties!.Keys);
         Assert.Contains("name", document.Components.Schemas["B"].Properties.Keys);
@@ -464,7 +464,7 @@ public sealed partial class KiotaBuilderTests
         var constraintBranches = constraints.OneOf ?? constraints.AnyOf!;
         if (allowlist)
         {
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
             Assert.Contains("id", fieldBranches[0].Properties!.Keys);
             Assert.Contains("name", fieldBranches[1].Properties!.Keys);
             Assert.DoesNotContain("id", constraintBranches[1].Properties!.Keys);
@@ -472,7 +472,7 @@ public sealed partial class KiotaBuilderTests
         }
         else
         {
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
             Assert.Contains("id", fieldBranches[0].Properties!.Keys);
             Assert.Contains("id", constraintBranches[1].Properties!.Keys);
         }
@@ -583,7 +583,7 @@ public sealed partial class KiotaBuilderTests
         new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
         {
             IncludeProperties = ["ParentA#keep", "ParentB#keep"],
-        });
+        }, TestContext.Current.CancellationToken);
         foreach (var name in new[] { "ParentA", "ParentB" })
         {
             var parent = document.Components!.Schemas![name];
@@ -630,12 +630,12 @@ public sealed partial class KiotaBuilderTests
         };
         if (exclude)
         {
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
             Assert.Contains("id", branches[1].Properties!.Keys);
         }
         else
         {
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
             Assert.Contains("id", branches[0].Properties!.Keys);
             Assert.DoesNotContain("id", branches[1].Properties!.Keys);
             Assert.Contains("name", branches[1].Properties.Keys);
@@ -677,12 +677,12 @@ public sealed partial class KiotaBuilderTests
         };
         if (allowlist)
         {
-            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
             Assert.Equal(3, document.Components!.Schemas!["Result"].Properties!.Count);
         }
         else
         {
-            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken));
             Assert.Equal(3, document.Components!.Schemas!["Result"].Properties!.Count);
         }
     }
@@ -704,10 +704,10 @@ public sealed partial class KiotaBuilderTests
             new OpenApiSchema { Required = new HashSet<string>(StringComparer.Ordinal) { "shared" } },
             new OpenApiSchema { Type = JsonSchemaType.Object },
         ];
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { ExcludeProperties = ["B#id"] });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { ExcludeProperties = ["B#id"] }, TestContext.Current.CancellationToken);
         Assert.DoesNotContain("id", document.Components.Schemas["B"].Properties!.Keys);
         Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
-            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["Result#shared"] }));
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["Result#shared"] }, TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -729,7 +729,7 @@ public sealed partial class KiotaBuilderTests
             new OpenApiSchema { Type = JsonSchemaType.Object },
         ];
         Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
-            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["Result#kind"] }));
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["Result#kind"] }, TestContext.Current.CancellationToken));
         Assert.Contains("kind", root.Properties.Keys);
     }
 
@@ -786,7 +786,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = allowlist ? ["B#name"] : [],
             ExcludeProperties = allowlist ? [] : ["B#id"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.DoesNotContain("id", document.Components!.Schemas!["B"].Properties!.Keys);
         Assert.Contains("name", document.Components.Schemas["B"].Properties!.Keys);
         Assert.Contains("id", document.Components.Schemas["A"].AllOf![1].Properties!.Keys);
@@ -799,7 +799,7 @@ public sealed partial class KiotaBuilderTests
     {
         var document = await ReadUnionProtectionDocumentAsync(composition);
         Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
-            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["A#id"] }));
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["A#id"] }, TestContext.Current.CancellationToken));
         Assert.Contains("id", document.Components!.Schemas!["A"].AllOf![1].Properties!.Keys);
     }
 
@@ -817,7 +817,7 @@ public sealed partial class KiotaBuilderTests
         else
             root.Required = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal) { "id" };
         Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
-            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["B#id"] }));
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["B#id"] }, TestContext.Current.CancellationToken));
         Assert.Contains("id", document.Components.Schemas["B"].Properties!.Keys);
     }
 
@@ -859,7 +859,7 @@ public sealed partial class KiotaBuilderTests
         if (nullableObject)
             objectSchema.Type = JsonSchemaType.Object | JsonSchemaType.Null;
         var configuration = new GenerationConfiguration { ExcludeProperties = ["Result#metadata"] };
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, _httpClient);
         builder.SetOpenApiDocument(document);
         var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
@@ -911,7 +911,7 @@ public sealed partial class KiotaBuilderTests
         {
             ExcludeProperties = trimBase ? ["Derived#name", "Base#id"] : ["Derived#name"],
         };
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, _httpClient);
         builder.SetOpenApiDocument(document);
         var model = builder.CreateSourceModel(builder.CreateUriSpace(document));

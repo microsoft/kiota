@@ -142,7 +142,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = ["user#mail", "user#profile"],
             ExcludeProperties = ["user#profile"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Equal(["displayName", "mail"], UserPropertyFragment(document).Properties!.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(["label", "mail"], document.Components!.Schemas!["unused"].Properties!.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(["@odata.type", "id"], document.Components.Schemas["entity"].Properties!.Keys.Order(StringComparer.Ordinal));
@@ -161,7 +161,7 @@ public sealed partial class KiotaBuilderTests
             {
                 IncludeProperties = ["user#mail"],
                 ExcludeProperties = [selector],
-            }));
+            }, TestContext.Current.CancellationToken));
         Assert.Contains("required or discriminator", exception.Message, StringComparison.Ordinal);
         Assert.Contains("profile", UserPropertyFragment(document).Properties!.Keys);
     }
@@ -175,7 +175,7 @@ public sealed partial class KiotaBuilderTests
         new OpenApiPropertyFilter(logger).Apply(document, new GenerationConfiguration
         {
             IncludeProperties = ["entity#id", "user#mail", "unused#mail"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Contains("@odata.type", document.Components!.Schemas!["entity"].Properties!.Keys);
         Assert.Contains(messages, x => x.Contains("Retaining required or discriminator property entity#@odata.type", StringComparison.Ordinal));
         Assert.Contains(messages, x => x.Contains("component unused not referenced", StringComparison.Ordinal));
@@ -201,7 +201,7 @@ public sealed partial class KiotaBuilderTests
             {
                 IncludeProperties = ["user#mail"],
                 ExcludeProperties = [selector],
-            }));
+            }, TestContext.Current.CancellationToken));
         Assert.Contains(diagnostic, exception.Message, StringComparison.Ordinal);
         Assert.Contains("profile", UserPropertyFragment(document).Properties!.Keys);
     }
@@ -213,7 +213,7 @@ public sealed partial class KiotaBuilderTests
     public async Task TrimsOwnedCompositionFragmentsWithoutChangingBranchesAsync(string composition)
     {
         var document = await ReadPropertyFilterDocumentAsync(PropertyFilterDescription.Replace("allOf:", $"{composition}:", StringComparison.Ordinal));
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { ExcludeProperties = ["user#profile"] });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { ExcludeProperties = ["user#profile"] }, TestContext.Current.CancellationToken);
         var user = document.Components!.Schemas!["user"];
         var branches = user.AllOf ?? user.AnyOf ?? user.OneOf!;
         Assert.Equal(2, branches.Count);
@@ -234,7 +234,7 @@ public sealed partial class KiotaBuilderTests
         new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
         {
             IncludeProperties = ["user#?", "user#custom#name", "user#Mail"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Equal(["?", "Mail", "custom#name", "displayName"], properties.Keys.Order(StringComparer.Ordinal));
     }
 
@@ -245,7 +245,7 @@ public sealed partial class KiotaBuilderTests
         new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
         {
             IncludeProperties = ["u*#ma*"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Equal(["displayName", "mail"], UserPropertyFragment(document).Properties!.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(["mail"], document.Components!.Schemas!["unused"].Properties!.Keys);
         Assert.Equal(["@odata.type", "id"], document.Components.Schemas["entity"].Properties!.Keys.Order(StringComparer.Ordinal));
@@ -255,7 +255,7 @@ public sealed partial class KiotaBuilderTests
     public async Task WildcardOnlyFiltersComponentsWithMatchingOwnedPropertiesAsync()
     {
         var document = await ReadPropertyFilterDocumentAsync();
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["*#mail"] });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["*#mail"] }, TestContext.Current.CancellationToken);
         Assert.Equal(["displayName", "mail"], UserPropertyFragment(document).Properties!.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(2, document.Components!.Schemas!["profile"].Properties!.Count);
         Assert.Equal(["@odata.type", "id"], document.Components.Schemas["entity"].Properties!.Keys.Order(StringComparer.Ordinal));
@@ -269,7 +269,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = ["user#*"],
             ExcludeProperties = ["u*#pro*"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Equal(["displayName", "friends", "mail"], UserPropertyFragment(document).Properties!.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(["label", "mail"], document.Components!.Schemas!["unused"].Properties!.Keys.Order(StringComparer.Ordinal));
     }
@@ -282,7 +282,7 @@ public sealed partial class KiotaBuilderTests
         {
             IncludeProperties = ["user#*a*"],
             ExcludeProperties = ["user#ma*"],
-        });
+        }, TestContext.Current.CancellationToken);
         Assert.Equal(["displayName"], UserPropertyFragment(document).Properties!.Keys);
     }
 
@@ -294,7 +294,7 @@ public sealed partial class KiotaBuilderTests
     {
         var document = await ReadPropertyFilterDocumentAsync();
         var exception = Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
-            .Apply(document, new GenerationConfiguration { IncludeProperties = ["user#mail"], ExcludeProperties = [selector] }));
+            .Apply(document, new GenerationConfiguration { IncludeProperties = ["user#mail"], ExcludeProperties = [selector] }, TestContext.Current.CancellationToken));
         Assert.Contains("required or discriminator", exception.Message, StringComparison.Ordinal);
         Assert.Contains("profile", UserPropertyFragment(document).Properties!.Keys);
     }
@@ -307,7 +307,7 @@ public sealed partial class KiotaBuilderTests
         properties["literal.name"] = new OpenApiSchema { Type = JsonSchemaType.String };
         properties["literalXname"] = new OpenApiSchema { Type = JsonSchemaType.String };
         properties["custom/name"] = new OpenApiSchema { Type = JsonSchemaType.String };
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["user#literal.*", "user#custom*"] });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["user#literal.*", "user#custom*"] }, TestContext.Current.CancellationToken);
         Assert.Equal(["custom/name", "displayName", "literal.name"], properties.Keys.Order(StringComparer.Ordinal));
     }
 
@@ -328,14 +328,14 @@ public sealed partial class KiotaBuilderTests
             },
         };
         Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
-            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["user#mail"] }));
+            .Apply(document, new GenerationConfiguration { ExcludeProperties = ["user#mail"] }, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task DefaultPropertySelectionIsANoOpAsync()
     {
         var document = await ReadPropertyFilterDocumentAsync();
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration());
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration(), TestContext.Current.CancellationToken);
         Assert.Equal(4, UserPropertyFragment(document).Properties!.Count);
         Assert.Equal(2, document.Components!.Schemas!["entity"].Properties!.Count);
     }
@@ -350,7 +350,7 @@ public sealed partial class KiotaBuilderTests
         if (!explicitObjectType)
             baseSchema.Type = null;
         var configuration = new GenerationConfiguration { ExcludeProperties = ["Base#metadata"] };
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, configuration, _httpClient);
         builder.SetOpenApiDocument(document);
         var model = builder.CreateSourceModel(builder.CreateUriSpace(document));
@@ -401,7 +401,7 @@ public sealed partial class KiotaBuilderTests
         var document = await ReadPropertyFilterDocumentAsync();
         document.Paths["/me"].Operations![System.Net.Http.HttpMethod.Get].Responses!["200"]
             .Content!["application/json"] = new OpenApiMediaType { Schema = new OpenApiSchemaReference("profile", document) };
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["user#mail"] });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["user#mail"] }, TestContext.Current.CancellationToken);
         var builder = new KiotaBuilder(NullLogger<KiotaBuilder>.Instance, new GenerationConfiguration(), _httpClient);
         builder.SetOpenApiDocument(document);
         var source = builder.CreateSourceModel(builder.CreateUriSpace(document));

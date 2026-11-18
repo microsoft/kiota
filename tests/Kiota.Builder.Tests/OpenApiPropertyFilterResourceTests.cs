@@ -49,7 +49,7 @@ public sealed class OpenApiPropertyFilterResourceTests(ITestOutputHelper output)
         var workingSetBefore = process.WorkingSet64;
         var allocatedBefore = GC.GetTotalAllocatedBytes(true);
         var watch = Stopwatch.StartNew();
-        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration, TestContext.Current.CancellationToken);
         watch.Stop();
         var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
         process.Refresh();

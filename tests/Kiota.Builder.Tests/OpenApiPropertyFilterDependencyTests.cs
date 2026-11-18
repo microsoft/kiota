@@ -107,8 +107,8 @@ public sealed class OpenApiPropertyFilterDependencyTests
     public void WorkLimitStopsWideSymbolicAnalysisBeforeMutatingDeclarations()
     {
         var root = SchemaWithProperties("keep", "remove");
-        root.Required = new HashSet<string>(StringComparer.Ordinal) { "remove" };
-        root.AnyOf = Enumerable.Repeat<IOpenApiSchema>(new OpenApiSchema(), 150_000).ToList();
+        var constraint = new OpenApiSchema { Required = new HashSet<string>(StringComparer.Ordinal) { "remove" } };
+        root.AnyOf = Enumerable.Repeat<IOpenApiSchema>(constraint, 150_000).ToList();
 
         var error = Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance)
             .Apply(DocumentWithRoot(root), new GenerationConfiguration { IncludeProperties = ["Root#keep"] }, TestContext.Current.CancellationToken));
@@ -121,8 +121,7 @@ public sealed class OpenApiPropertyFilterDependencyTests
     public void DepthLimitStopsDeepSymbolicConditionsBeforeMutatingDeclarations()
     {
         var root = SchemaWithProperties("keep", "remove");
-        root.Required = new HashSet<string>(StringComparer.Ordinal) { "remove" };
-        var common = new OpenApiSchema();
+        var common = new OpenApiSchema { Required = new HashSet<string>(StringComparer.Ordinal) { "remove" } };
         root.AllOf = Enumerable.Range(0, 300).Select(_ => (IOpenApiSchema)new OpenApiSchema
         {
             OneOf = [common, new OpenApiSchema()],
