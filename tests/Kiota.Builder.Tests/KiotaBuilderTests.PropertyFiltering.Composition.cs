@@ -13,6 +13,58 @@ namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests
 {
     [Theory]
+    [InlineData("anyOf", "anyOf", false)]
+    [InlineData("anyOf", "anyOf", true)]
+    [InlineData("anyOf", "oneOf", false)]
+    [InlineData("anyOf", "oneOf", true)]
+    [InlineData("oneOf", "anyOf", false)]
+    [InlineData("oneOf", "anyOf", true)]
+    [InlineData("oneOf", "oneOf", false)]
+    [InlineData("oneOf", "oneOf", true)]
+    public async Task RedundantUnionWrappersDoNotProtectSiblingDeclarationsAsync(string composition, string wrapperComposition, bool exclude)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Redundant shared union wrapper
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Result:
+                  allOf:
+                    - $ref: '#/components/schemas/Union'
+                    - {{wrapperComposition}}:
+                        - $ref: '#/components/schemas/Union'
+                Union:
+                  {{composition}}:
+                    - $ref: '#/components/schemas/A'
+                    - $ref: '#/components/schemas/B'
+                A:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                B:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+            """);
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["B#name"],
+            ExcludeProperties = exclude ? ["B#id"] : [],
+        });
+        Assert.Contains("id", document.Components!.Schemas!["A"].Properties!.Keys);
+        Assert.DoesNotContain("id", document.Components.Schemas["B"].Properties!.Keys);
+        Assert.Contains("name", document.Components.Schemas["B"].Properties.Keys);
+    }
+
+    [Theory]
     [InlineData("oneOf", "oneOf", false)]
     [InlineData("oneOf", "oneOf", true)]
     [InlineData("oneOf", "anyOf", false)]

@@ -259,17 +259,17 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             var declarations = unions.Length > 1 ? unions.Select(union => union
                 .SelectMany(static x => GetComposedSchemas(x))
                 .Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 })
-                .Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray()).ToArray() : [];
+                .ToHashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance)).ToArray() : [];
             var branches = new Dictionary<IOpenApiSchema, HashSet<IOpenApiSchema>>(ReferenceEqualityComparer.Instance);
             for (var i = 0; i < unions.Length; i++)
                 foreach (var branch in unions[i])
                 {
                     if (!branches.TryGetValue(branch, out var context))
                         branches[branch] = context = new(ReferenceEqualityComparer.Instance);
-                    // Independent unions are conjunctive; alternatives within one union are not.
+                    // A shared wrapper must not reintroduce this union's own alternative declarations as ancestors.
                     for (var j = 0; j < unions.Length; j++)
                         if (i != j)
-                            context.UnionWith(declarations[j]);
+                            context.UnionWith(declarations[j].Where(fragment => !declarations[i].Contains(fragment)));
                 }
             Branches = branches.Select(static x => new ProtectionBranch(x.Key, x.Value.ToArray())).ToArray();
         }
