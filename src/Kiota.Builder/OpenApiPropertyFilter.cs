@@ -21,7 +21,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         var excludeSelectors = configuration.ExcludeProperties.Select(ModelPropertySelector.Parse).ToHashSet();
         var components = (document.Components?.Schemas ?? new Dictionary<string, IOpenApiSchema>())
             .ToDictionary(static x => x.Key, static x => x.Value, StringComparer.Ordinal);
-        var declarations = new Dictionary<ModelPropertySelector, List<OpenApiSchema>>();
+        var declarations = new Dictionary<ModelPropertySelector, List<IOpenApiSchema>>();
         var owners = new Dictionary<IOpenApiSchema, HashSet<string>>(ReferenceEqualityComparer.Instance);
         foreach (var (name, schema) in components)
             foreach (var fragment in GetOwnedFragments(schema))
@@ -29,7 +29,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 if (!owners.TryGetValue(fragment, out var names))
                     owners[fragment] = names = new(StringComparer.Ordinal);
                 names.Add(name);
-                foreach (var property in fragment.Properties?.Keys ?? [])
+                foreach (var property in GetOwnedProperties(fragment)?.Keys ?? [])
                 {
                     var selector = new ModelPropertySelector(name, property);
                     if (!declarations.TryGetValue(selector, out var fragments))
@@ -60,7 +60,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 if (!declarations.ContainsKey(selector))
                 {
                     var declaringComponents = GetComposedSchemas(schema)
-                        .Where(x => x.Properties?.ContainsKey(selector.Property) == true && owners.ContainsKey(x))
+                        .Where(x => GetOwnedProperties(x)?.ContainsKey(selector.Property) == true && owners.ContainsKey(x))
                         .SelectMany(x => owners[x])
                         .Distinct(StringComparer.Ordinal)
                         .Order(StringComparer.Ordinal)
@@ -96,16 +96,12 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                         logger.LogInformation("Retaining required or discriminator property {PropertySelector}", selector.ToString());
                     continue;
                 }
-                if (fragment.Properties is { } properties && properties.Remove(selector.Property))
+                if (GetOwnedProperties(fragment) is { } properties && properties.Remove(selector.Property))
                 {
                     removed++;
                     // Preserve the object type previously implied by its properties.
                     if (properties.Count == 0)
-                    {
-                        fragment.Type ??= JsonSchemaType.Object;
-                        fragment.Extensions ??= new Dictionary<string, IOpenApiExtension>(StringComparer.Ordinal);
-                        fragment.Extensions[OpenApiKiotaTrimmedPropertiesExtension.Name] = OpenApiKiotaTrimmedPropertiesExtension.Instance;
-                    }
+                        PreserveTrimmedObject(fragment);
                 }
             }
         }
@@ -123,10 +119,9 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             {
                 if (reference.Target is { } target)
                     VisitUsedSchema(target);
-                return;
             }
             foreach (var child in GetCompositionChildren(schema)
-                .Concat(schema.Properties?.Values ?? [])
+                .Concat(GetOwnedProperties(schema)?.Values ?? [])
                 .Concat(new[] { schema.Items, schema.AdditionalProperties, schema.Not }.OfType<IOpenApiSchema>())
                 .Concat(schema.Discriminator?.Mapping?.Values ?? []))
                 VisitUsedSchema(child);
@@ -268,7 +263,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             foreach (var property in state.ProtectedNames)
                 requiredConditions[property] = conditions.Or(requiredConditions.GetValueOrDefault(property), state.Activation);
         foreach (var schema in owners.Keys)
-            foreach (var property in schema.Properties?.Keys ?? [])
+            foreach (var property in GetOwnedProperties(schema)?.Keys ?? [])
                 if (requiredConditions.TryGetValue(property, out var required) &&
                     conditions.And(required, states[schema].Activation) != ProtectionConditions.False)
                 {
@@ -387,16 +382,41 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
     }
 
-    private static IEnumerable<OpenApiSchema> GetOwnedFragments(IOpenApiSchema schema)
+    private static IDictionary<string, IOpenApiSchema>? GetOwnedProperties(IOpenApiSchema schema) =>
+        schema is OpenApiSchemaReference reference ? reference.Reference.Properties : schema.Properties;
+
+    private static void PreserveTrimmedObject(IOpenApiSchema fragment)
+    {
+        IDictionary<string, IOpenApiExtension> extensions;
+        switch (fragment)
+        {
+            case OpenApiSchemaReference reference:
+                reference.Type ??= JsonSchemaType.Object;
+                // The convenience getter may expose the target's dictionary; annotate a local copy instead.
+                extensions = reference.Reference.Extensions ??= reference.Extensions is { } inheritedExtensions
+                    ? new Dictionary<string, IOpenApiExtension>(inheritedExtensions, StringComparer.Ordinal)
+                    : new Dictionary<string, IOpenApiExtension>(StringComparer.Ordinal);
+                break;
+            case OpenApiSchema schema:
+                schema.Type ??= JsonSchemaType.Object;
+                extensions = schema.Extensions ??= new Dictionary<string, IOpenApiExtension>(StringComparer.Ordinal);
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported owned schema type '{fragment.GetType().Name}'.");
+        }
+        extensions[OpenApiKiotaTrimmedPropertiesExtension.Name] = OpenApiKiotaTrimmedPropertiesExtension.Instance;
+    }
+
+    private static IEnumerable<IOpenApiSchema> GetOwnedFragments(IOpenApiSchema schema)
     {
         var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
         var pending = new Stack<IOpenApiSchema>();
         pending.Push(schema);
         while (pending.TryPop(out var current))
         {
-            if (!visited.Add(current) || current is not OpenApiSchema fragment) continue;
-            yield return fragment;
-            foreach (var child in GetCompositionChildren(fragment))
+            if (!visited.Add(current) || current is not (OpenApiSchema or OpenApiSchemaReference)) continue;
+            yield return current;
+            foreach (var child in GetCompositionChildren(current))
                 pending.Push(child);
         }
     }
@@ -413,7 +433,6 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             {
                 if (reference.Target is { } target)
                     pending.Push(target);
-                continue;
             }
             yield return current;
             foreach (var child in GetCompositionChildren(current))
@@ -421,8 +440,14 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
     }
 
-    private static IEnumerable<IOpenApiSchema> GetCompositionChildren(IOpenApiSchema schema) =>
-        (schema.AllOf ?? []).Concat(schema.AnyOf ?? []).Concat(schema.OneOf ?? []);
+    private static IEnumerable<IOpenApiSchema> GetCompositionChildren(IOpenApiSchema schema)
+    {
+        var reference = (schema as OpenApiSchemaReference)?.Reference;
+        var allOf = reference is null ? schema.AllOf : reference.AllOf;
+        var anyOf = reference is null ? schema.AnyOf : reference.AnyOf;
+        var oneOf = reference is null ? schema.OneOf : reference.OneOf;
+        return (allOf ?? []).Concat(anyOf ?? []).Concat(oneOf ?? []);
+    }
 
     private sealed class SchemaVisitor(Action<IOpenApiSchema> visit) : OpenApiVisitorBase
     {

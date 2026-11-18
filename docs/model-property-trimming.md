@@ -42,7 +42,7 @@ Comma lists are expanded before persistence; `*` patterns are stored and evaluat
 - Independent unions combined through `allOf` can protect one another's declarations when their branch choices can coexist, without mixing alternatives of the same shared union.
 - Protection is declaration-specific: omitting a name from an allowlist can retain its required inline declaration while trimming an optional same-named sibling declaration. Explicitly excluding that name fails if any targeted declaration is protected.
 - Unknown components/properties, patterns matching nothing, and malformed selectors fail generation rather than being ignored.
-- Named components and their inline composition fragments are supported. Select an inherited property on its declaring base component, not on a derived component. Standalone inline-object members and external component aliases are not selectable.
+- Named components and their owned inline composition fragments are supported, including properties and composition fragments authored beside an OpenAPI 3.1 `$ref`. These siblings belong to the referencing component; the target's properties remain owned by their declaring component. Select an inherited property on that declaring component, not on a derived component. Standalone inline-object members and declarations available only through external component aliases are not selectable.
 - Selection is global per component: all endpoints using a model see the same generated surface. Enum members, composition branches, and whole models cannot be explicitly selected.
 - Removing the final optional property preserves the object's union branch and inheritance relationship; it does not turn the schema into an unconstrained placeholder.
 

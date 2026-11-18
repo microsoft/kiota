@@ -1,10 +1,19 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Property filtering validation
   version: 1.0.0
 servers:
   - url: https://example.com
 paths:
+  /reference:
+    get:
+      responses:
+        '200':
+          description: A model with reference-owned declarations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceModel'
   /widgets:
     get:
       responses:
@@ -26,6 +35,22 @@ paths:
           description: Accepted
 components:
   schemas:
+    ReferenceBase:
+      type: object
+    ReferenceModel:
+      $ref: '#/components/schemas/ReferenceBase'
+      properties:
+        localName:
+          type: string
+        localDrop:
+          type: string
+      allOf:
+        - type: object
+          properties:
+            inlineName:
+              type: string
+            inlineDrop:
+              type: string
     Base:
       type: object
       required: [id]

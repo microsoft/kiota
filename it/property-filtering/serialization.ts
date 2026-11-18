@@ -2,16 +2,35 @@ import assert from "node:assert/strict";
 import { JsonParseNode, JsonSerializationWriter } from "@microsoft/kiota-serialization-json";
 import {
     createBaseFromDiscriminatorValue,
+    createReferenceModelFromDiscriminatorValue,
     deserializeIntoBase,
     deserializeIntoOptionalChoice,
     deserializeIntoRequiredChoice,
+    deserializeIntoReferenceModel,
     deserializeIntoWidget,
     serializeOptionalChoice,
     serializeRequiredChoice,
+    serializeReferenceModel,
     serializeWidget,
     type Widget,
+    type ReferenceModel,
 } from "./client/models/index.js";
 import * as models from "./client/models/index.js";
+
+const reference = new JsonParseNode({ localName: "reference", inlineName: "inline" })
+    .getObjectValue<ReferenceModel>(createReferenceModelFromDiscriminatorValue);
+assert.ok(reference);
+assert.equal(reference.localName, "reference");
+assert.equal(reference.inlineName, "inline");
+assert.equal("localDrop" in deserializeIntoReferenceModel({}), false);
+assert.equal("inlineDrop" in deserializeIntoReferenceModel({}), false);
+const referenceWriter = new JsonSerializationWriter();
+referenceWriter.writeObjectValue(undefined, reference, serializeReferenceModel);
+const referenceJson = JSON.parse(new TextDecoder().decode(referenceWriter.getSerializedContent()));
+assert.equal(referenceJson.localName, "reference");
+assert.equal(referenceJson.inlineName, "inline");
+assert.equal("localDrop" in referenceJson, false);
+assert.equal("inlineDrop" in referenceJson, false);
 
 const payload = {
     id: "base-id",

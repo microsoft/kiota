@@ -7,6 +7,23 @@ using Xunit;
 public sealed class SerializationTests
 {
     [Fact]
+    public async Task ReferenceSiblingDeclarationsAreGeneratedAndSerializedAsync()
+    {
+        using var payload = JsonDocument.Parse("""{"localName":"reference","inlineName":"inline"}""");
+        var model = new JsonParseNode(payload.RootElement).GetObjectValue(ReferenceModel.CreateFromDiscriminatorValue);
+        Assert.NotNull(model);
+        Assert.Equal("reference", model.LocalName);
+        Assert.Equal("inline", model.InlineName);
+        Assert.Null(typeof(ReferenceModel).GetProperty("LocalDrop"));
+        Assert.Null(typeof(ReferenceModel).GetProperty("InlineDrop"));
+        using var serialized = await SerializeAsync(model);
+        Assert.Equal("reference", serialized.RootElement.GetProperty("localName").GetString());
+        Assert.Equal("inline", serialized.RootElement.GetProperty("inlineName").GetString());
+        Assert.False(serialized.RootElement.TryGetProperty("localDrop", out _));
+        Assert.False(serialized.RootElement.TryGetProperty("inlineDrop", out _));
+    }
+
+    [Fact]
     public async Task RetainsInheritedAndRecursiveFieldsThroughSerializationAsync()
     {
         using var payload = JsonDocument.Parse("""

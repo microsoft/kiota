@@ -28,6 +28,8 @@ public sealed class OpenApiPropertyFilterOracleTests : IDisposable
     [InlineData("constrained-reference")]
     [InlineData("cyclic-entry")]
     [InlineData("reference-siblings")]
+    [InlineData("reference-owned-declarations")]
+    [InlineData("reference-owned-required")]
     [InlineData("three-alternatives")]
     [MemberData(nameof(GeneratedCases))]
     public async Task MatchesExhaustiveBranchChoiceOracleAsync(string caseName)
@@ -180,6 +182,16 @@ public sealed class OpenApiPropertyFilterOracleTests : IDisposable
             new(DeclaresId: true), new(ReferenceTarget: 0, RequiresId: true),
             new(ReferenceTarget: 1, AnyOf: [3, 4]), new(Discriminator: true), new(),
         ],
+        "reference-owned-declarations" =>
+        [
+            new(DeclaresId: true), new(DeclaresId: true, ReferenceTarget: 0),
+            new(AllOf: [1]), new(AnyOf: [2, 4]), new(),
+        ],
+        "reference-owned-required" =>
+        [
+            new(DeclaresId: true), new(DeclaresId: true, RequiresId: true, ReferenceTarget: 0),
+            new(ReferenceTarget: 1, Discriminator: true),
+        ],
         "three-alternatives" =>
         [
             new(DeclaresId: true, RequiresId: true), new(DeclaresId: true), new(DeclaresId: true),
@@ -201,7 +213,7 @@ public sealed class OpenApiPropertyFilterOracleTests : IDisposable
             var second = random.Next(nodes.Length - 1);
             var alternatives = new[] { first, second >= first ? second + 1 : second };
             nodes[i] = new Node(
-                DeclaresId: i < 2,
+                DeclaresId: i < 2 || i == 2 && (seed & 1) == 0,
                 RequiresId: random.Next(4) == 0,
                 Discriminator: random.Next(8) == 0,
                 AllOf: allOf,

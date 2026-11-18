@@ -2145,6 +2145,11 @@ public partial class KiotaBuilder
             return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         }
 
+        if (schema.MergeReferenceInlineAllOfSchemaEntries() is { } mergedReferenceSchema)
+            return CreateModelDeclarationAndType(currentNode, mergedReferenceSchema, operation, codeNamespace, suffix,
+                response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody,
+                dynamicBindingSuffixContext: suffixForInlineSchema);
+
         if (schema.IsObjectType() || schema.HasPropertyInformation() || schema.IsEnum() || schema.AdditionalProperties?.Type is not null)
         {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
@@ -2369,6 +2374,7 @@ public partial class KiotaBuilder
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
+            schema = schema.MergeReferenceInlineAllOfSchemaEntries() ?? schema;
             if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
                 return enumDeclaration;
 
