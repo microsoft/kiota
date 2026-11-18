@@ -222,6 +222,48 @@ public sealed partial class KiotaBuilderTests
             });
     }
 
+    [Theory]
+    [InlineData("400", """{"oneOf":[{"$ref":"#/components/schemas/Count"},{"type":"null"}]}""")]
+    [InlineData("400", """{"anyOf":[{"type":"null"},{"$ref":"#/components/schemas/Count"}]}""")]
+    [InlineData("4XX", """{"oneOf":[{"type":"null"},{"$ref":"#/components/schemas/Count"}]}""")]
+    [InlineData("4XX", """{"anyOf":[{"$ref":"#/components/schemas/Count"},{"type":"null"}]}""")]
+    [InlineData("default", """{"oneOf":[{"$ref":"#/components/schemas/Count"},{"type":"null"}]}""")]
+    [InlineData("default", """{"anyOf":[{"type":"null"},{"$ref":"#/components/schemas/Count"}]}""")]
+    [InlineData("400", """{"$ref":"#/components/schemas/NullableCount"}""")]
+    [InlineData("400", """{"anyOf":[{"$ref":"#/components/schemas/NullableCount"}]}""")]
+    [InlineData("400", """{"allOf":[{"$ref":"#/components/schemas/NullableCount"}],"description":"wrapped"}""")]
+    [InlineData("400", """{"type":"array","items":{"oneOf":[{"type":"null"},{"$ref":"#/components/schemas/Count"}]}}""")]
+    public async Task NullableReferenceToPrimitiveComponentInErrorResponseKeepsTheErrorMappingAsync(string statusCode, string errorSchema)
+    {
+        var paths = """
+            "/count":{"get":{"responses":{
+              "200":{"description":"ok","content":{"application/json":{"schema":RESPONSE}}},
+              "STATUS":{"description":"error","content":{"application/json":{"schema":ERROR}}}
+            }}}
+            """.Replace("RESPONSE", NullableReference("oneOf", "Count", false)).Replace("STATUS", statusCode).Replace("ERROR", errorSchema);
+        var codeModel = await CreateCodeModelForNullableReferencesAsync(paths, """
+            "Count":{"type":"integer","format":"int32"},
+            "NullableCount":{"oneOf":[{"$ref":"#/components/schemas/Count"},{"type":"null"}]}
+            """);
+        var requestBuilder = codeModel.FindChildByName<CodeClass>("CountRequestBuilder");
+        Assert.NotNull(requestBuilder);
+        var executor = Assert.Single(requestBuilder.Methods, static x => x.IsOfKind(CodeMethodKind.RequestExecutor));
+        // the success response still maps to the primitive type
+        var returnType = Assert.IsType<CodeType>(executor.ReturnType);
+        Assert.Equal("integer", returnType.Name, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(returnType.TypeDefinition);
+        // the error response keeps its typed error mapping, which needs a class
+        string[] expectedCodes = statusCode == "default" ? ["4XX", "5XX"] : [statusCode];
+        Assert.Equal(expectedCodes, executor.ErrorMappings.Select(static x => x.Key));
+        foreach (var errorMapping in executor.ErrorMappings)
+        {
+            var errorType = Assert.IsType<CodeType>(errorMapping.Value);
+            var errorClass = Assert.IsType<CodeClass>(errorType.TypeDefinition);
+            Assert.Equal("Count", errorClass.Name, StringComparer.OrdinalIgnoreCase);
+            Assert.True(errorClass.IsErrorDefinition);
+        }
+    }
+
     private const string ThingPath = """
         "/thing":{"get":{"responses":{"200":{"description":"ok","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Thing"}}}}}}}
         """;
