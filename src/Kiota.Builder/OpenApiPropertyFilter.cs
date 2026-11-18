@@ -252,24 +252,28 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             ProtectedNames = Fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
                 .Concat(Fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
                 .ToHashSet(StringComparer.Ordinal);
-            var unions = Fragments.SelectMany(static x => new[] { x.AnyOf, x.OneOf })
+            var unions = Fragments.SelectMany(fragment => new[] { fragment.AnyOf, fragment.OneOf }
                 .Where(static x => x is { Count: > 0 })
-                .Select(static x => x!.Select(GetCanonicalSchema).Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray())
+                .Select(branches => (Schema: fragment, Branches: branches!.Select(GetCanonicalSchema)
+                    .Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray())))
                 .ToArray();
-            var declarations = unions.Length > 1 ? unions.Select(union => union
+            var descendants = unions.Length > 1 ? unions.Select(union => union.Branches
                 .SelectMany(static x => GetComposedSchemas(x))
-                .Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 })
                 .ToHashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance)).ToArray() : [];
+            var declarations = descendants.Select(fragments => fragments
+                .Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 }).ToArray()).ToArray();
             var branches = new Dictionary<IOpenApiSchema, HashSet<IOpenApiSchema>>(ReferenceEqualityComparer.Instance);
             for (var i = 0; i < unions.Length; i++)
-                foreach (var branch in unions[i])
+                foreach (var branch in unions[i].Branches)
                 {
                     if (!branches.TryGetValue(branch, out var context))
                         branches[branch] = context = new(ReferenceEqualityComparer.Instance);
-                    // A shared wrapper must not reintroduce this union's own alternative declarations as ancestors.
+                    // Nested occurrences are not independent, even when reached through separate allOf entries.
                     for (var j = 0; j < unions.Length; j++)
-                        if (i != j)
-                            context.UnionWith(declarations[j].Where(fragment => !declarations[i].Contains(fragment)));
+                        if (i != j &&
+                            !descendants[i].Contains(unions[j].Schema) &&
+                            !descendants[j].Contains(unions[i].Schema))
+                            context.UnionWith(declarations[j]);
                 }
             Branches = branches.Select(static x => new ProtectionBranch(x.Key, x.Value.ToArray())).ToArray();
         }

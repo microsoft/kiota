@@ -21,6 +21,64 @@ public sealed partial class KiotaBuilderTests
     [InlineData("oneOf", "anyOf", true)]
     [InlineData("oneOf", "oneOf", false)]
     [InlineData("oneOf", "oneOf", true)]
+    public async Task PartiallyOverlappingIndependentUnionsProtectSharedDeclarationsAsync(string constraintsComposition, string fieldsComposition, bool exclude)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Independent unions with shared alternatives
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Result:
+                  allOf:
+                    - {{constraintsComposition}}:
+                        - required: [id]
+                        - $ref: '#/components/schemas/A'
+                    - {{fieldsComposition}}:
+                        - $ref: '#/components/schemas/A'
+                        - $ref: '#/components/schemas/B'
+                A:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                B:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+            """);
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["A#name", "B#name"],
+            ExcludeProperties = exclude ? ["A#id"] : [],
+        };
+        if (exclude)
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+        else
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        foreach (var name in new[] { "A", "B" })
+        {
+            Assert.Contains("id", document.Components!.Schemas![name].Properties!.Keys);
+            Assert.Contains("name", document.Components.Schemas[name].Properties!.Keys);
+        }
+    }
+
+    [Theory]
+    [InlineData("anyOf", "anyOf", false)]
+    [InlineData("anyOf", "anyOf", true)]
+    [InlineData("anyOf", "oneOf", false)]
+    [InlineData("anyOf", "oneOf", true)]
+    [InlineData("oneOf", "anyOf", false)]
+    [InlineData("oneOf", "anyOf", true)]
+    [InlineData("oneOf", "oneOf", false)]
+    [InlineData("oneOf", "oneOf", true)]
     public async Task RedundantUnionWrappersDoNotProtectSiblingDeclarationsAsync(string composition, string wrapperComposition, bool exclude)
     {
         var document = await ReadPropertyFilterDocumentAsync($$"""
