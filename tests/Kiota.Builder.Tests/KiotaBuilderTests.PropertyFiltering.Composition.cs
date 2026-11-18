@@ -13,6 +13,182 @@ namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests
 {
     [Theory]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    public async Task RecursiveCompositionProtectsFieldsFromEverySchemaEntryAsync(string composition, bool exclude)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Recursive composition entry points
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                U:
+                  {{composition}}:
+                    - required: [id]
+                    - $ref: '#/components/schemas/V'
+                V:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    keep:
+                      type: string
+                  {{composition}}:
+                    - $ref: '#/components/schemas/U'
+                    - type: object
+            """);
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["V#keep"],
+            ExcludeProperties = exclude ? ["V#id"] : [],
+        };
+        if (exclude)
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+        else
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        Assert.Contains("id", document.Components!.Schemas!["V"].Properties!.Keys);
+        Assert.Contains("keep", document.Components.Schemas["V"].Properties.Keys);
+    }
+
+    [Theory]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    public async Task SharedThreeAlternativeUnionsKeepRequiredFieldsBranchLocalAsync(string composition, bool exclude)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        document.AddComponent("C", new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema>
+            {
+                ["id"] = new OpenApiSchema { Type = JsonSchemaType.String },
+                ["name"] = new OpenApiSchema { Type = JsonSchemaType.String },
+            },
+        });
+        var union = document.Components!.Schemas!["Result"];
+        (union.AnyOf ?? union.OneOf)!.Add(new OpenApiSchemaReference("C", document));
+        document.AddComponent("Repeated", new OpenApiSchema
+        {
+            AllOf =
+            [
+                new OpenApiSchemaReference("Result", document),
+                new OpenApiSchema { OneOf = [new OpenApiSchemaReference("Result", document)] },
+            ],
+        });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["B#name", "C#name"],
+            ExcludeProperties = exclude ? ["B#id", "C#id"] : [],
+        });
+        foreach (var name in new[] { "B", "C" })
+        {
+            Assert.DoesNotContain("id", document.Components.Schemas[name].Properties!.Keys);
+            Assert.Contains("name", document.Components.Schemas[name].Properties!.Keys);
+        }
+        Assert.Contains("id", document.Components.Schemas["A"].AllOf![1].Properties!.Keys);
+    }
+
+    [Theory]
+    [InlineData("anyOf", false)]
+    [InlineData("anyOf", true)]
+    [InlineData("oneOf", false)]
+    [InlineData("oneOf", true)]
+    public async Task RepeatedConstraintFreeUnionWrappersDoNotProtectSiblingDeclarationsAsync(string composition, bool exclude)
+    {
+        var document = await ReadUnionProtectionDocumentAsync(composition);
+        document.AddComponent("Repeated", new OpenApiSchema
+        {
+            AllOf =
+            [
+                new OpenApiSchema { AnyOf = [new OpenApiSchemaReference("Result", document)] },
+                new OpenApiSchema { AnyOf = [new OpenApiSchemaReference("Result", document)] },
+            ],
+        });
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["B#name"],
+            ExcludeProperties = exclude ? ["B#id"] : [],
+        });
+        Assert.DoesNotContain("id", document.Components!.Schemas!["B"].Properties!.Keys);
+        Assert.Contains("name", document.Components.Schemas["B"].Properties.Keys);
+        Assert.Contains("id", document.Components.Schemas["A"].AllOf![1].Properties!.Keys);
+    }
+
+    [Theory]
+    [InlineData("anyOf", "anyOf", false)]
+    [InlineData("anyOf", "anyOf", true)]
+    [InlineData("anyOf", "oneOf", false)]
+    [InlineData("anyOf", "oneOf", true)]
+    [InlineData("oneOf", "anyOf", false)]
+    [InlineData("oneOf", "anyOf", true)]
+    [InlineData("oneOf", "oneOf", false)]
+    [InlineData("oneOf", "oneOf", true)]
+    public async Task ConstrainedNestedUnionAlternativesProtectIndependentDeclarationsAsync(string composition, string wrapperComposition, bool exclude)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$"""
+            openapi: 3.0.3
+            info:
+              title: Constrained nested union references
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Result:
+                  allOf:
+                    - $ref: '#/components/schemas/U'
+                    - {{wrapperComposition}}:
+                        - allOf:
+                            - $ref: '#/components/schemas/U'
+                            - required: [name]
+                        - required: [id]
+                U:
+                  {{composition}}:
+                    - $ref: '#/components/schemas/A'
+                    - $ref: '#/components/schemas/B'
+                A:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    keep:
+                      type: string
+                B:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    keep:
+                      type: string
+            """);
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["A#keep", "B#keep"],
+            ExcludeProperties = exclude ? ["A#id"] : [],
+        };
+        if (exclude)
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+        else
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        foreach (var name in new[] { "A", "B" })
+        {
+            Assert.Contains("id", document.Components!.Schemas![name].Properties!.Keys);
+            Assert.Contains("name", document.Components.Schemas[name].Properties!.Keys);
+            Assert.Contains("keep", document.Components.Schemas[name].Properties!.Keys);
+        }
+    }
+
+    [Theory]
     [InlineData("anyOf", "anyOf", false)]
     [InlineData("anyOf", "anyOf", true)]
     [InlineData("anyOf", "oneOf", false)]

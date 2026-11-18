@@ -185,123 +185,187 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
     {
         var protection = new Dictionary<IOpenApiSchema, HashSet<string>>(ReferenceEqualityComparer.Instance);
         var states = new Dictionary<IOpenApiSchema, ProtectionState>(ReferenceEqualityComparer.Instance);
-        var queued = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
-        var pending = new Queue<ProtectionState>();
-        void Enqueue(IOpenApiSchema schema, IEnumerable<IOpenApiSchema> ancestors)
+        var undiscovered = new Queue<ProtectionState>();
+        ProtectionState GetState(IOpenApiSchema schema)
         {
             schema = GetCanonicalSchema(schema);
-            if (schema.AllOf is not { Count: > 0 } && schema.AnyOf is not { Count: > 0 } &&
-                schema.OneOf is not { Count: > 0 } && schema.Required is not { Count: > 0 } &&
-                string.IsNullOrEmpty(schema.Discriminator?.PropertyName)) return;
             if (!states.TryGetValue(schema, out var state))
             {
-                state = new ProtectionState(schema, owners);
+                state = new ProtectionState(schema);
                 states[schema] = state;
+                undiscovered.Enqueue(state);
             }
-            if (state.ProtectedNames.Count == 0 && state.Branches.Length == 0) return;
-            foreach (var ancestor in ancestors)
-                if (state.Ancestors.Add(ancestor))
-                    state.NewAncestors.Add(ancestor);
-            if ((!state.Initialized || state.NewAncestors.Count != 0) && queued.Add(schema))
-                pending.Enqueue(state);
+            return state;
         }
-        new OpenApiWalker(new SchemaVisitor(schema => Enqueue(schema, []))).Walk(document);
-        void Protect(ProtectionState state, IEnumerable<IOpenApiSchema> targets)
-        {
-            if (state.ProtectedNames.Count == 0) return;
-            foreach (var fragment in targets.Where(owners.ContainsKey))
-                foreach (var property in fragment.Properties?.Keys.Where(state.ProtectedNames.Contains) ?? [])
-                {
-                    if (!protection.TryGetValue(fragment, out var names))
-                        protection[fragment] = names = new(StringComparer.Ordinal);
-                    names.Add(property);
-                }
-        }
-        while (pending.TryDequeue(out var state))
-        {
-            queued.Remove(state.Schema);
-            var addedAncestors = state.NewAncestors.ToArray();
-            state.NewAncestors.Clear();
-            Protect(state, addedAncestors);
-            IEnumerable<IOpenApiSchema> outgoing = addedAncestors;
-            var initializing = !state.Initialized;
-            if (initializing)
+        new OpenApiWalker(new SchemaVisitor(schema => GetState(schema))).Walk(document);
+        while (undiscovered.TryDequeue(out var state))
+            foreach (var child in GetCompositionChildren(state.Schema))
             {
-                state.Initialized = true;
-                Protect(state, GetComposedSchemas(state.Schema));
-                outgoing = outgoing.Concat(state.Fragments.Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 }))
-                    .Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
+                var target = GetState(child);
+                state.Children.Add(target);
+                target.HasParent = true;
             }
-            // Propagate each new ancestor fact once per edge, not once per reference path.
-            var facts = outgoing.ToArray();
-            foreach (var branch in state.Branches)
-                Enqueue(branch.Schema, initializing ? facts.Concat(branch.IndependentDeclarations) : facts);
+
+        var ordered = new List<ProtectionState>();
+        var visited = new HashSet<ProtectionState>();
+        void Visit(ProtectionState root)
+        {
+            var pending = new Queue<ProtectionState>();
+            if (visited.Add(root))
+                pending.Enqueue(root);
+            while (pending.TryDequeue(out var current))
+            {
+                ordered.Add(current);
+                foreach (var child in current.Children)
+                    if (visited.Add(child))
+                        pending.Enqueue(child);
+            }
         }
+        foreach (var root in states.Values.Where(static x => !x.HasParent))
+            Visit(root);
+        foreach (var state in states.Values)
+            Visit(state);
+
+        // Shared union occurrences use the same choice variables. Keep reachability symbolic
+        // so redundant wrappers cannot mix alternatives or expand every reference path.
+        var conditions = new ProtectionConditions();
+        // Every schema can be an entry point, including different members of a composition cycle.
+        var rootConditions = conditions.CreateChoices(ordered.Count);
+        var work = new Queue<ProtectionState>();
+        void Activate(ProtectionState state, int condition)
+        {
+            var activation = conditions.Or(state.Activation, condition);
+            if (activation == state.Activation) return;
+            state.Activation = activation;
+            if (!state.Queued)
+            {
+                state.Queued = true;
+                work.Enqueue(state);
+            }
+        }
+        for (var i = 0; i < ordered.Count; i++)
+            Activate(ordered[i], rootConditions[i]);
+        foreach (var state in ordered)
+        {
+            foreach (var child in state.Schema.AllOf ?? [])
+                state.Edges.Add((GetState(child), ProtectionConditions.True));
+            foreach (var union in new[] { state.Schema.AnyOf, state.Schema.OneOf })
+            {
+                if (union is not { Count: > 0 }) continue;
+                var choices = conditions.CreateChoices(union.Count);
+                for (var i = 0; i < union.Count; i++)
+                    state.Edges.Add((GetState(union[i]), choices[i]));
+            }
+        }
+        while (work.TryDequeue(out var state))
+        {
+            state.Queued = false;
+            foreach (var (target, condition) in state.Edges)
+                Activate(target, conditions.And(state.Activation, condition));
+        }
+
+        var declarations = owners.Keys.SelectMany(schema => (schema.Properties?.Keys ?? [])
+            .Select(property => (Property: property, State: states[schema])))
+            .ToLookup(static x => x.Property, static x => x.State, StringComparer.Ordinal);
+        foreach (var state in states.Values)
+            foreach (var property in (state.Schema.Required ?? Enumerable.Empty<string>())
+                .Concat(new[] { state.Schema.Discriminator?.PropertyName }.OfType<string>()))
+                foreach (var declaration in declarations[property])
+                    if (conditions.And(state.Activation, declaration.Activation) != ProtectionConditions.False)
+                    {
+                        if (!protection.TryGetValue(declaration.Schema, out var names))
+                            protection[declaration.Schema] = names = new(StringComparer.Ordinal);
+                        names.Add(property);
+                    }
         return protection;
     }
 
     private static IOpenApiSchema GetCanonicalSchema(IOpenApiSchema schema) =>
         schema is OpenApiSchemaReference { RecursiveTarget: { } target } ? target : schema;
 
-    private sealed class ProtectionState
+    private sealed class ProtectionState(IOpenApiSchema schema)
     {
-        internal ProtectionState(IOpenApiSchema schema, Dictionary<IOpenApiSchema, HashSet<string>> owners)
+        internal IOpenApiSchema Schema { get; } = schema;
+        internal List<ProtectionState> Children { get; } = [];
+        internal List<(ProtectionState Target, int Condition)> Edges { get; } = [];
+        internal bool HasParent
         {
-            Schema = schema;
-            Fragments = GetComposedSchemas(schema, includeUnions: false).ToArray();
-            ProtectedNames = Fragments.SelectMany(static x => x.Required ?? Enumerable.Empty<string>())
-                .Concat(Fragments.Select(static x => x.Discriminator?.PropertyName).OfType<string>())
-                .ToHashSet(StringComparer.Ordinal);
-            var unions = Fragments.SelectMany(fragment => new[] { fragment.AnyOf, fragment.OneOf }
-                .Where(static x => x is { Count: > 0 })
-                .Select(branches => (Schema: fragment, Branches: branches!.Select(GetCanonicalSchema)
-                    .Distinct<IOpenApiSchema>(ReferenceEqualityComparer.Instance).ToArray())))
-                .ToArray();
-            var descendants = unions.Length > 1 ? unions.Select(union => union.Branches
-                .SelectMany(static x => GetComposedSchemas(x))
-                .ToHashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance)).ToArray() : [];
-            var declarations = descendants.Select(fragments => fragments
-                .Where(owners.ContainsKey).Where(static x => x.Properties is { Count: > 0 }).ToArray()).ToArray();
-            var branches = new Dictionary<IOpenApiSchema, HashSet<IOpenApiSchema>>(ReferenceEqualityComparer.Instance);
-            for (var i = 0; i < unions.Length; i++)
-                foreach (var branch in unions[i].Branches)
-                {
-                    if (!branches.TryGetValue(branch, out var context))
-                        branches[branch] = context = new(ReferenceEqualityComparer.Instance);
-                    // Nested occurrences are not independent, even when reached through separate allOf entries.
-                    for (var j = 0; j < unions.Length; j++)
-                        if (i != j &&
-                            !descendants[i].Contains(unions[j].Schema) &&
-                            !descendants[j].Contains(unions[i].Schema))
-                            context.UnionWith(declarations[j]);
-                }
-            Branches = branches.Select(static x => new ProtectionBranch(x.Key, x.Value.ToArray())).ToArray();
+            get; set;
         }
-        internal IOpenApiSchema Schema
+        internal bool Queued
         {
-            get;
+            get; set;
         }
-        internal IOpenApiSchema[] Fragments
-        {
-            get;
-        }
-        internal HashSet<string> ProtectedNames
-        {
-            get;
-        }
-        internal ProtectionBranch[] Branches
-        {
-            get;
-        }
-        internal HashSet<IOpenApiSchema> Ancestors { get; } = new(ReferenceEqualityComparer.Instance);
-        internal HashSet<IOpenApiSchema> NewAncestors { get; } = new(ReferenceEqualityComparer.Instance);
-        internal bool Initialized
+        internal int Activation
         {
             get; set;
         }
     }
 
-    private sealed record ProtectionBranch(IOpenApiSchema Schema, IOpenApiSchema[] IndependentDeclarations);
+    private sealed class ProtectionConditions
+    {
+        internal const int False = 0;
+        internal const int True = 1;
+        private readonly List<(int Variable, int Low, int High)> nodes = [(int.MaxValue, False, False), (int.MaxValue, True, True)];
+        private readonly Dictionary<(int Variable, int Low, int High), int> unique = [];
+        private readonly Dictionary<(bool Conjunction, int Left, int Right), int> applications = [];
+        private int variableCount;
+
+        internal int[] CreateChoices(int count)
+        {
+            var bits = 0;
+            while ((1L << bits) < count)
+                bits++;
+            var firstVariable = variableCount;
+            variableCount += bits;
+            var result = new int[count];
+            for (var choice = 0; choice < count; choice++)
+            {
+                var condition = True;
+                for (var bit = bits - 1; bit >= 0; bit--)
+                    condition = (choice & (1L << bit)) == 0
+                        ? Create(firstVariable + bit, condition, False)
+                        : Create(firstVariable + bit, False, condition);
+                result[choice] = condition;
+            }
+            return result;
+        }
+
+        private int Create(int variable, int low, int high)
+        {
+            if (low == high) return low;
+            var key = (variable, low, high);
+            if (unique.TryGetValue(key, out var existing)) return existing;
+            var index = nodes.Count;
+            nodes.Add(key);
+            unique[key] = index;
+            return index;
+        }
+
+        internal int And(int left, int right) => Apply(true, left, right);
+        internal int Or(int left, int right) => Apply(false, left, right);
+
+        private int Apply(bool conjunction, int left, int right)
+        {
+            if (left == right) return left;
+            if (left > right) (left, right) = (right, left);
+            if (conjunction && left == False) return False;
+            if (conjunction && left == True || !conjunction && left == False) return right;
+            if (!conjunction && (left == True || right == True)) return True;
+            var key = (conjunction, left, right);
+            if (applications.TryGetValue(key, out var existing)) return existing;
+            var variable = Math.Min(nodes[left].Variable, nodes[right].Variable);
+            var low = Apply(conjunction,
+                nodes[left].Variable == variable ? nodes[left].Low : left,
+                nodes[right].Variable == variable ? nodes[right].Low : right);
+            var high = Apply(conjunction,
+                nodes[left].Variable == variable ? nodes[left].High : left,
+                nodes[right].Variable == variable ? nodes[right].High : right);
+            var result = Create(variable, low, high);
+            applications[key] = result;
+            return result;
+        }
+    }
 
     private static IEnumerable<OpenApiSchema> GetOwnedFragments(IOpenApiSchema schema)
     {
@@ -317,7 +381,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
     }
 
-    private static IEnumerable<IOpenApiSchema> GetComposedSchemas(IOpenApiSchema schema, bool includeUnions = true)
+    private static IEnumerable<IOpenApiSchema> GetComposedSchemas(IOpenApiSchema schema)
     {
         var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
         var pending = new Stack<IOpenApiSchema>();
@@ -332,7 +396,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 continue;
             }
             yield return current;
-            foreach (var child in includeUnions ? GetCompositionChildren(current) : current.AllOf ?? [])
+            foreach (var child in GetCompositionChildren(current))
                 pending.Push(child);
         }
     }

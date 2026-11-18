@@ -39,7 +39,7 @@ Comma lists are expanded before persistence; `*` patterns are stored and evaluat
 - Exclusions remove individual properties. When both filters name an ordinary property, exclusion wins.
 - Required and discriminator properties are always retained, including constraints applied through composition or inheritance. Omitting one from an include filter produces an informational diagnostic; excluding one fails generation even when matched by `*`.
 - Requirements inside a `oneOf`/`anyOf` branch protect that branch and any shared ancestor declarations they reference, not same-named optional fields in sibling branches. Constraints shared by the union or `allOf` still apply to their referenced declarations.
-- Independent unions combined through `allOf` share declaration contexts: requirements in one union can protect fields declared inside another, without mixing alternatives of the same union.
+- Independent unions combined through `allOf` can protect one another's declarations when their branch choices can coexist, without mixing alternatives of the same shared union.
 - Protection is declaration-specific: omitting a name from an allowlist can retain its required inline declaration while trimming an optional same-named sibling declaration. Explicitly excluding that name fails if any targeted declaration is protected.
 - Unknown components/properties, patterns matching nothing, and malformed selectors fail generation rather than being ignored.
 - Named components and their inline composition fragments are supported. Select an inherited property on its declaring base component, not on a derived component. Standalone inline-object members and external component aliases are not selectable.
@@ -48,7 +48,7 @@ Comma lists are expanded before persistence; `*` patterns are stored and evaluat
 
 For example, excluding `microsoft.graph.user#profile` can remove a `profile` model referenced only by that property. A model used by another operation, retained property, or required inheritance/discriminator relationship remains.
 
-Protection uses a worklist of shared schema nodes and new ancestor-declaration facts, rather than expanding every reference path through a union graph.
+Protection propagates symbolic activation conditions through a memoized decision graph, rather than expanding every reference path through a union graph. Shared union occurrences reuse branch choices; independent unions have separate choices. A constraint protects a declaration only when both can be active within the same composition root.
 
 ## Saved clients and regeneration
 
