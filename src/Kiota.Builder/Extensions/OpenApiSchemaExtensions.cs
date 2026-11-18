@@ -231,6 +231,20 @@ public static class OpenApiSchemaExtensions
     private static OpenApiSchema CopySchemaReference(OpenApiSchemaReference reference, OpenApiSchema target)
     {
         var result = (OpenApiSchema)reference.CopyReferenceAsTargetElementWithOverrides(target);
+        var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance) { reference };
+        IOpenApiSchema? current = reference.Target;
+        var required = new HashSet<string>(result.Required ?? Enumerable.Empty<string>(), StringComparer.Ordinal);
+        while (current is not null && visited.Add(current))
+        {
+            var localReference = (current as OpenApiSchemaReference)?.Reference;
+            var properties = localReference is null ? current.Properties : localReference.Properties;
+            if (properties is not null)
+                result.TryAddProperties(properties);
+            required.UnionWith((localReference is null ? current.Required : localReference.Required) ?? Enumerable.Empty<string>());
+            current = (current as OpenApiSchemaReference)?.Target;
+        }
+        if (required.Count > 0)
+            result.Required = required;
         // Class descriptions come from the definition, not an individual referencing site.
         result.Description = reference.Target?.Description;
         return result;

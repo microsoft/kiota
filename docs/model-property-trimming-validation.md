@@ -1,6 +1,6 @@
 # Property-filter protection validation
 
-The protection contract is branch-local: a required/discriminator constraint protects a declaration when both can be active in the same composition entry. Repeated occurrences of the same union reuse its branch choice; independent unions have independent choices. Reference-local constraints are conjunctive with the reference target. Every schema is considered as an entry, including schemas inside cycles.
+The protection contract is branch-local: a required/discriminator constraint protects a declaration when both can be active in the same composition entry. Repeated occurrences of the same union reuse its branch choice; independent unions have independent choices. Reference-local constraints are conjunctive with the reference target. Every schema is considered as an entry, including schemas inside cycles. Nested properties, items, and additional-property schemas have independent entry contexts; they do not impose their field requirements on the containing object.
 
 ## Independent differential oracle
 
@@ -39,10 +39,10 @@ A Windows x64/.NET 10.0.15 run produced the following results (three samples, me
 
 | Input | Baseline ms | Filtered ms | Filter allocations MiB | Baseline peak MiB | Filtered peak MiB |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 2,048 disconnected models | 3.2 | 102.0 | 16.0 | 86.7 | 95.0 |
-| Depth-24 shared diamond | 2.9 | 48.5 | 6.3 | 84.9 | 88.7 |
-| 24-node union cycle | 3.0 | 54.7 | 6.1 | 85.0 | 88.8 |
-| GitHub, 1,016 components / 41,231 declarations | 2.9 | 560.3 | 140.2 | 218.4 | 310.0 |
+| 2,048 disconnected models | 2.8 | 108.4 | 18.6 | 86.6 | 95.3 |
+| Depth-24 shared diamond | 2.7 | 46.8 | 6.4 | 84.7 | 88.7 |
+| 24-node union cycle | 2.7 | 52.5 | 6.2 | 85.0 | 88.9 |
+| GitHub, 1,016 components / 41,231 declarations | 2.7 | 666.3 | 155.2 | 218.5 | 311.0 |
 
 The pinned description's SHA-256 is `6d9bbb20d8865b01464028937f2403954ad46598b4ebd3513dcb1a15b1a84aa7`. Its selector removes four optional declarations while preserving required fields. Results vary with runtime and hardware; CI publishes fresh raw measurements rather than enforcing these timings as thresholds.
 

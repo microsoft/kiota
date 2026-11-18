@@ -17,20 +17,26 @@ import {
 } from "./client/models/index.js";
 import * as models from "./client/models/index.js";
 
-const reference = new JsonParseNode({ localName: "reference", inlineName: "inline" })
+const reference = new JsonParseNode({ localName: "reference", inlineName: "inline", secondName: "second", inheritedName: "base" })
     .getObjectValue<ReferenceModel>(createReferenceModelFromDiscriminatorValue);
 assert.ok(reference);
 assert.equal(reference.localName, "reference");
 assert.equal(reference.inlineName, "inline");
+assert.equal(reference.inheritedName, "base");
+assert.equal(reference.secondName, "second");
 assert.equal("localDrop" in deserializeIntoReferenceModel({}), false);
 assert.equal("inlineDrop" in deserializeIntoReferenceModel({}), false);
+assert.equal("secondDrop" in deserializeIntoReferenceModel({}), false);
 const referenceWriter = new JsonSerializationWriter();
 referenceWriter.writeObjectValue(undefined, reference, serializeReferenceModel);
 const referenceJson = JSON.parse(new TextDecoder().decode(referenceWriter.getSerializedContent()));
 assert.equal(referenceJson.localName, "reference");
 assert.equal(referenceJson.inlineName, "inline");
+assert.equal(referenceJson.inheritedName, "base");
+assert.equal(referenceJson.secondName, "second");
 assert.equal("localDrop" in referenceJson, false);
 assert.equal("inlineDrop" in referenceJson, false);
+assert.equal("secondDrop" in referenceJson, false);
 
 const payload = {
     id: "base-id",

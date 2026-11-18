@@ -21,7 +21,7 @@ try {
         & $KiotaExecutable generate --language $language --openapi $description --output $client `
             --namespace-name PropertyFiltering.Client --include-property 'Base#marker' `
             --include-property 'Widget#name,friends,choice' --include-property 'OptionalChoice#name' `
-            --include-property 'RequiredChoice#keep' --include-property 'ReferenceModel#localName,inlineName' --log-level Critical
+            --include-property 'RequiredChoice#keep' --include-property 'ReferenceModel#localName,inlineName,secondName' --log-level Critical
         if ($LASTEXITCODE -ne 0) { throw "$language property-filter generation failed." }
         if ($language -eq 'CSharp') {
             # Reuse the maintained integration dependency manifest rather than introducing another package version list.

@@ -193,12 +193,17 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
         new OpenApiWalker(new SchemaVisitor(schema => GetState(schema))).Walk(document);
         while (undiscovered.TryDequeue(out var state))
+        {
+            // Nested values have their own entry contexts, not the containing object's composition.
+            foreach (var nested in state.NestedSchemas)
+                GetState(nested);
             foreach (var child in state.AllOf.Concat(state.Unions.OfType<IList<IOpenApiSchema>>().SelectMany(static x => x)))
             {
                 var target = GetState(child);
                 state.Children.Add(target);
                 target.HasParent = true;
             }
+        }
 
         var ordered = new List<ProtectionState>();
         var visited = new HashSet<ProtectionState>();
@@ -288,6 +293,15 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             var discriminator = reference is null ? schema.Discriminator : reference.Discriminator;
             ProtectedNames = (required ?? Enumerable.Empty<string>())
                 .Concat(new[] { discriminator?.PropertyName }.OfType<string>()).ToArray();
+            var properties = reference is null ? schema.Properties : reference.Properties;
+            NestedSchemas = (properties?.Values ?? [])
+                .Concat(new[]
+                {
+                    reference is null ? schema.Items : reference.Items,
+                    reference is null ? schema.AdditionalProperties : reference.AdditionalProperties,
+                    reference is null ? schema.Not : reference.Not,
+                }.OfType<IOpenApiSchema>())
+                .Concat(discriminator?.Mapping?.Values ?? []).ToArray();
         }
         internal IOpenApiSchema[] AllOf
         {
@@ -298,6 +312,10 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             get;
         }
         internal string[] ProtectedNames
+        {
+            get;
+        }
+        internal IOpenApiSchema[] NestedSchemas
         {
             get;
         }

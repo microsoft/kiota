@@ -89,6 +89,74 @@ public sealed partial class KiotaBuilderTests
     }
 
     [Theory]
+    [InlineData("properties", false)]
+    [InlineData("properties", true)]
+    [InlineData("items", false)]
+    [InlineData("items", true)]
+    [InlineData("additionalProperties", false)]
+    [InlineData("additionalProperties", true)]
+    public async Task NestedReferenceSiblingConstraintsHaveIndependentEntryContextsAsync(string location, bool exclude)
+    {
+        var document = await ReadPropertyFilterDocumentAsync("""
+            openapi: 3.1.0
+            info:
+              title: Nested reference constraints
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Empty: {}
+                User:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    keep:
+                      type: string
+                Wrapper:
+                  $ref: '#/components/schemas/Empty'
+                  properties:
+                    id:
+                      type: string
+                    keep:
+                      type: string
+            """);
+        var reference = Assert.IsType<OpenApiSchemaReference>(document.Components!.Schemas!["Wrapper"]);
+        var nested = new OpenApiSchema
+        {
+            AllOf =
+            [
+                new OpenApiSchemaReference("User", document),
+                new OpenApiSchema { Required = new HashSet<string>(StringComparer.Ordinal) { "id" } },
+            ],
+        };
+        switch (location)
+        {
+            case "properties": reference.Reference.Properties!["child"] = nested; break;
+            case "items": reference.Reference.Items = nested; break;
+            case "additionalProperties": reference.Reference.AdditionalProperties = nested; break;
+            default: throw new ArgumentOutOfRangeException(nameof(location));
+        }
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["User#keep", "Wrapper#keep"],
+            ExcludeProperties = exclude ? ["User#id"] : [],
+        };
+        if (exclude)
+        {
+            var error = Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+            Assert.StartsWith("Cannot exclude required or discriminator property", error.Message, StringComparison.Ordinal);
+            Assert.Contains("id", reference.Reference.Properties!.Keys);
+        }
+        else
+        {
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+            Assert.DoesNotContain("id", reference.Reference.Properties!.Keys);
+        }
+        Assert.Contains("id", document.Components.Schemas["User"].Properties!.Keys);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task ReferenceTargetsRemainOwnedByTheirDeclaringComponentAsync(bool inlineReference)
@@ -207,6 +275,32 @@ public sealed partial class KiotaBuilderTests
             new GenerationConfiguration { IncludeProperties = ["Profile#keep"] });
         Assert.DoesNotContain(messages, static message => message.Contains("not referenced by the selected operations", StringComparison.Ordinal));
         Assert.DoesNotContain("remove", document.Components.Schemas["Profile"].Properties!.Keys);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MergingReferenceSiblingsRetainsTargetFieldsAndRequirementsWithoutMutationAsync(bool throughAlias)
+    {
+        var document = await ReadPropertyFilterDocumentAsync(ReferenceOwnedPropertiesDescription(false));
+        var reference = Assert.IsType<OpenApiSchemaReference>(document.Components!.Schemas!["Derived"]);
+        reference.Description = "definition";
+        reference.Required = new HashSet<string>(StringComparer.Ordinal) { "keep" };
+        var target = Assert.IsType<OpenApiSchema>(document.Components.Schemas["Base"]);
+        target.Required = new HashSet<string>(StringComparer.Ordinal) { "inherited" };
+        var originalTargetProperties = target.Properties!.ToArray();
+        var originalLocalProperties = reference.Reference.Properties!.ToArray();
+        IOpenApiSchema source = throughAlias ? new OpenApiSchemaReference("Derived", document) { Description = "site" } : reference;
+        var merged = Assert.IsType<OpenApiSchema>(source.MergeReferenceInlineAllOfSchemaEntries());
+        Assert.Equal(["inherited", "inline", "keep", "remove", "shared"], merged.Properties!.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["inherited", "keep"], merged.Required!.Order(StringComparer.Ordinal));
+        Assert.Equal(throughAlias ? "definition" : target.Description, merged.Description);
+        Assert.NotNull(target.Properties);
+        Assert.NotNull(reference.Reference.Properties);
+        Assert.Equal(originalTargetProperties, target.Properties.ToArray());
+        Assert.Equal(originalLocalProperties, reference.Reference.Properties.ToArray());
+        Assert.Equal(["inherited"], target.Required);
+        Assert.Equal(["keep"], reference.Reference.Required!);
     }
 
     [Theory]

@@ -37,6 +37,10 @@ components:
   schemas:
     ReferenceBase:
       type: object
+      required: [inheritedName]
+      properties:
+        inheritedName:
+          type: string
     ReferenceModel:
       $ref: '#/components/schemas/ReferenceBase'
       properties:
@@ -50,6 +54,12 @@ components:
             inlineName:
               type: string
             inlineDrop:
+              type: string
+        - type: object
+          properties:
+            secondName:
+              type: string
+            secondDrop:
               type: string
     Base:
       type: object
