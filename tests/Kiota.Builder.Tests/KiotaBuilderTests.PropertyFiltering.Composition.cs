@@ -13,6 +13,116 @@ namespace Kiota.Builder.Tests;
 public sealed partial class KiotaBuilderTests
 {
     [Theory]
+    [InlineData(null, false)]
+    [InlineData("id", false)]
+    [InlineData("name", false)]
+    [InlineData("base", false)]
+    [InlineData(null, true)]
+    [InlineData("id", true)]
+    [InlineData("name", true)]
+    [InlineData("base", true)]
+    public async Task ReferenceSiblingConstraintsProtectTargetDeclarationsAsync(string excludedProperty, bool throughAlias)
+    {
+        var document = await ReadPropertyFilterDocumentAsync("""
+            openapi: 3.1.0
+            info:
+              title: Reference sibling constraints
+              version: 1.0.0
+            paths:
+              /user:
+                get:
+                  responses:
+                    '200':
+                      description: OK
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/User'
+                            required: [id]
+                            allOf:
+                              - required: [name]
+            components:
+              schemas:
+                User:
+                  type: object
+                  required: [base]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    base:
+                      type: string
+                    keep:
+                      type: string
+            """);
+        if (throughAlias)
+        {
+            document.AddComponent("UserAlias", new OpenApiSchemaReference("User", document)
+            {
+                Required = new HashSet<string>(StringComparer.Ordinal) { "name" },
+            });
+            Assert.IsType<OpenApiMediaType>(document.Paths["/user"].Operations[System.Net.Http.HttpMethod.Get].Responses["200"].Content["application/json"]).Schema =
+                new OpenApiSchemaReference("UserAlias", document)
+                {
+                    Required = new HashSet<string>(StringComparer.Ordinal) { "id" },
+                };
+        }
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = excludedProperty is null ? ["User#keep"] : [],
+            ExcludeProperties = excludedProperty is null ? [] : [$"User#{excludedProperty}"],
+        };
+        if (excludedProperty is not null)
+            Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration));
+        else
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, configuration);
+        Assert.Equal(4, document.Components!.Schemas!["User"].Properties!.Count);
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task DisconnectedRequiredFieldsDoNotCreateQuadraticProtectionIntersectionsAsync()
+    {
+        var document = await ReadPropertyFilterDocumentAsync("""
+            openapi: 3.0.3
+            info:
+              title: Disconnected required fields
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Target:
+                  type: object
+                  properties:
+                    keep:
+                      type: string
+                    remove:
+                      type: string
+            """);
+        for (var i = 0; i < 2048; i++)
+            document.AddComponent($"Model{i}", new OpenApiSchema
+            {
+                Type = JsonSchemaType.Object,
+                Required = new HashSet<string>(StringComparer.Ordinal) { "id" },
+                Properties = new Dictionary<string, IOpenApiSchema>
+                {
+                    ["id"] = new OpenApiSchema { Type = JsonSchemaType.String },
+                },
+            });
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await Task.Run(() =>
+        {
+            var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            new OpenApiPropertyFilter(NullLogger.Instance).Apply(document, new GenerationConfiguration { IncludeProperties = ["Target#keep"] });
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+            Assert.True(allocated < 128 * 1024 * 1024, $"Property protection allocated {allocated:N0} bytes for disconnected schemas.");
+            Assert.DoesNotContain("remove", document.Components!.Schemas!["Target"].Properties!.Keys);
+            foreach (var schema in document.Components.Schemas.Values.Skip(1))
+                Assert.Contains("id", schema.Properties!.Keys);
+        }, cancellationToken).WaitAsync(cancellationToken);
+    }
+
+    [Theory]
     [InlineData("anyOf", false)]
     [InlineData("anyOf", true)]
     [InlineData("oneOf", false)]

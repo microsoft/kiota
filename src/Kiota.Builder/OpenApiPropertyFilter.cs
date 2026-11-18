@@ -188,7 +188,6 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         var undiscovered = new Queue<ProtectionState>();
         ProtectionState GetState(IOpenApiSchema schema)
         {
-            schema = GetCanonicalSchema(schema);
             if (!states.TryGetValue(schema, out var state))
             {
                 state = new ProtectionState(schema);
@@ -199,7 +198,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
         new OpenApiWalker(new SchemaVisitor(schema => GetState(schema))).Walk(document);
         while (undiscovered.TryDequeue(out var state))
-            foreach (var child in GetCompositionChildren(state.Schema))
+            foreach (var child in state.AllOf.Concat(state.Unions.OfType<IList<IOpenApiSchema>>().SelectMany(static x => x)))
             {
                 var target = GetState(child);
                 state.Children.Add(target);
@@ -247,9 +246,9 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             Activate(ordered[i], rootConditions[i]);
         foreach (var state in ordered)
         {
-            foreach (var child in state.Schema.AllOf ?? [])
+            foreach (var child in state.AllOf)
                 state.Edges.Add((GetState(child), ProtectionConditions.True));
-            foreach (var union in new[] { state.Schema.AnyOf, state.Schema.OneOf })
+            foreach (var union in state.Unions)
             {
                 if (union is not { Count: > 0 }) continue;
                 var choices = conditions.CreateChoices(union.Count);
@@ -264,28 +263,49 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 Activate(target, conditions.And(state.Activation, condition));
         }
 
-        var declarations = owners.Keys.SelectMany(schema => (schema.Properties?.Keys ?? [])
-            .Select(property => (Property: property, State: states[schema])))
-            .ToLookup(static x => x.Property, static x => x.State, StringComparer.Ordinal);
+        var requiredConditions = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var state in states.Values)
-            foreach (var property in (state.Schema.Required ?? Enumerable.Empty<string>())
-                .Concat(new[] { state.Schema.Discriminator?.PropertyName }.OfType<string>()))
-                foreach (var declaration in declarations[property])
-                    if (conditions.And(state.Activation, declaration.Activation) != ProtectionConditions.False)
-                    {
-                        if (!protection.TryGetValue(declaration.Schema, out var names))
-                            protection[declaration.Schema] = names = new(StringComparer.Ordinal);
-                        names.Add(property);
-                    }
+            foreach (var property in state.ProtectedNames)
+                requiredConditions[property] = conditions.Or(requiredConditions.GetValueOrDefault(property), state.Activation);
+        foreach (var schema in owners.Keys)
+            foreach (var property in schema.Properties?.Keys ?? [])
+                if (requiredConditions.TryGetValue(property, out var required) &&
+                    conditions.And(required, states[schema].Activation) != ProtectionConditions.False)
+                {
+                    if (!protection.TryGetValue(schema, out var names))
+                        protection[schema] = names = new(StringComparer.Ordinal);
+                    names.Add(property);
+                }
         return protection;
     }
 
-    private static IOpenApiSchema GetCanonicalSchema(IOpenApiSchema schema) =>
-        schema is OpenApiSchemaReference { RecursiveTarget: { } target } ? target : schema;
-
-    private sealed class ProtectionState(IOpenApiSchema schema)
+    private sealed class ProtectionState
     {
-        internal IOpenApiSchema Schema { get; } = schema;
+        internal ProtectionState(IOpenApiSchema schema)
+        {
+            // Reference getters fall back to the target; keep only authored sibling keywords on this node.
+            var reference = (schema as OpenApiSchemaReference)?.Reference;
+            AllOf = (reference is null ? schema.AllOf : reference.AllOf)?.ToArray() ?? [];
+            if (schema is OpenApiSchemaReference { Target: { } target })
+                AllOf = [target, .. AllOf];
+            Unions = [reference is null ? schema.AnyOf : reference.AnyOf, reference is null ? schema.OneOf : reference.OneOf];
+            var required = reference is null ? schema.Required : reference.Required;
+            var discriminator = reference is null ? schema.Discriminator : reference.Discriminator;
+            ProtectedNames = (required ?? Enumerable.Empty<string>())
+                .Concat(new[] { discriminator?.PropertyName }.OfType<string>()).ToArray();
+        }
+        internal IOpenApiSchema[] AllOf
+        {
+            get;
+        }
+        internal IList<IOpenApiSchema>?[] Unions
+        {
+            get;
+        }
+        internal string[] ProtectedNames
+        {
+            get;
+        }
         internal List<ProtectionState> Children { get; } = [];
         internal List<(ProtectionState Target, int Condition)> Edges { get; } = [];
         internal bool HasParent
@@ -407,5 +427,10 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
     private sealed class SchemaVisitor(Action<IOpenApiSchema> visit) : OpenApiVisitorBase
     {
         public override void Visit(IOpenApiSchema schema) => visit(schema);
+        public override void Visit(IOpenApiReferenceHolder referenceHolder)
+        {
+            if (referenceHolder is IOpenApiSchema schema)
+                visit(schema);
+        }
     }
 }
