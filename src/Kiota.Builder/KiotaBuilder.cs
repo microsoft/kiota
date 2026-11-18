@@ -216,7 +216,7 @@ public partial class KiotaBuilder
             if (generating && !config.IsPluginConfiguration && (config.IncludeProperties.Count != 0 || config.ExcludeProperties.Count != 0))
             {
                 sw.Start();
-                new OpenApiPropertyFilter(logger).Apply(openApiDocument, config);
+                new OpenApiPropertyFilter(logger).Apply(openApiDocument, config, cancellationToken);
                 StopLogAndReset(sw, $"step {++stepId} - filtering model properties - took");
             }
             SetApiRootUrl();
@@ -1915,9 +1915,6 @@ public partial class KiotaBuilder
             // greatest parent type
             (true, { Length: 0 }, { Length: 0 }, _) =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace),
-            // an object base can be empty after property trimming
-            (false, { Length: 0 }, { Length: 0 }, _) when schema.IsObjectType() =>
-                AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace),
             // inline schema + referenced schema
             (false, { Length: > 0 }, { Length: 1 }, _) =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema.MergeAllOfSchemaEntries([.. referencedSchemas], static x => x is not null)!, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
@@ -2145,11 +2142,6 @@ public partial class KiotaBuilder
             return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         }
 
-        if (schema.MergeReferenceInlineAllOfSchemaEntries() is { } mergedReferenceSchema)
-            return CreateModelDeclarationAndType(currentNode, mergedReferenceSchema, operation, codeNamespace, suffix,
-                response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody,
-                dynamicBindingSuffixContext: suffixForInlineSchema);
-
         if (schema.IsObjectType() || schema.HasPropertyInformation() || schema.IsEnum() || schema.AdditionalProperties?.Type is not null)
         {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
@@ -2374,7 +2366,6 @@ public partial class KiotaBuilder
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
-            schema = schema.MergeReferenceInlineAllOfSchemaEntries() ?? schema;
             if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
                 return enumDeclaration;
 

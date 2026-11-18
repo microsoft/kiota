@@ -6,7 +6,7 @@ The protection contract is branch-local: a required/discriminator constraint pro
 
 `OpenApiPropertyFilterOracleTests` does not use the production activation conditions, decision graph, or protection helpers. For each small graph it enumerates every concrete union-choice assignment, walks every schema entry with a stack and visited set, and records which declarations coexist with a constraint. It compares that result against both inclusion trimming and exclusion rejection.
 
-The suite includes eight named graph families and 64 deterministic generated graphs. These cover shared wrappers, partially overlapping independent unions, constrained references, reference-owned sibling declarations, discriminator constraints, cycles, and three-way alternatives. The oracle checks this generator protection contract, not arbitrary JSON Schema payload satisfiability. Exhaustive choice enumeration is deliberately limited to small graphs.
+The suite includes six named graph families and 64 deterministic generated graphs. These cover shared wrappers, partially overlapping independent unions, constrained references, discriminator constraints, cycles, and three-way alternatives. The oracle checks this generator protection contract, not arbitrary JSON Schema payload satisfiability. Exhaustive choice enumeration is deliberately limited to small graphs.
 
 ```powershell
 dotnet run --project tests\Kiota.Builder.Tests\Kiota.Builder.Tests.csproj -- `
@@ -55,6 +55,6 @@ npm ci --prefix it\typescript
 
 Use the platform's published Kiota executable, or a local development executable. `-Languages CSharp` and `-Languages TypeScript` select individual checks. `-TypeScriptNodeModules` can point at an already prepared directory containing the existing TypeScript integration dependencies.
 
-The harness generates fresh clients from `PropertyFiltering.yaml`, compiles C#, type-checks TypeScript, and runs both against their JSON serialization runtimes. Checks cover retained inherited/discriminator fields, recursive collections, omitted declarations and unreachable models, branch-local required union fields, reference-owned sibling and inline `allOf` declarations, and preservation of additional data. C# reuses the maintained `it/csharp/basic/basic.csproj` dependency manifest; TypeScript reuses `it/typescript` dependencies. No service or mock server is needed, and generated clients are removed afterward.
+The harness generates fresh clients from `PropertyFiltering.yaml`, compiles C#, type-checks TypeScript, and runs both against their JSON serialization runtimes. Checks cover retained inherited/discriminator fields, recursive collections, omitted declarations and unreachable models, branch-local required union fields, and preservation of additional data. C# reuses the maintained `it/csharp/basic/basic.csproj` dependency manifest; TypeScript reuses `it/typescript` dependencies. No service or mock server is needed, and generated clients are removed afterward.
 
 The integration workflow runs these cross-language checks and bounded resource samples. Its aggregate integration status includes the new validation job, and raw resource JSON is uploaded as `property-filter-resources`. The independent oracle runs with the regular builder test suite.

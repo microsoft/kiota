@@ -7,29 +7,6 @@ using Xunit;
 public sealed class SerializationTests
 {
     [Fact]
-    public async Task ReferenceSiblingDeclarationsAreGeneratedAndSerializedAsync()
-    {
-        using var payload = JsonDocument.Parse("""{"localName":"reference","inlineName":"inline","secondName":"second","inheritedName":"base"}""");
-        var model = new JsonParseNode(payload.RootElement).GetObjectValue(ReferenceModel.CreateFromDiscriminatorValue);
-        Assert.NotNull(model);
-        Assert.Equal("reference", model.LocalName);
-        Assert.Equal("inline", model.InlineName);
-        Assert.Equal("base", model.InheritedName);
-        Assert.Equal("second", model.SecondName);
-        Assert.Null(typeof(ReferenceModel).GetProperty("LocalDrop"));
-        Assert.Null(typeof(ReferenceModel).GetProperty("InlineDrop"));
-        Assert.Null(typeof(ReferenceModel).GetProperty("SecondDrop"));
-        using var serialized = await SerializeAsync(model);
-        Assert.Equal("reference", serialized.RootElement.GetProperty("localName").GetString());
-        Assert.Equal("inline", serialized.RootElement.GetProperty("inlineName").GetString());
-        Assert.Equal("base", serialized.RootElement.GetProperty("inheritedName").GetString());
-        Assert.Equal("second", serialized.RootElement.GetProperty("secondName").GetString());
-        Assert.False(serialized.RootElement.TryGetProperty("localDrop", out _));
-        Assert.False(serialized.RootElement.TryGetProperty("inlineDrop", out _));
-        Assert.False(serialized.RootElement.TryGetProperty("secondDrop", out _));
-    }
-
-    [Fact]
     public async Task RetainsInheritedAndRecursiveFieldsThroughSerializationAsync()
     {
         using var payload = JsonDocument.Parse("""

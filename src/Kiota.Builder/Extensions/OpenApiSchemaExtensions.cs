@@ -93,19 +93,10 @@ public static class OpenApiSchemaExtensions
     {
         if (schema.HasAnyProperty()) return true;
         // A trimmed object must not be reclassified as an unconstrained empty schema.
-        static bool HasTrimmedProperties(IOpenApiSchema? candidate) => candidate?.Extensions is { } extensions &&
+        var source = schema is OpenApiSchemaReference reference ? reference.RecursiveTarget : schema;
+        return source?.Extensions is { } extensions &&
             extensions.TryGetValue(OpenApiKiotaTrimmedPropertiesExtension.Name, out var extension) &&
             extension is OpenApiKiotaTrimmedPropertiesExtension;
-        if (HasTrimmedProperties(schema)) return true;
-        if (schema is not OpenApiSchemaReference reference) return false;
-        var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance) { reference };
-        var current = reference.Target;
-        while (current is not null && visited.Add(current))
-        {
-            if (HasTrimmedProperties(current)) return true;
-            current = (current as OpenApiSchemaReference)?.Target;
-        }
-        return false;
     }
     public static bool IsInclusiveUnion(this IOpenApiSchema? schema, uint exclusiveMinimumNumberOfEntries = 1)
     {
@@ -130,26 +121,6 @@ public static class OpenApiSchemaExtensions
     internal static IOpenApiSchema? MergeAllOfSchemaEntries(this IOpenApiSchema? schema, HashSet<IOpenApiSchema>? schemasToExclude = default, Func<IOpenApiSchema, bool>? filter = default)
     {
         return schema.MergeIntersectionSchemaEntries(schemasToExclude, true, filter);
-    }
-
-    internal static IOpenApiSchema? MergeReferenceInlineAllOfSchemaEntries(this IOpenApiSchema schema)
-    {
-        if (schema is not OpenApiSchemaReference source ||
-            source.Reference.AllOf is null && source.Target is not OpenApiSchemaReference)
-            return null;
-        var current = schema;
-        var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
-        while (current is OpenApiSchemaReference reference && visited.Add(current))
-        {
-            if (reference.Reference.AllOf is { } entries)
-                return entries is [OpenApiSchema { Properties.Count: > 0 } inline] &&
-                    inline.AllOf is not { Count: > 0 } && inline.AnyOf is not { Count: > 0 } && inline.OneOf is not { Count: > 0 }
-                    ? schema.MergeAllOfSchemaEntries()
-                    : null;
-            if (reference.Target is not { } target) break;
-            current = target;
-        }
-        return null;
     }
 
     internal static IOpenApiSchema? MergeInclusiveUnionSchemaEntries(this IOpenApiSchema? schema)
@@ -219,35 +190,10 @@ public static class OpenApiSchemaExtensions
         return schema switch
         {
             OpenApiSchema oas => (OpenApiSchema)oas.CreateShallowCopy(),
-            OpenApiSchemaReference oasr when oasr.Target is OpenApiSchema target &&
-                oasr.Reference.Properties is null && oasr.Reference.AllOf is null &&
-                oasr.Reference.AnyOf is null && oasr.Reference.OneOf is null => (OpenApiSchema)target.CreateShallowCopy(),
-            OpenApiSchemaReference oasr when oasr.RecursiveTarget is OpenApiSchema target => CopySchemaReference(oasr, target),
+            OpenApiSchemaReference oasr when oasr.Target is OpenApiSchema target => (OpenApiSchema)target.CreateShallowCopy(),
             OpenApiSchemaReference => throw new InvalidOperationException("The schema reference is not resolved"),
             _ => throw new InvalidOperationException("The schema type is not supported")
         };
-    }
-
-    private static OpenApiSchema CopySchemaReference(OpenApiSchemaReference reference, OpenApiSchema target)
-    {
-        var result = (OpenApiSchema)reference.CopyReferenceAsTargetElementWithOverrides(target);
-        var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance) { reference };
-        IOpenApiSchema? current = reference.Target;
-        var required = new HashSet<string>(result.Required ?? Enumerable.Empty<string>(), StringComparer.Ordinal);
-        while (current is not null && visited.Add(current))
-        {
-            var localReference = (current as OpenApiSchemaReference)?.Reference;
-            var properties = localReference is null ? current.Properties : localReference.Properties;
-            if (properties is not null)
-                result.TryAddProperties(properties);
-            required.UnionWith((localReference is null ? current.Required : localReference.Required) ?? Enumerable.Empty<string>());
-            current = (current as OpenApiSchemaReference)?.Target;
-        }
-        if (required.Count > 0)
-            result.Required = required;
-        // Class descriptions come from the definition, not an individual referencing site.
-        result.Description = reference.Target?.Description;
-        return result;
     }
 
     internal static IOpenApiSchema? MergeIntersectionSchemaEntries(this IOpenApiSchema? schema, HashSet<IOpenApiSchema>? schemasToExclude = default, bool overrideIntersection = false, Func<IOpenApiSchema, bool>? filter = default)
