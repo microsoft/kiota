@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Property filtering validation
+  version: 1.0.0
+servers:
+  - url: https://example.com
+paths:
+  /widgets:
+    get:
+      responses:
+        '200':
+          description: A polymorphic widget
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Base'
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Widget'
+      responses:
+        '204':
+          description: Accepted
+components:
+  schemas:
+    Base:
+      type: object
+      required: [id]
+      discriminator:
+        propertyName: kind
+        mapping:
+          widget: '#/components/schemas/Widget'
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        marker:
+          type: string
+        baseOptional:
+          type: string
+    Widget:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          properties:
+            name:
+              type: string
+            friends:
+              type: array
+              items:
+                $ref: '#/components/schemas/Widget'
+            choice:
+              $ref: '#/components/schemas/Choice'
+            drop:
+              type: string
+            profile:
+              $ref: '#/components/schemas/Profile'
+    Choice:
+      anyOf:
+        - $ref: '#/components/schemas/RequiredChoice'
+        - $ref: '#/components/schemas/OptionalChoice'
+    RequiredChoice:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        keep:
+          type: string
+    OptionalChoice:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Profile:
+      type: object
+      properties:
+        biography:
+          type: string

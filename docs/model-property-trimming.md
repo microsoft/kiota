@@ -50,6 +50,8 @@ For example, excluding `microsoft.graph.user#profile` can remove a `profile` mod
 
 Protection propagates symbolic activation conditions through a memoized decision graph, rather than expanding every reference path through a union graph. Shared union occurrences reuse branch choices; independent unions have separate choices. A constraint protects a declaration only when both can be active within the same composition root.
 
+See [protection validation](model-property-trimming-validation.md) for the independent exhaustive-choice oracle, bounded resource measurements, and generated-client compilation and serialization checks.
+
 ## Saved clients and regeneration
 
 The selections are saved as `includeProperties` and `excludeProperties` in client workspace configuration and legacy lock files. Both default to empty arrays for existing clients.
