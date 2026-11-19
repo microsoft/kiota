@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Kiota.Builder.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,6 +10,49 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Fact]
+    public void WildcardValidationVisitsSharedAncestorsOnce()
+    {
+        var schemas = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal);
+        var document = new OpenApiDocument { Components = new OpenApiComponents { Schemas = schemas } };
+        var references = new List<CountingSchemaReference>();
+        IOpenApiSchema parent = null;
+        for (var i = 0; i < 128; i++)
+        {
+            var schema = new OpenApiSchema { Properties = new Dictionary<string, IOpenApiSchema> { ["keep"] = new OpenApiSchema() } };
+            schemas.Add($"Model{i}", schema);
+            if (parent is not null)
+            {
+                var link = new CountingSchemaReference($"Model{i - 1}", document, parent);
+                references.Add(link);
+                schema.AllOf = [link];
+            }
+            parent = schema;
+        }
+
+        new OpenApiPropertyFilter(NullLogger.Instance).Apply(document,
+            new GenerationConfiguration { IncludeProperties = ["Model*#keep"] }, TestContext.Current.CancellationToken);
+
+        Assert.All(references, reference => Assert.Equal(1, reference.TargetReads));
+    }
+
+    private sealed class CountingSchemaReference(string id, OpenApiDocument document, IOpenApiSchema target) :
+        OpenApiSchemaReference(id, document)
+    {
+        internal int TargetReads
+        {
+            get; private set;
+        }
+        public override IOpenApiSchema Target
+        {
+            get
+            {
+                TargetReads++;
+                return target;
+            }
+        }
+    }
+
     [Fact]
     public async Task RejectsDynamicReferencesInExternalResponseSchemasAsync()
     {

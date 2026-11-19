@@ -41,11 +41,10 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 }
             }
 
-        var supportedComponents = new HashSet<string>(StringComparer.Ordinal);
+        var checkedSchemas = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
         void CheckSupportedComposition(string component, ModelPropertySelector selector)
         {
-            if (!supportedComponents.Add(component)) return;
-            if (GetComposedSchemas(components[component], cancellationToken).OfType<OpenApiSchemaReference>()
+            if (GetComposedSchemas(components[component], cancellationToken, checkedSchemas).OfType<OpenApiSchemaReference>()
                 .Any(static reference => reference.Reference is { Properties.Count: > 0 } or
                 { AllOf.Count: > 0 } or { AnyOf.Count: > 0 } or { OneOf.Count: > 0 }))
                 throw new InvalidOperationException($"Cannot apply property selection '{selector}' to component '{component}' because its composition contains a schema with properties or composition beside $ref. Use an explicit allOf with separate reference and inline entries, or omit the selector.");
@@ -621,9 +620,10 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
     }
 
-    private static IEnumerable<IOpenApiSchema> GetComposedSchemas(IOpenApiSchema schema, CancellationToken cancellationToken)
+    private static IEnumerable<IOpenApiSchema> GetComposedSchemas(IOpenApiSchema schema, CancellationToken cancellationToken,
+        HashSet<IOpenApiSchema>? visited = null)
     {
-        var visited = new HashSet<IOpenApiSchema>(ReferenceEqualityComparer.Instance);
+        visited ??= new(ReferenceEqualityComparer.Instance);
         var pending = new Stack<IOpenApiSchema>();
         pending.Push(schema);
         while (pending.TryPop(out var current))
