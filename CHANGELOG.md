@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fix missing model factories when an allOf alias is referenced before its model. [#8540](https://github.com/microsoft/kiota/issues/8540)
+- Fixed credential-cache file creation in elevated Windows processes, including Azure DevOps release agents, by explicitly assigning the current user as owner with private permissions.
 
 ## [1.39.0] - 2026-11-17
 
