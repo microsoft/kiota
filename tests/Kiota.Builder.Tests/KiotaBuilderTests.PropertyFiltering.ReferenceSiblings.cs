@@ -9,6 +9,93 @@ namespace Kiota.Builder.Tests;
 
 public sealed partial class KiotaBuilderTests
 {
+    [Fact]
+    public async Task RejectsDynamicReferencesInExternalResponseSchemasAsync()
+    {
+        var document = await ReadPropertyFilterDocumentAsync("""
+            openapi: 3.1.0
+            info: {title: External response, version: 1.0.0}
+            paths:
+              /resource:
+                get:
+                  responses:
+                    '200':
+                      description: Placeholder for the resolved external response
+            components:
+              schemas:
+                Resource:
+                  properties: {id: {type: string}}
+            """);
+        var external = await ReadPropertyFilterDocumentAsync("""
+            openapi: 3.1.0
+            info: {title: Response definitions, version: 1.0.0}
+            paths: {}
+            components:
+              responses:
+                Resource:
+                  description: OK
+                  content:
+                    application/json:
+                      schema: {$dynamicRef: '#node'}
+            """);
+        var response = external.Components!.Responses!["Resource"];
+        var operation = document.Paths["/resource"].Operations![System.Net.Http.HttpMethod.Get];
+        operation.Responses!["200"] = new ExternalResponseReference(document, response);
+        Assert.IsType<OpenApiSchemaReference>(operation.Responses!["200"].Content!["application/json"].Schema);
+
+        var error = Assert.Throws<InvalidOperationException>(() => new OpenApiPropertyFilter(NullLogger.Instance).Apply(document,
+            new GenerationConfiguration { ExcludeProperties = ["Resource#id"] }, TestContext.Current.CancellationToken));
+        Assert.Contains("dynamic reference '#node'", error.Message, StringComparison.Ordinal);
+        Assert.Contains("id", document.Components!.Schemas!["Resource"].Properties!.Keys);
+    }
+
+    private sealed class ExternalResponseReference(OpenApiDocument document, IOpenApiResponse response) :
+        OpenApiResponseReference("Resource", document, "https://example.com/responses.yaml")
+    {
+        public override IOpenApiResponse Target => response;
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, false, true)]
+    public async Task RejectsTrimmingWithAmbiguousDynamicReferencesBeforeMutationAsync(bool exclude, bool hasOrdinaryReference, bool nested)
+    {
+        var document = await ReadPropertyFilterDocumentAsync($$$"""
+            openapi: 3.1.0
+            info: {title: Ambiguous dynamic reference, version: 1.0.0}
+            paths: {}
+            components:
+              schemas:
+                A:
+                  $dynamicAnchor: node
+                  properties: {id: {type: string}, keep: {type: string}}
+                B:
+                  $dynamicAnchor: node
+                  properties: {id: {type: string}}
+                Wrapper:
+                  {{{(nested ? "$defs: {child: {$dynamicRef: '#node'}}" : "$dynamicRef: '#node'")}}}
+                  {{{(hasOrdinaryReference ? "$ref: '#/components/schemas/A'" : string.Empty)}}}
+                  required: [id]
+            """);
+        var configuration = new GenerationConfiguration
+        {
+            IncludeProperties = exclude ? [] : ["A#keep"],
+            ExcludeProperties = exclude ? ["A#id"] : [],
+        };
+        var schemas = document.Components!.Schemas!;
+        if (!nested)
+            Assert.Equal(hasOrdinaryReference, Assert.IsType<OpenApiSchemaReference>(schemas["Wrapper"]).Target is not null);
+        var filter = new OpenApiPropertyFilter(NullLogger.Instance);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var error = Assert.Throws<InvalidOperationException>(() => filter.Apply(document, configuration, cancellationToken));
+        Assert.Contains("dynamic reference '#node'", error.Message, StringComparison.Ordinal);
+        filter.Apply(document, new GenerationConfiguration(), cancellationToken);
+        Assert.Contains("id", schemas["A"].Properties!.Keys);
+    }
+
     [Theory]
     [InlineData("properties: {local: {type: string}}", "Derived#local", false)]
     [InlineData("allOf: [{properties: {local: {type: string}}}]", "Deri*#loc*", true)]

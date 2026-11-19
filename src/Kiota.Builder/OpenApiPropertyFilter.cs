@@ -166,19 +166,27 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 .Concat(schema.Discriminator?.Mapping?.Values ?? []))
                 VisitUsedSchema(child);
         }
+        VisitOperationSchemas(document, VisitUsedSchema);
+        foreach (var component in includes.Union(excludes).Select(static x => x.Component).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+            if (!usedComponents.Contains(component) && logger.IsEnabled(LogLevel.Information))
+                logger.LogInformation("Property selection targets component {Component} not referenced by the selected operations", component);
+    }
+
+    private static void VisitOperationSchemas(OpenApiDocument document, Action<IOpenApiSchema> visit)
+    {
         var visitedPaths = new HashSet<IOpenApiPathItem>(ReferenceEqualityComparer.Instance);
         void VisitContent(IDictionary<string, IOpenApiMediaType>? content)
         {
             foreach (var media in content?.Values ?? [])
                 if (media.Schema is { } schema)
-                    VisitUsedSchema(schema);
+                    visit(schema);
         }
         void VisitParameters(IEnumerable<IOpenApiParameter>? parameters)
         {
             foreach (var parameter in parameters ?? [])
             {
                 if (parameter.Schema is { } schema)
-                    VisitUsedSchema(schema);
+                    visit(schema);
                 VisitContent(parameter.Content);
             }
         }
@@ -196,7 +204,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                     foreach (var header in response.Headers?.Values ?? [])
                     {
                         if (header.Schema is { } schema)
-                            VisitUsedSchema(schema);
+                            visit(schema);
                         VisitContent(header.Content);
                     }
                 }
@@ -207,9 +215,6 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
         }
         foreach (var path in (document.Paths?.Values ?? Enumerable.Empty<IOpenApiPathItem>()).Concat(document.Webhooks?.Values ?? []))
             VisitPath(path);
-        foreach (var component in includes.Union(excludes).Select(static x => x.Component).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
-            if (!usedComponents.Contains(component) && logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Property selection targets component {Component} not referenced by the selected operations", component);
     }
 
     private static Dictionary<IOpenApiSchema, Dictionary<string, string>> GetProtectedDeclarations(
@@ -224,6 +229,9 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             budget.Step();
             if (!states.TryGetValue(schema, out var state))
             {
+                if (schema is OpenApiSchemaReference reference &&
+                    reference.Reference.DynamicRef is { Length: > 0 } dynamicRef)
+                    throw new InvalidOperationException($"Cannot trim model properties in a description containing dynamic reference '{dynamicRef}'. Omit the property selectors or use an explicit schema reference.");
                 state = new ProtectionState(schema);
                 states[schema] = state;
                 undiscovered.Enqueue(state);
@@ -231,6 +239,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
             return state;
         }
         new OpenApiWalker(new SchemaVisitor(schema => GetState(schema))).Walk(document);
+        VisitOperationSchemas(document, schema => GetState(schema));
         foreach (var schema in candidates.Keys)
             GetState(schema);
         while (undiscovered.TryDequeue(out var state))
@@ -462,6 +471,7 @@ internal sealed class OpenApiPropertyFilter(ILogger logger)
                 .Concat(new[] { discriminator?.PropertyName }.OfType<string>());
             var properties = GetDeclaredProperties(schema);
             NestedSchemas = (properties?.Values ?? [])
+                .Concat((reference is null ? schema.Definitions : reference.Definitions)?.Values ?? [])
                 .Concat(new[]
                 {
                     reference is null ? schema.Items : reference.Items,

@@ -39,6 +39,7 @@ Comma lists are expanded before persistence; `*` patterns are stored and evaluat
 - Exclusions remove individual properties. When both filters name an ordinary property, exclusion wins.
 - Required and discriminator properties are always retained, including constraints applied through composition or inheritance. Omitting one from an include filter produces an informational diagnostic; excluding one fails generation even when matched by `*`.
 - OpenAPI 3.1 `dependentRequired` fields are protected when their triggering property is retained in the same schema context, including transitive dependencies.
+- Property removals are not supported in descriptions containing OpenAPI 3.1 `$dynamicRef`. Kiota rejects them before modifying the description. Generation without property selectors is unchanged.
 - Requirements inside a `oneOf`/`anyOf` branch protect that branch and any shared ancestor declarations they reference, not same-named optional fields in sibling branches. Constraints shared by the union or `allOf` still apply to their referenced declarations.
 - Independent unions combined through `allOf` can protect one another's declarations when their branch choices can coexist, without mixing alternatives of the same shared union.
 - Protection is declaration-specific: omitting a name from an allowlist can retain its required inline declaration while trimming an optional same-named sibling declaration. Explicitly excluding that name fails if any targeted declaration is protected.
