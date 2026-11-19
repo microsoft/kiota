@@ -1,5 +1,4 @@
 ﻿using System.CommandLine;
-using Kiota.Builder.Extensions;
 
 namespace kiota.Extension;
 
@@ -7,7 +6,7 @@ internal static class PropertyFilterExtensions
 {
     internal static List<string> ExpandPropertyGroup(string group)
     {
-        group = group.TrimQuotes();
+        group = RemoveEnclosingQuotes(group);
         var separator = group.IndexOf('#', StringComparison.Ordinal);
         if (separator <= 0 || separator == group.Length - 1)
             throw new FormatException($"Invalid property selector '{group}'. Expected component#property1,property2.");
@@ -27,4 +26,12 @@ internal static class PropertyFilterExtensions
         (result.GetValue(option) ?? [])
             .SelectMany(ExpandPropertyGroup)
             .ToHashSet(StringComparer.Ordinal);
+
+    internal static HashSet<string> GetExcludedProperties(this ParseResult result, Option<List<string>> option) =>
+        (result.GetValue(option) ?? [])
+            .Select(RemoveEnclosingQuotes)
+            .ToHashSet(StringComparer.Ordinal);
+
+    private static string RemoveEnclosingQuotes(string selector) =>
+        selector.Length >= 2 && selector[0] == selector[^1] && selector[0] is '"' or '\'' ? selector[1..^1] : selector;
 }

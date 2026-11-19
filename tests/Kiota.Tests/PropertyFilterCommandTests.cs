@@ -85,6 +85,38 @@ public sealed class PropertyFilterCommandTests
     }
 
     [Theory]
+    [InlineData("generate")]
+    [InlineData("add")]
+    [InlineData("edit")]
+    public void PreservesLiteralTrailingQuotesInPropertySelectors(string commandName)
+    {
+        var command = GetCommand(commandName);
+        var arguments = RequiredArguments(commandName);
+        arguments.AddRange([
+            "--include-property", "User#status,status'",
+            "--include-property", "'User#status\"'",
+            "--exclude-property", "User#name'",
+            "--exclude-property", "User#name\"",
+            "--exclude-property", "\"User#name'\"",
+        ]);
+        var result = command.Parse([.. arguments]);
+        Assert.Empty(result.Errors);
+        var includeOption = Assert.IsType<Option<List<string>>>(command.Options.Single(static x => x.Name == "--include-property"));
+        var excludeOption = Assert.IsType<Option<List<string>>>(command.Options.Single(static x => x.Name == "--exclude-property"));
+        var expectedIncludes = new[] { "User#status", "User#status'", "User#status\"" };
+        var expectedExcludes = new[] { "User#name'", "User#name\"" };
+        Assert.True(result.GetIncludedProperties(includeOption).SetEquals(expectedIncludes));
+        Assert.True(result.GetExcludedProperties(excludeOption).SetEquals(expectedExcludes));
+        if (command.Action is EditHandler edit)
+        {
+            var configuration = new GenerationConfiguration();
+            edit.ApplyPropertyFilters(configuration, result);
+            Assert.True(configuration.IncludeProperties.SetEquals(expectedIncludes));
+            Assert.True(configuration.ExcludeProperties.SetEquals(expectedExcludes));
+        }
+    }
+
+    [Theory]
     [InlineData("User")]
     [InlineData("#name,mail")]
     [InlineData("User#")]

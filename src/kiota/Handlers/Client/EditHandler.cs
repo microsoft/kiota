@@ -250,8 +250,8 @@ internal class EditHandler : BaseKiotaCommandHandler
         }
         if (parseResult.GetValue(IncludePropertiesOption) is { Count: > 0 })
             configuration.IncludeProperties = parseResult.GetIncludedProperties(IncludePropertiesOption);
-        if (parseResult.GetValue(ExcludePropertiesOption) is { Count: > 0 } excludeProperties)
-            configuration.ExcludeProperties = excludeProperties.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.Ordinal);
+        if (parseResult.GetValue(ExcludePropertiesOption) is { Count: > 0 })
+            configuration.ExcludeProperties = parseResult.GetExcludedProperties(ExcludePropertiesOption);
     }
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, GenerationLanguage? language, bool? backingStore,

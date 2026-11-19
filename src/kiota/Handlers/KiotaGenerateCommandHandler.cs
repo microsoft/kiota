@@ -107,7 +107,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         List<string>? includePatterns0 = parseResult.GetValue(IncludePatternsOption);
         List<string>? excludePatterns0 = parseResult.GetValue(ExcludePatternsOption);
         var includeProperties = parseResult.GetIncludedProperties(IncludePropertiesOption);
-        List<string>? excludeProperties = parseResult.GetValue(ExcludePropertiesOption);
+        var excludeProperties = parseResult.GetExcludedProperties(ExcludePropertiesOption);
         List<string>? disabledValidationRules0 = parseResult.GetValue(DisabledValidationRulesOption);
         bool cleanOutput = parseResult.GetValue(CleanOutputOption);
         List<string>? structuredMimeTypes0 = parseResult.GetValue(StructuredMimeTypesOption);
@@ -153,7 +153,7 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         if (excludePatterns.Count != 0)
             Configuration.Generation.ExcludePatterns = excludePatterns.Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         Configuration.Generation.IncludeProperties = includeProperties;
-        Configuration.Generation.ExcludeProperties = excludeProperties.OrEmpty().Select(static x => x.TrimQuotes()).ToHashSet(StringComparer.Ordinal);
+        Configuration.Generation.ExcludeProperties = excludeProperties;
         if (disabledValidationRules.Count != 0)
             Configuration.Generation.DisabledValidationRules = disabledValidationRules
                                                                     .Select(static x => x.TrimQuotes())
