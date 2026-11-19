@@ -74,6 +74,28 @@ internal static class TokenCacheSecurity
             ValidateUnix(GetUnixStatus(path), false, true);
     }
 
+    internal static FileStream CreateFile(string path)
+    {
+        const FileOptions options = FileOptions.Asynchronous | FileOptions.WriteThrough;
+        if (OperatingSystem.IsWindows())
+        {
+            var security = new FileSecurity();
+            // Elevated Windows processes can otherwise create administrator-owned files.
+            security.SetOwner(CurrentUser);
+            security.SetAccessRuleProtection(true, false);
+            security.AddAccessRule(new FileSystemAccessRule(CurrentUser, FileSystemRights.FullControl, AccessControlType.Allow));
+            return new FileInfo(path).Create(System.IO.FileMode.CreateNew, FileSystemRights.Write, FileShare.None, 4096, options, security);
+        }
+        return new FileStream(path, new FileStreamOptions
+        {
+            Mode = System.IO.FileMode.CreateNew,
+            Access = FileAccess.Write,
+            Share = FileShare.None,
+            Options = options,
+            UnixCreateMode = FileMode,
+        });
+    }
+
     [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The returned FileStream owns the native SafeFileHandle; failure paths dispose it.")]
     internal static FileStream OpenRead(string path)
     {

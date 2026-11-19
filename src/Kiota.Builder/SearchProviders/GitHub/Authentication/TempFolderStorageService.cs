@@ -119,16 +119,7 @@ public class TempFolderTokenStorageService : ITokenStorageService
         var created = false;
         try
         {
-            var options = new FileStreamOptions
-            {
-                Mode = FileMode.CreateNew,
-                Access = FileAccess.Write,
-                Share = FileShare.None,
-                Options = FileOptions.Asynchronous | FileOptions.WriteThrough,
-            };
-            if (!OperatingSystem.IsWindows())
-                options.UnixCreateMode = TokenCacheSecurity.FileMode;
-            var stream = new FileStream(temporaryPath, options);
+            var stream = TokenCacheSecurity.CreateFile(temporaryPath);
             created = true;
             await using (stream.ConfigureAwait(false))
             {

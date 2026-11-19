@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - C#: generated `if` statements now include a space after the keyword and wrap single-statement bodies in braces.
+- Fixed credential-cache file creation in elevated Windows processes, including Azure DevOps release agents, by explicitly assigning the current user as owner with private permissions.
 
 ## [1.39.0] - 2026-11-17
 
