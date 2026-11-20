@@ -50,6 +50,35 @@ dotnet test ./tests/Kiota.Tests/
 dotnet test ./tests/Kiota.Builder.Tests
 ```
 
+### CI checks for non-behavioral changes
+
+The .NET, integration, idempotency, surface-area, and VS Code test workflows
+share a conservative changed-path check for pull requests and merge queues.
+The boundary is whether changes could affect software behavior or test execution,
+not whether they change package contents. Known documentation-only changes bypass
+builds and tests while the existing required checks report success. This includes
+`docs/`, Markdown under `specs/`, root README and contributor documents, `LICENSE`,
+READMEs directly under `abstractions/`, `authentication/`, `http/`, `serialization/`,
+and `it/`, and Markdown directly under the two VS Code package directories.
+Packaged READMEs do not trigger behavioral tests solely because they are packaged.
+Root `.vscode/`, GitHub issue templates, and Copilot instructions, agents, and
+skills also qualify.
+
+Markdown is not ignored globally: files in source/resource, test-fixture, and
+generation-input locations still run tests. All other paths, including source,
+tests, build configuration, workflows, and unknown paths, run the tests.
+Mixed documentation and potentially behavioral changes also run the tests.
+
+PR checks compare the target SHA with the tested merge SHA; merge queues compare
+the group's base and head SHAs. Renames inspect both paths. Manual and main-branch
+push runs always run the full workflows. If the comparison is unavailable, tests
+run normally; a failed detector or failed/cancelled prerequisite cannot pass a
+required gate.
+
+The allowlist and regression tests live in `scripts/test-impact.cjs` and
+`scripts/test-impact.test.cjs`. Run them with
+`node --test scripts/test-impact.test.cjs` when changing the detection logic.
+
 ## Try out the generator
 
 You can try out the generator including your local changes by running:

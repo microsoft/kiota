@@ -69,16 +69,31 @@ public partial class KiotaBuilder
         {
             MaxDegreeOfParallelism = config.MaxDegreeOfParallelism,
         };
-        var workingDirectory = Directory.GetCurrentDirectory();
-        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workingDirectory);
+        workspaceDirectory = Directory.GetCurrentDirectory();
+        workspaceManagementService = new WorkspaceManagementService(logger, client, useKiotaConfig, workspaceDirectory);
         this.useKiotaConfig = useKiotaConfig;
         openApiDocumentDownloadService = new OpenApiDocumentDownloadService(client, logger);
         settingsFileManagementService = settingsManagementService ?? new SettingsFileManagementService();
     }
     private readonly OpenApiDocumentDownloadService openApiDocumentDownloadService;
     private readonly bool useKiotaConfig;
+    private readonly string workspaceDirectory;
+    /// <summary>
+    /// Validates that the output path is a subdirectory of the workspace directory.
+    /// </summary>
+    /// <param name="outputPath">The output path, absolute or relative to the current directory.</param>
+    /// <param name="workspaceDirectory">The workspace directory.</param>
+    /// <exception cref="InvalidOperationException">The output path is not a subdirectory of the workspace.</exception>
+    public static void ValidateWorkspaceOutputPath(string outputPath, string workspaceDirectory)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(outputPath);
+        ArgumentException.ThrowIfNullOrEmpty(workspaceDirectory);
+        BaseApiConsumerConfiguration.ValidateAbsoluteOutputPath(Path.GetFullPath(outputPath), workspaceDirectory);
+    }
     private async Task CleanOutputDirectoryAsync(CancellationToken cancellationToken)
     {
+        if (useKiotaConfig && !config.NoWorkspace)
+            ValidateWorkspaceOutputPath(config.OutputPath, workspaceDirectory);
         if (config.CleanOutput && Directory.Exists(config.OutputPath))
         {
             LogCleaningOutputDirectory(config.OutputPath);

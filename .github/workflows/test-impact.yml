@@ -1,0 +1,26 @@
+name: Detect test impact
+
+on:
+  workflow_call:
+    outputs:
+      run-tests:
+        description: Whether the changed paths could affect software behavior or test execution.
+        value: ${{ jobs.changes.outputs.run-tests }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run-tests: ${{ steps.impact.outputs.run-tests }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Test impact detection
+        run: node --test scripts/test-impact.test.cjs
+      - name: Detect potentially behavioral changes
+        id: impact
+        run: node scripts/test-impact.cjs
