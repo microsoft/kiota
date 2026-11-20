@@ -16,7 +16,7 @@ Generate the code:
 ./it/generate-code.ps1 -descriptionUrl ${FILE/URL} -language ${LANG}
 ```
 
-Instead of publishing, you could also build the project and use the "-Dev" switch that executes Kiota from "src\kiota\bin\Debug\net8.0":
+Instead of publishing, you could also build the project and use the "-Dev" switch that executes Kiota from "src\kiota\bin\Debug\net10.0":
 
 ```bash
 ./it/generate-code.ps1 -descriptionUrl ${FILE/URL} -language ${LANG} -Dev

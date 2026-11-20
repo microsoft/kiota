@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Target .NET 10 and .NET 11, dropping .NET 8 and .NET 9 support. Building requires the .NET 11 SDK.
+
 ## [1.39.0] - 2026-11-17
 
 ### Added

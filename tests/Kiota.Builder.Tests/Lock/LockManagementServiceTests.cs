@@ -6,8 +6,18 @@ using Xunit;
 
 namespace Kiota.Builder.Tests.Lock;
 
-public class LockManagementServiceTests
+public sealed class LockManagementServiceTests : IDisposable
 {
+    private readonly string _testDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+    public LockManagementServiceTests()
+    {
+        Directory.CreateDirectory(_testDirectory);
+    }
+    public void Dispose()
+    {
+        if (Directory.Exists(_testDirectory))
+            Directory.Delete(_testDirectory, true);
+    }
     [Fact]
     public async Task DefensiveProgrammingAsync()
     {
@@ -22,7 +32,7 @@ public class LockManagementServiceTests
     public async Task IdentityAsync()
     {
         var lockManagementService = new LockManagementService();
-        var descriptionPath = Path.Combine(Path.GetTempPath(), "description.yml");
+        var descriptionPath = Path.Join(_testDirectory, "description.yml");
         var lockFile = new KiotaLock
         {
             ClientClassName = "foo",
@@ -30,7 +40,7 @@ public class LockManagementServiceTests
             DescriptionLocation = descriptionPath,
             AllowedExternalOrigins = ["https://contoso.com/*"],
         };
-        var path = Path.GetTempPath();
+        var path = _testDirectory;
         await lockManagementService.WriteLockFileAsync(path, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         lockFile.DescriptionLocation = Path.GetFullPath(descriptionPath); // expected since we write the relative path but read to the full path
         var result = await lockManagementService.GetLockFromDirectoryAsync(path, cancellationToken: TestContext.Current.CancellationToken);
@@ -39,16 +49,16 @@ public class LockManagementServiceTests
     [Fact]
     public async Task UsesRelativePathsAsync()
     {
-        var tmpPath = Path.Combine(Path.GetTempPath(), "tests", "kiota");
+        var tmpPath = _testDirectory;
         var lockManagementService = new LockManagementService();
-        var descriptionPath = Path.Combine(tmpPath, "information", "description.yml");
+        var descriptionPath = Path.Join(tmpPath, "information", "description.yml");
         var descriptionDirectory = Path.GetDirectoryName(descriptionPath);
         Directory.CreateDirectory(descriptionDirectory);
         var lockFile = new KiotaLock
         {
             DescriptionLocation = descriptionPath,
         };
-        var outputDirectory = Path.Combine(tmpPath, "output");
+        var outputDirectory = Path.Join(tmpPath, "output");
         Directory.CreateDirectory(outputDirectory);
         await lockManagementService.WriteLockFileAsync(outputDirectory, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("../information/description.yml", lockFile.DescriptionLocation, StringComparer.OrdinalIgnoreCase);
@@ -57,14 +67,14 @@ public class LockManagementServiceTests
     public async Task DeletesALockAsync()
     {
         var lockManagementService = new LockManagementService();
-        var descriptionPath = Path.Combine(Path.GetTempPath(), "description.yml");
+        var descriptionPath = Path.Join(_testDirectory, "description.yml");
         var lockFile = new KiotaLock
         {
             ClientClassName = "foo",
             ClientNamespaceName = "bar",
             DescriptionLocation = descriptionPath,
         };
-        var path = Path.GetTempPath();
+        var path = _testDirectory;
         await lockManagementService.WriteLockFileAsync(path, lockFile, cancellationToken: TestContext.Current.CancellationToken);
         lockManagementService.DeleteLockFile(path);
         Assert.Null(await lockManagementService.GetLockFromDirectoryAsync(path, cancellationToken: TestContext.Current.CancellationToken));
