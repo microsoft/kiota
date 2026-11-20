@@ -208,4 +208,24 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("MinusOne = -1,", result);
         Assert.Contains("Zero = 0,", result);
     }
+
+    [Theory]
+    [InlineData("10; delete_database();")]
+    [InlineData("10\" or 1=1")]
+    [InlineData("system('calc')")]
+    [InlineData("abc")]
+    public void ThrowsOnHostileNumericValue(string hostileValue)
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Hostile", SerializationName = hostileValue });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(currentEnum));
+    }
+
+    [Fact]
+    public void ThrowsOnFractionalEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneFive", SerializationName = "1.5" });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(currentEnum));
+    }
 }

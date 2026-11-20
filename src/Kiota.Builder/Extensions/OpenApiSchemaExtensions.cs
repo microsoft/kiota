@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kiota.Builder.OpenApiExtensions;
 using Microsoft.OpenApi;
 
@@ -308,6 +309,19 @@ public static class OpenApiSchemaExtensions
                                     x.GetValue<string>() is string value &&
                                     !string.IsNullOrEmpty(value)) ||
                                    x.GetValueKind() is JsonValueKind.Number);
+    }
+    public static bool IsNumericEnum(this IOpenApiSchema? schema)
+    {
+        if (schema is null || schema.Enum is null || schema.Enum.Count == 0) return false;
+        var jsonValues = schema.Enum.OfType<JsonValue>().ToArray();
+        if (jsonValues.Length == 0 || jsonValues.Length != schema.Enum.Count) return false;
+
+        return jsonValues.All(static x =>
+            x.GetValueKind() is JsonValueKind.Number ||
+            (x.GetValueKind() is JsonValueKind.String &&
+             x.TryGetValue<string>(out var s) &&
+             !string.IsNullOrEmpty(s) &&
+             decimal.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _)));
     }
     public static bool IsComposedEnum(this IOpenApiSchema? schema)
     {

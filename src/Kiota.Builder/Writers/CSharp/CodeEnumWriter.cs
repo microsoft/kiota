@@ -19,6 +19,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         if (!codeElement.Options.Any())
             return;
 
+        if (codeElement.IsFractional)
+            throw new InvalidOperationException($"Floating-point enums are not supported in C# ('{codeElement.Name}').");
         var codeNamespace = codeElement.Parent as CodeNamespace;
         if (codeNamespace != null)
         {
@@ -64,7 +66,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
             if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
             if (codeElement.IsNumeric)
             {
-                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()} = {option.SerializationName},");
+                if (!TryValidateNumericLiteral(codeElement, option.SerializationName, out var validatedValue))
+                    throw new InvalidOperationException($"Invalid integer enum value '{option.SerializationName}' for option '{option.Name}' in enum '{codeElement.Name}'.");
+                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()} = {validatedValue},");
             }
             else
             {
@@ -78,4 +82,23 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
     }
     private static readonly Func<int, string> GetEnumFlag = static idx =>
         (idx == 0 ? 1 : Math.Pow(2, idx)).ToString(CultureInfo.InvariantCulture);
+    private static bool TryValidateNumericLiteral(CodeEnum codeElement, string rawValue, out string validatedValue)
+    {
+        if (string.Equals(codeElement.Format, "uint64", StringComparison.OrdinalIgnoreCase))
+        {
+            if (ulong.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ulongVal))
+            {
+                validatedValue = ulongVal.ToString(CultureInfo.InvariantCulture);
+                return true;
+            }
+        }
+        else if (long.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longVal))
+        {
+            validatedValue = longVal.ToString(CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        validatedValue = string.Empty;
+        return false;
+    }
 }

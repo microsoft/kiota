@@ -2811,4 +2811,62 @@ public sealed class CodeMethodWriterTests : IDisposable
         Assert.DoesNotContain('\u2028', result);
         Assert.DoesNotContain('\u2029', result);
     }
+
+    [Fact]
+    public void WritesConstructorWithNumericalEnumDefaultResolvedByWireValue()
+    {
+        setup();
+        var modelsNamespace = root.AddNamespace("models");
+        method.Kind = CodeMethodKind.Constructor;
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
+        {
+            Name = "TaskStatus",
+            IsNumeric = true,
+        }).First();
+        codeEnum.AddOption(
+            new CodeEnumOption { Name = "Active", SerializationName = "10" },
+            new CodeEnumOption { Name = "Inactive", SerializationName = "20" },
+            new CodeEnumOption { Name = "MinusOne", SerializationName = "-1" },
+            new CodeEnumOption { Name = "Zero", SerializationName = "0" }
+        );
+
+        parentClass.AddProperty(
+            new CodeProperty
+            {
+                Name = "status",
+                DefaultValue = "10",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            },
+            new CodeProperty
+            {
+                Name = "inactiveStatus",
+                DefaultValue = "20",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            },
+            new CodeProperty
+            {
+                Name = "negativeStatus",
+                DefaultValue = "-1",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            },
+            new CodeProperty
+            {
+                Name = "zeroStatus",
+                DefaultValue = "0",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            }
+        );
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("Status = global::models.TaskStatus.Active;", result);
+        Assert.DoesNotContain("OneZero", result);
+        Assert.Contains("InactiveStatus = global::models.TaskStatus.Inactive;", result);
+        Assert.Contains("NegativeStatus = global::models.TaskStatus.MinusOne;", result);
+        Assert.Contains("ZeroStatus = global::models.TaskStatus.Zero;", result);
+    }
 }

@@ -2387,8 +2387,7 @@ public partial class KiotaBuilder
             {
                 enumFlagsExtension = flagsExtension;
             }
-            var isNumeric = schema.Type is JsonSchemaType.Integer or JsonSchemaType.Number
-                || (schema.Enum is { Count: > 0 } && schema.Enum.OfType<JsonValue>().All(static x => x.GetValueKind() is JsonValueKind.Number));
+            var isNumeric = schema.IsNumericEnum();
             var newEnum = new CodeEnum
             {
                 Name = declarationName,
@@ -2413,7 +2412,7 @@ public partial class KiotaBuilder
         OpenApiEnumValuesDescriptionExtension? extensionInformation = null;
         if (schema.Extensions is not null && schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
-        if (!target.IsNumeric && schema.Enum is { Count: > 0 } && schema.Enum.OfType<JsonValue>().All(static x => x.GetValueKind() is JsonValueKind.Number))
+        if (!target.IsNumeric && schema.IsNumericEnum())
         {
             target.IsNumeric = true;
             target.Format ??= schema.Format;

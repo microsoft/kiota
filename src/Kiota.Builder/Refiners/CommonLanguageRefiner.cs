@@ -1720,4 +1720,44 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             }
         }
     }
+    protected static void RevertFractionalEnumsToPrimitives(CodeElement currentElement, string floatTypeName, string doubleTypeName)
+    {
+        if (currentElement is CodeNamespace ns)
+        {
+            var fractionalEnums = ns.GetChildElements(true).OfType<CodeEnum>().Where(static x => x.IsFractional).ToArray();
+            if (fractionalEnums.Length != 0)
+            {
+                var fractionalEnumSet = fractionalEnums.ToHashSet();
+                ReplaceFractionalEnumReferences(currentElement, fractionalEnumSet, floatTypeName, doubleTypeName);
+                foreach (var fractionalEnum in fractionalEnums)
+                {
+                    var parent = fractionalEnum.GetImmediateParentOfType<CodeNamespace>();
+                    parent?.RemoveChildElement(fractionalEnum);
+                }
+            }
+        }
+    }
+    private static void ReplaceFractionalEnumReferences(CodeElement current, HashSet<CodeEnum> fractionalEnums, string floatTypeName, string doubleTypeName)
+    {
+        if (current is CodeProperty prop && prop.Type is CodeType propType && propType.TypeDefinition is CodeEnum propEnum && fractionalEnums.Contains(propEnum))
+        {
+            propType.TypeDefinition = null;
+            propType.Name = string.Equals(propEnum.Format, "float", StringComparison.OrdinalIgnoreCase) ? floatTypeName : doubleTypeName;
+            propType.IsExternal = true;
+            prop.DefaultValue = string.Empty;
+        }
+        else if (current is CodeParameter param && param.Type is CodeType paramType && paramType.TypeDefinition is CodeEnum paramEnum && fractionalEnums.Contains(paramEnum))
+        {
+            paramType.TypeDefinition = null;
+            paramType.Name = string.Equals(paramEnum.Format, "float", StringComparison.OrdinalIgnoreCase) ? floatTypeName : doubleTypeName;
+            paramType.IsExternal = true;
+        }
+        else if (current is CodeMethod method && method.ReturnType is CodeType returnType && returnType.TypeDefinition is CodeEnum returnEnum && fractionalEnums.Contains(returnEnum))
+        {
+            returnType.TypeDefinition = null;
+            returnType.Name = string.Equals(returnEnum.Format, "float", StringComparison.OrdinalIgnoreCase) ? floatTypeName : doubleTypeName;
+            returnType.IsExternal = true;
+        }
+        CrawlTree(current, x => ReplaceFractionalEnumReferences(x, fractionalEnums, floatTypeName, doubleTypeName));
+    }
 }

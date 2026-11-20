@@ -295,9 +295,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
                                         .ThenBy(static x => x.Name))
         {
             var defaultValue = propWithDefault.DefaultValue;
-            if (propWithDefault.Type is CodeType { TypeDefinition: CodeEnum })
+            if (propWithDefault.Type is CodeType { TypeDefinition: CodeEnum enumDefinition })
             {
-                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{defaultValue.Trim('"').CleanupSymbolName().ToFirstCharacterUpperCase()}";
+                var rawDefault = defaultValue.Trim('"');
+                var matchingOption = enumDefinition.Options.FirstOrDefault(x =>
+                    x.SerializationName.Equals(rawDefault, StringComparison.OrdinalIgnoreCase) ||
+                    x.WireName.Equals(rawDefault, StringComparison.OrdinalIgnoreCase) ||
+                    x.Name.Equals(rawDefault, StringComparison.OrdinalIgnoreCase));
+
+                var memberName = matchingOption is not null
+                    ? matchingOption.Name.ToFirstCharacterUpperCase()
+                    : rawDefault.CleanupSymbolName().ToFirstCharacterUpperCase();
+
+                defaultValue = $"{conventions.GetTypeString(propWithDefault.Type, currentMethod).TrimEnd('?')}.{memberName}";
             }
             else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))

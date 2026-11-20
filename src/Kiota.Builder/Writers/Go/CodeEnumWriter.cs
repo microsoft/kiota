@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 
 using Kiota.Builder.CodeDOM;
@@ -30,6 +31,9 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
             writer.CloseBlock(")");
         }
 
+        if (codeElement.IsFractional)
+            throw new InvalidOperationException($"Floating-point enums are not supported in Go ('{codeElement.Name}').");
+
         var typeName = codeElement.Name.ToFirstCharacterUpperCase();
         writer.WriteLine(); // gofmt: exactly one blank line before each top-level declaration
         conventions.WriteShortDescription(codeElement, writer);
@@ -53,7 +57,11 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
                     conventions.WriteDescriptionItem(GoConventionService.RemoveInvalidDescriptionCharacters(item.Documentation.DescriptionTemplate), writer);
 
                 if (codeElement.IsNumeric)
-                    writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} {typeName} = {item.WireName}");
+                {
+                    if (!long.TryParse(item.WireName, NumberStyles.Integer, CultureInfo.InvariantCulture, out var goIntVal))
+                        throw new InvalidOperationException($"Invalid integer enum value '{item.WireName}' for option '{item.Name}' in enum '{codeElement.Name}'.");
+                    writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} {typeName} = {goIntVal.ToString(CultureInfo.InvariantCulture)}");
+                }
                 else if (isMultiValue)
                     writer.WriteLine($"{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()} = {(int)Math.Pow(2, power)}");
                 else
@@ -79,7 +87,29 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, GoConventionService>
         var enumOptions = codeElement.Options.ToList();
 
         writer.WriteLine(); // gofmt: exactly one blank line before each top-level declaration
-        if (codeElement.IsNumeric)
+        if (codeElement.IsNumeric && isMultiValue)
+        {
+            writer.StartBlock($"func (i {typeName}) String() string {{");
+            writer.WriteLine("var values []string");
+            writer.StartBlock("options := []struct {");
+            writer.WriteLine($"val {typeName}");
+            writer.WriteLine("name string");
+            writer.DecreaseIndent();
+            writer.StartBlock("}{");
+            foreach (var item in enumOptions)
+            {
+                writer.WriteLine($"{{{item.Name.ToUpperInvariant()}_{typeName.ToUpperInvariant()}, \"{item.WireName.SanitizeDoubleQuote()}\"}},");
+            }
+            writer.CloseBlock();
+            writer.StartBlock("for _, opt := range options {");
+            writer.StartBlock("if opt.val != 0 && i&opt.val == opt.val {");
+            writer.WriteLine("values = append(values, opt.name)");
+            writer.CloseBlock();
+            writer.CloseBlock();
+            writer.WriteLine("return strings.Join(values, \",\")");
+            writer.CloseBlock();
+        }
+        else if (codeElement.IsNumeric)
         {
             writer.StartBlock($"func (i {typeName}) String() string {{");
             writer.StartBlock("switch i {");

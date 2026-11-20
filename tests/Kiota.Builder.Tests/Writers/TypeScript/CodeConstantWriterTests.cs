@@ -728,4 +728,30 @@ public sealed class CodeConstantWriterTests : IDisposable
         Assert.Contains("Inactive: 20,", result);
         Assert.Contains("as const;", result);
     }
+
+    [Fact]
+    public void WritesFractionalNumericalEnum()
+    {
+        AddCodeEnum();
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneFive", SerializationName = "1.5" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneSevenFive", SerializationName = "1.75" });
+        codeConstantWriter.WriteCodeElement(currentEnum.CodeEnumObject, writer);
+        var result = tw.ToString();
+        Assert.Contains("OneFive: 1.5,", result);
+        Assert.Contains("OneSevenFive: 1.75,", result);
+    }
+
+    [Theory]
+    [InlineData("10; delete_database();")]
+    [InlineData("10\" or 1=1")]
+    [InlineData("system('calc')")]
+    [InlineData("abc")]
+    public void ThrowsOnHostileNumericValue(string hostileValue)
+    {
+        AddCodeEnum();
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Hostile", SerializationName = hostileValue });
+        Assert.Throws<InvalidOperationException>(() => codeConstantWriter.WriteCodeElement(currentEnum.CodeEnumObject, writer));
+    }
 }

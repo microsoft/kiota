@@ -62,7 +62,18 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
             }
             if (codeElement?.IsNumeric ?? false)
             {
-                writer.WriteLine($"public const {constantName} = {enumProperty.WireName};");
+                if (long.TryParse(enumProperty.WireName, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var phpIntVal))
+                {
+                    writer.WriteLine($"public const {constantName} = {phpIntVal.ToString(System.Globalization.CultureInfo.InvariantCulture)};");
+                }
+                else if (double.TryParse(enumProperty.WireName, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var phpDoubleVal))
+                {
+                    writer.WriteLine($"public const {constantName} = {phpDoubleVal.ToString(System.Globalization.CultureInfo.InvariantCulture)};");
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Invalid numeric enum value '{enumProperty.WireName}' for option '{enumProperty.Name}' in enum '{codeElement.Name}'.");
+                }
             }
             else
             {

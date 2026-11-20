@@ -231,7 +231,9 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
             conventions.WriteShortDescription(x, writer);
             if (codeEnum.IsNumeric)
             {
-                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: {x.WireName},");
+                if (!double.TryParse(x.WireName, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var numVal))
+                    throw new InvalidOperationException($"Invalid numeric enum value '{x.WireName}' for option '{x.Name}' in enum '{codeEnum.Name}'.");
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: {numVal.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
             }
             else
             {
