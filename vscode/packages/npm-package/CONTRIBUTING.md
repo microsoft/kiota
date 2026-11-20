@@ -1,6 +1,6 @@
 # Contributing to kiota npm package
 
-Thanks for your interest in contributing to Kiota npm package! We welcome contributions from everyone, regardless of skill level or experience. See [general contribution guidelines](../../CONTRIBUTING.md) for general contribution guidelines.
+Thanks for your interest in contributing to Kiota npm package! We welcome contributions from everyone, regardless of skill level or experience. See [general contribution guidelines](../../../CONTRIBUTING.md) for general contribution guidelines.
 
 ## Getting Started
 
