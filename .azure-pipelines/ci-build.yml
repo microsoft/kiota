@@ -229,6 +229,9 @@ extends:
                   artifactName: csproj
                   targetPath: "$(Build.ArtifactStagingDirectory)/csproj"
 
+              - pwsh: $(Build.SourcesDirectory)/scripts/merge-changelog-entries.ps1
+                displayName: "Add pending changelog entries to the Unreleased section"
+
               # upload the changelog file as changelog artifact
 
               - task: CopyFiles@2
@@ -307,6 +310,9 @@ extends:
               - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version $(artifactVersion)
                 condition: eq(variables['isPrerelease'], 'false')
                 displayName: "Get release notes from CHANGELOG.md"
+
+              - pwsh: $(Build.SourcesDirectory)/scripts/merge-changelog-entries.ps1
+                displayName: "Add pending changelog entries to the Unreleased section"
 
               - pwsh: $(Build.SourcesDirectory)/scripts/get-release-notes.ps1 -version Unreleased
                 condition: eq(variables['isPrerelease'], 'true')
