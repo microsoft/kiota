@@ -304,17 +304,23 @@ public class CodeFunctionWriter(TypeScriptConventionService conventionService) :
         writer.WriteLine($"const backingStoreFactory = {requestAdapterArgumentName}.getBackingStoreFactory();");
         writer.WriteLine(string.Empty);
 
-        writer.StartBlock("if (parseNodeFactoryRegistry.registerDefaultDeserializer) {");
-        WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
-            "registerDefaultDeserializer", "backingStoreFactory");
-        writer.CloseBlock();
-        writer.WriteLine(string.Empty);
+        if (method.DeserializerModules is { Count: > 0 })
+        {
+            writer.StartBlock("if (parseNodeFactoryRegistry.registerDefaultDeserializer) {");
+            WriteSerializationRegistration(method.DeserializerModules, writer, "parseNodeFactoryRegistry",
+                "registerDefaultDeserializer", "backingStoreFactory");
+            writer.CloseBlock();
+            writer.WriteLine(string.Empty);
+        }
 
-        writer.StartBlock("if (serializationWriterFactory.registerDefaultSerializer) {");
-        WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
-            "registerDefaultSerializer");
-        writer.CloseBlock();
-        writer.WriteLine(string.Empty);
+        if (method.SerializerModules is { Count: > 0 })
+        {
+            writer.StartBlock("if (serializationWriterFactory.registerDefaultSerializer) {");
+            WriteSerializationRegistration(method.SerializerModules, writer, "serializationWriterFactory",
+                "registerDefaultSerializer");
+            writer.CloseBlock();
+            writer.WriteLine(string.Empty);
+        }
 
         if (!string.IsNullOrEmpty(method.BaseUrl))
         {

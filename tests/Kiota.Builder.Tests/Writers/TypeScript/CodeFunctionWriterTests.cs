@@ -1011,8 +1011,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
         // Then
         Assert.Contains("oDataError.message = oDataError.prop1 ?? \"\"", result);
     }
-    [Fact]
-    public void WritesApiConstructor()
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    public void WritesApiConstructor(bool hasSerializers, bool hasDeserializers)
     {
         var parentClass = root.AddClass(new CodeClass
         {
@@ -1049,8 +1053,8 @@ public sealed class CodeFunctionWriterTests : IDisposable
             Kind = CodeParameterKind.RequestAdapter,
             Type = requestAdapterProp.Type,
         });
-        method.DeserializerModules = ["com.microsoft.kiota.serialization.Deserializer"];
-        method.SerializerModules = ["com.microsoft.kiota.serialization.Serializer"];
+        method.DeserializerModules = hasDeserializers ? ["com.microsoft.kiota.serialization.Deserializer"] : [];
+        method.SerializerModules = hasSerializers ? ["com.microsoft.kiota.serialization.Serializer"] : [];
         method.IsStatic = true;
         root.RemoveChildElement(parentClass);
         var function = new CodeFunction(method);
@@ -1063,8 +1067,20 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("parseNodeFactoryRegistry = requestAdapter.getParseNodeFactory() as ParseNodeFactoryRegistry",
             result);
         Assert.Contains("const backingStoreFactory = requestAdapter.getBackingStoreFactory();", result);
-        Assert.Contains("serializationWriterFactory.registerDefaultSerializer", result);
-        Assert.Contains("parseNodeFactoryRegistry.registerDefaultDeserializer", result);
+        if (hasSerializers)
+        {
+            Assert.Contains("if (serializationWriterFactory.registerDefaultSerializer)", result);
+            Assert.Contains("serializationWriterFactory.registerDefaultSerializer(com.microsoft.kiota.serialization.Serializer);", result);
+        }
+        else
+            Assert.DoesNotContain("serializationWriterFactory.registerDefaultSerializer", result);
+        if (hasDeserializers)
+        {
+            Assert.Contains("if (parseNodeFactoryRegistry.registerDefaultDeserializer)", result);
+            Assert.Contains("parseNodeFactoryRegistry.registerDefaultDeserializer(com.microsoft.kiota.serialization.Deserializer, backingStoreFactory);", result);
+        }
+        else
+            Assert.DoesNotContain("parseNodeFactoryRegistry.registerDefaultDeserializer", result);
         Assert.Contains($"baseUrl = \"{method.BaseUrl}\"", result);
         Assert.Contains($"\"baseurl\": requestAdapter.baseUrl", result);
         Assert.Contains($"apiClientProxifier<", result);
