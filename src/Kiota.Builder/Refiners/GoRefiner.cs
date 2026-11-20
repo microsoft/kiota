@@ -288,6 +288,16 @@ public class GoRefiner : CommonLanguageRefiner
         return string.Join(string.Empty, classNameList.Count > 1 ? classNameList.Skip(1) : classNameList);
     }
 
+    private string GetUniqueComposedName(CodeElement element, CodeNamespace targetNamespace)
+    {
+        var composedName = GetComposedName(element);
+        var candidateName = composedName;
+        var suffix = 1;
+        while (targetNamespace.FindChildByName<CodeElement>(candidateName, false) is not null)
+            candidateName = $"{composedName}{suffix++}";
+        return candidateName;
+    }
+
     private static void GetUsingsInModelsNameSpace(CodeNamespace modelsNameSpace, CodeNamespace currentNameSpace, Dictionary<string, HashSet<string>> dependencies)
     {
         if (!modelsNameSpace.Name.Equals(currentNameSpace.Name, StringComparison.OrdinalIgnoreCase) && !currentNameSpace.IsChildOf(modelsNameSpace))
@@ -320,7 +330,7 @@ public class GoRefiner : CommonLanguageRefiner
         var visited = new HashSet<string>();
         var stack = new Stack<string>();
 
-        foreach (var node in dependencies.Keys)
+        foreach (var node in dependencies.Keys.Order(StringComparer.Ordinal))
         {
             if (!visited.Contains(node))
             {
@@ -343,7 +353,7 @@ public class GoRefiner : CommonLanguageRefiner
         if (dependencies.TryGetValue(node, out var value))
         {
             var stackSet = new HashSet<string>(stack);
-            foreach (var neighbor in value)
+            foreach (var neighbor in value.Order(StringComparer.Ordinal))
             {
                 if (stackSet.Contains(neighbor))
                 {
@@ -365,47 +375,52 @@ public class GoRefiner : CommonLanguageRefiner
 
     private void MigrateNameSpace(CodeNamespace currentNameSpace, CodeNamespace targetNameSpace)
     {
-        foreach (var codeClass in currentNameSpace.Classes)
+        foreach (var codeClass in currentNameSpace.Classes.OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
         {
+            var name = GetUniqueComposedName(codeClass, targetNameSpace);
             currentNameSpace.RemoveChildElement(codeClass);
-            codeClass.Name = GetComposedName(codeClass);
+            codeClass.Name = name;
             codeClass.Parent = targetNameSpace;
             targetNameSpace.AddClass(codeClass);
         }
 
-        foreach (var x in currentNameSpace.Enums)
+        foreach (var x in currentNameSpace.Enums.OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
         {
+            var name = GetUniqueComposedName(x, targetNameSpace);
             currentNameSpace.RemoveChildElement(x);
-            x.Name = GetComposedName(x);
+            x.Name = name;
             x.Parent = targetNameSpace;
             targetNameSpace.AddEnum(x);
         }
 
-        foreach (var x in currentNameSpace.Interfaces)
+        foreach (var x in currentNameSpace.Interfaces.OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
         {
+            var name = GetUniqueComposedName(x, targetNameSpace);
             currentNameSpace.RemoveChildElement(x);
-            x.Name = GetComposedName(x);
+            x.Name = name;
             x.Parent = targetNameSpace;
             targetNameSpace.AddInterface(x);
         }
 
-        foreach (var x in currentNameSpace.Functions)
+        foreach (var x in currentNameSpace.Functions.OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
         {
+            var name = GetUniqueComposedName(x, targetNameSpace);
             currentNameSpace.RemoveChildElement(x);
-            x.Name = GetComposedName(x);
+            x.Name = name;
             x.Parent = targetNameSpace;
             targetNameSpace.AddFunction(x);
         }
 
-        foreach (var x in currentNameSpace.Constants)
+        foreach (var x in currentNameSpace.Constants.OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
         {
+            var name = GetUniqueComposedName(x, targetNameSpace);
             currentNameSpace.RemoveChildElement(x);
-            x.Name = GetComposedName(x);
+            x.Name = name;
             x.Parent = targetNameSpace;
             targetNameSpace.AddConstant(x);
         }
 
-        foreach (var ns in currentNameSpace.Namespaces)
+        foreach (var ns in currentNameSpace.Namespaces.OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
         {
             MigrateNameSpace(ns, targetNameSpace);
         }
@@ -567,14 +582,16 @@ public class GoRefiner : CommonLanguageRefiner
             if (!packageRootNameSpace.Name.Equals(currentNamespace.Name, StringComparison.Ordinal) && modelNameSpace != null && !currentNamespace.IsChildOf(modelNameSpace))
             {
 
+                var candidateName = GetUniqueComposedName(codeClass, packageRootNameSpace);
                 currentNamespace.RemoveChildElement(codeClass);
-                codeClass.Name = GetComposedName(codeClass);
+                codeClass.Name = candidateName;
                 codeClass.Parent = packageRootNameSpace;
                 packageRootNameSpace.AddClass(codeClass);
             }
         }
 
-        CrawlTree(currentElement, FlattenNestedHierarchy);
+        foreach (var child in currentElement.GetChildElements(true).OrderBy(static x => x.Name, StringComparer.Ordinal).ToArray())
+            FlattenNestedHierarchy(child);
     }
 
     private void FlattenParamsFileNames(CodeElement currentElement)

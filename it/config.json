@@ -68,11 +68,6 @@
         "Language": "typescript",
         "Pattern": "/oauth/token/",
         "Rationale": "Fails for typescript with api dated 2026-06-25 - https://github.com/microsoft/kiota/issues/7861"
-      },
-      {
-        "Language": "go",
-        "Pattern": "/oauth/token/",
-        "Rationale": "Compilation fails with api from 2026-06-22 - https://github.com/microsoft/kiota/issues/7823"
       }
     ]
   },
