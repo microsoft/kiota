@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruby is now a preview language.
 - Improved validation of workspace output paths.
 - External references, and redirects returned while loading them, are now checked against `--allowed-external-origins` using their resolved address.
+- Fixed the default Ruby serializers and deserializers of the VS Code extension, which made Ruby generation fail.
 
 ## [1.38.0] - 2026-11-02
 

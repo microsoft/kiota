@@ -180,14 +180,19 @@
         "kiota.generate.serializer.Ruby": {
           "type": "array",
           "default": [
-            "microsoft_kiota_serialization/json_serialization_writer_factory"
+            "microsoft_kiota_serialization_json.JsonSerializationWriterFactory",
+            "microsoft_kiota_serialization_text.TextSerializationWriterFactory",
+            "microsoft_kiota_serialization_form.FormSerializationWriterFactory",
+            "microsoft_kiota_serialization_multipart.MultipartSerializationWriterFactory"
           ],
           "description": "%kiota.generate.serializer.description%"
         },
         "kiota.generate.deserializer.Ruby": {
           "type": "array",
           "default": [
-            "microsoft_kiota_serialization/json_parse_node_factory"
+            "microsoft_kiota_serialization_json.JsonParseNodeFactory",
+            "microsoft_kiota_serialization_text.TextParseNodeFactory",
+            "microsoft_kiota_serialization_form.FormParseNodeFactory"
           ],
           "description": "%kiota.generate.deserializer.description%"
         },
