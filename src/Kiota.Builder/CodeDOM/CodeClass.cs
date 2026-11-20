@@ -173,15 +173,15 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         }
         return default;
     }
-    private CodeProperty? GetOriginalPropertyDefinedFromBaseType(string serializationName)
+    internal CodeProperty? GetOriginalPropertyDefinedFromBaseType(string wireName)
     {
-        ArgumentException.ThrowIfNullOrEmpty(serializationName);
+        ArgumentException.ThrowIfNullOrEmpty(wireName);
 
         if (BaseClass is CodeClass currentParentClass)
-            if (currentParentClass.FindPropertyByWireName(serializationName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType && currentProperty.Kind is not (CodePropertyKind.AdditionalData or CodePropertyKind.BackingStore))
+            if (currentParentClass.FindPropertyByWireName(wireName) is CodeProperty currentProperty && !currentProperty.ExistsInBaseType && currentProperty.Kind is not (CodePropertyKind.AdditionalData or CodePropertyKind.BackingStore))
                 return currentProperty;
             else
-                return currentParentClass.GetOriginalPropertyDefinedFromBaseType(serializationName);
+                return currentParentClass.GetOriginalPropertyDefinedFromBaseType(wireName);
         return default;
     }
     private CodeProperty? FindPropertyByWireName(string wireName)
