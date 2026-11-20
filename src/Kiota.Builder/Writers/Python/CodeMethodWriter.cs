@@ -152,7 +152,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
                 if (propertyType.TypeDefinition is CodeClass && !propertyType.IsCollection)
                 {
                     var mappedType = parentClass.DiscriminatorInformation.DiscriminatorMappings.FirstOrDefault(x => x.Value.Name.Equals(propertyType.Name, StringComparison.OrdinalIgnoreCase));
-                    if (!string.IsNullOrEmpty(mappedType.Key))
+                    if (parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation && !string.IsNullOrEmpty(mappedType.Key))
                     {
                         writer.StartBlock($"{(includeElse ? "el" : string.Empty)}if {DiscriminatorMappingVarName} and {DiscriminatorMappingVarName}.casefold() == \"{mappedType.Key.SanitizeDoubleQuote()}\".casefold():");
                         _codeUsingWriter.WriteDeferredImport(parentClass, propertyType.Name, writer);
@@ -217,7 +217,7 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PythonConventionSe
     {
         var parseNodeParameter = codeElement.Parameters.OfKind(CodeParameterKind.ParseNode) ?? throw new InvalidOperationException("Factory method should have a ParseNode parameter");
 
-        if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
+        if (parentClass.DiscriminatorInformation.ShouldWriteParseNodeCheck && parentClass.DiscriminatorInformation.HasBasicDiscriminatorInformation && !parentClass.DiscriminatorInformation.ShouldWriteDiscriminatorForIntersectionType)
         {
             writer.StartBlock("try:");
             writer.WriteLine($"child_node = {parseNodeParameter.Name}.get_child_node(\"{parentClass.DiscriminatorInformation.DiscriminatorPropertyName.SanitizeDoubleQuote()}\")");
