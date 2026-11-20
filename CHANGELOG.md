@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- BREAKING - A nullable reference to a component that is not a model, such as a `oneOf` or `anyOf` with a `$ref` to a string, integer, number, boolean, numeric enum or primitive array schema and a `{"type": "null"}` branch, generated an empty model for the component, so the value was dropped when reading and written back as `{}`. It now maps to the same type as a direct reference to the component, such as `string?`, `int?` or `List<string>`. Error responses keep the component model and their typed error mapping. [#8353](https://github.com/microsoft/kiota/issues/8353)
+  This changes the public API of regenerated clients, with or without `--exclude-backward-compatible`. For example in C#, with an integer component `Count`, a property, request body parameter or return value of type `Count` becomes `int?`, `Task<Count>` becomes `Task<int?>`, and the empty `Count` model is no longer generated unless another use, such as an error response, still needs it. To migrate, regenerate the client and use the primitive type, or a collection of it, wherever your code creates, extends or references the removed model.
+
 ## [1.39.0] - 2026-11-17
 
 ### Added

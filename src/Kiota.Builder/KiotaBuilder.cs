@@ -1426,7 +1426,7 @@ public partial class KiotaBuilder
             var parentElement = response is not OpenApiResponseReference && errorSchema is not OpenApiSchemaReference
                 ? (CodeElement)executorMethod
                 : modelsNamespace;
-            var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response);
+            var errorType = CreateModelDeclarations(currentNode, errorSchema, operation, parentElement, $"{errorCode}Error", response: response, isErrorResponse: true);
             if (errorType is CodeType codeType &&
                 codeType.TypeDefinition is CodeClass codeClass)
             {
@@ -1962,7 +1962,7 @@ public partial class KiotaBuilder
             AddDynamicBindingTypeParameters(schema, currentClass);
         return currentClass;
     }
-    private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema)
+    private CodeTypeBase CreateComposedModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, string suffixForInlineSchema, CodeNamespace codeNamespace, bool isRequestBody, string typeNameForInlineSchema, bool isErrorResponse)
     {
         var typeName = string.IsNullOrEmpty(typeNameForInlineSchema) ? currentNode.GetClassName(config.StructuredMimeTypes, operation: operation, suffix: suffixForInlineSchema, schema: schema, requestBody: isRequestBody).CleanupSymbolName() : typeNameForInlineSchema;
         var typesCount = schema.AnyOf?.Count ?? schema.OneOf?.Count ?? 0;
@@ -1970,6 +1970,10 @@ public partial class KiotaBuilder
         // meaningful entry plus a { "type": "null" } branch. Both patterns must be squished to the target
         // type so we don't create an unnecessary union type/wrapper for what is just a nullable reference.
         var unionEntries = schema.AnyOf is { Count: > 0 } ? schema.AnyOf : schema.OneOf;
+        // Only an exact { "type": "null" } branch makes this a nullable reference to a primitive component.
+        // A branch such as { "type": ["integer", "null"] } also allows another value, so the union is kept.
+        // An error response keeps the component model, because an error mapping is only added for a class.
+        var canMapToPrimitiveComponent = !isErrorResponse && (unionEntries?.Any(static x => x.Type is JsonSchemaType.Null) ?? false);
         if (typesCount == 2 && (unionEntries?.Any(static x => // nullable on a schema in the anyOf/oneOf
                                                         (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null &&
                                                         !x.HasAnyProperty() &&
@@ -1979,8 +1983,13 @@ public partial class KiotaBuilder
                                                         !x.IsIntersection() &&
                                                         !x.IsArray() &&
                                                         !x.IsReferencedSchema()) ?? false) &&
-            unionEntries?.FirstOrDefault(static x => !string.IsNullOrEmpty(x.GetSchemaName())) is { } targetSchema)
+            unionEntries?.FirstOrDefault(x => !string.IsNullOrEmpty(x.GetSchemaName()) || (canMapToPrimitiveComponent && x.IsReferencedSchema() && MapsToPrimitiveType(x))) is { } targetSchema)
         {
+            // A nullable reference to a component that is not a model, such as a string, an integer, a date-time,
+            // a numeric enum or an array of primitives, maps the same way a direct $ref to it does.
+            // Declaring a model for it would generate an empty class that drops the value.
+            if (canMapToPrimitiveComponent && MapsToPrimitiveType(targetSchema))
+                return CreateModelDeclarations(currentNode, targetSchema, operation, codeNamespace, suffixForInlineSchema, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
             var className = targetSchema.GetSchemaName().CleanupSymbolName();
             var shortestNamespace = GetShortestNamespace(codeNamespace, targetSchema);
             // When the unwrapped target is itself an allOf inheritance/intersection schema, route it through
@@ -2063,6 +2072,18 @@ public partial class KiotaBuilder
         }
         return unionType;
     }
+    /// <summary>
+    /// Whether the schema maps to a primitive type or a collection of primitives instead of a model or an enum.
+    /// A union whose members include an object or a reference keeps mapping to a model.
+    /// A single allOf wrapper around a primitive, such as { "allOf": [{ "type": "string" }] }, maps to that primitive.
+    /// </summary>
+    private static bool MapsToPrimitiveType(IOpenApiSchema schema) =>
+        !schema.IsObjectType() &&
+        !schema.HasAnyProperty() &&
+        !schema.IsEnum() &&
+        !(schema.AnyOf ?? []).Union(schema.OneOf ?? []).Union(schema.AllOf ?? []).Any(static x => x.IsReferencedSchema() || x.IsObjectType() || x.HasAnyProperty()) &&
+        (GetPrimitiveType(schema) is not null ||
+        (!schema.IsIntersection() && schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) is { } allOfEntry && MapsToPrimitiveType(allOfEntry)));
     private void AddTypeArrayMemberToComposedType(IOpenApiSchema schema, JsonSchemaType typeToScan, CodeComposedTypeBase codeComposedTypeBase)
     {
         if (!schema.Type.HasValue || (schema.Type.Value & typeToScan) != typeToScan) return;
@@ -2076,7 +2097,7 @@ public partial class KiotaBuilder
                 codeComposedTypeBase.AddType(primitiveType);
         }
     }
-    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false)
+    private CodeTypeBase CreateModelDeclarations(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeElement parentElement, string suffixForInlineSchema, IOpenApiResponse? response = default, string typeNameForInlineSchema = "", bool isRequestBody = false, bool isViaDiscriminator = false, bool isErrorResponse = false)
     {
         var (codeNamespace, responseValue, suffix) = schema.IsReferencedSchema() switch
         {
@@ -2103,7 +2124,7 @@ public partial class KiotaBuilder
                 || (schema.OneOf is { Count: 1 } && schema.OneOf[0].IsReferencedSchema())))
         {
             var innerRef = schema.AnyOf is { Count: 1 } ? schema.AnyOf[0] : schema.OneOf![0];
-            return CreateModelDeclarations(currentNode, innerRef, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isViaDiscriminator);
+            return CreateModelDeclarations(currentNode, innerRef, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isViaDiscriminator, isErrorResponse);
         }
 
         if (schema.IsInherited())
@@ -2121,19 +2142,19 @@ public partial class KiotaBuilder
         if ((schema.IsInclusiveUnion() || schema.IsExclusiveUnion()) && string.IsNullOrEmpty(schema.Format)
             && !schema.IsODataPrimitiveType())
         { // OData types are oneOf string, type + format, enum
-            return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema);
+            return CreateComposedModelDeclaration(currentNode, schema, operation, suffix, codeNamespace, isRequestBody, typeNameForInlineSchema, isErrorResponse);
         }
 
         // type: object with single oneOf referring to inheritance or intersection
         if (schema.IsObjectType() && schema.MergeSingleExclusiveUnionInheritanceOrIntersectionSchemaEntries() is IOpenApiSchema mergedExclusiveUnionSchema)
         {
-            return CreateModelDeclarations(currentNode, mergedExclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+            return CreateModelDeclarations(currentNode, mergedExclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isErrorResponse: isErrorResponse);
         }
 
         // type: object with single anyOf referring to inheritance or intersection
         if (schema.IsObjectType() && schema.MergeSingleInclusiveUnionInheritanceOrIntersectionSchemaEntries() is IOpenApiSchema mergedInclusiveUnionSchema)
         {
-            return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+            return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isErrorResponse: isErrorResponse);
         }
 
         if (schema.IsObjectType() || schema.HasAnyProperty() || schema.IsEnum() || schema.AdditionalProperties?.Type is not null)
@@ -2146,14 +2167,14 @@ public partial class KiotaBuilder
             !schema.Items.IsArray()) // Only handle collections of primitives and complex types. Otherwise, multi-dimensional arrays would be recursively unwrapped undesirably to lead to incorrect serialization types.
         {
             // collections at root
-            return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+            return CreateCollectionModelDeclaration(currentNode, schema, operation, codeNamespace, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isErrorResponse);
         }
 
         if (schema.Type is not null && (schema.Type & ~JsonSchemaType.Null) != 0 || !string.IsNullOrEmpty(schema.Format))
             return GetPrimitiveType(schema) ?? new CodeType { Name = UntypedNodeName, IsExternal = true };
         if ((schema.AnyOf is { Count: > 0 } || schema.OneOf is { Count: > 0 } || schema.AllOf is { Count: > 0 }) &&
            (schema.AnyOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.OneOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true)) ?? schema.AllOf?.FirstOrDefault(static x => x.IsSemanticallyMeaningful(true))) is { } childSchema) // we have an empty node because of some local override for schema properties and need to unwrap it.
-            return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+            return CreateModelDeclarations(currentNode, childSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isErrorResponse: isErrorResponse);
         // $dynamicRef resolution: when the library couldn't resolve Target (multi-candidate case),
         // walk the dynamic scope outermost-first and resolve against the first frame
         // whose schema or $defs declare a matching $dynamicAnchor (JSON Schema 2020-12 §7.7.2).
@@ -2181,7 +2202,7 @@ public partial class KiotaBuilder
                         // Only target resolution can borrow the frame ref id; inline binding $defs must stay inline.
                         var refId = resolved.GetReferenceId() ?? (allowFrameReferenceFallback ? frame.Schema.GetReferenceId() : null);
                         if (string.IsNullOrEmpty(refId))
-                            return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+                            return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isErrorResponse: isErrorResponse);
                         var className = refId.Split('/').Last().Split('.').Last().CleanupSymbolName();
                         var nsName = GetModelsNamespaceNameFromReferenceId(refId);
                         var searchNs = rootNamespace?.FindOrAddNamespace(nsName) ?? codeNamespace;
@@ -2198,7 +2219,7 @@ public partial class KiotaBuilder
                         }
                         if (GetExistingDeclaration(searchNs, currentNode, className) is CodeClass existing)
                             return new CodeType { TypeDefinition = existing };
-                        return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
+                        return CreateModelDeclarations(currentNode, resolved, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody, isErrorResponse: isErrorResponse);
                     }
                 }
             }
@@ -2319,7 +2340,7 @@ public partial class KiotaBuilder
                schema.AnyOf?.Any(x => ContainsDynamicReference(x, visited)) == true ||
                schema.OneOf?.Any(x => ContainsDynamicReference(x, visited)) == true;
     }
-    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string suffixForInlineSchema, IOpenApiResponse? response, string typeNameForInlineSchema, bool isRequestBody)
+    private CodeTypeBase CreateCollectionModelDeclaration(OpenApiUrlTreeNode currentNode, IOpenApiSchema schema, OpenApiOperation? operation, CodeNamespace codeNamespace, string suffixForInlineSchema, IOpenApiResponse? response, string typeNameForInlineSchema, bool isRequestBody, bool isErrorResponse)
     {
         var shouldPush = schema.Definitions?.Values.Any(static d => !string.IsNullOrEmpty(d.DynamicAnchor)) == true;
         var bindingSuffix = shouldPush ? TryGetDynamicBindingSuffix(schema, currentNode, operation, response, isRequestBody, suffixForInlineSchema) : null;
@@ -2334,7 +2355,7 @@ public partial class KiotaBuilder
                    && schema.Items != null)
             {
                 var targetNamespace = GetShortestNamespace(codeNamespace, schema.Items);
-                type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody);
+                type = CreateModelDeclarations(currentNode, schema.Items, operation, targetNamespace, string.Empty, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody: isRequestBody, isErrorResponse: isErrorResponse);
             }
             if (type is null)
                 return new CodeType { Name = UntypedNodeName, IsExternal = true };
