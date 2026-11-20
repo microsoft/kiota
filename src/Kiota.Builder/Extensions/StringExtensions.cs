@@ -118,6 +118,7 @@ public static partial class StringExtensions
         {
             nameSpan = nameSpan[..indexOfLess];
         }
+        if (nameSpan.IsEmpty) return string.Empty;
 
         static int CountNecessaryNewSeparators(ReadOnlySpan<char> span)
         {
@@ -143,7 +144,7 @@ public static partial class StringExtensions
             current = nameSpan[i];
             if (current == '-')
             {
-                if (!char.IsUpper(nameSpan[i + 1])) span[counter++] = separator;
+                if (i + 1 == nameSpan.Length || !char.IsUpper(nameSpan[i + 1])) span[counter++] = separator;
             }
             else if (char.IsUpper(current))
             {
@@ -156,7 +157,7 @@ public static partial class StringExtensions
             }
         }
 
-        return new string(span);
+        return new string(span[..counter]);
     }
 
     public static string NormalizeNameSpaceName(this string? original, string delimiter) =>
