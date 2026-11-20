@@ -87,6 +87,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "parentClassUriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "\"{baseurl+}/foo/\"bar\nbaz\"",
         };
         codeConstantWriter.WriteCodeElement(constant, writer);
@@ -186,6 +187,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -208,6 +210,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -230,6 +233,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -255,6 +259,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -282,6 +287,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -312,6 +318,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -343,6 +350,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -364,6 +372,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -396,6 +405,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -443,6 +453,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -473,6 +484,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -512,6 +524,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -551,6 +564,7 @@ public sealed class CodeConstantWriterTests : IDisposable
         {
             Name = "UriTemplate",
             Kind = CodeConstantKind.UriTemplate,
+            OriginalCodeElement = parentClass,
             UriTemplate = "{baseurl+}/foo/bar"
         });
         writer.Write(constant);
@@ -609,6 +623,7 @@ public sealed class CodeConstantWriterTests : IDisposable
             {
                 Name = "SomecustomtypeUriTemplate",
                 Kind = CodeConstantKind.UriTemplate,
+                OriginalCodeElement = parentClass,
             },
             new CodeConstant
             {
