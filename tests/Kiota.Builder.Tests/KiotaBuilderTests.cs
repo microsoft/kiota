@@ -848,7 +848,8 @@ components:
         var node = builder.CreateUriSpace(document);
         var codeModel = builder.CreateSourceModel(node);
         await builder.ApplyLanguageRefinementAsync(generationConfiguration, codeModel, TestContext.Current.CancellationToken);
-        var requestBuilderNamespace = codeModel.FindNamespaceByName("ApiSdk.api.all");
+        var requestBuilderNamespace = codeModel.FindNamespaceByName(
+            language == GenerationLanguage.Python ? "api_sdk.api.all" : "ApiSdk.api.all");
         Assert.NotNull(requestBuilderNamespace);
         if (language == GenerationLanguage.TypeScript || language == GenerationLanguage.Go)
         {// these languages use CodeFiles
