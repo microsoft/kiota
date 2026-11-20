@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fix missing model factories when an allOf alias is referenced before its model. [#8540](https://github.com/microsoft/kiota/issues/8540)
-- Fixed credential-cache file creation in elevated Windows processes, including Azure DevOps release agents, by explicitly assigning the current user as owner with private permissions.
 
 ## [1.39.0] - 2026-11-17
 
@@ -22,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixed credential-cache file creation in elevated Windows processes, including Azure DevOps release agents, by explicitly assigning the current user as owner with private permissions.
 - Go: include the endpoint path in inline composed-type wrapper names when flattening request builders, preventing response type collisions between paths such as `/v1/blocks/meeting_notes` and `/v1/meeting_notes`.
 - Improved GitHub sign-in state handling and authentication command error reporting. Existing users must sign in again after upgrading.
   The old temporary credential cache is no longer read or cleared by logout. Before signing in again, revoke any PAT used with Kiota in GitHub **Settings > Developer settings > Personal access tokens**, and revoke Kiota's device-code authorization in **Settings > Applications > Authorized GitHub Apps** (**Authorized OAuth Apps** for a custom OAuth client). Remove your old token files (`pat-api.github.com.txt` and `<app-id>-api.github.com.txt`) from the system temporary directory's `kiota/auth` folder (`%TEMP%\kiota\auth` on Windows; `$TMPDIR/kiota/auth`, or `/tmp/kiota/auth`, on Unix). Verify that the directory and files belong to you and are not symbolic links or junctions; do not recursively delete a shared temporary directory. Revocation invalidates credentials even if the old files cannot be safely removed.
