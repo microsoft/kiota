@@ -20,6 +20,8 @@ Once the `workspace.json` file is generated and the OpenAPI description file is 
 | `--openapi \| -d` | Yes | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. | No |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
+| `--include-property` | No | `microsoft.graph.user#display*,mail` | Repeatable, case-sensitive component/property selectors. Supports `*` in both halves and comma-separated properties per component. Trims whitespace around fields and rejects empty names. | No |
+| `--exclude-property` | No | `microsoft.graph.user#preferred*` | Repeatable, case-sensitive selectors to exclude ordinary properties. Supports `*` in both component and property names. | No |
 | `--language \| -l` | Yes | csharp | The target language for the generated code files or for the information. | Yes |
 | `--namespace-name \| -n` | No | Contoso.GraphApp | The namespace of the client class. Defaults to `Microsoft.Graph`. | Yes, without its value |
 | `--backing-store \| -b` | No | | Defaults to `false` | Yes |
@@ -30,6 +32,10 @@ Once the `workspace.json` file is generated and the OpenAPI description file is 
 
 > [!NOTE] 
 > It is not required to use the CLI to add new clients. It is possible to add a new client by adding a new entry in the `clients` section of the `workspace.json` file. See the [workspace.json schema](../schemas/workspace.json) for more information. Using `kiota client generate --client-name myClient` would be required to generate the code files.
+
+Property selectors are stored in the client's `includeProperties` and `excludeProperties` arrays, not in plugin settings. The first `#` separates the component key from the JSON property name; selectors are not generated-language identifiers or nested paths. `*` matches zero or more characters in either half; other punctuation is literal. Components without a matching owned property remain unchanged, and a selector matching nothing fails. Duplicates and ordering have no effect. Required and discriminator properties remain protected; excluding them, including through a pattern, fails generation. Property filtering changes generated types, not server responses, `$select`, or AdditionalData behavior.
+
+The legacy `kiota generate` command accepts the same repeatable `--include-property` and `--exclude-property` options. Comma-separated includes are expanded before persistence in `includeProperties`; star patterns are retained and evaluated on regeneration. `kiota update` and workspace migration preserve these selectors. Supply each entry with a repeated option, not multiple space-delimited values after one option.
 
 ## Telemetry
 

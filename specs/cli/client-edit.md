@@ -16,6 +16,9 @@ Once the `workspace.json` file and the API Manifest are updated, the code genera
 | `--openapi \| -d` | No | https://aka.ms/graph/v1.0/openapi.yaml | The location of the OpenAPI description in JSON or YAML format to use to generate the SDK. Accepts a URL or a local path. | Yes, without its value |
 | `--include-path \| -i` | No | /me/chats#GET | A glob pattern to include paths from generation. Accepts multiple values. Defaults to no value which includes everything. | Yes, without its value |
 | `--exclude-path \| -e` | No | \*\*/users/\*\* | A glob pattern to exclude paths from generation. Accepts multiple values. Defaults to no value which excludes nothing. | Yes, without its value |
+| `--include-property` | No | `microsoft.graph.user#display*,mail` | Repeatable, case-sensitive component#property selectors; supports `*` in both halves and comma-separated properties per component. Replaces saved includes when supplied; omission preserves them. | No |
+| `--exclude-property` | No | `microsoft.graph.user#preferred*` | Repeatable, case-sensitive component#property selectors; supports `*` in both halves. Replaces saved exclusions when supplied; omission preserves them. | No |
+| `--clear-property-filters` | No | | Clears both saved property selector sets before applying supplied include/exclude options. Available only on client edit. | No |
 | `--language \| -l` | No | csharp | The target language for the generated code files or for the information. | Yes |
 | `--namespace-name \| -n` | No | Contoso.GraphApp | The namespace of the client class. Defaults to `Microsoft.Graph`. | Yes, without its value |
 | `--backing-store \| -b` | No | | Defaults to `false` | Yes |
@@ -32,6 +35,21 @@ Once the `workspace.json` file and the API Manifest are updated, the code genera
 ```bash
 kiota client edit --client-name "GraphClient" --exclude-path "/users/$count"
 ```
+
+To disable property trimming, clear both saved sets:
+
+```bash
+kiota client edit --client-name "GraphClient" --clear-property-filters
+```
+
+To clear existing rules and start a new allowlist, combine clearing with repeatable selectors:
+
+```bash
+kiota client edit --client-name "GraphClient" --clear-property-filters \
+  --include-property "microsoft.graph.user#displayName,mail"
+```
+
+Editing the client's `includeProperties` and `excludeProperties` workspace arrays to `[]` also clears them. Existing files without these fields behave as empty selections. See [client add](client-add.md) for selector syntax and protection rules.
 
 _The resulting `workspace.json` file will look like this:_
 

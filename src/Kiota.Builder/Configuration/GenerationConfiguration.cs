@@ -127,6 +127,8 @@ public partial class GenerationConfiguration : ICloneable
     };
     public HashSet<string> IncludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ExcludePatterns { get; set; } = new(0, StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> IncludeProperties { get; set; } = new(0, StringComparer.Ordinal);
+    public HashSet<string> ExcludeProperties { get; set; } = new(0, StringComparer.Ordinal);
     /// <summary>
     /// The overrides loaded from the api manifest when refreshing a client, as opposed to the user provided ones.
     /// </summary>
@@ -175,6 +177,8 @@ public partial class GenerationConfiguration : ICloneable
             StructuredMimeTypes = new(StructuredMimeTypes ?? Enumerable.Empty<string>()),
             IncludePatterns = new(IncludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             ExcludePatterns = new(ExcludePatterns ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
+            IncludeProperties = new(IncludeProperties ?? Enumerable.Empty<string>(), StringComparer.Ordinal),
+            ExcludeProperties = new(ExcludeProperties ?? Enumerable.Empty<string>(), StringComparer.Ordinal),
             ClearCache = ClearCache,
             DisabledValidationRules = new(DisabledValidationRules ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),
             AllowedExternalOrigins = new(AllowedExternalOrigins ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase),

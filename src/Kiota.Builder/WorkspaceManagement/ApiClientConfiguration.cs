@@ -55,6 +55,16 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
     /// </summary>
     public HashSet<string> DisabledValidationRules { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
+    /// Case-sensitive component#property selectors to include, supporting * in either name.
+    /// Wildcard patterns are preserved and evaluated on regeneration.
+    /// </summary>
+    public HashSet<string> IncludeProperties { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>
+    /// Case-sensitive component#property selectors to exclude, supporting * in either name.
+    /// Wildcard patterns are preserved and evaluated on regeneration.
+    /// </summary>
+    public HashSet<string> ExcludeProperties { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>
     /// Initializes a new instance of the <see cref="ApiClientConfiguration"/> class.
     /// </summary>
     public ApiClientConfiguration() : base()
@@ -76,6 +86,8 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         IncludeAdditionalData = config.IncludeAdditionalData;
         StructuredMimeTypes = config.StructuredMimeTypes.ToList();
         DisabledValidationRules = config.DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        IncludeProperties = config.IncludeProperties.ToHashSet(StringComparer.Ordinal);
+        ExcludeProperties = config.ExcludeProperties.ToHashSet(StringComparer.Ordinal);
     }
     /// <summary>
     /// Updates the passed configuration with the values from the config file.
@@ -97,6 +109,8 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
         config.IncludeAdditionalData = IncludeAdditionalData;
         config.StructuredMimeTypes = new(StructuredMimeTypes);
         config.DisabledValidationRules = DisabledValidationRules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        config.IncludeProperties = IncludeProperties.ToHashSet(StringComparer.Ordinal);
+        config.ExcludeProperties = ExcludeProperties.ToHashSet(StringComparer.Ordinal);
         UpdateGenerationConfigurationFromBase(config, clientName, requests);
     }
 
@@ -112,6 +126,8 @@ public class ApiClientConfiguration : BaseApiConsumerConfiguration, ICloneable
             IncludeAdditionalData = IncludeAdditionalData,
             ExcludeBackwardCompatible = ExcludeBackwardCompatible,
             DisabledValidationRules = new(DisabledValidationRules, StringComparer.OrdinalIgnoreCase),
+            IncludeProperties = new(IncludeProperties, StringComparer.Ordinal),
+            ExcludeProperties = new(ExcludeProperties, StringComparer.Ordinal),
         };
         CloneBase(result);
         return result;

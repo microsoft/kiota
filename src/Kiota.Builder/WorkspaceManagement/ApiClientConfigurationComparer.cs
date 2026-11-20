@@ -11,6 +11,7 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
 {
     private readonly StringIEnumerableDeepComparer _stringIEnumerableDeepComparer;
     private readonly StringComparer _stringComparer;
+    private static readonly StringIEnumerableDeepComparer PropertySelectorComparer = new(StringComparer.Ordinal);
 
     public ApiClientConfigurationComparer(StringIEnumerableDeepComparer? stringIEnumerableDeepComparer = null,
         StringComparer? stringComparer = null)
@@ -32,6 +33,8 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
 
         // slow deep comparison
         return _stringIEnumerableDeepComparer.Equals(x.DisabledValidationRules, y.DisabledValidationRules)
+               && PropertySelectorComparer.Equals(x.IncludeProperties, y.IncludeProperties)
+               && PropertySelectorComparer.Equals(x.ExcludeProperties, y.ExcludeProperties)
                && _stringIEnumerableDeepComparer.Equals(x.StructuredMimeTypes, y.StructuredMimeTypes)
                && base.Equals(x, y);
     }
@@ -42,6 +45,8 @@ public class ApiClientConfigurationComparer : BaseApiConsumerConfigurationCompar
         var hash = new HashCode();
         if (obj == null) return hash.ToHashCode();
         hash.Add(obj.DisabledValidationRules, _stringIEnumerableDeepComparer); // _stringIEnumerableDeepComparer orders
+        hash.Add(obj.IncludeProperties, PropertySelectorComparer);
+        hash.Add(obj.ExcludeProperties, PropertySelectorComparer);
         hash.Add(obj.ClientNamespaceName, _stringComparer);
         hash.Add(obj.Language, _stringComparer);
         hash.Add(obj.TypeAccessModifier, _stringComparer);
