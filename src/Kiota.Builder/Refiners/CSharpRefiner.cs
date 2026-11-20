@@ -55,7 +55,6 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 },
                 !_configuration.ExcludeBackwardCompatible,//TODO remove the condition for v2
                 !_configuration.ExcludeBackwardCompatible);
-            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             ConvertUnionTypesToWrapper(generatedCode,
                 _configuration.UsesBackingStore,
                 static s => s,
@@ -63,6 +62,7 @@ public class CSharpRefiner : CommonLanguageRefiner, ILanguageRefiner
                 SerializationNamespaceName,
                 "IComposedTypeWrapper"
             );
+            MoveClassesWithNamespaceNamesUnderNamespace(generatedCode);
             cancellationToken.ThrowIfCancellationRequested();
             AddDefaultImports(generatedCode, defaultUsingEvaluators);
             AddPropertiesAndMethodTypesImports(generatedCode, false, false, false);
