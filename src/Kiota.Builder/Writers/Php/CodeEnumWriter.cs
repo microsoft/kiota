@@ -45,7 +45,7 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
         {
             writer.WriteLine(string.Empty);
         }
-        writer.WriteLine($"class {codeElement?.Name.ToFirstCharacterUpperCase()} extends Enum {{");
+        writer.WriteLine($"class {codeElement.Name.ToFirstCharacterUpperCase()} extends Enum {{");
         writer.IncreaseIndent();
         var reservedNames = enumProperties.Select(static option => GetEnumValueName(option.Name)).ToHashSet(StringComparer.Ordinal);
         var emittedNames = new HashSet<string>(StringComparer.Ordinal);
@@ -60,7 +60,25 @@ public partial class CodeEnumWriter : BaseElementWriter<CodeEnum, PhpConventionS
                     candidate = $"{constantName}_{++suffix}";
                 constantName = candidate;
             }
-            writer.WriteLine($"public const {constantName} = \"{PhpConventionService.SanitizePhpDoubleQuoteLiteral(enumProperty.WireName)}\";");
+            if (codeElement?.IsNumeric ?? false)
+            {
+                if (long.TryParse(enumProperty.WireName, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var phpIntVal))
+                {
+                    writer.WriteLine($"public const {constantName} = {phpIntVal.ToString(System.Globalization.CultureInfo.InvariantCulture)};");
+                }
+                else if (double.TryParse(enumProperty.WireName, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var phpDoubleVal))
+                {
+                    writer.WriteLine($"public const {constantName} = {phpDoubleVal.ToString(System.Globalization.CultureInfo.InvariantCulture)};");
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Invalid numeric enum value '{enumProperty.WireName}' for option '{enumProperty.Name}' in enum '{codeElement.Name}'.");
+                }
+            }
+            else
+            {
+                writer.WriteLine($"public const {constantName} = \"{PhpConventionService.SanitizePhpDoubleQuoteLiteral(enumProperty.WireName)}\";");
+            }
         }
     }
     [GeneratedRegex(@"([A-Z]{1})", RegexOptions.Singleline, 500)]

@@ -19,6 +19,8 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
         if (!codeElement.Options.Any())
             return;
 
+        if (codeElement.IsFractional)
+            throw new InvalidOperationException($"Floating-point enums are not supported in C# ('{codeElement.Name}').");
         var codeNamespace = codeElement.Parent as CodeNamespace;
         if (codeNamespace != null)
         {
@@ -38,7 +40,18 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
             writer.WriteLine("[Flags]");
         conventions.WriteDeprecationAttribute(codeElement, writer);
         if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} enum {codeElement.Name.ToFirstCharacterUpperCase()}");
+        var numericTypeSuffix = codeElement.IsNumeric && !string.IsNullOrEmpty(codeElement.Format) ? codeElement.Format.ToLowerInvariant() switch
+        {
+            "int64" => " : long",
+            "int8" => " : sbyte",
+            "uint8" => " : byte",
+            "int16" => " : short",
+            "uint16" => " : ushort",
+            "uint32" => " : uint",
+            "uint64" => " : ulong",
+            _ => string.Empty,
+        } : string.Empty;
+        writer.WriteLine($"{conventions.GetAccessModifier(codeElement.Access)} enum {codeElement.Name.ToFirstCharacterUpperCase()}{numericTypeSuffix}");
         if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
         writer.StartBlock();
         var idx = 0;
@@ -51,7 +64,16 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
                 writer.WriteLine($"[EnumMember(Value = \"{option.SerializationName.SanitizeCSharpDoubleQuote()}\")]");
             }
             if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-            writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+            if (codeElement.IsNumeric)
+            {
+                if (!TryValidateNumericLiteral(codeElement, option.SerializationName, out var validatedValue))
+                    throw new InvalidOperationException($"Invalid integer enum value '{option.SerializationName}' for option '{option.Name}' in enum '{codeElement.Name}'.");
+                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()} = {validatedValue},");
+            }
+            else
+            {
+                writer.WriteLine($"{option.Name.ToFirstCharacterUpperCase()}{(codeElement.Flags ? " = " + GetEnumFlag(idx) : string.Empty)},");
+            }
             if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
             idx++;
         }
@@ -60,4 +82,23 @@ public class CodeEnumWriter : BaseElementWriter<CodeEnum, CSharpConventionServic
     }
     private static readonly Func<int, string> GetEnumFlag = static idx =>
         (idx == 0 ? 1 : Math.Pow(2, idx)).ToString(CultureInfo.InvariantCulture);
+    private static bool TryValidateNumericLiteral(CodeEnum codeElement, string rawValue, out string validatedValue)
+    {
+        if (string.Equals(codeElement.Format, "uint64", StringComparison.OrdinalIgnoreCase))
+        {
+            if (ulong.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ulongVal))
+            {
+                validatedValue = ulongVal.ToString(CultureInfo.InvariantCulture);
+                return true;
+            }
+        }
+        else if (long.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longVal))
+        {
+            validatedValue = longVal.ToString(CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        validatedValue = string.Empty;
+        return false;
+    }
 }

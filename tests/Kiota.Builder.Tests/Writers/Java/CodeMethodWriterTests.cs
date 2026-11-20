@@ -2577,4 +2577,54 @@ public sealed class CodeMethodWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("\"application/json; profile=\\\"CamelCase\\\"\"", result);
     }
+
+    [Fact]
+    public void WritesConstructorWithNumericalEnumDefaultValue()
+    {
+        setup();
+        var modelsNamespace = root.AddNamespace("models");
+        method.Kind = CodeMethodKind.Constructor;
+        var codeEnum = modelsNamespace.AddEnum(new CodeEnum
+        {
+            Name = "Status",
+            IsNumeric = true,
+        }).First();
+        codeEnum.AddOption(
+            new CodeEnumOption { Name = "Active", SerializationName = "10" },
+            new CodeEnumOption { Name = "Inactive", SerializationName = "20" },
+            new CodeEnumOption { Name = "MinusOne", SerializationName = "-1" },
+            new CodeEnumOption { Name = "Zero", SerializationName = "0" }
+        );
+
+        parentClass.AddProperty(
+            new CodeProperty
+            {
+                Name = "status",
+                DefaultValue = "10",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            },
+            new CodeProperty
+            {
+                Name = "negativeStatus",
+                DefaultValue = "-1",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            },
+            new CodeProperty
+            {
+                Name = "zeroStatus",
+                DefaultValue = "0",
+                Kind = CodePropertyKind.Custom,
+                Type = new CodeType { TypeDefinition = codeEnum }
+            }
+        );
+
+        writer.Write(method);
+        var result = tw.ToString();
+        Assert.Contains("this.setStatus(Status.forValue(\"10\"));", result);
+        Assert.DoesNotContain("Status.forValue(10)", result);
+        Assert.Contains("this.setNegativeStatus(Status.forValue(\"-1\"));", result);
+        Assert.Contains("this.setZeroStatus(Status.forValue(\"0\"));", result);
+    }
 }

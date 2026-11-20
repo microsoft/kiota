@@ -1042,5 +1042,36 @@ public class CSharpLanguageRefinerTests
         Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System");
         Assert.Contains(declaration.Usings, x => x.Declaration?.Name == "System.Collections.Generic");
     }
+
+    [Fact]
+    public async Task RevertsFractionalEnumsToPrimitiveAsync()
+    {
+        var fractionalEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "Rate",
+            IsNumeric = true,
+        }).First();
+        fractionalEnum.AddOption(
+            new CodeEnumOption { Name = "OneFive", SerializationName = "1.5" },
+            new CodeEnumOption { Name = "TwoFive", SerializationName = "2.5" }
+        );
+
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "Invoice",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var prop = model.AddProperty(new CodeProperty
+        {
+            Name = "rate",
+            Type = new CodeType { TypeDefinition = fractionalEnum },
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.CSharp }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Null((prop.Type as CodeType)?.TypeDefinition);
+        Assert.Equal("double", prop.Type.Name);
+        Assert.DoesNotContain(root.GetChildElements(true).OfType<CodeEnum>(), x => x.Name == "Rate");
+    }
     #endregion
 }

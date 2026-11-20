@@ -131,4 +131,56 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = Kiota.Builder.Writers.Python.PythonConventionService.RemoveInvalidDescriptionCharacters(input!);
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void WritesNumericalEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Active", SerializationName = "10" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "Inactive", SerializationName = "20" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("(int, Enum):", result);
+        Assert.Contains("Active = 10,", result);
+        Assert.Contains("Inactive = 20,", result);
+    }
+
+    [Fact]
+    public void WritesFractionalEnumWithoutExplicitFormat()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneFive", SerializationName = "1.5" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneSevenFive", SerializationName = "1.75" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("(float, Enum):", result);
+        Assert.Contains("OneFive = 1.5,", result);
+        Assert.Contains("OneSevenFive = 1.75,", result);
+    }
+
+    [Fact]
+    public void WritesFractionalEnumWithExplicitFloatOrDoubleFormat()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.Format = "double";
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneZero", SerializationName = "1.0" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "TwoZero", SerializationName = "2.0" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("(float, Enum):", result);
+        Assert.Contains("OneZero = 1,", result);
+        Assert.Contains("TwoZero = 2,", result);
+    }
+
+    [Theory]
+    [InlineData("10; delete_database();")]
+    [InlineData("10\" or 1=1")]
+    [InlineData("system('calc')")]
+    [InlineData("abc")]
+    public void ThrowsOnHostileNumericValue(string hostileValue)
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Hostile", SerializationName = hostileValue });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(currentEnum));
+    }
 }

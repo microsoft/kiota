@@ -229,7 +229,16 @@ public class CodeConstantWriter : BaseElementWriter<CodeConstant, TypeScriptConv
         codeEnum.Options.ToList().ForEach(x =>
         {
             conventions.WriteShortDescription(x, writer);
-            writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName.SanitizeDoubleQuote()}\",");
+            if (codeEnum.IsNumeric)
+            {
+                if (!double.TryParse(x.WireName, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var numVal))
+                    throw new InvalidOperationException($"Invalid numeric enum value '{x.WireName}' for option '{x.Name}' in enum '{codeEnum.Name}'.");
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: {numVal.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
+            }
+            else
+            {
+                writer.WriteLine($"{x.Name.ToFirstCharacterUpperCase()}: \"{x.WireName.SanitizeDoubleQuote()}\",");
+            }
         });
         writer.CloseBlock("} as const;");
     }

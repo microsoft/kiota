@@ -2402,10 +2402,13 @@ public partial class KiotaBuilder
             {
                 enumFlagsExtension = flagsExtension;
             }
+            var isNumeric = schema.IsNumericEnum();
             var newEnum = new CodeEnum
             {
                 Name = declarationName,
                 Flags = enumFlagsExtension?.IsFlags ?? false,
+                IsNumeric = isNumeric,
+                Format = schema.Format,
                 Documentation = new()
                 {
                     DescriptionTemplate = !string.IsNullOrEmpty(schemaDescription) || !string.IsNullOrEmpty(schema.GetReferenceId()) ?
@@ -2424,9 +2427,14 @@ public partial class KiotaBuilder
         OpenApiEnumValuesDescriptionExtension? extensionInformation = null;
         if (schema.Extensions is not null && schema.Extensions.TryGetValue(OpenApiEnumValuesDescriptionExtension.Name, out var rawExtension) && rawExtension is OpenApiEnumValuesDescriptionExtension localExtInfo)
             extensionInformation = localExtInfo;
+        if (!target.IsNumeric && schema.IsNumericEnum())
+        {
+            target.IsNumeric = true;
+            target.Format ??= schema.Format;
+        }
         target.AddOption(schema.Enum?.OfType<JsonValue>()
                         .Where(static x => x.GetValueKind() is JsonValueKind.String or JsonValueKind.Number)
-                        .Select(static x => x.GetValueKind() is JsonValueKind.String ? x.GetValue<string>() : x.GetValue<decimal>().ToString(CultureInfo.InvariantCulture))
+                        .Select(static x => x.GetValueKind() is JsonValueKind.String ? x.GetValue<string>() : (x.TryGetValue<long>(out var l) ? l.ToString(CultureInfo.InvariantCulture) : (x.TryGetValue<decimal>(out var d) ? d.ToString(CultureInfo.InvariantCulture) : x.ToJsonString())))
                         .Where(static x => !string.IsNullOrEmpty(x))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Select((x) =>
@@ -2438,6 +2446,7 @@ public partial class KiotaBuilder
                                         name :
                                         x).CleanupSymbolName(),
                                 SerializationName = x,
+                                IsNumeric = target.IsNumeric,
                                 Documentation = new()
                                 {
                                     DescriptionTemplate = optionDescription?.Description?.CleanupDescription() ?? string.Empty,
