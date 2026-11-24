@@ -102,7 +102,17 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
     {
         if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase() + "()") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
         {
+            var segments = primaryMessageCodePath.Split('.');
+            if (segments.Length == 1)
+            {
+                writer.WriteLine($"return this.{primaryMessageCodePath};");
+                return;
+            }
+            var nullChecks = Enumerable.Range(1, segments.Length - 1).Select(x => $"this.{string.Join('.', segments[..x])} != null");
+            writer.StartBlock($"if ({string.Join(" && ", nullChecks)}) {{");
             writer.WriteLine($"return this.{primaryMessageCodePath};");
+            writer.CloseBlock();
+            writer.WriteLine("return super.getMessage();");
         }
         else
         {

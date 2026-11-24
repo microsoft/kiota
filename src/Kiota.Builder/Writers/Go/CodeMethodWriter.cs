@@ -100,7 +100,12 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, GoConventionServic
     {
         if (parentClass.AssociatedInterface is not null && parentClass.IsErrorDefinition && parentClass.AssociatedInterface.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterUpperCase(), static x => x.Name.ToFirstCharacterUpperCase() + "()") is string primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
         {
+            var segments = primaryMessageCodePath.Split('.');
+            var nilChecks = Enumerable.Range(1, segments.Length).Select(x => $"m.{string.Join('.', segments[..x])} != nil");
+            writer.StartBlock($"if {string.Join(" && ", nilChecks)} {{");
             writer.WriteLine($"return *(m.{primaryMessageCodePath})");
+            writer.CloseBlock();
+            writer.WriteLine("return \"\"");
         }
         else
         {

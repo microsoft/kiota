@@ -302,6 +302,7 @@ public sealed class CodeMethodWriterTests : IDisposable
         var error401 = root.AddClass(new CodeClass
         {
             Name = "Error401",
+            Kind = CodeClassKind.Model,
             IsErrorDefinition = true
         }).First();
         error401.AddProperty(new CodeProperty { Type = new CodeType { Name = "string" }, Name = "code", Kind = CodePropertyKind.Custom });
@@ -318,7 +319,67 @@ public sealed class CodeMethodWriterTests : IDisposable
         _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
         var result = stringWriter.ToString();
 
+        Assert.Contains("return $this->escapedGetMessage() ?? '';", result);
+        Assert.DoesNotContain("$primaryError", result);
+    }
+    private async Task<string> WriteErrorMessageOverrideOfAsync(Func<CodeClass, CodeClass> addPrimaryMessagePath, string primaryMessagePropertyName = "message")
+    {
+        setup();
+        var error = root.AddClass(new CodeClass
+        {
+            Name = "ServiceError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true
+        }).Single();
+        var lastClass = addPrimaryMessagePath(error);
+        lastClass.AddProperty(new CodeProperty { Type = new CodeType { Name = "string" }, Name = primaryMessagePropertyName, IsPrimaryErrorMessage = true, Kind = CodePropertyKind.Custom });
+        var codeMethod = new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType { Name = "string" },
+            SimpleName = "getPrimaryErrorMessage",
+        };
+        error.AddMethod(codeMethod);
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.PHP }, root, cancellationToken: TestContext.Current.CancellationToken);
+        _codeMethodWriter.WriteCodeElement(codeMethod, languageWriter);
+        return stringWriter.ToString();
+    }
+    private CodeClass AddObjectProperty(CodeClass parent, string propertyName, string className)
+    {
+        var child = root.AddClass(new CodeClass { Name = className, Kind = CodeClassKind.Model }).Single();
+        parent.AddProperty(new CodeProperty { Name = propertyName, Kind = CodePropertyKind.Custom, Type = new CodeType { Name = className, TypeDefinition = child } });
+        return child;
+    }
+    [Fact]
+    public async Task WriteErrorMessageOverrideOfADirectPropertyAsync()
+    {
+        var result = await WriteErrorMessageOverrideOfAsync(static error => error, "developerErrorMessage");
+
+        Assert.Contains("return $this->getDeveloperErrorMessage() ?? '';", result);
+        Assert.DoesNotContain("getDeveloperError()", result);
+    }
+    [Fact]
+    public async Task WriteErrorMessageOverrideOfANestedObjectAsync()
+    {
+        var result = await WriteErrorMessageOverrideOfAsync(error => AddObjectProperty(error, "response", "ResponseDetail"));
+
+        Assert.Contains("$primaryError = $this->getResponse();", result);
+        Assert.Contains("if ($primaryError !== null) {", result);
         Assert.Contains("return $primaryError->getMessage() ?? '';", result);
+        Assert.Contains("return '';", result);
+        Assert.DoesNotContain("getRespon()", result);
+        Assert.DoesNotContain("$primaryError === null ? null", result);
+    }
+    [Fact]
+    public async Task WriteErrorMessageOverrideTwoLevelsDeepAsync()
+    {
+        var result = await WriteErrorMessageOverrideOfAsync(error => AddObjectProperty(AddObjectProperty(error, "outer", "OuterDetail"), "inner", "InnerDetail"));
+
+        Assert.Contains("$primaryError = $this->getOuter();", result);
+        Assert.Contains("$primaryError = $primaryError === null ? null : $primaryError->getInner();", result);
+        Assert.Contains("if ($primaryError !== null) {", result);
+        Assert.Contains("return $primaryError->getMessage() ?? '';", result);
+        Assert.DoesNotContain("$this->getOuter()->getInner()", result);
     }
     [Fact]
     public async Task WritesRequestExecutorForEnumTypesAsync()
