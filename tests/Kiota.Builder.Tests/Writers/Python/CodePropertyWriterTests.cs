@@ -1,7 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 using Kiota.Builder.CodeDOM;
+using Kiota.Builder.Configuration;
+using Kiota.Builder.Refiners;
 using Kiota.Builder.Writers;
 
 using Xunit;
@@ -207,5 +211,32 @@ public sealed class CodePropertyWriterTests : IDisposable
         Assert.Contains("if self.outer is not None and self.outer.inner is not None:", result);
         Assert.Contains("return '' if self.outer.inner.message is None else self.outer.inner.message", result);
         Assert.DoesNotContain("if self.outer.inner is not None:", result);
+    }
+    [Theory]
+    [InlineData("primaryMessage")]
+    [InlineData("primary_message")]
+    public async Task WritePrimaryErrorMessagePropertyNamedLikeTheOverrideAsync(string primaryMessagePropertyName)
+    {
+        var root = CodeNamespace.InitRootNamespace();
+        var model = root.AddNamespace("models").AddClass(new CodeClass
+        {
+            Name = "CollidingError",
+            Kind = CodeClassKind.Model,
+            IsErrorDefinition = true,
+        }).Single();
+        model.AddProperty(new CodeProperty
+        {
+            Name = primaryMessagePropertyName,
+            Kind = CodePropertyKind.Custom,
+            Type = new CodeType { Name = "string", IsExternal = true },
+            IsPrimaryErrorMessage = true,
+        });
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Python }, root, cancellationToken: TestContext.Current.CancellationToken);
+        writer.Write(model.Properties.Single(static x => x.Kind is CodePropertyKind.ErrorMessageOverride));
+        var result = tw.ToString();
+        Assert.Contains("def primary_message(self) -> Optional[str]:", result);
+        Assert.Contains("if self.primary_messageEscaped is not None:", result);
+        Assert.Contains("return '' if self.primary_messageEscaped is None else self.primary_messageEscaped", result);
+        Assert.DoesNotContain("self.primary_message ", result);
     }
 }

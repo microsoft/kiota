@@ -54,8 +54,9 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                 writer.WriteLine("@property");
                 writer.StartBlock($"def {codeElement.Name}(self) -> Optional[{codeElement.Type.Name}]:");
                 conventions.WriteLongDescription(codeElement, writer);
+                // models are dataclasses: read the field, whose name may be escaped, rather than the getter it was named from
                 if (parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(),
-                        static x => x.Name.ToSnakeCase()) is string primaryMessageCodePath &&
+                        static x => x.AccessedProperty?.Name.ToFirstCharacterLowerCase() ?? x.Name.ToSnakeCase()) is string primaryMessageCodePath &&
                     !string.IsNullOrEmpty(primaryMessageCodePath))
                 {
                     var segments = primaryMessageCodePath.Split('.');
