@@ -9,6 +9,32 @@ namespace Kiota.Builder.Tests.WorkspaceManagement;
 public sealed class ApiClientConfigurationTests
 {
     [Fact]
+    public void RoundTripsPropertySelectionsThroughClonedClientAndManifestOverrides()
+    {
+        var original = new GenerationConfiguration();
+        original.IncludeProperties.UnionWith(["User#name", "User#Name"]);
+        original.ExcludeProperties.UnionWith(["User#mail", "user#mail"]);
+        var client = new ApiClientConfiguration(original);
+        var clone = (ApiClientConfiguration)client.Clone();
+        clone.IncludeProperties.Add("User#id");
+        clone.ExcludeProperties.Remove("user#mail");
+
+        var restored = new GenerationConfiguration();
+        clone.UpdateGenerationConfigurationFromApiClientConfiguration(restored, "Client", [
+            new RequestInfo { Method = "GET", UriTemplate = "users" },
+        ]);
+        Assert.True(restored.IncludeProperties.SetEquals(["User#name", "User#Name", "User#id"]));
+        Assert.True(restored.ExcludeProperties.SetEquals(["User#mail"]));
+        Assert.Single(restored.PatternsOverride);
+        Assert.True(restored.IncludeProperties.Add("user#name"));
+        restored.ExcludeProperties.Clear();
+        Assert.Equal(2, original.IncludeProperties.Count);
+        Assert.Equal(2, client.IncludeProperties.Count);
+        Assert.Equal(2, client.ExcludeProperties.Count);
+        Assert.Single(clone.ExcludeProperties);
+    }
+
+    [Fact]
     public void Clones()
     {
         var clientConfig = new ApiClientConfiguration

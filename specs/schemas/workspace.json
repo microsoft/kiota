@@ -29,6 +29,22 @@
             "baseUrl": {
               "type": "string"
             },
+            "includeProperties": {
+              "description": "Case-sensitive component#property selectors to include. '*' matches zero or more characters in either name; patterns are preserved and evaluated on regeneration.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[^#]+#[\\s\\S]+$"
+              }
+            },
+            "excludeProperties": {
+              "description": "Case-sensitive component#property selectors to exclude. '*' matches zero or more characters in either name; patterns are preserved and evaluated on regeneration.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[^#]+#[\\s\\S]+$"
+              }
+            },
             "language": {
               "type": "string"
             },

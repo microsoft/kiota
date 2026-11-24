@@ -67,7 +67,7 @@ test("pushes, manual runs, missing SHAs, empty diffs and git errors never bypass
 test("required workflow gates pass only successful runs or explicitly authorized bypasses", () => {
     for (const [workflow, prerequisites] of [
         ["dotnet", ["dotnet-tests"]],
-        ["integration-tests", ["build", "download-openapi-specs", "integration"]],
+        ["integration-tests", ["build", "download-openapi-specs", "integration", "property-filtering"]],
         ["idempotency-tests", ["build", "download-openapi-specs", "idempotency"]],
         ["surface-area-tests", ["build", "surface-diff"]],
         ["build-vscode-extension", ["test_and_generate_binaries", "build"]],

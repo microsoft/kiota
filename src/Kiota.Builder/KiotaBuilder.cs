@@ -213,6 +213,12 @@ public partial class KiotaBuilder
             sw.Start();
             FilterPathsByPatterns(openApiDocument);
             StopLogAndReset(sw, $"step {++stepId} - filtering API paths with patterns - took");
+            if (generating && !config.IsPluginConfiguration && (config.IncludeProperties.Count != 0 || config.ExcludeProperties.Count != 0))
+            {
+                sw.Start();
+                new OpenApiPropertyFilter(logger).Apply(openApiDocument, config, cancellationToken);
+                StopLogAndReset(sw, $"step {++stepId} - filtering model properties - took");
+            }
             SetApiRootUrl();
 
             // Should Generate
@@ -1892,7 +1898,7 @@ public partial class KiotaBuilder
         var shortestNamespace = string.IsNullOrEmpty(referenceId) ? codeNamespaceFromParent : rootNamespace.FindOrAddNamespace(shortestNamespaceName);
         var inlineSchemas = Array.FindAll(flattenedAllOfs, static x => !x.IsReferencedSchema());
         var referencedSchemas = Array.FindAll(flattenedAllOfs, static x => x.IsReferencedSchema());
-        var rootSchemaHasProperties = schema.HasAnyProperty();
+        var rootSchemaHasPropertyInformation = schema.HasPropertyInformation();
         // if the schema is meaningful, we only want to consider the root schema for naming to avoid "grabbing" the name of the parent
         // if the schema has no reference id we're either at the beginning of an inline schema, or expanding the inheritance tree
         var shouldNameLookupConsiderSubSchemas = schema.IsSemanticallyMeaningful() || string.IsNullOrEmpty(referenceId);
@@ -1904,7 +1910,7 @@ public partial class KiotaBuilder
             .CleanupSymbolName();
         if (bindingSuffix is not null)
             className = $"{className}{bindingSuffix}";
-        var codeDeclaration = (rootSchemaHasProperties, inlineSchemas, referencedSchemas, isViaDiscriminator) switch
+        var codeDeclaration = (rootSchemaHasPropertyInformation, inlineSchemas, referencedSchemas, isViaDiscriminator) switch
         {
             // greatest parent type
             (true, { Length: 0 }, { Length: 0 }, _) =>
@@ -1931,13 +1937,13 @@ public partial class KiotaBuilder
             (false, { Length: 1 }, { Length: 0 }, true) =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
             // too much information but we can make a choice -> maps to properties + inline schema
-            (true, { Length: 1 }, { Length: 1 }, _) when inlineSchemas[0].HasAnyProperty() && !referencedSchemas[0].HasAnyProperty() =>
+            (true, { Length: 1 }, { Length: 1 }, _) when inlineSchemas[0].HasPropertyInformation() && !referencedSchemas[0].HasPropertyInformation() =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, inlineSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, typeNameForInlineSchema)),
             // too much information but we can make a choice -> maps to properties + referenced schema
-            (true, { Length: 1 }, { Length: 1 }, _) when referencedSchemas[0].HasAnyProperty() && !inlineSchemas[0].HasAnyProperty() =>
+            (true, { Length: 1 }, { Length: 1 }, _) when referencedSchemas[0].HasPropertyInformation() && !inlineSchemas[0].HasPropertyInformation() =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, schema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
             // too much information but we can merge root + inline schema
-            (true, { Length: 1 }, { Length: 1 }, _) when referencedSchemas[0].HasAnyProperty() && inlineSchemas[0].HasAnyProperty() && schema.MergeAllOfSchemaEntries([.. referencedSchemas]) is { } mergedSchema =>
+            (true, { Length: 1 }, { Length: 1 }, _) when referencedSchemas[0].HasPropertyInformation() && inlineSchemas[0].HasPropertyInformation() && schema.MergeAllOfSchemaEntries([.. referencedSchemas]) is { } mergedSchema =>
                 AddModelDeclarationIfDoesntExist(currentNode, operation, mergedSchema, className, shortestNamespace, CreateInheritedModelDeclaration(currentNode, referencedSchemas[0], operation, classNameSuffix, codeNamespace, isRequestBody, string.Empty)),
             // none of the allOf entries have properties, it's a grandparent schema
             (true, { Length: 1 }, { Length: 1 }, _) =>
@@ -1972,7 +1978,7 @@ public partial class KiotaBuilder
         var unionEntries = schema.AnyOf is { Count: > 0 } ? schema.AnyOf : schema.OneOf;
         if (typesCount == 2 && (unionEntries?.Any(static x => // nullable on a schema in the anyOf/oneOf
                                                         (x.Type & JsonSchemaType.Null) is JsonSchemaType.Null &&
-                                                        !x.HasAnyProperty() &&
+                                                        !x.HasPropertyInformation() &&
                                                         !x.IsExclusiveUnion() &&
                                                         !x.IsInclusiveUnion() &&
                                                         !x.IsInherited() &&
@@ -2098,7 +2104,7 @@ public partial class KiotaBuilder
         // object, and self-referential properties like "innerError" or "parent" cause infinite recursion because
         // each iteration creates a uniquely-named inline class.
         if (string.IsNullOrEmpty(schema.GetDiscriminatorPropertyName())
-            && !schema.HasAnyProperty()
+            && !schema.HasPropertyInformation()
             && ((schema.AnyOf is { Count: 1 } && schema.AnyOf[0].IsReferencedSchema())
                 || (schema.OneOf is { Count: 1 } && schema.OneOf[0].IsReferencedSchema())))
         {
@@ -2136,7 +2142,7 @@ public partial class KiotaBuilder
             return CreateModelDeclarations(currentNode, mergedInclusiveUnionSchema, operation, parentElement, suffixForInlineSchema, response, typeNameForInlineSchema, isRequestBody);
         }
 
-        if (schema.IsObjectType() || schema.HasAnyProperty() || schema.IsEnum() || schema.AdditionalProperties?.Type is not null)
+        if (schema.IsObjectType() || schema.HasPropertyInformation() || schema.IsEnum() || schema.AdditionalProperties?.Type is not null)
         {
             // no inheritance or union type, often empty definitions with only additional properties are used as property bags.
             return CreateModelDeclarationAndType(currentNode, schema, operation, codeNamespace, suffix, response: responseValue, typeNameForInlineSchema: typeNameForInlineSchema, isRequestBody, dynamicBindingSuffixContext: suffixForInlineSchema);
