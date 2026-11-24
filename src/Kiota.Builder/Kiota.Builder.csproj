@@ -3,7 +3,7 @@
     <LangVersion>Latest</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <TargetFrameworks>net8.0;net9.0;net10.0;</TargetFrameworks>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
     <PackageProjectUrl>https://github.com/microsoft/kiota</PackageProjectUrl>
@@ -33,6 +33,10 @@
   <PropertyGroup>
     <!-- the source generators emit warnings -->
     <NoWarn>$(NoWarn);CS8785;NU5048;NU5104;CA1724;CA1055;CA1848;CA1308;CA1822</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <!-- The .NET 11 analyzer incorrectly requires StringComparison for ordinal char overloads that have no such parameter. -->
+    <NoWarn>$(NoWarn);CA1307</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AsyncKeyedLock" />

@@ -6,7 +6,8 @@ Thanks for your interest in contributing to Kiota! We welcome contributions from
 
 To get started, you'll need to have the following tools installed:
 
-- [.NET SDK 8.0](https://get.dot.net/8)
+- [.NET SDK 11.0](https://get.dot.net/11), as specified in `global.json`.
+- [.NET runtime 10.0](https://get.dot.net/10) to run the generator with `-f net10.0`. Tests target `net11.0` and use the runtime included with the .NET 11 SDK.
 
 ## Recommended tools
 
@@ -83,7 +84,7 @@ The allowlist and regression tests live in `scripts/test-impact.cjs` and
 You can try out the generator including your local changes by running:
 
 ```sh
-dotnet run -c Release --project src/kiota/kiota.csproj -- <arguments you would pass>
+dotnet run -c Release --project src/kiota/kiota.csproj -f net10.0 -- <arguments you would pass>
 ```
 
 ## Contributing Code

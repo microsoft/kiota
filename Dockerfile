@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0 AS build-env
+FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:11.0 AS build-env
 ARG version_suffix
 WORKDIR /app
 
