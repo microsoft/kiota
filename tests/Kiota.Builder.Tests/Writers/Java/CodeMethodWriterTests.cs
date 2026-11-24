@@ -2548,7 +2548,68 @@ public sealed class CodeMethodWriterTests : IDisposable
         // Then
         Assert.Contains("@Override", result);
         Assert.Contains("String getErrorMessage() ", result);
-        Assert.Contains("return this.getProp1()", result);
+        Assert.Contains("return this.getProp1();", result);
+        Assert.DoesNotContain("if (", result);
+        Assert.DoesNotContain("super.getMessage()", result);
+    }
+    private CodeMethod AddPrimaryMessageErrorThroughObjects(params string[] objectPropertyNames)
+    {
+        var currentClass = root.AddClass(new CodeClass { Name = "messageClass", Kind = CodeClassKind.Model }).Single();
+        var message = currentClass.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType { Name = "String" },
+        }).Single();
+        currentClass.AddMethod(new CodeMethod
+        {
+            Name = "getMessage",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = message.Type,
+            Access = AccessModifier.Public,
+            AccessedProperty = message,
+        });
+        foreach (var propertyName in objectPropertyNames.Reverse())
+        {
+            var objectClass = currentClass;
+            currentClass = propertyName == objectPropertyNames[0] ?
+                root.AddClass(new CodeClass { Name = "errorClass", IsErrorDefinition = true, Kind = CodeClassKind.Model }).Single() :
+                root.AddClass(new CodeClass { Name = $"{propertyName}OwnerClass", Kind = CodeClassKind.Model }).Single();
+            currentClass.AddMethod(new CodeMethod
+            {
+                Name = $"get{propertyName.ToFirstCharacterUpperCase()}",
+                Kind = CodeMethodKind.Getter,
+                ReturnType = new CodeType { Name = objectClass.Name, TypeDefinition = objectClass },
+                Access = AccessModifier.Public,
+            });
+        }
+        return currentClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType { Name = "String", IsNullable = false },
+            Name = "getMessage"
+        }).Single();
+    }
+    [Fact]
+    public void WritesMessageOverrideOnPrimaryOfANestedObject()
+    {
+        writer.Write(AddPrimaryMessageErrorThroughObjects("error"));
+        var result = tw.ToString();
+
+        Assert.Contains("if (this.getError() != null) {", result);
+        Assert.Contains("return this.getError().getMessage();", result);
+        Assert.Contains("return super.getMessage();", result);
+    }
+    [Fact]
+    public void WritesMessageOverrideOnPrimaryTwoLevelsDeep()
+    {
+        writer.Write(AddPrimaryMessageErrorThroughObjects("outer", "inner"));
+        var result = tw.ToString();
+
+        Assert.Contains("if (this.getOuter() != null && this.getOuter().getInner() != null) {", result);
+        Assert.Contains("return this.getOuter().getInner().getMessage();", result);
+        Assert.Contains("return super.getMessage();", result);
     }
 
     [Fact]
