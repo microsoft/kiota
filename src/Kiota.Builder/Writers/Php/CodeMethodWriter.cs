@@ -88,12 +88,19 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, PhpConventionServi
     {
         if (parentClass.IsErrorDefinition && parentClass.GetPrimaryMessageCodePath(static x => x.Name.ToFirstCharacterLowerCase(), static x => x.Name.ToFirstCharacterLowerCase() + "()", pathSegment: "->") is { } primaryMessageCodePath && !string.IsNullOrEmpty(primaryMessageCodePath))
         {
-            var withoutMessage = primaryMessageCodePath.TrimEnd("->getMessage()".ToCharArray()) + "()";
+            var segments = primaryMessageCodePath.Split("->");
+            if (segments.Length == 1)
+            {
+                writer.WriteLine($"return $this->{segments[0]} ?? '';");
+                return;
+            }
             var primaryErrorVariableName = "$primaryError";
-            writer.WriteLine($"{primaryErrorVariableName} = $this->{withoutMessage};");
+            writer.WriteLine($"{primaryErrorVariableName} = $this->{segments[0]};");
+            foreach (var segment in segments[1..^1])
+                writer.WriteLine($"{primaryErrorVariableName} = {primaryErrorVariableName} === null ? null : {primaryErrorVariableName}->{segment};");
             writer.WriteLine($"if ({primaryErrorVariableName} !== null) {{");
             writer.IncreaseIndent();
-            writer.WriteLine($"return {primaryErrorVariableName}->getMessage() ?? '';");
+            writer.WriteLine($"return {primaryErrorVariableName}->{segments[^1]} ?? '';");
             writer.CloseBlock();
             writer.WriteLine("return '';");
         }

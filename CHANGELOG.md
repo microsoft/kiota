@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Python: an error's `primary_message`, which `str()` of the error reads, raised an `AttributeError` or kept the client from importing when the property marked with `x-ms-primary-error-message` had a name such as `developer_error_message` or `message`, or sat two or more objects down with one of them missing. It now returns the message, or `''` when the message or an object on its path is missing; the code generated for a message that already worked doesn't change. [#8655](https://github.com/microsoft/kiota/issues/8655)
+- PHP: an error's `getPrimaryErrorMessage()` called a method that doesn't exist, such as `getDeveloperError()` for `developerErrorMessage`, or a method on `null`, unless the property marked with `x-ms-primary-error-message` was a `message` one object down. It now returns the message, or `''` when the message or an object on its path is missing; the code generated for a `message` one object down doesn't change. [#8655](https://github.com/microsoft/kiota/issues/8655)
 
 ## [1.39.0] - 2026-11-17
 
