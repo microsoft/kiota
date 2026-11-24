@@ -147,6 +147,65 @@ public sealed class CodePropertyWriterTests : IDisposable
         parentClass.IsErrorDefinition = true;
         writer.Write(property);
         var result = tw.ToString();
+        Assert.Contains("if self.error is not None:", result);
         Assert.Contains("return '' if self.error.message is None else self.error.message", result);
+    }
+    [Theory]
+    [InlineData("developer_error_message")]
+    [InlineData("message")]
+    public void WritePrimaryErrorMessagePropertyOfTheErrorItself(string primaryMessagePropertyName)
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        property.Type.Name = "str";
+        parentClass.AddProperty(new CodeProperty { Name = primaryMessagePropertyName, Type = new CodeType { Name = "str" }, IsPrimaryErrorMessage = true });
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains($"if self.{primaryMessagePropertyName} is not None:", result);
+        Assert.Contains($"return '' if self.{primaryMessagePropertyName} is None else self.{primaryMessagePropertyName}", result);
+    }
+    [Fact]
+    public void WritePrimaryErrorMessagePropertyOfANestedObject()
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        var cls = new CodeClass
+        {
+            Name = "MainError",
+            Documentation = new CodeDocumentation { DescriptionTemplate = "Some documentation" }
+        };
+        cls.AddProperty(new CodeProperty { Name = "message", Type = new CodeType { Name = "str" }, IsPrimaryErrorMessage = true });
+        property.Type.Name = "str";
+        parentClass.AddProperty(new CodeProperty { Name = "response", Type = new CodeType { IsExternal = false, Name = "MainError", TypeDefinition = cls } });
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("if self.response is not None:", result);
+        Assert.Contains("return '' if self.response.message is None else self.response.message", result);
+        Assert.DoesNotContain("self.respon ", result);
+    }
+    [Fact]
+    public void WritePrimaryErrorMessagePropertyTwoLevelsDeep()
+    {
+        property.Kind = CodePropertyKind.ErrorMessageOverride;
+        var inner = new CodeClass
+        {
+            Name = "InnerError",
+            Documentation = new CodeDocumentation { DescriptionTemplate = "Some documentation" }
+        };
+        inner.AddProperty(new CodeProperty { Name = "message", Type = new CodeType { Name = "str" }, IsPrimaryErrorMessage = true });
+        var outer = new CodeClass
+        {
+            Name = "OuterError",
+            Documentation = new CodeDocumentation { DescriptionTemplate = "Some documentation" }
+        };
+        outer.AddProperty(new CodeProperty { Name = "inner", Type = new CodeType { IsExternal = false, Name = "InnerError", TypeDefinition = inner } });
+        property.Type.Name = "str";
+        parentClass.AddProperty(new CodeProperty { Name = "outer", Type = new CodeType { IsExternal = false, Name = "OuterError", TypeDefinition = outer } });
+        parentClass.IsErrorDefinition = true;
+        writer.Write(property);
+        var result = tw.ToString();
+        Assert.Contains("if self.outer is not None and self.outer.inner is not None:", result);
+        Assert.Contains("return '' if self.outer.inner.message is None else self.outer.inner.message", result);
+        Assert.DoesNotContain("if self.outer.inner is not None:", result);
     }
 }

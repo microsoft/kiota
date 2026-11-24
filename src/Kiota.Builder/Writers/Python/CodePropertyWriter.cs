@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -57,8 +58,12 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, PythonConventi
                         static x => x.Name.ToSnakeCase()) is string primaryMessageCodePath &&
                     !string.IsNullOrEmpty(primaryMessageCodePath))
                 {
-                    var pathWithoutMessage = primaryMessageCodePath.TrimEnd(".message".ToCharArray());
-                    writer.StartBlock($"if self.{pathWithoutMessage} is not None:");
+                    var segments = primaryMessageCodePath.Split('.');
+                    // a direct property checks itself, a nested one checks every object on its path
+                    string[] checkedPaths = segments.Length == 1 ?
+                        segments :
+                        [.. Enumerable.Range(1, segments.Length - 1).Select(x => string.Join('.', segments[..x]))];
+                    writer.StartBlock($"if {string.Join(" and ", checkedPaths.Select(static x => $"self.{x} is not None"))}:");
                     writer.WriteLine(
                         $"return '' if self.{primaryMessageCodePath} is None else self.{primaryMessageCodePath}");
                     writer.DecreaseIndent();
