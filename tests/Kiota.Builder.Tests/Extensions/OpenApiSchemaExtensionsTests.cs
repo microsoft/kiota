@@ -1159,4 +1159,67 @@ public class OpenApiSchemaExtensionsTests
         var reference = new OpenApiSchema();
         Assert.Empty(reference.GetClassName());
     }
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public void IsComposedEnumRecognizesNullOnlyEnumBranch(bool useOneOf, bool nullFirst, bool includeNullType)
+    {
+        var nullBranch = new OpenApiSchema
+        {
+            Type = includeNullType ? JsonSchemaType.Null : null,
+            Enum = [null!],
+        };
+        IList<IOpenApiSchema> branches = nullFirst ? [nullBranch, enumSchema] : [enumSchema, nullBranch];
+        var schema = useOneOf ? new OpenApiSchema { OneOf = branches } : new OpenApiSchema { AnyOf = branches };
+        Assert.False(nullBranch.IsEnum());
+        Assert.False(nullBranch.IsSemanticallyMeaningful());
+        Assert.False(nullBranch.IsSemanticallyMeaningful(true));
+        Assert.True(schema.IsComposedEnum());
+        Assert.False(schema.IsInclusiveUnion());
+        Assert.False(schema.IsExclusiveUnion());
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void IsComposedEnumDoesNotCollapseMixedUnionWithNullOnlyEnumBranch(bool useOneOf)
+    {
+        var nullBranch = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Null,
+            Enum = [null!],
+        };
+        IList<IOpenApiSchema> branches = [enumSchema, numberSchema, nullBranch];
+        var schema = useOneOf ? new OpenApiSchema { OneOf = branches } : new OpenApiSchema { AnyOf = branches };
+        Assert.False(schema.IsComposedEnum());
+        Assert.Equal(!useOneOf, schema.IsInclusiveUnion());
+        Assert.Equal(useOneOf, schema.IsExclusiveUnion());
+    }
+    [Fact]
+    public void IsArrayTrueOnNullOnlyItems()
+    {
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Items = new OpenApiSchema { Type = JsonSchemaType.Null },
+        }.IsArray());
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Items = new OpenApiSchema { Enum = [null!] },
+        }.IsArray());
+        Assert.True(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Items = new OpenApiSchema
+            {
+                AnyOf = [new OpenApiSchema { Type = JsonSchemaType.Null }],
+            },
+        }.IsArray());
+    }
 }
