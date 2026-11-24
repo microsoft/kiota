@@ -25,8 +25,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+  /api/v1/clusters:
+    get:
+      summary: Retrieves a list of clusters
+      operationId: getClusters
+      responses:
+        "400":
+          description: Example.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterError"
+  /api/v1/brokers:
+    get:
+      summary: Retrieves a list of brokers
+      operationId: getBrokers
+      responses:
+        "503":
+          description: Example.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrokerError"
 components:
   schemas:
+    ClusterError:
+      type: object
+      properties:
+        developerErrorMessage:
+          type: string
+          x-ms-primary-error-message: true
+          example: The cluster is not available.
+    BrokerError:
+      type: object
+      properties:
+        response:
+          $ref: "#/components/schemas/BrokerErrorResponse"
+    BrokerErrorResponse:
+      type: object
+      properties:
+        detail:
+          $ref: "#/components/schemas/BrokerErrorDetail"
+    BrokerErrorDetail:
+      type: object
+      properties:
+        message:
+          type: string
+          x-ms-primary-error-message: true
+          example: The broker is not available.
     ServiceError:
       type: object
       properties:
