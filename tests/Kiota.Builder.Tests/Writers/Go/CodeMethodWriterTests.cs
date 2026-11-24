@@ -2788,7 +2788,70 @@ public sealed class CodeMethodWriterTests : IDisposable
 
         // Then
         Assert.Contains("Error() string {", result);
-        Assert.Contains("return *(m.GetProp1()", result);
+        Assert.Contains("if m.GetProp1() != nil {", result);
+        Assert.Contains("return *(m.GetProp1())", result);
+        Assert.Contains("return \"\"", result);
+    }
+    private CodeMethod AddPrimaryMessageErrorThroughObjects(params string[] objectPropertyNames)
+    {
+        var messageClass = root.AddClass(new CodeClass { Name = "messageClass", Kind = CodeClassKind.Model }).Single();
+        var message = messageClass.AddProperty(new CodeProperty
+        {
+            Name = "message",
+            Kind = CodePropertyKind.Custom,
+            IsPrimaryErrorMessage = true,
+            Type = new CodeType { Name = "string" },
+        }).Single();
+        var currentInterface = root.AddInterface(new CodeInterface { Name = "messageInterface", OriginalClass = messageClass }).Single();
+        currentInterface.AddMethod(new CodeMethod
+        {
+            Name = "GetMessage",
+            Kind = CodeMethodKind.Getter,
+            ReturnType = message.Type,
+            Access = AccessModifier.Public,
+            AccessedProperty = message,
+        });
+        var errorClass = root.AddClass(new CodeClass { Name = "errorClass", IsErrorDefinition = true, Kind = CodeClassKind.Model }).Single();
+        foreach (var propertyName in objectPropertyNames.Reverse())
+        {
+            var objectInterface = currentInterface;
+            var ownerClass = propertyName == objectPropertyNames[0] ? errorClass : root.AddClass(new CodeClass { Name = $"{propertyName}OwnerClass", Kind = CodeClassKind.Model }).Single();
+            currentInterface = root.AddInterface(new CodeInterface { Name = $"{propertyName}OwnerInterface", OriginalClass = ownerClass }).Single();
+            currentInterface.AddMethod(new CodeMethod
+            {
+                Name = $"Get{propertyName.ToFirstCharacterUpperCase()}",
+                Kind = CodeMethodKind.Getter,
+                ReturnType = new CodeType { Name = objectInterface.Name, TypeDefinition = objectInterface },
+                Access = AccessModifier.Public,
+            });
+        }
+        errorClass.AssociatedInterface = currentInterface;
+        return errorClass.AddMethod(new CodeMethod
+        {
+            Kind = CodeMethodKind.ErrorMessageOverride,
+            ReturnType = new CodeType { Name = "string", IsNullable = false },
+            Name = "Error"
+        }).Single();
+    }
+    [Fact]
+    public void WritesMessageOverrideOnPrimaryOfANestedObject()
+    {
+        writer.Write(AddPrimaryMessageErrorThroughObjects("error"));
+        var result = tw.ToString();
+
+        Assert.Contains("if m.GetError() != nil && m.GetError().GetMessage() != nil {", result);
+        Assert.Contains("return *(m.GetError().GetMessage())", result);
+        Assert.Contains("return \"\"", result);
+    }
+    [Fact]
+    public void WritesMessageOverrideOnPrimaryTwoLevelsDeep()
+    {
+        writer.Write(AddPrimaryMessageErrorThroughObjects("outer", "inner"));
+        var result = tw.ToString();
+
+        Assert.Contains("if m.GetOuter() != nil && m.GetOuter().GetInner() != nil && m.GetOuter().GetInner().GetMessage() != nil {", result);
+        Assert.Contains("return *(m.GetOuter().GetInner().GetMessage())", result);
+        Assert.Contains("return \"\"", result);
     }
 
     [Fact]
