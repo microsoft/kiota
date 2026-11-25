@@ -50,7 +50,17 @@ pwsh -c '$ErrorActionPreference = "Stop"; ./it/exec-cmd.ps1 -descriptionUrl ./te
 ```
 
 - **Debug** a generation with the **Launch \<language\>** configurations; the extension with **Run Extension** in a window opened on `vscode/packages/microsoft-kiota`.
-- **Extension and npm package tests** download a kiota release by default.
+- **Extension and npm package tests** download a kiota release by default. To run them against your checkout, use `-Tier Full` below; it publishes kiota and passes it in through `KIOTA_SIDELOADING_BINARY_ZIP_PATH` and `lib/.kiotabin`.
+
+## Check it
+
+```bash
+pwsh .devcontainer/test-devcontainer.ps1              # tools match CI's versions (about a second)
+pwsh .devcontainer/test-devcontainer.ps1 -Tier Build  # + build the solution and the extension
+pwsh .devcontainer/test-devcontainer.ps1 -Tier Full   # + all tests, one integration test per language
+```
+
+`Full` runs the integration tests in a temporary worktree (`HEAD` with your uncommitted changes to tracked files), so `it/` is never changed, and stops before them if `it/` or the description has local changes. If `.NET SDK` fails after `global.json` moved, run **Dev Containers: Rebuild Without Cache and Reopen in Container** (a plain rebuild keeps the cached SDK).
 
 ## Before you open a pull request
 
@@ -68,6 +78,6 @@ Add your own extensions or features in your VS Code user settings, not here:
 ## Maintenance
 
 - **Dependabot** updates the features ([`devcontainer-lock.json`](devcontainer-lock.json), one grouped PR).
-- **Changing a tool version**: update the CI workflow and the matching option in [`devcontainer.json`](devcontainer.json) together.
+- **Changing a tool version**: update the CI workflow and the matching option in [`devcontainer.json`](devcontainer.json) together; `-Tier Tools` fails until they agree.
 - **Base image**: patch updates come with the `3-resolute` tag; a new major is a manual bump.
 - **Versioning**: the container is versioned with the repository. Each commit's `.devcontainer/` matches that commit's CI, so an older checkout gets the container that went with it.

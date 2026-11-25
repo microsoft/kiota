@@ -1,5 +1,6 @@
 // Kiota dev container. See .devcontainer/README.md for what is in it and how to use it.
 // Tool versions mirror what CI tests with (global.json, .github/workflows/*.yml, it/*/ manifests).
+// .devcontainer/test-devcontainer.ps1 fails when they drift apart.
 {
   "name": "Kiota",
   // Ubuntu 26.04, the OS of CI's Ubuntu runners. Image major pinned so the OS cannot change underneath us.
