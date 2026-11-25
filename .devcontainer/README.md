@@ -77,7 +77,8 @@ Add your own extensions or features in your VS Code user settings, not here:
 
 ## Maintenance
 
-- **Dependabot** updates the features ([`devcontainer-lock.json`](devcontainer-lock.json), one grouped PR).
+- **CI**: [`devcontainer.yml`](../.github/workflows/devcontainer.yml) builds the container from scratch on x64 and ARM64 and runs `-Tier Full` when the container or `global.json` change, and weekly; the weekly run also catches version changes in the CI workflows, `it/go/go.mod` and `it/dart/pubspec.yaml`.
+- **Dependabot** updates the features ([`devcontainer-lock.json`](devcontainer-lock.json), one grouped PR) and the CLI CI uses ([`package.json`](package.json)). Those PRs skip the product test suites (`scripts/test-impact.cjs`) and are tested by this workflow, which is not a required check, so they are not auto-merged: merge them once it passes.
 - **Changing a tool version**: update the CI workflow and the matching option in [`devcontainer.json`](devcontainer.json) together; `-Tier Tools` fails until they agree.
 - **Base image**: patch updates come with the `3-resolute` tag; a new major is a manual bump.
 - **Versioning**: the container is versioned with the repository. Each commit's `.devcontainer/` matches that commit's CI, so an older checkout gets the container that went with it.

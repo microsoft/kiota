@@ -16,6 +16,7 @@ test("known non-behavioral paths bypass tests on PRs and merge groups", () => {
     for (const [eventName, event] of [["pull_request", pr], ["merge_group", group]]) {
         assert.equal(requiresTests(eventName, event, head, diff([
             "docs/tutorial.md", ".vscode/settings.json", "CHANGELOG.md", "CONTRIBUTING.md",
+            ".devcontainer/devcontainer.json", ".devcontainer/features/dart/install.sh",
             ".github/ISSUE_TEMPLATE/bug.yml", ".github/instructions/testing.md",
             ".github/agents/reviewer.md", ".github/skills/review/SKILL.md",
             ".github/copilot-instructions.md", "README.md", "LICENSE",

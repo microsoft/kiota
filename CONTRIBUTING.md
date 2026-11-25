@@ -60,8 +60,9 @@ builds and tests while the existing required checks report success. This include
 READMEs directly under `abstractions/`, `authentication/`, `http/`, `serialization/`,
 and `it/`, and Markdown directly under the two VS Code package directories.
 Packaged READMEs do not trigger behavioral tests solely because they are packaged.
-Root `.vscode/`, GitHub issue templates, and Copilot instructions, agents, and
-skills also qualify.
+Root `.vscode/` and `.devcontainer/`, GitHub issue templates, and Copilot
+instructions, agents, and skills also qualify; `.devcontainer/` changes are
+tested by the devcontainer workflow instead.
 
 Markdown is not ignored globally: files in source/resource, test-fixture, and
 generation-input locations still run tests. All other paths, including source,

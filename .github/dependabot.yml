@@ -11,6 +11,13 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+  - package-ecosystem: npm
+    directory: /.devcontainer
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
   - package-ecosystem: nuget
     directory: /
     schedule:

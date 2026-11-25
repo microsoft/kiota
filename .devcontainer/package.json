@@ -1,0 +1,8 @@
+{
+  "name": "kiota-devcontainer-tools",
+  "private": true,
+  "description": "Pins the Dev Container CLI used by .github/workflows/devcontainer.yml, so Dependabot can update it.",
+  "devDependencies": {
+    "@devcontainers/cli": "0.91.0"
+  }
+}

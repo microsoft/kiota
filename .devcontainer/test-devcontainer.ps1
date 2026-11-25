@@ -13,7 +13,10 @@
     -Tier Full   Build, then runs the .NET tests, the npm package and VS Code extension tests, and one
                  integration test per language against MockServer.
 
-    Run it yourself inside the container. Afterwards git status is as the script found it.
+    Run it yourself inside the container; .github/workflows/devcontainer.yml runs -Tier Full on amd64 and
+    arm64. Full runs the integration tests in a temporary worktree (HEAD with your uncommitted changes to tracked
+    files), so it/ is never changed, and stops before them if it/ or the description has local changes. Two Full
+    runs at once collide on MockServer's port and fail.
 
 .EXAMPLE
     pwsh .devcontainer/test-devcontainer.ps1 -Tier Full -Language python

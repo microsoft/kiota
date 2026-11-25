@@ -1,0 +1,66 @@
+name: devcontainer
+
+# Builds the dev container from scratch on linux/amd64 and linux/arm64 and runs
+# .devcontainer/test-devcontainer.ps1 inside it: tool presence, version drift against the
+# CI pins in this repository, and a build + test + integration-test smoke run.
+# It runs when the container or global.json changes. The weekly run catches the rest: version changes in the CI
+# workflows, it/go/go.mod and it/dart/pubspec.yaml (which change with every dependency bump there), and upstream
+# changes (feature or package sources) that break the build.
+# Dependabot keeps the features (devcontainer-lock.json) and the CLI (.devcontainer/package.json) current; its
+# pull requests skip the product test suites (scripts/test-impact.cjs), are tested by this workflow, and are not
+# auto-merged (auto-merge-dependabot.yml), so a maintainer merges them once it passes.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - ".devcontainer/**"
+      - "global.json"
+      - ".github/workflows/devcontainer.yml"
+  pull_request:
+    paths:
+      - ".devcontainer/**"
+      - "global.json"
+      - ".github/workflows/devcontainer.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-devcontainer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  devcontainer:
+    name: devcontainer (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # the container's install scripts run in this checkout; nothing here pushes
+
+      # The CLI version is pinned in .devcontainer/package.json so Dependabot keeps it current.
+      - name: Install the Dev Container CLI
+        run: npm ci --prefix .devcontainer
+
+      - name: Build and start the dev container (lockfile must be up to date)
+        run: npx --prefix .devcontainer devcontainer up --workspace-folder . --frozen-lockfile
+
+      - name: Test the dev container
+        run: npx --prefix .devcontainer devcontainer exec --workspace-folder . pwsh -NoProfile -File .devcontainer/test-devcontainer.ps1 -Tier Full
+
+      - name: Image size
+        if: always()
+        run: docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep -E '^vsc-' || true
