@@ -58,6 +58,9 @@ jobs:
       - name: Build and start the dev container (lockfile must be up to date)
         run: npx --prefix .devcontainer devcontainer up --workspace-folder . --frozen-lockfile
 
+      - name: Test the scripts in .devcontainer
+        run: npx --prefix .devcontainer devcontainer exec --workspace-folder . pwsh -NoProfile -Command 'Invoke-Pester -Configuration @{ Run = @{ Path = "./.devcontainer/*.Tests.ps1"; Exit = $true }; Output = @{ CIFormat = "GithubActions" } }'
+
       - name: Test the dev container
         run: npx --prefix .devcontainer devcontainer exec --workspace-folder . pwsh -NoProfile -File .devcontainer/test-devcontainer.ps1 -Tier Full
 

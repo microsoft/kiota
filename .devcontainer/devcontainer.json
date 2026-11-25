@@ -127,7 +127,9 @@
   // Runs once when the container is created (and in Codespaces prebuilds).
   "onCreateCommand": {
     "reportgenerator": "dotnet tool update --global dotnet-reportgenerator-globaltool --version '5.*'",
-    "dotnet-outdated": "dotnet tool update --global dotnet-outdated-tool --version '4.*'"
+    "dotnet-outdated": "dotnet tool update --global dotnet-outdated-tool --version '4.*'",
+    // Tests for the scripts in .devcontainer/: Invoke-Pester -Path ./.devcontainer/*.Tests.ps1
+    "pester": "pwsh -NoProfile -Command \"Install-PSResource Pester -Version '[6.0,7.0)' -TrustRepository -Scope CurrentUser -Quiet\""
   },
   // Runs after onCreate and whenever a prebuild picks up new content: restore so the first build and test are fast.
   "updateContentCommand": {

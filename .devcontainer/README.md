@@ -27,6 +27,7 @@ Base image [`mcr.microsoft.com/devcontainers/base:3-resolute`](https://github.co
 | Dart | newest 3.x (`it/dart/pubspec.yaml`) | Dart ITs ([local feature](features/dart)) |
 | xvfb + Electron libraries | | headless extension tests |
 | GitHub CLI, reportgenerator, dotnet-outdated | 2.x, 5.x, 4.x | PRs, coverage reports, `dotnet outdated` |
+| Pester | 6.x | tests for the scripts in `.devcontainer/` |
 
 On creation the container runs `dotnet restore` and `npm ci` (in `vscode/`). Extensions: C# Dev Kit, OpenAPI, YAML, GitHub Actions and pull requests, GitLens, Live Share, markdownlint, cSpell, ESLint, Prettier, and one per integration-test language.
 
@@ -58,6 +59,7 @@ pwsh -c '$ErrorActionPreference = "Stop"; ./it/exec-cmd.ps1 -descriptionUrl ./te
 pwsh .devcontainer/test-devcontainer.ps1              # tools match CI's versions (about a second)
 pwsh .devcontainer/test-devcontainer.ps1 -Tier Build  # + build the solution and the extension
 pwsh .devcontainer/test-devcontainer.ps1 -Tier Full   # + all tests, one integration test per language
+Invoke-Pester -Path ./.devcontainer/*.Tests.ps1       # the tests for these scripts (pwsh)
 ```
 
 `Full` runs the integration tests in a temporary worktree (`HEAD` with your uncommitted changes to tracked files), so `it/` is never changed, and stops before them if `it/` or the description has local changes. If `.NET SDK` fails after `global.json` moved, run **Dev Containers: Rebuild Without Cache and Reopen in Container** (a plain rebuild keeps the cached SDK).
