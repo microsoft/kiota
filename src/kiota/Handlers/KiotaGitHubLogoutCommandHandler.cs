@@ -44,9 +44,9 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
             try
             {
                 var deviceCodeAuthProvider = GetGitHubDeviceStorageService(logger);
-                var deviceCodeResult = await deviceCodeAuthProvider.TokenStorageService.Value.DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
-                var patResult = await GetGitHubPatStorageService(logger).DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
-                if (deviceCodeResult || patResult)
+                var deleted = await DeleteTokensAsync(deviceCodeAuthProvider.TokenStorageService.Value,
+                    GetGitHubPatStorageService(logger), cancellationToken).ConfigureAwait(false);
+                if (deleted)
                     DisplaySuccess("Logged out successfully.");
                 else
                     DisplaySuccess("Already logged out.");
@@ -70,6 +70,15 @@ internal class KiotaGitHubLogoutCommandHandler : BaseKiotaCommandHandler
                 if (stopwatch is not null) meterRuntime?.Record(stopwatch.Elapsed.TotalSeconds, tl);
             }
         }
+    }
+
+    internal static async Task<bool> DeleteTokensAsync(ITokenStorageService deviceStorage, ITokenStorageService patStorage, CancellationToken cancellationToken)
+    {
+        var results = await Task.WhenAll(DeleteAsync(deviceStorage), DeleteAsync(patStorage)).ConfigureAwait(false);
+        return results.Any(static deleted => deleted);
+
+        async Task<bool> DeleteAsync(ITokenStorageService storage) =>
+            await storage.DeleteTokenAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static void CreateTelemetryTags(ActivitySource? activitySource, LogLevel? logLevel,
