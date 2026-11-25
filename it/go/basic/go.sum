@@ -13,14 +13,6 @@ github.com/microsoft/kiota-abstractions-go v1.12.1 h1:W4Zh9hCyqWZNWlHMh1+G8u1IsR
 github.com/microsoft/kiota-abstractions-go v1.12.1/go.mod h1:/F3nXKnU9udY8ZQ1A8FFgr5OoBXlruUGZ3jgrBCQ0tc=
 github.com/microsoft/kiota-http-go v1.5.5 h1:K+jC3lq0kejeUETmh/C7TSIV+vdLuw1LT7NPPoNCxAE=
 github.com/microsoft/kiota-http-go v1.5.5/go.mod h1:L+5Ri+SzwELnUcNA0cpbFKp/pBbvypLh3Cd1PR6sjx0=
-github.com/microsoft/kiota-serialization-form-go v1.1.7 h1:FYN71K1ghl4OaguAcHiDWAa3W/mFNlgta9rMOP5SfjI=
-github.com/microsoft/kiota-serialization-form-go v1.1.7/go.mod h1:P7mmbQnvomNcOnPwTTkWj5NWtgMF1jY8NsXJtCGc9p8=
-github.com/microsoft/kiota-serialization-json-go v1.1.5 h1:gwoDAJbsT16ndbEDtMd/p51UP+rSR7JJ3DPwgeGbIZk=
-github.com/microsoft/kiota-serialization-json-go v1.1.5/go.mod h1:1SOZ2GYmFT975zoXPzvGmxGIOf0+RP3LEUDtd2Mxn+E=
-github.com/microsoft/kiota-serialization-multipart-go v1.1.6 h1:QsT4gXmrgsI2kY4dzKldikKFveyTpG7jdAbu3PBxG8w=
-github.com/microsoft/kiota-serialization-multipart-go v1.1.6/go.mod h1:jozo8/doPlO2LIWqeW9MOIXBf1XkswOy9WlKMqYw/T4=
-github.com/microsoft/kiota-serialization-text-go v1.1.7 h1:V3JahNdBoLE5sdNdJz82z3otOM9o3qgCBbIgI5v+738=
-github.com/microsoft/kiota-serialization-text-go v1.1.7/go.mod h1:XchDOAi02q/VVBNnLB4kzOrR6ZcQ1wtV1LSRZVokcgc=
 github.com/std-uritemplate/std-uritemplate/go/v2 v2.0.13 h1:EvUlEJUuES5kbLhkXqvRQ63CfGcQDoW7n0G1bCY4cuo=
 github.com/std-uritemplate/std-uritemplate/go/v2 v2.0.13/go.mod h1:Z5KcoM0YLC7INlNhEezeIZ0TZNYf7WSNO0Lvah4DSeQ=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
