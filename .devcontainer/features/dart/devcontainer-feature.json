@@ -1,0 +1,25 @@
+{
+  "id": "dart",
+  "version": "1.0.0",
+  "name": "Dart SDK",
+  "description": "Installs the Dart SDK from the official Dart archive (stable channel), with SHA-256 verification. Local feature: there is no maintained Dart feature in the devcontainers organization.",
+  "documentationURL": "https://dart.dev/get-dart/archive",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "proposals": ["3", "3.14", "latest"],
+      "description": "Dart SDK version from the stable channel: a major (3) or major.minor (3.14) for the newest release within it, an exact version (3.14.1), or 'latest'."
+    }
+  },
+  "containerEnv": {
+    "DART_SDK": "/usr/lib/dart",
+    "PATH": "/usr/lib/dart/bin:${PATH}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["Dart-Code.dart-code"]
+    }
+  },
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
+}

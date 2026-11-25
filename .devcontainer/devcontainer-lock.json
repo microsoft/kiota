@@ -1,0 +1,54 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "2.5.0",
+      "resolved": "ghcr.io/devcontainers/features/dotnet@sha256:0fc16547ed4db6d7ff2a9f5981d2b93eb314e568affb9958029ad794f1f9a093",
+      "integrity": "sha256:0fc16547ed4db6d7ff2a9f5981d2b93eb314e568affb9958029ad794f1f9a093"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "1.1.3",
+      "resolved": "ghcr.io/devcontainers/features/github-cli@sha256:bd7ab48a832228f633239277552c30b353867fef2e5b037e064b4e64f0b843f2",
+      "integrity": "sha256:bd7ab48a832228f633239277552c30b353867fef2e5b037e064b4e64f0b843f2"
+    },
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.4.1",
+      "resolved": "ghcr.io/devcontainers/features/go@sha256:2f2ed290df9a5f1841340b14cb8a287cf0574a816967dd84dcfe42fdd97b897e",
+      "integrity": "sha256:2f2ed290df9a5f1841340b14cb8a287cf0574a816967dd84dcfe42fdd97b897e"
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "1.8.3",
+      "resolved": "ghcr.io/devcontainers/features/java@sha256:61a839211feda1e2a1f10646648a948e733e4d98d770f3a4b6698a3c5fc92abe",
+      "integrity": "sha256:61a839211feda1e2a1f10646648a948e733e4d98d770f3a4b6698a3c5fc92abe"
+    },
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "2.1.2",
+      "resolved": "ghcr.io/devcontainers/features/node@sha256:20ac718cc67e7999a9d3fbb8387f1a3a5d53ecbd41fe7c075ebadb8e9b431b17",
+      "integrity": "sha256:20ac718cc67e7999a9d3fbb8387f1a3a5d53ecbd41fe7c075ebadb8e9b431b17"
+    },
+    "ghcr.io/devcontainers/features/php:1": {
+      "version": "1.1.6",
+      "resolved": "ghcr.io/devcontainers/features/php@sha256:d2367aa5d0c6c39e824e81c1d53696fc3c6370aca5d954105d3675d0a176137f",
+      "integrity": "sha256:d2367aa5d0c6c39e824e81c1d53696fc3c6370aca5d954105d3675d0a176137f"
+    },
+    "ghcr.io/devcontainers/features/powershell:2": {
+      "version": "2.0.4",
+      "resolved": "ghcr.io/devcontainers/features/powershell@sha256:34cd20ddd57ab8cc11cba8af7cc21314fbb28855d4dca50168f9a9bae2de51a7",
+      "integrity": "sha256:34cd20ddd57ab8cc11cba8af7cc21314fbb28855d4dca50168f9a9bae2de51a7"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "1.8.1",
+      "resolved": "ghcr.io/devcontainers/features/python@sha256:7b35df4ff12f378effab187341b1b1b2373de6dd6d027d87aa77dd246c62b517",
+      "integrity": "sha256:7b35df4ff12f378effab187341b1b1b2373de6dd6d027d87aa77dd246c62b517"
+    },
+    "ghcr.io/devcontainers/features/ruby:2": {
+      "version": "2.0.0",
+      "resolved": "ghcr.io/devcontainers/features/ruby@sha256:31b07475acf72a649c2f323d2ab5c15e1a0c286e7495be822b0850e240a9b5b7",
+      "integrity": "sha256:31b07475acf72a649c2f323d2ab5c15e1a0c286e7495be822b0850e240a9b5b7"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+      "version": "1.0.2",
+      "resolved": "ghcr.io/rocker-org/devcontainer-features/apt-packages@sha256:87a4d7750a596a5db034ba8508782f31aebdc2ffe955c66aaecb33d9de2ecdae",
+      "integrity": "sha256:87a4d7750a596a5db034ba8508782f31aebdc2ffe955c66aaecb33d9de2ecdae"
+    }
+  }
+}
