@@ -49,9 +49,15 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
     public new Task<Stream> LoadAsync(Uri baseUrl, Uri uri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uri);
-        var targetUri = uri.IsAbsoluteUri || baseUrl is null ? uri : new Uri(baseUrl, uri);
-        if (!IsAllowed(targetUri, uri))
+        var resolutionBase = !uri.IsAbsoluteUri && baseUrl is { IsAbsoluteUri: true } && OpenApiConstants.BaseRegistryUri.Equals(baseUrl.AbsoluteUri, StringComparison.Ordinal) ?
+            new Uri(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar) : baseUrl;
+        var targetUri = uri.IsAbsoluteUri || resolutionBase is null ? uri : new Uri(resolutionBase, uri);
+        // Resolve file URIs the same way as DefaultStreamLoader, then authorize and open that one filesystem path.
+        var localPath = targetUri.IsFile ? NormalizePathCandidate(new UriBuilder(targetUri) { Fragment = string.Empty }.Uri.LocalPath) : null;
+        if (!(localPath is null ? IsAllowed(targetUri) : IsAllowedLocalPath(localPath)))
             throw new InvalidOperationException($"The external reference {targetUri} is not allowed. Add it to --allowed-external-origins to load it.");
+        if (localPath is not null)
+            return Task.FromResult<Stream>(File.OpenRead(localPath));
         if (IsHttpUri(targetUri) && (uri.IsAbsoluteUri || baseUrl is null || !OpenApiConstants.BaseRegistryUri.Equals(baseUrl.AbsoluteUri, StringComparison.Ordinal)))
             return LoadFromHttpAsync(targetUri, cancellationToken);
         return base.LoadAsync(baseUrl!, uri, cancellationToken);
@@ -103,7 +109,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             try
             {
-                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && Canonicalize(respondingUri) is var canonicalRespondingUri && !IsAllowed(canonicalRespondingUri, canonicalRespondingUri))
+                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && Canonicalize(respondingUri) is var canonicalRespondingUri && !IsAllowed(canonicalRespondingUri))
                     throw new InvalidOperationException($"The external reference {targetUri} was served from {respondingUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
                 if (!IsRedirect(response.StatusCode) || response.Headers.Location is not { } location)
                 {
@@ -128,7 +134,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
                 if (!IsHttpUri(redirectUri) || (Uri.UriSchemeHttps.Equals(requestUri.Scheme, StringComparison.OrdinalIgnoreCase) && !Uri.UriSchemeHttps.Equals(redirectUri.Scheme, StringComparison.OrdinalIgnoreCase)))
                     throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not supported.");
                 redirectUri = Canonicalize(redirectUri);
-                if (!IsAllowed(redirectUri, redirectUri))
+                if (!IsAllowed(redirectUri))
                     throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
                 if (redirectCount >= MaxRedirects)
                     throw new InvalidOperationException($"The external reference {targetUri} exceeded the maximum number of redirects ({MaxRedirects}).");
@@ -143,43 +149,30 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         }
     }
 
-    private bool IsAllowed(Uri targetUri, Uri originalUri)
+    private bool IsAllowedLocalPath(string localPath)
+    {
+        return allowedExternalOrigins.Any(allowedOrigin =>
+            allowedOrigin.Equals("*", StringComparison.Ordinal) ||
+            Matches(NormalizeAllowedPath(allowedOrigin), localPath));
+    }
+
+    private bool IsAllowed(Uri targetUri)
     {
         if (allowedExternalOrigins.Count == 0)
             return false;
 
-        var uriCandidates = GetUriCandidates(targetUri, originalUri);
-        var pathCandidates = GetPathCandidates(targetUri, originalUri);
+        var uriCandidates = GetUriCandidates(targetUri);
         return allowedExternalOrigins.Any(allowedOrigin =>
             allowedOrigin.Equals("*", StringComparison.Ordinal) ||
-            MatchesAnyUriCandidate(allowedOrigin, uriCandidates) ||
-            MatchesAnyCandidate(NormalizeAllowedPath(allowedOrigin), pathCandidates));
+            MatchesAnyUriCandidate(allowedOrigin, uriCandidates));
     }
 
-    private static IEnumerable<string> GetUriCandidates(Uri targetUri, Uri originalUri)
+    private static IEnumerable<string> GetUriCandidates(Uri targetUri)
     {
         yield return targetUri.AbsoluteUri;
         // the absolute URI drops the default port, which a pattern with a port wildcard still expects
         if (IsHttpUri(targetUri) && targetUri.IsDefaultPort)
             yield return targetUri.GetComponents(UriComponents.AbsoluteUri | UriComponents.StrongPort, UriFormat.UriEscaped);
-        // the original string can keep segments such as "..", which the request doesn't
-        if (IsHttpUri(targetUri))
-            yield break;
-        yield return targetUri.OriginalString;
-        yield return originalUri.OriginalString;
-    }
-
-    private static IEnumerable<string> GetPathCandidates(Uri targetUri, Uri originalUri)
-    {
-        if (targetUri.IsFile)
-            yield return NormalizePathCandidate(targetUri.LocalPath);
-        if (!originalUri.IsAbsoluteUri || originalUri.IsFile)
-            yield return NormalizePathCandidate(originalUri.IsAbsoluteUri ? originalUri.LocalPath : originalUri.OriginalString);
-    }
-
-    private static bool MatchesAnyCandidate(string pattern, IEnumerable<string> candidates)
-    {
-        return candidates.Any(candidate => Matches(pattern, candidate));
     }
 
     private static bool MatchesAnyUriCandidate(string pattern, IEnumerable<string> candidates)
@@ -302,8 +295,13 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
 
     private static string NormalizeAllowedPath(string allowedOrigin)
     {
-        if (Uri.TryCreate(allowedOrigin, UriKind.Absolute, out var uri) && !uri.IsFile)
-            return allowedOrigin;
+        if (Uri.TryCreate(allowedOrigin, UriKind.Absolute, out var uri))
+        {
+            if (!uri.IsFile)
+                return allowedOrigin;
+            if (!Path.IsPathRooted(allowedOrigin))
+                allowedOrigin = uri.LocalPath;
+        }
 
         var path = allowedOrigin.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
         if (!Path.IsPathRooted(path))
