@@ -232,4 +232,75 @@ public sealed class CodeEnumWriterTests : IDisposable
         Assert.Contains("return []string{\"line1\\\"\\nline2\"}[i]", result);
         Assert.Contains("case \"line1\\\"\\nline2\":", result);
     }
+
+    [Fact]
+    public void WritesNumericalEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "active", SerializationName = "10" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "inactive", SerializationName = "20" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int", result);
+        Assert.Contains("ACTIVE_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 10", result);
+        Assert.Contains("INACTIVE_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 20", result);
+        Assert.Contains("switch i {", result);
+        Assert.Contains("case ACTIVE_SOMEENUM:", result);
+        Assert.Contains("return \"10\"", result);
+    }
+
+    [Fact]
+    public void WritesNumericalEnumWithInt64Format()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.Format = "int64";
+        currentEnum.AddOption(new CodeEnumOption { Name = "bigValue", SerializationName = "9223372036854775807" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains($"type {EnumName.ToFirstCharacterUpperCase()} int64", result);
+        Assert.Contains("BIGVALUE_SOMEENUM SomeEnum = 9223372036854775807", result);
+    }
+
+    [Fact]
+    public void WritesNumericalFlagsEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.Flags = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "read", SerializationName = "1" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "write", SerializationName = "2" });
+        currentEnum.AddOption(new CodeEnumOption { Name = "execute", SerializationName = "4" });
+        writer.Write(currentEnum);
+        var result = tw.ToString();
+        Assert.Contains("READ_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 1", result);
+        Assert.Contains("WRITE_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 2", result);
+        Assert.Contains("EXECUTE_SOMEENUM", result);
+        Assert.Contains("SomeEnum = 4", result);
+        Assert.Contains("options := []struct {", result);
+        Assert.Contains("strings.Join(values, \",\")", result);
+        Assert.DoesNotContain("math.Pow", result);
+    }
+
+    [Theory]
+    [InlineData("10; delete_database();")]
+    [InlineData("10\" or 1=1")]
+    [InlineData("system('calc')")]
+    [InlineData("abc")]
+    public void ThrowsOnHostileNumericValue(string hostileValue)
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "Hostile", SerializationName = hostileValue });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(currentEnum));
+    }
+
+    [Fact]
+    public void ThrowsOnFractionalEnum()
+    {
+        currentEnum.IsNumeric = true;
+        currentEnum.AddOption(new CodeEnumOption { Name = "OneFive", SerializationName = "1.5" });
+        Assert.Throws<InvalidOperationException>(() => writer.Write(currentEnum));
+    }
 }

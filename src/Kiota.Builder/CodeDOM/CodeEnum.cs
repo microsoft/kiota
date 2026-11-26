@@ -13,6 +13,28 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         get; set;
     }
+    public bool IsNumeric
+    {
+        get; set;
+    }
+    public string? Format
+    {
+        get; set;
+    }
+    private bool? _isFractional;
+    public bool IsFractional
+    {
+        get => _isFractional ?? (IsNumeric && (
+            string.Equals(Format, "float", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Format, "double", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Format, "decimal", StringComparison.OrdinalIgnoreCase) ||
+            Options.Any(static x => x.WireName.Contains('.', StringComparison.Ordinal) ||
+                                    x.WireName.Contains('e', StringComparison.OrdinalIgnoreCase) ||
+                                    (!long.TryParse(x.WireName, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out _) &&
+                                     double.TryParse(x.WireName, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _)))
+        ));
+        set => _isFractional = value;
+    }
 
     public CodeDocumentation Documentation { get; set; } = new();
     private readonly ConcurrentQueue<CodeEnumOption> OptionsInternal = new(); // this structure is used to maintain the order of the options

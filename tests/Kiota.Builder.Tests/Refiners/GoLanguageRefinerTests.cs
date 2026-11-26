@@ -1481,5 +1481,55 @@ components:
         Assert.DoesNotContain(method.Parameters, p => p.Name == "type");
         Assert.DoesNotContain(method.Parameters, p => p.Name == "select");
     }
+
+    [Fact]
+    public async Task RevertsFractionalEnumsToPrimitiveAsync()
+    {
+        var fractionalEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "Rate",
+            IsNumeric = true,
+        }).First();
+        fractionalEnum.AddOption(
+            new CodeEnumOption { Name = "OneFive", SerializationName = "1.5" },
+            new CodeEnumOption { Name = "TwoFive", SerializationName = "2.5" }
+        );
+
+        var model = root.AddClass(new CodeClass
+        {
+            Name = "Invoice",
+            Kind = CodeClassKind.Model,
+        }).First();
+        var prop = model.AddProperty(new CodeProperty
+        {
+            Name = "rate",
+            Type = new CodeType { TypeDefinition = fractionalEnum },
+        }).First();
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Null((prop.Type as CodeType)?.TypeDefinition);
+        Assert.Equal("float64", prop.Type.Name);
+        Assert.DoesNotContain(root.GetChildElements(true).OfType<CodeEnum>(), x => x.Name == "Rate");
+    }
+
+    [Fact]
+    public async Task DoesNotImportMathForNumericalFlagsEnumAsync()
+    {
+        var flagsEnum = root.AddEnum(new CodeEnum
+        {
+            Name = "Permission",
+            Flags = true,
+            IsNumeric = true,
+        }).First();
+        flagsEnum.AddOption(
+            new CodeEnumOption { Name = "Read", SerializationName = "1" },
+            new CodeEnumOption { Name = "Write", SerializationName = "2" }
+        );
+
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Go }, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(flagsEnum.Usings, x => x.Name == "math");
+    }
     #endregion
 }

@@ -7992,7 +7992,10 @@ paths:
         Assert.NotNull(getRB);
         var getMethod = getRB.Methods.FirstOrDefault(static x => x.IsOfKind(CodeMethodKind.RequestExecutor) && "Get".Equals(x.Name, StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(getMethod);
-        Assert.Equal("double", getMethod.ReturnType.Name);
+        Assert.Equal("meGetResponse", getMethod.ReturnType.Name);
+        var enumDef = requestBuilderNS.FindChildByName<CodeEnum>("meGetResponse", false);
+        Assert.NotNull(enumDef);
+        Assert.True(enumDef.IsNumeric);
     }
     [InlineData("MV22X/MV72X", "MV22XMV72X")]
     [Theory]
@@ -12609,5 +12612,285 @@ components:
             m.Kind is CodeMethodKind.RequestGenerator && m.HttpMethod == Builder.CodeDOM.HttpMethod.Patch);
         Assert.NotNull(patchGenerator);
         Assert.False(patchGenerator.HasUrlTemplateOverride);
+    }
+
+    [Fact]
+    public async Task ParsesNumericalEnumInformationAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test Service
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+components:
+  schemas:
+    Status:
+      type: integer
+      format: int32
+      enum:
+        - 10
+        - 20
+        - 30");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("Status", false);
+        Assert.NotNull(enumDef);
+        Assert.True(enumDef.IsNumeric);
+        Assert.Equal("int32", enumDef.Format);
+        Assert.Equal(3, enumDef.Options.Count());
+        var first = enumDef.Options.ElementAt(0);
+        Assert.Equal("10", first.SerializationName);
+        Assert.Equal("OneZero", first.Name);
+        Assert.True(first.IsNumeric);
+        var second = enumDef.Options.ElementAt(1);
+        Assert.Equal("20", second.SerializationName);
+        Assert.Equal("TwoZero", second.Name);
+        Assert.True(second.IsNumeric);
+        var third = enumDef.Options.ElementAt(2);
+        Assert.Equal("30", third.SerializationName);
+        Assert.Equal("ThreeZero", third.Name);
+        Assert.True(third.IsNumeric);
+    }
+
+    [Fact]
+    public async Task ParsesNumericalEnumWithNegativeAndSparseValuesAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test Service
+  version: 1.0.0
+paths:
+  /priority:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Priority'
+components:
+  schemas:
+    Priority:
+      type: integer
+      format: int64
+      enum:
+        - -1
+        - 0
+        - 100");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("Priority", false);
+        Assert.NotNull(enumDef);
+        Assert.True(enumDef.IsNumeric);
+        Assert.Equal("int64", enumDef.Format);
+        Assert.Equal(3, enumDef.Options.Count());
+        var first = enumDef.Options.ElementAt(0);
+        Assert.Equal("-1", first.SerializationName);
+        Assert.Equal("minus_1", first.Name);
+        Assert.True(first.IsNumeric);
+        var second = enumDef.Options.ElementAt(1);
+        Assert.Equal("0", second.SerializationName);
+        Assert.Equal("Zero", second.Name);
+        Assert.True(second.IsNumeric);
+        var third = enumDef.Options.ElementAt(2);
+        Assert.Equal("100", third.SerializationName);
+        Assert.Equal("OneZeroZero", third.Name);
+        Assert.True(third.IsNumeric);
+    }
+
+    [Fact]
+    public async Task ParsesNumericalEnumWithXMsEnumNamesAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test Service
+  version: 1.0.0
+paths:
+  /task:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+components:
+  schemas:
+    TaskStatus:
+      type: integer
+      format: int32
+      enum:
+        - 10
+        - 20
+      x-ms-enum:
+        name: TaskStatus
+        modelAsString: false
+        values:
+          - value: 10
+            name: Active
+            description: Active task
+          - value: 20
+            name: Completed
+            description: Completed task");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("TaskStatus", false);
+        Assert.NotNull(enumDef);
+        Assert.True(enumDef.IsNumeric);
+        Assert.Equal(2, enumDef.Options.Count());
+        var first = enumDef.Options.ElementAt(0);
+        Assert.Equal("10", first.SerializationName);
+        Assert.Equal("Active", first.Name);
+        Assert.Equal("Active task", first.Documentation.DescriptionTemplate);
+        Assert.True(first.IsNumeric);
+        var second = enumDef.Options.ElementAt(1);
+        Assert.Equal("20", second.SerializationName);
+        Assert.Equal("Completed", second.Name);
+        Assert.Equal("Completed task", second.Documentation.DescriptionTemplate);
+        Assert.True(second.IsNumeric);
+    }
+
+    [Fact]
+    public async Task ParsesFractionalEnumAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test Service
+  version: 1.0.0
+paths:
+  /rate:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rate'
+components:
+  schemas:
+    Rate:
+      type: number
+      enum:
+        - 1.5
+        - 2.5");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("Rate", false);
+        Assert.NotNull(enumDef);
+        Assert.True(enumDef.IsNumeric);
+        Assert.True(enumDef.IsFractional);
+        Assert.Equal(2, enumDef.Options.Count());
+        Assert.Equal("1.5", enumDef.Options.ElementAt(0).SerializationName);
+        Assert.Equal("2.5", enumDef.Options.ElementAt(1).SerializationName);
+    }
+
+    [Fact]
+    public async Task RejectsStringEnumEntriesUnderIntegerTypeFromBeingNumericEnumAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test Service
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+components:
+  schemas:
+    Status:
+      type: integer
+      enum:
+        - foo; drop();
+        - bar");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("Status", false);
+        Assert.NotNull(enumDef);
+        Assert.False(enumDef.IsNumeric);
+    }
+
+    [Fact]
+    public async Task RejectsMixedEnumEntriesFromBeingNumericEnumAsync()
+    {
+        var tempFilePath = Path.GetTempFileName();
+        await using var fs = await GetDocumentStreamAsync(@"openapi: 3.0.1
+info:
+  title: Test Service
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+components:
+  schemas:
+    Status:
+      type: integer
+      enum:
+        - 10
+        - foo");
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, new GenerationConfiguration { ClientClassName = "Graph", OpenAPIFilePath = tempFilePath }, _httpClient);
+        var document = await builder.CreateOpenApiDocumentAsync(fs, cancellationToken: TestContext.Current.CancellationToken);
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+        var modelsNS = codeModel.FindNamespaceByName("ApiSdk.models");
+        Assert.NotNull(modelsNS);
+        var enumDef = modelsNS.FindChildByName<CodeEnum>("Status", false);
+        Assert.NotNull(enumDef);
+        Assert.False(enumDef.IsNumeric);
     }
 }

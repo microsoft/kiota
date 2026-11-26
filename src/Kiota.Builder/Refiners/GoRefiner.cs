@@ -95,6 +95,7 @@ public class GoRefiner : CommonLanguageRefiner
             RemoveModelPropertiesThatDependOnSubNamespaces(
                 generatedCode
             );
+            RevertFractionalEnumsToPrimitives(generatedCode, "float32", "float64");
             FixConstructorClashes(generatedCode, x => $"{x}Escaped");
             ReplaceReservedNames(
                 generatedCode,
@@ -843,7 +844,7 @@ public class GoRefiner : CommonLanguageRefiner
         new (static x => x is CodeMethod @method && @method.IsOfKind(CodeMethodKind.RequestExecutor) && (method.ReturnType.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase) ||
                                                                                                         method.Parameters.Any(x => x.Kind is CodeParameterKind.RequestBody && x.Type.Name.Equals(KiotaBuilder.UntypedNodeName, StringComparison.OrdinalIgnoreCase))),
             SerializationNamespaceName, KiotaBuilder.UntypedNodeName),
-        new (static x => x is CodeEnum @enum && @enum.Flags,"", "math"),
+        new (static x => x is CodeEnum @enum && @enum.Flags && !@enum.IsNumeric, "", "math"),
     };
     private const string MultipartBodyClassName = "MultipartBody";
     private const string AbstractionsNamespaceName = "github.com/microsoft/kiota-abstractions-go";

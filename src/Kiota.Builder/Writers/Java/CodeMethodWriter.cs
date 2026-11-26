@@ -394,7 +394,14 @@ public partial class CodeMethodWriter : BaseElementWriter<CodeMethod, JavaConven
             var defaultValue = propWithDefault.DefaultValue.SanitizeQuotedStringLiteral();
             if (propWithDefault.Type is CodeType propertyType && propertyType.TypeDefinition is CodeEnum enumDefinition)
             {
-                defaultValue = $"{enumDefinition.Name}.forValue({defaultValue})";
+                var trimmedDefault = defaultValue.Trim('"');
+                var matchingOption = enumDefinition.Options.FirstOrDefault(x =>
+                    x.SerializationName.Equals(trimmedDefault, StringComparison.OrdinalIgnoreCase) ||
+                    x.WireName.Equals(trimmedDefault, StringComparison.OrdinalIgnoreCase) ||
+                    x.Name.Equals(trimmedDefault, StringComparison.OrdinalIgnoreCase));
+
+                var wireValue = matchingOption is not null ? matchingOption.WireName : trimmedDefault;
+                defaultValue = $"{enumDefinition.Name}.forValue(\"{wireValue.SanitizeDoubleQuote()}\")";
             }
             else if (propWithDefault.Type.IsNullable &&
                 defaultValue.TrimQuotes().Equals(NullValueString, StringComparison.OrdinalIgnoreCase))
