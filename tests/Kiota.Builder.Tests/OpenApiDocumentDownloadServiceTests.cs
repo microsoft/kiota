@@ -580,17 +580,17 @@ components:
     public async Task AllowedExternalOriginsStreamLoaderRejectsLocalTraversal(string allowedOriginKind, bool absoluteReference, string referencePath)
     {
         var relativeDirectory = Path.GetRandomFileName();
-        var tempDirectory = Path.Combine(Directory.GetCurrentDirectory(), relativeDirectory);
-        var allowedDirectory = Path.Combine(tempDirectory, "safe");
+        var tempDirectory = Path.Join(Directory.GetCurrentDirectory(), relativeDirectory);
+        var allowedDirectory = Path.Join(tempDirectory, "safe");
         try
         {
             Directory.CreateDirectory(allowedDirectory);
-            await File.WriteAllTextAsync(Path.Combine(tempDirectory, "outside.yaml"), "type: object", TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(Path.Join(tempDirectory, "outside.yaml"), "type: object", TestContext.Current.CancellationToken);
             var allowedOrigin = allowedOriginKind switch
             {
-                "absolute" => Path.Combine(allowedDirectory, "*"),
-                "uri" => new Uri(Path.Combine(allowedDirectory, "*")).AbsoluteUri,
-                _ => Path.Combine(relativeDirectory, "safe", "*"),
+                "absolute" => Path.Join(allowedDirectory, "*"),
+                "uri" => new Uri(Path.Join(allowedDirectory, "*")).AbsoluteUri,
+                _ => Path.Join(relativeDirectory, "safe", "*"),
             };
             var reference = absoluteReference ?
                 new Uri($"{new Uri(allowedDirectory).AbsoluteUri}/{referencePath}") :
@@ -601,7 +601,7 @@ components:
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
                 await using var stream = await loader.LoadAsync(
-                    new Uri(new Uri(Path.Combine(Directory.GetCurrentDirectory(), "openapi.yaml")).AbsoluteUri),
+                    new Uri(new Uri(Path.Join(Directory.GetCurrentDirectory(), "openapi.yaml")).AbsoluteUri),
                     reference,
                     TestContext.Current.CancellationToken);
             });
@@ -620,18 +620,18 @@ components:
     [InlineData("nested/%2e%2e/pet.yaml", "pet.yaml")]
     public async Task AllowedExternalOriginsStreamLoaderLoadsCanonicalLocalPaths(string referencePath, string fileName)
     {
-        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var allowedDirectory = Path.Combine(tempDirectory, "safe");
+        var tempDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+        var allowedDirectory = Path.Join(tempDirectory, "safe");
         try
         {
             Directory.CreateDirectory(allowedDirectory);
-            var schemaPath = Path.Combine(allowedDirectory, fileName);
+            var schemaPath = Path.Join(allowedDirectory, fileName);
             await File.WriteAllTextAsync(schemaPath, "type: object", TestContext.Current.CancellationToken);
             using var httpClient = new HttpClient(new ResponseHandler());
             var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [schemaPath]);
 
             await using var stream = await loader.LoadAsync(
-                new Uri(new Uri(Path.Combine(tempDirectory, "openapi.yaml")).AbsoluteUri),
+                new Uri(new Uri(Path.Join(tempDirectory, "openapi.yaml")).AbsoluteUri),
                 new Uri($"safe/{referencePath}#/components/schemas/Pet", UriKind.Relative),
                 TestContext.Current.CancellationToken);
             using var reader = new StreamReader(stream);
@@ -648,19 +648,19 @@ components:
     public async Task AllowedExternalOriginsStreamLoaderDoesNotAuthorizeRelativePathsAgainstAnotherBaseDirectory()
     {
         var relativeDirectory = Path.GetRandomFileName();
-        var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var schemaPath = Path.Combine(tempDirectory, relativeDirectory, "pet.yaml");
+        var tempDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+        var schemaPath = Path.Join(tempDirectory, relativeDirectory, "pet.yaml");
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(schemaPath)!);
             await File.WriteAllTextAsync(schemaPath, "type: object", TestContext.Current.CancellationToken);
             using var httpClient = new HttpClient(new ResponseHandler());
-            var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [Path.Combine(relativeDirectory, "*")]);
+            var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [Path.Join(relativeDirectory, "*")]);
 
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
                 await using var stream = await loader.LoadAsync(
-                    new Uri(Path.Combine(tempDirectory, "openapi.yaml")),
+                    new Uri(Path.Join(tempDirectory, "openapi.yaml")),
                     new Uri($"{relativeDirectory}/pet.yaml", UriKind.Relative),
                     TestContext.Current.CancellationToken);
             });
@@ -692,12 +692,12 @@ components:
     public async Task AllowedExternalOriginsValidateLocalReferencesDuringDocumentLoading(bool traversal)
     {
         var relativeDirectory = Path.GetRandomFileName();
-        var tempDirectory = Path.Combine(Directory.GetCurrentDirectory(), relativeDirectory);
+        var tempDirectory = Path.Join(Directory.GetCurrentDirectory(), relativeDirectory);
         try
         {
-            Directory.CreateDirectory(Path.Combine(tempDirectory, "safe"));
+            Directory.CreateDirectory(Path.Join(tempDirectory, "safe"));
             var referencePath = traversal ? "safe/%2e%2e/outside.yaml" : "safe/pet.yaml";
-            var schemaPath = traversal ? Path.Combine(tempDirectory, "outside.yaml") : Path.Combine(tempDirectory, "safe", "pet.yaml");
+            var schemaPath = traversal ? Path.Join(tempDirectory, "outside.yaml") : Path.Join(tempDirectory, "safe", "pet.yaml");
             await File.WriteAllTextAsync(schemaPath, """
 openapi: 3.0.0
 info:
@@ -715,7 +715,7 @@ components:
             var config = new GenerationConfiguration
             {
                 OpenAPIFilePath = "openapi.yaml",
-                AllowedExternalOrigins = [Path.Combine(relativeDirectory, "safe", "*")],
+                AllowedExternalOrigins = [Path.Join(relativeDirectory, "safe", "*")],
             };
             using var input = CreateMemoryStreamFromString($$"""
 openapi: 3.0.0

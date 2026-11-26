@@ -54,7 +54,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
         var targetUri = uri.IsAbsoluteUri || resolutionBase is null ? uri : new Uri(resolutionBase, uri);
         // Resolve file URIs the same way as DefaultStreamLoader, then authorize and open that one filesystem path.
         var localPath = targetUri.IsFile ? NormalizePathCandidate(new UriBuilder(targetUri) { Fragment = string.Empty }.Uri.LocalPath) : null;
-        if (!(localPath is null ? IsAllowed(targetUri) : IsAllowedLocalPath(localPath)))
+        if (!(localPath is null ? IsAllowedUri(targetUri) : IsAllowedLocalPath(localPath)))
             throw new InvalidOperationException($"The external reference {targetUri} is not allowed. Add it to --allowed-external-origins to load it.");
         if (localPath is not null)
             return Task.FromResult<Stream>(File.OpenRead(localPath));
@@ -109,7 +109,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             try
             {
-                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && Canonicalize(respondingUri) is var canonicalRespondingUri && !IsAllowed(canonicalRespondingUri))
+                if (response.RequestMessage?.RequestUri is { } respondingUri && respondingUri != requestUri && Canonicalize(respondingUri) is var canonicalRespondingUri && !IsAllowedUri(canonicalRespondingUri))
                     throw new InvalidOperationException($"The external reference {targetUri} was served from {respondingUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
                 if (!IsRedirect(response.StatusCode) || response.Headers.Location is not { } location)
                 {
@@ -134,7 +134,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
                 if (!IsHttpUri(redirectUri) || (Uri.UriSchemeHttps.Equals(requestUri.Scheme, StringComparison.OrdinalIgnoreCase) && !Uri.UriSchemeHttps.Equals(redirectUri.Scheme, StringComparison.OrdinalIgnoreCase)))
                     throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not supported.");
                 redirectUri = Canonicalize(redirectUri);
-                if (!IsAllowed(redirectUri))
+                if (!IsAllowedUri(redirectUri))
                     throw new InvalidOperationException($"The external reference {targetUri} redirected to {redirectUri}, which is not allowed. Add it to --allowed-external-origins to load it.");
                 if (redirectCount >= MaxRedirects)
                     throw new InvalidOperationException($"The external reference {targetUri} exceeded the maximum number of redirects ({MaxRedirects}).");
@@ -156,7 +156,7 @@ internal sealed partial class AllowedExternalOriginsStreamLoader : DefaultStream
             Matches(NormalizeAllowedPath(allowedOrigin), localPath));
     }
 
-    private bool IsAllowed(Uri targetUri)
+    private bool IsAllowedUri(Uri targetUri)
     {
         if (allowedExternalOrigins.Count == 0)
             return false;
