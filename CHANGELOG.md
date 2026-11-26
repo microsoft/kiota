@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Local external references are checked against `--allowed-external-origins` using the resolved filesystem path that is opened.
+
 ## [1.39.0] - 2026-11-17
 
 ### Added
