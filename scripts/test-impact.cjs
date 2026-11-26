@@ -4,7 +4,7 @@ const { appendFileSync, readFileSync } = require("node:fs");
 // Classify by behavioral impact, not package contents. Do not ignore Markdown
 // globally: source resources and test fixtures can also use that format.
 function isNonImpactful(path) {
-    return /^(docs\/|\.vscode\/|\.github\/(ISSUE_TEMPLATE|agents|instructions|skills)\/)/.test(path)
+    return /^(docs\/|\.vscode\/|\.devcontainer\/|\.github\/(ISSUE_TEMPLATE|agents|instructions|skills)\/)/.test(path)
         || /^(README|CHANGELOG|CODE_OF_CONDUCT|CONTRIBUTING|SECURITY|SUPPORT)\.md$/i.test(path)
         || /^(abstractions|authentication|http|serialization|it)\/readme\.md$/i.test(path)
         || /^specs\/.*\.md$/i.test(path)
