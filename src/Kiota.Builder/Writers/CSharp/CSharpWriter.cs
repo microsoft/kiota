@@ -4,7 +4,8 @@ namespace Kiota.Builder.Writers.CSharp;
 
 public class CSharpWriter : LanguageWriter
 {
-    public CSharpWriter(string rootPath, string clientNamespaceName)
+    public CSharpWriter(string rootPath, string clientNamespaceName) : this(rootPath, clientNamespaceName, false) { }
+    public CSharpWriter(string rootPath, string clientNamespaceName, bool excludeBackwardCompatible)
     {
         PathSegmenter = new CSharpPathSegmenter(rootPath, clientNamespaceName);
         var conventionService = new CSharpConventionService();
@@ -13,7 +14,7 @@ public class CSharpWriter : LanguageWriter
         AddOrReplaceCodeElementWriter(new CodeEnumWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeIndexerWriter(conventionService));
         AddOrReplaceCodeElementWriter(new CodeMethodWriter(conventionService));
-        AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService));
+        AddOrReplaceCodeElementWriter(new CodePropertyWriter(conventionService, excludeBackwardCompatible));
         AddOrReplaceCodeElementWriter(new CodeTypeWriter(conventionService));
 
     }
