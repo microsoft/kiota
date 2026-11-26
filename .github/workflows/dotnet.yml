@@ -8,7 +8,12 @@ on:
   merge_group:
 
 jobs:
-  dotnet-build:
+  changes:
+    uses: ./.github/workflows/test-impact.yml
+
+  dotnet-tests:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,7 +30,7 @@ jobs:
           global-json-file: global.json
       - name: Setup Go
         # required so the integration tests can run gofmt against the generated Go code
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: stable
       - name: Restore dependencies
@@ -55,6 +60,8 @@ jobs:
           path: reports/coverage
 
   test-release:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -125,3 +132,14 @@ jobs:
             ./${{ matrix.os }}/kiota info -l Java
             exit 1
           fi
+
+  # Keep the required check reporting even when builds and tests are bypassed.
+  dotnet-build:
+    runs-on: ubuntu-latest
+    needs: [changes, dotnet-tests]
+    if: always()
+    steps:
+      - name: Verify test results or intentional bypass
+        env:
+          PASSED: ${{ needs.changes.result == 'success' && (needs.changes.outputs.run-tests == 'false' || needs.dotnet-tests.result == 'success') }}
+        run: test "$PASSED" = true

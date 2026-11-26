@@ -158,11 +158,18 @@ public sealed class TempFolderTokenStorageServiceTests : IDisposable
         if (OperatingSystem.IsWindows())
         {
             using var identity = WindowsIdentity.GetCurrent();
-            var security = new DirectoryInfo(CacheDirectory).GetAccessControl(AccessControlSections.Owner | AccessControlSections.Access);
-            Assert.True(security.AreAccessRulesProtected);
-            Assert.Equal(identity.User, security.GetOwner(typeof(SecurityIdentifier)));
-            foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
-                Assert.Equal(identity.User, rule.IdentityReference);
+            FileSystemSecurity[] entries =
+            [
+                new DirectoryInfo(CacheDirectory).GetAccessControl(AccessControlSections.Owner | AccessControlSections.Access),
+                new FileInfo(TokenPath).GetAccessControl(AccessControlSections.Owner | AccessControlSections.Access),
+            ];
+            foreach (var security in entries)
+            {
+                Assert.True(security.AreAccessRulesProtected);
+                Assert.Equal(identity.User, security.GetOwner(typeof(SecurityIdentifier)));
+                foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
+                    Assert.Equal(identity.User, rule.IdentityReference);
+            }
         }
         else
         {
