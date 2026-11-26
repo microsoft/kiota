@@ -42,7 +42,8 @@ public sealed class CodeEnumWriterTests : IDisposable
         var result = tw.ToString();
         Assert.Contains("from enum import Enum", result);
         Assert.Contains("(str, Enum):", result);
-        Assert.Contains($"Option1 = \"{optionName}\"", result);
+        Assert.Contains($"Option1 = \"{optionName}\"{Environment.NewLine}", result);
+        Assert.DoesNotContain($"Option1 = \"{optionName}\",", result);
         Assert.DoesNotContain("pass", result);
     }
     [Fact]
@@ -64,7 +65,8 @@ public sealed class CodeEnumWriterTests : IDisposable
         });
         writer.Write(currentEnum);
         var result = tw.ToString();
-        Assert.Contains("Option1 = \"line1\\\"\\nline2\",", result);
+        Assert.Contains($"Option1 = \"line1\\\"\\nline2\"{Environment.NewLine}", result);
+        Assert.DoesNotContain("Option1 = \"line1\\\"\\nline2\",", result);
     }
     [Fact]
     public void SanitizesEnumOptionDescriptionWithNewlines()
