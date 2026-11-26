@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
@@ -19,21 +19,10 @@ public class CodePropertyWriter : BaseElementWriter<CodeProperty, CSharpConventi
                                             CodePropertyKind.QueryParameter);// Other property types are appropriately constructor initialized
         bool hasDescription = conventions.WriteShortDescription(codeElement, writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        if (isNullableReferenceType)
-        {
-            CSharpConventionService.WriteNullableOpening(writer);
-            if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-            WritePropertyInternal(codeElement, writer, $"{propertyType}?");
-            if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
-            CSharpConventionService.WriteNullableMiddle(writer);
-        }
 
         if (!hasDescription) conventions.WritePragmaDisable(writer, CSharpConventionService.CS1591);
-        WritePropertyInternal(codeElement, writer, propertyType);// Always write the normal way
+        WritePropertyInternal(codeElement, writer, isNullableReferenceType ? $"{propertyType}?" : propertyType);
         if (!hasDescription) conventions.WritePragmaRestore(writer, CSharpConventionService.CS1591);
-
-        if (isNullableReferenceType)
-            CSharpConventionService.WriteNullableClosing(writer);
     }
 
     private void WritePropertyInternal(CodeProperty codeElement, LanguageWriter writer, string propertyType)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Kiota.Builder.CodeDOM;
@@ -85,7 +85,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains($"{TypeName} {PropertyName}", result);
+        Assert.Contains($"{TypeName}? {PropertyName}", result);
         Assert.Contains("get; set;", result);
     }
     [Fact]
@@ -104,7 +104,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         property.Kind = CodePropertyKind.Custom;
         writer.Write(property);
         var result = tw.ToString();
-        Assert.Contains("get { return BackingStore?.Get<global::" + rootNamespace.Name + ".SomeCustomClass>(\"propertyName\"); }", result);
+        Assert.Contains("get { return BackingStore?.Get<global::" + rootNamespace.Name + ".SomeCustomClass?>(\"propertyName\"); }", result);
         Assert.Contains("set { BackingStore?.Set(\"propertyName\", value);", result);
     }
     [Fact]
@@ -146,7 +146,7 @@ public sealed class CodePropertyWriterTests : IDisposable
         writer.Write(property);
         var result = tw.ToString();
         var sanitizedWireName = property.WireName.SanitizeCSharpDoubleQuote();
-        Assert.Contains($"BackingStore?.Get<global::{rootNamespace.Name}.SomeCustomClass>(\"{sanitizedWireName}\")", result);
+        Assert.Contains($"BackingStore?.Get<global::{rootNamespace.Name}.SomeCustomClass?>(\"{sanitizedWireName}\")", result);
         Assert.Contains($"BackingStore?.Set(\"{sanitizedWireName}\", value);", result);
         Assert.DoesNotContain('\u2028', result);
         Assert.DoesNotContain('\u2029', result);
