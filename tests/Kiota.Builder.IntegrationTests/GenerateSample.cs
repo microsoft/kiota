@@ -338,6 +338,37 @@ public sealed class GenerateSample : IDisposable
         return (process.ExitCode, await stdOutTask, await stdErrTask);
     }
 
+    [Fact]
+    public async Task GeneratesNullableInlineUnionsAsync()
+    {
+        var logger = LoggerFactory.Create(builder => { }).CreateLogger<KiotaBuilder>();
+        var outputPath = Path.Combine(".", "Generated", "NullableInlineUnion", "CSharp");
+        var configuration = new GenerationConfiguration
+        {
+            Language = GenerationLanguage.CSharp,
+            OpenAPIFilePath = GetAbsolutePath("nullable-inline-union.yaml"),
+            OutputPath = outputPath,
+            CleanOutput = true,
+        };
+        await new KiotaBuilder(logger, configuration, _httpClient).GenerateClientAsync(new());
+
+        var generatedDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Generated", "NullableInlineUnion", "CSharp");
+        var requestBuilderText = File.ReadAllText(Path.Combine(generatedDirectory, "Things", "ThingsRequestBuilder.cs"));
+        // { "anyOf": [{ "type": "string" }, { "type": "null" }] } request body: "" is a valid payload, so only null is rejected.
+        Assert.Contains("PostAsync(string body", requestBuilderText, StringComparison.Ordinal);
+        Assert.Contains("if(ReferenceEquals(body, null)) throw new ArgumentNullException(nameof(body));", requestBuilderText, StringComparison.Ordinal);
+        Assert.DoesNotContain("string.IsNullOrEmpty(body)", requestBuilderText, StringComparison.Ordinal);
+        var thingText = File.ReadAllText(Path.Combine(generatedDirectory, "Models", "Thing.cs"));
+        // nullable array property: a plain list of strings.
+        Assert.Contains("Tags = n.GetCollectionOfPrimitiveValues<string>()?.AsList();", thingText, StringComparison.Ordinal);
+        // array of nullable arrays: the outer list holds wrappers and each wrapper holds the inner list, so [["x"]] keeps both dimensions.
+        Assert.Contains("NestedTags = n.GetCollectionOfObjectValues<global::ApiSdk.Models.Thing.Thing_nestedTags>(global::ApiSdk.Models.Thing.Thing_nestedTags.CreateFromDiscriminatorValue)?.AsList();", thingText, StringComparison.Ordinal);
+        Assert.Contains("writer.WriteCollectionOfObjectValues<global::ApiSdk.Models.Thing.Thing_nestedTags>(\"nestedTags\", NestedTags);", thingText, StringComparison.Ordinal);
+        Assert.Contains("if(parseNode.GetCollectionOfPrimitiveValues<string>()?.AsList() is List<string> stringValue)", thingText, StringComparison.Ordinal);
+        Assert.Contains("writer.WriteCollectionOfPrimitiveValues<string>(null, String);", thingText, StringComparison.Ordinal);
+        Assert.DoesNotContain("NestedTags = n.GetCollectionOfPrimitiveValues<string>()", thingText, StringComparison.Ordinal);
+    }
+
     private static string GetAbsolutePath(string relativePath) => Path.Combine(Directory.GetCurrentDirectory(), relativePath);
     private static string ReadGeneratedModelText(string modelsDir)
     {

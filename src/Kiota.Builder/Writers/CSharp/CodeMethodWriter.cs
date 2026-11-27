@@ -29,7 +29,8 @@ public class CodeMethodWriter : BaseElementWriter<CodeMethod, CSharpConventionSe
         foreach (var parameter in codeElement.Parameters.Where(static x => !x.Optional && !x.IsOfKind(CodeParameterKind.RequestAdapter, CodeParameterKind.PathParameters, CodeParameterKind.RawUrl)).OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
         {
             var parameterName = parameter.Name.ToFirstCharacterLowerCase();
-            if (nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && parameter.Type.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None)
+            // an empty string is a valid scalar request body, only reject null for it
+            if (nameof(String).Equals(parameter.Type.Name, StringComparison.OrdinalIgnoreCase) && parameter.Type.CollectionKind == CodeTypeBase.CodeTypeCollectionKind.None && !parameter.IsOfKind(CodeParameterKind.RequestBody))
                 writer.WriteLine($"if(string.IsNullOrEmpty({parameterName})) throw new ArgumentNullException(nameof({parameterName}));");
             else
                 writer.WriteLine($"if(ReferenceEquals({parameterName}, null)) throw new ArgumentNullException(nameof({parameterName}));");
