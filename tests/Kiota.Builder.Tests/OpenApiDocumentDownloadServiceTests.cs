@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -193,12 +194,162 @@ components:
     Pet:
       $ref: 'https://contoso.com/schemas/pet.yaml#/components/schemas/Pet'
 """);
-        using var httpClient = new HttpClient(new ResponseHandler());
-        var documentDownloadService = new OpenApiDocumentDownloadService(httpClient, fakeLogger);
+        using var handler = new ResponseHandler();
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, fakeLogger) { ExternalReferencesHandler = handler };
 
         var document = await documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(document);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsDoNotFollowRedirectsToOtherOrigins()
+    {
+        var generationConfig = new GenerationConfiguration
+        {
+            OpenAPIFilePath = "https://example.com/openapi.yaml",
+            AllowedExternalOrigins = ["https://contoso.com/schemas/*"],
+        };
+        using var inputDocumentStream = CreateMemoryStreamFromString("""
+openapi: 3.0.0
+info:
+  title: External refs
+  version: 0.0.0
+paths: {}
+components:
+  schemas:
+    Pet:
+      $ref: 'https://contoso.com/schemas/pet.yaml#/components/schemas/Pet'
+""");
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = "https://fabrikam.com/pet.yaml" });
+        var documentDownloadService = new OpenApiDocumentDownloadService(_httpClient, new FakeLogger<OpenApiDocumentDownloadService>()) { ExternalReferencesHandler = handler };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            documentDownloadService.GetDocumentFromStreamAsync(inputDocumentStream, generationConfig, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(["https://contoso.com/schemas/pet.yaml"], handler.RequestedUris);
+    }
+
+    [Theory]
+    [InlineData("https://fabrikam.com/pet.yaml")]
+    [InlineData("https://contoso.com/other/pet.yaml")]
+    [InlineData("http://contoso.com/schemas/pet.yaml")]
+    [InlineData("file:///schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/../private/pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsRedirects(string redirectTarget)
+    {
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = redirectTarget });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*", "https://contoso.com:443/schemas/*", "http://contoso.com/schemas/*", "file:///schemas/*"]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+        Assert.Equal(["https://contoso.com/schemas/pet.yaml"], handler.RequestedUris);
+    }
+
+    [Theory]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com:443/schemas/v2/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com/schemas/v2/pet.yaml")]
+    [InlineData("https://contoso.com", "https://contoso.com")]
+    [InlineData("https://contoso.com?version=*", "https://contoso.com?version=2")]
+    public async Task AllowedExternalOriginsStreamLoaderFollowsRedirectsMatchingEquivalentOrigins(string allowedOrigin, string redirectTarget)
+    {
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = redirectTarget });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/pet.yaml", allowedOrigin]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+        Assert.Equal(2, handler.RequestedUris.Count);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderAppliesTimeoutToAllRedirects()
+    {
+        using var handler = new ResponseHandler(new()
+        {
+            ["https://contoso.com/schemas/pet.yaml"] = "https://contoso.com/schemas/1.yaml",
+            ["https://contoso.com/schemas/1.yaml"] = "https://contoso.com/schemas/2.yaml",
+            ["https://contoso.com/schemas/2.yaml"] = "https://contoso.com/schemas/3.yaml",
+            ["https://contoso.com/schemas/3.yaml"] = "https://contoso.com/schemas/4.yaml",
+        }, TimeSpan.FromMilliseconds(300));
+        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(700) };
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+        Assert.True(handler.RequestedUris.Count < 5);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderAppliesTimeoutToResponseBody()
+    {
+        using var handler = new StalledBodyHandler();
+        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(500) };
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderFollowsAllowedRedirects()
+    {
+        using var handler = new ResponseHandler(new()
+        {
+            ["https://contoso.com/schemas/pet.yaml"] = "https://zap.contoso.com/schemas/pet.yaml",
+            ["https://zap.contoso.com/schemas/pet.yaml"] = "v2/pet.yaml",
+        });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*", "https://*.contoso.com/schemas/*"]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+        Assert.Equal(["https://contoso.com/schemas/pet.yaml", "https://zap.contoso.com/schemas/pet.yaml", "https://zap.contoso.com/schemas/v2/pet.yaml"], handler.RequestedUris);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderFollowsAllowedRedirectsWithoutBaseUrl()
+    {
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = "https://contoso.com/schemas/v2/pet.yaml" });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await using var stream = await loader.LoadAsync(
+            new Uri(OpenApiConstants.BaseRegistryUri),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(stream);
+        Assert.Equal(["https://contoso.com/schemas/pet.yaml", "https://contoso.com/schemas/v2/pet.yaml"], handler.RequestedUris);
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderLimitsRedirects()
+    {
+        using var handler = new ResponseHandler(new() { ["https://contoso.com/schemas/pet.yaml"] = "https://contoso.com/schemas/pet.yaml" });
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["https://contoso.com/schemas/*"]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("https://contoso.com/schemas/pet.yaml"),
+            TestContext.Current.CancellationToken));
+        Assert.Equal(11, handler.RequestedUris.Count);
     }
 
     [Fact]
@@ -246,13 +397,59 @@ components:
     }
 
     [Theory]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/%2e%2e/private/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com:443/schemas/*", "https://contoso.com:443/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com/my schemas/*", "https://contoso.com/my schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/%2E%2E/*", "https://contoso.com/private/pet.yaml")]
+    [InlineData("*://contoso.com/schemas/*", "https://contoso.com/schemas/../private/pet.yaml")]
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com:443/schemas/../private/pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsReferencesLeavingAllowedPath(string allowedOrigin, string externalReference)
+    {
+        using var handler = new ResponseHandler();
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri(externalReference),
+            TestContext.Current.CancellationToken));
+        Assert.Empty(handler.RequestedUris);
+    }
+
+    [Theory]
     [InlineData("https://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*.contoso.com/*", "https://zap.nested.contoso.com/schemas/pet.yaml")]
     [InlineData("HTTPS://*.contoso.com/*", "https://zap.contoso.com/schemas/pet.yaml")]
     [InlineData("https://*/schemas/*", "https://anything.example.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/pet.yaml")]
     [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/nested/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/*", "https://contoso.com/schemas/v1/../v2/pet.yaml")]
+    // exact entries match the resolved reference
+    [InlineData("https://contoso.com/schemas/v1/../v2/pet.yaml", "https://contoso.com/schemas/v1/../v2/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/pet model.yaml", "https://contoso.com/schemas/pet model.yaml")]
+    [InlineData("https://contoso.com/schemas/pét.yaml", "https://contoso.com/schemas/pét.yaml")]
+    // wildcard entries match the resolved reference too
+    [InlineData("https://contoso.com/my schemas/*", "https://contoso.com/my schemas/pet.yaml")]
+    [InlineData("https://contoso.com/pét/*", "https://contoso.com/pét/pet.yaml")]
+    [InlineData("https://*.contoso.com/my schemas/*", "https://zap.contoso.com/my schemas/pet.yaml")]
     [InlineData("https://contoso.com:8443/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
+    // encoded unreserved characters are decoded like in the resolved reference
+    [InlineData("https://contoso.com/%73chemas/*", "https://contoso.com/%73chemas/pet.yaml")]
+    [InlineData("https://contoso.com/%73chemas/*", "https://contoso.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com/schemas/pet%2E*", "https://contoso.com/schemas/pet.yaml")]
+    [InlineData("https://contoso.com/%7Euser/*", "https://contoso.com/~user/pet.yaml")]
+    // a port wildcard also matches the default port, which the resolved reference drops
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com:443/schemas/pet.yaml")]
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com/schemas/pet.yaml")]
+    [InlineData("http://contoso.com:*/schemas/*", "http://contoso.com:80/schemas/pet.yaml")]
+    [InlineData("https://contoso.com:*/schemas/*", "https://contoso.com:8443/schemas/pet.yaml")]
+    // a scheme wildcard is written like an http or https pattern
+    [InlineData("*://contoso.com/my schemas/*", "https://contoso.com/my schemas/pet.yaml")]
+    [InlineData("*://contoso.com/%73chemas/*", "http://contoso.com/schemas/pet.yaml")]
+    [InlineData("http*://contoso.com/my schemas/*", "https://contoso.com/my schemas/pet.yaml")]
+    [InlineData("*://contoso.com", "https://contoso.com")]
     // wildcards from the path onwards keep matching any character, the destination is already pinned by then
     [InlineData("https://*.contoso.com/schemas/pet.yaml?version=*", "https://zap.contoso.com/schemas/pet.yaml?version=2")]
     // a query or a fragment can follow the authority without a path, and its wildcard is not bounded either
@@ -367,6 +564,189 @@ components:
         }
     }
 
+    [Theory]
+    [InlineData("relative", false, "%2e%2e/outside.yaml")]
+    [InlineData("relative", false, "%2E%2E/outside.yaml")]
+    [InlineData("relative", false, ".%2e/outside.yaml")]
+    [InlineData("relative", false, "%2e./outside.yaml")]
+    [InlineData("relative", false, "%2e%2e%2foutside.yaml")]
+    [InlineData("relative", false, "%2e%2e%5coutside.yaml")]
+    [InlineData("relative", false, "../outside.yaml")]
+    [InlineData("absolute", false, "%2e%2e/outside.yaml")]
+    [InlineData("absolute", true, "%2e%2e/outside.yaml")]
+    [InlineData("uri", false, "%2e%2e/outside.yaml")]
+    [InlineData("uri", true, "%2e%2e/outside.yaml")]
+    [InlineData("uri", true, "../outside.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderRejectsLocalTraversal(string allowedOriginKind, bool absoluteReference, string referencePath)
+    {
+        var relativeDirectory = Path.GetRandomFileName();
+        var tempDirectory = Path.Join(Directory.GetCurrentDirectory(), relativeDirectory);
+        var allowedDirectory = Path.Join(tempDirectory, "safe");
+        try
+        {
+            Directory.CreateDirectory(allowedDirectory);
+            await File.WriteAllTextAsync(Path.Join(tempDirectory, "outside.yaml"), "type: object", TestContext.Current.CancellationToken);
+            var allowedOrigin = allowedOriginKind switch
+            {
+                "absolute" => Path.Join(allowedDirectory, "*"),
+                "uri" => new Uri(Path.Join(allowedDirectory, "*")).AbsoluteUri,
+                _ => Path.Join(relativeDirectory, "safe", "*"),
+            };
+            var reference = absoluteReference ?
+                new Uri($"{new Uri(allowedDirectory).AbsoluteUri}/{referencePath}") :
+                new Uri($"{relativeDirectory}/safe/{referencePath}", UriKind.Relative);
+            using var httpClient = new HttpClient(new ResponseHandler());
+            var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [allowedOrigin]);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await using var stream = await loader.LoadAsync(
+                    new Uri(new Uri(Path.Join(Directory.GetCurrentDirectory(), "openapi.yaml")).AbsoluteUri),
+                    reference,
+                    TestContext.Current.CancellationToken);
+            });
+            Assert.Contains("not allowed", exception.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Theory]
+    [InlineData("pet%20model.yaml", "pet model.yaml")]
+    [InlineData("pet%252ename.yaml", "pet%2ename.yaml")]
+    [InlineData("nested/%2e%2e/pet.yaml", "pet.yaml")]
+    public async Task AllowedExternalOriginsStreamLoaderLoadsCanonicalLocalPaths(string referencePath, string fileName)
+    {
+        var tempDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+        var allowedDirectory = Path.Join(tempDirectory, "safe");
+        try
+        {
+            Directory.CreateDirectory(allowedDirectory);
+            var schemaPath = Path.Join(allowedDirectory, fileName);
+            await File.WriteAllTextAsync(schemaPath, "type: object", TestContext.Current.CancellationToken);
+            using var httpClient = new HttpClient(new ResponseHandler());
+            var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [schemaPath]);
+
+            await using var stream = await loader.LoadAsync(
+                new Uri(new Uri(Path.Join(tempDirectory, "openapi.yaml")).AbsoluteUri),
+                new Uri($"safe/{referencePath}#/components/schemas/Pet", UriKind.Relative),
+                TestContext.Current.CancellationToken);
+            using var reader = new StreamReader(stream);
+            Assert.Equal("type: object", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderDoesNotAuthorizeRelativePathsAgainstAnotherBaseDirectory()
+    {
+        var relativeDirectory = Path.GetRandomFileName();
+        var tempDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+        var schemaPath = Path.Join(tempDirectory, relativeDirectory, "pet.yaml");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(schemaPath)!);
+            await File.WriteAllTextAsync(schemaPath, "type: object", TestContext.Current.CancellationToken);
+            using var httpClient = new HttpClient(new ResponseHandler());
+            var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, [Path.Join(relativeDirectory, "*")]);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await using var stream = await loader.LoadAsync(
+                    new Uri(Path.Join(tempDirectory, "openapi.yaml")),
+                    new Uri($"{relativeDirectory}/pet.yaml", UriKind.Relative),
+                    TestContext.Current.CancellationToken);
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
+    public async Task AllowedExternalOriginsStreamLoaderDoesNotAuthorizeHttpReferencesWithLocalPathPatterns()
+    {
+        using var handler = new ResponseHandler();
+        using var httpClient = new HttpClient(handler);
+        var loader = (IStreamLoader)new AllowedExternalOriginsStreamLoader(httpClient, ["schemas/*"]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => loader.LoadAsync(
+            new Uri("https://example.com/openapi.yaml"),
+            new Uri("schemas/pet.yaml", UriKind.Relative),
+            TestContext.Current.CancellationToken));
+        Assert.Empty(handler.RequestedUris);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AllowedExternalOriginsValidateLocalReferencesDuringDocumentLoading(bool traversal)
+    {
+        var relativeDirectory = Path.GetRandomFileName();
+        var tempDirectory = Path.Join(Directory.GetCurrentDirectory(), relativeDirectory);
+        try
+        {
+            Directory.CreateDirectory(Path.Join(tempDirectory, "safe"));
+            var referencePath = traversal ? "safe/%2e%2e/outside.yaml" : "safe/pet.yaml";
+            var schemaPath = traversal ? Path.Join(tempDirectory, "outside.yaml") : Path.Join(tempDirectory, "safe", "pet.yaml");
+            await File.WriteAllTextAsync(schemaPath, """
+openapi: 3.0.0
+info:
+  title: External schema
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        marker:
+          type: string
+""", TestContext.Current.CancellationToken);
+            var config = new GenerationConfiguration
+            {
+                OpenAPIFilePath = "openapi.yaml",
+                AllowedExternalOrigins = [Path.Join(relativeDirectory, "safe", "*")],
+            };
+            using var input = CreateMemoryStreamFromString($$"""
+openapi: 3.0.0
+info:
+  title: Local references
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Pet:
+      $ref: '{{relativeDirectory}}/{{referencePath}}#/components/schemas/Pet'
+""");
+            var service = new OpenApiDocumentDownloadService(_httpClient, new FakeLogger<OpenApiDocumentDownloadService>());
+            if (traversal)
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetDocumentFromStreamAsync(
+                    input, config, cancellationToken: TestContext.Current.CancellationToken));
+            }
+            else
+            {
+                var document = await service.GetDocumentFromStreamAsync(input, config, cancellationToken: TestContext.Current.CancellationToken);
+                Assert.NotNull(document?.Components?.Schemas?["Pet"].Properties?["marker"]);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, true);
+        }
+    }
+
     [Fact]
     public async Task GetDocumentFromStreamAsyncSupportsLargeYamlScalars()
     {
@@ -399,13 +779,49 @@ paths: {}
         return stream;
     }
 
-    private sealed class ResponseHandler : HttpMessageHandler
+    private sealed class StalledBodyHandler : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(CreateStalledResponse());
+
+        private static HttpResponseMessage CreateStalledResponse() => new(HttpStatusCode.OK) { Content = new StalledContent() };
+
+        private sealed class StalledContent : HttpContent
         {
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context) =>
+                SerializeToStreamAsync(stream, context, CancellationToken.None);
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context, CancellationToken cancellationToken) =>
+                Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            protected override bool TryComputeLength(out long length)
             {
-                Content = new StringContent("""
+                length = 0;
+                return false;
+            }
+        }
+    }
+
+    private sealed class ResponseHandler(Dictionary<string, string> redirects = null, TimeSpan delay = default) : HttpMessageHandler
+    {
+        public List<string> RequestedUris { get; } = [];
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var requestUri = request.RequestUri!.AbsoluteUri;
+            RequestedUris.Add(requestUri);
+            if (delay > TimeSpan.Zero)
+                await Task.Delay(delay, cancellationToken);
+            if (redirects?.TryGetValue(requestUri, out var location) == true)
+                return CreateRedirectResponse(location);
+            return CreateOkResponse();
+        }
+
+        private static HttpResponseMessage CreateRedirectResponse(string location) => new(HttpStatusCode.Found)
+        {
+            Headers = { Location = new Uri(location, UriKind.RelativeOrAbsolute) },
+        };
+
+        private static HttpResponseMessage CreateOkResponse() => new(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""
 openapi: 3.0.0
 info:
   title: External ref
@@ -416,7 +832,6 @@ components:
     Pet:
       type: object
 """),
-            });
-        }
+        };
     }
 }

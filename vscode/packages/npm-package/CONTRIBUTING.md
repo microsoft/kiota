@@ -1,6 +1,6 @@
 # Contributing to kiota npm package
 
-Thanks for your interest in contributing to Kiota npm package! We welcome contributions from everyone, regardless of skill level or experience. See [general contribution guidelines](../../CONTRIBUTING.md) for general contribution guidelines.
+Thanks for your interest in contributing to Kiota npm package! We welcome contributions from everyone, regardless of skill level or experience. See [general contribution guidelines](../../../CONTRIBUTING.md) for general contribution guidelines.
 
 ## Getting Started
 
@@ -40,4 +40,4 @@ npm test
  
 ### Debugging the Kiota npm package
 
-See [Debugging the package](https://github.com/microsoft/kiota/blob/main/vscode/npm-package/debugging.md)
+See [Debugging the package](https://github.com/microsoft/kiota/blob/main/vscode/packages/npm-package/debugging.md)

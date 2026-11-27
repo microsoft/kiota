@@ -361,6 +361,10 @@ public partial class DartRefiner : CommonLanguageRefiner, ILanguageRefiner
             if (!string.IsNullOrEmpty(currentProperty.DefaultValue))
                 currentProperty.DefaultValue = "{}";
         }
+        else if (currentProperty.IsOfKind(CodePropertyKind.QueryParameter))
+        {
+            // query parameter property naming and wire name escaping are handled by ReplacePropertyNames and ReplaceReservedNames
+        }
         else
         {
             if (!currentProperty.IsNameEscaped)

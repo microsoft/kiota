@@ -11,6 +11,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+- Local external references are checked against `--allowed-external-origins` using the resolved filesystem path that is opened.
+
+## [1.39.0] - 2026-11-17
+
+### Added
+
+### Changed
+
+- Fixed credential-cache file creation in elevated Windows processes, including Azure DevOps release agents, by explicitly assigning the current user as owner with private permissions.
+- Go: include the endpoint path in inline composed-type wrapper names when flattening request builders, preventing response type collisions between paths such as `/v1/blocks/meeting_notes` and `/v1/meeting_notes`.
+- Improved GitHub sign-in state handling and authentication command error reporting. Existing users must sign in again after upgrading.
+  The old temporary credential cache is no longer read or cleared by logout. Before signing in again, revoke any PAT used with Kiota in GitHub **Settings > Developer settings > Personal access tokens**, and revoke Kiota's device-code authorization in **Settings > Applications > Authorized GitHub Apps** (**Authorized OAuth Apps** for a custom OAuth client). Remove your old token files (`pat-api.github.com.txt` and `<app-id>-api.github.com.txt`) from the system temporary directory's `kiota/auth` folder (`%TEMP%\kiota\auth` on Windows; `$TMPDIR/kiota/auth`, or `/tmp/kiota/auth`, on Unix). Verify that the directory and files belong to you and are not symbolic links or junctions; do not recursively delete a shared temporary directory. Revocation invalidates credentials even if the old files cannot be safely removed.
+- Fixed false-positive missing-discriminator warnings for unions of a single model and a null-only alternative.
+- Ruby: a path parameter named after a Ruby keyword, such as `{class}`, generated code that didn't parse. The Ruby parameter is now `class_escaped`, and the URL still uses `class`.
+- Ruby: fixed generation failing when a nested model is flattened onto the name of an existing one, as in Microsoft Graph beta.
+- Ruby: a request builder for a path with function parameters, such as Microsoft Graph's `search(q='{q}')`, puts their values in the URL. They were accepted and dropped, so the request went out with empty values.
+- Fixed the Ruby links in the readmes to point to the kiota-ruby repository.
+- Ruby is now a preview language.
+- Improved validation of workspace output paths.
+- External references, and redirects returned while loading them, are now checked against `--allowed-external-origins` using their resolved address.
+
+## [1.38.0] - 2026-11-02
+
+### Added
+
+### Changed
+
+- Python: check inherited-model discriminators once before type dispatch to avoid repeated truthiness checks that cause excessive CodeQL extraction work in large factories.
+
+## [1.37.0] - 2026-10-29
+
+### Added
+
 - Ruby: a deprecated operation, path, model, enum, property or parameter carries a YARD `@deprecated` tag with the description's deprecation text, date, removal date and version. Calling a deprecated method or navigating to a deprecated path also warns with `category: :deprecated`, which Ruby prints when `Warning[:deprecated]` is on, as it does for its own deprecations. [kiota-ruby#64](https://github.com/microsoft/kiota-ruby/issues/64)
 - Ruby: models generated with `--backing-store` keep their values in the runtime's backing store and send only the values changed since they were read, as the other languages do. Before, `--backing-store` generated Ruby that failed to load. Requires the runtime gems at 0.25.0. [kiota-ruby#53](https://github.com/microsoft/kiota-ruby/issues/53)
 - Ruby: generated clients register the text, form and multipart serializers, so `text/plain`, `application/x-www-form-urlencoded` and `multipart/form-data` bodies work, as in the other languages. Requires the runtime gems at 0.25.0. [kiota-ruby#52](https://github.com/microsoft/kiota-ruby/issues/52), [kiota-ruby#55](https://github.com/microsoft/kiota-ruby/issues/55), [kiota-ruby#57](https://github.com/microsoft/kiota-ruby/issues/57)
@@ -19,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The accessor to a child path is marked deprecated when that path is deprecated. It used to take the deprecation of its parent path instead, so a deprecated `/legacy` under a live `/api` was not flagged, and every child of a deprecated path was.
 - TypeScript: guard union discriminator access and preserve dispatch for identifiable values even when some members lack the property; fall back to serializing all members for unidentified values without referencing nonexistent properties.
+- TypeScript: resolve factory default deserializers in the declared model's namespace, preventing unresolved references to similarly named deserializers in child namespaces. Fixes [#8461](https://github.com/microsoft/kiota/issues/8461).
 - Ruby: `kiota info` lists the runtime gems at 0.25.0.
 - Map an inline schema combined with a `{ "type": "null" }` branch in a `oneOf` or `anyOf`, such as `"oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]` or FastAPI's `Optional[str]`, to the nullable inline type instead of a union wrapper with an empty member class for the null branch. A nullable array used as the items of another array keeps its union wrapper, so both array dimensions are preserved. [#7802](https://github.com/microsoft/kiota/issues/7802)
 - C#: a string request body is only rejected when it is null, so an empty string can be sent.
@@ -1945,3 +1981,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial GitHub release
+
+

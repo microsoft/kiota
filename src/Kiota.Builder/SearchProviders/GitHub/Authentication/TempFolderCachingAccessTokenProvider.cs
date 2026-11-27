@@ -45,7 +45,8 @@ public class TempFolderCachingAccessTokenProvider : IAccessTokenProvider
         {
             Logger.LogInformation("Token not found in cache, requesting a new one");
             result = await Concrete.GetAuthorizationTokenAsync(uri, additionalAuthenticationContext, cancellationToken).ConfigureAwait(false);
-            await TokenStorageService.Value.SetTokenAsync(result, cancellationToken).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(result))
+                await TokenStorageService.Value.SetTokenAsync(result, cancellationToken).ConfigureAwait(false);
         }
         return result ?? string.Empty;
     }

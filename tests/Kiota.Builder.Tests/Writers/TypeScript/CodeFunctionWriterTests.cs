@@ -134,6 +134,62 @@ public sealed class CodeFunctionWriterTests : IDisposable
         Assert.Contains("return deserializeIntoParentModel;", result);
         AssertExtensions.CurlyBracesAreClosed(result, 1);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WritesModelFactoriesForSimilarlyNamedModelsInNestedNamespacesAsync(bool aliasReturnType)
+    {
+        var generationConfiguration = new GenerationConfiguration { Language = GenerationLanguage.TypeScript };
+        var securityNamespace = root.AddNamespace("ApiSdk.models.microsoft.graph.security");
+        var dlpNamespace = securityNamespace.AddNamespace($"{securityNamespace.Name}.dlp");
+        var models = new List<CodeClass>();
+        foreach (var recordKind in new[] { "Endpoint", "Exchange", "SharePoint" })
+        {
+            foreach (var (modelNamespace, modelName) in new[]
+            {
+                (securityNamespace, $"complianceDLP{recordKind}AuditRecord"),
+                (dlpNamespace, $"complianceDlp{recordKind}AuditRecord"),
+            })
+            {
+                var model = TestHelper.CreateModelClass(modelNamespace, modelName, true);
+                model.AddMethod(new CodeMethod
+                {
+                    Name = "factory",
+                    Kind = CodeMethodKind.Factory,
+                    ReturnType = new CodeType { Name = model.Name, TypeDefinition = model },
+                    IsStatic = true,
+                });
+                models.Add(model);
+            }
+        }
+
+        await ILanguageRefiner.RefineAsync(generationConfiguration, root, cancellationToken: TestContext.Current.CancellationToken);
+
+        foreach (var model in models)
+        {
+            var modelNamespace = model.GetImmediateParentOfType<CodeNamespace>();
+            var modelFile = Assert.Single(modelNamespace.GetChildElements().OfType<CodeFile>());
+            var factoryFunction = Assert.Single(modelFile.GetChildElements().OfType<CodeFunction>(),
+                x => x.OriginalLocalMethod.Kind is CodeMethodKind.Factory && x.OriginalMethodParentClass == model);
+            if (aliasReturnType)
+            {
+                var returnType = Assert.IsType<CodeType>(factoryFunction.OriginalLocalMethod.ReturnType);
+                factoryFunction.AddUsing(new CodeUsing
+                {
+                    Name = modelNamespace.Name,
+                    Alias = $"Aliased{model.Name.ToFirstCharacterUpperCase()}",
+                    Declaration = new CodeType { Name = returnType.Name, TypeDefinition = returnType.TypeDefinition },
+                });
+            }
+            writer.Write(factoryFunction);
+            var result = tw.ToString();
+            Assert.Contains($"return deserializeInto{model.Name.ToFirstCharacterUpperCase()};", result);
+            var otherModel = models.Single(x => x != model && x.Name.Equals(model.Name, StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain($"return deserializeInto{otherModel.Name.ToFirstCharacterUpperCase()};", result);
+            tw.GetStringBuilder().Clear();
+        }
+    }
+
     [Fact]
     public async Task EscapesModelFactoryBodyAsync()
     {
@@ -155,12 +211,12 @@ public sealed class CodeFunctionWriterTests : IDisposable
             },
             IsStatic = true,
         }).First();
-        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld\nmodel", new CodeType
+        parentModel.DiscriminatorInformation.AddDiscriminatorMapping("ns.chi\"ld'\n\r\t\\$model", new CodeType
         {
             Name = "childModel",
             TypeDefinition = childModel,
         });
-        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe\nx";
+        parentModel.DiscriminatorInformation.DiscriminatorPropertyName = "@odata.ty\"pe'\n\r\t\\$x";
         factoryMethod.AddParameter(new CodeParameter
         {
             Name = "parseNode",
@@ -185,8 +241,10 @@ public sealed class CodeFunctionWriterTests : IDisposable
         parentNS.TryAddCodeFile("foo", factoryFunction);
         writer.Write(factoryFunction);
         var result = tw.ToString();
-        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.ty\\\"pe\\nx\")", result);
-        Assert.Contains("case \"ns.chi\\\"ld\\nmodel\":", result);
+        Assert.Contains("const mappingValueNode = parseNode?.getChildNode(\"@odata.ty\\\"pe'\\n\\r\\t\\\\$x\")", result);
+        Assert.Contains("case \"ns.chi\\\"ld'\\n\\r\\t\\\\$model\":", result);
+        Assert.DoesNotContain(parentModel.DiscriminatorInformation.DiscriminatorPropertyName, result);
+        Assert.DoesNotContain("ns.chi\"ld'\n\r\t\\$model", result);
     }
     [Fact]
     public async Task DoesntWriteFactorySwitchOnMissingParameterAsync()
