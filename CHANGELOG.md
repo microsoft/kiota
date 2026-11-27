@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Local external references are checked against `--allowed-external-origins` using the resolved filesystem path that is opened.
+- Python: avoid querying empty discriminator child node when deserializing undiscriminated union models. Fixes [#6868](https://github.com/microsoft/kiota/issues/6868).
 
 ## [1.39.0] - 2026-11-17
 
