@@ -90,6 +90,32 @@ public class DartLanguageRefinerTests
         Assert.Equal(input, property.DefaultValue);
     }
     [Fact]
+    public async Task PreservesWireNameForReservedQueryParameters()
+    {
+        var model = root.AddNamespace("models").AddClass(new CodeClass { Name = "QueryParameters", Kind = CodeClassKind.QueryParameters }).First();
+        var normalProp = model.AddProperty(new CodeProperty
+        {
+            Name = "filter",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType { Name = "String", IsExternal = true },
+        }).First();
+        var reservedProp = model.AddProperty(new CodeProperty
+        {
+            Name = "type",
+            Kind = CodePropertyKind.QueryParameter,
+            Type = new CodeType { Name = "String", IsExternal = true },
+        }).First();
+        await ILanguageRefiner.RefineAsync(new GenerationConfiguration { Language = GenerationLanguage.Dart }, root, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("filter", normalProp.Name);
+        Assert.False(normalProp.IsNameEscaped);
+        Assert.Equal(string.Empty, normalProp.SerializationName);
+
+        Assert.Equal("type_", reservedProp.Name);
+        Assert.True(reservedProp.IsNameEscaped);
+        Assert.Equal("type", reservedProp.SerializationName);
+        Assert.Equal("type", reservedProp.WireName);
+    }
+    [Fact]
     public async Task RefinesGeneratedDartDefaultsToRuntimeInitializers()
     {
         var model = root.AddNamespace("models").AddClass(new CodeClass { Name = "Configuration" }).First();
