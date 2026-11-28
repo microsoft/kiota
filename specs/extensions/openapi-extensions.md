@@ -66,7 +66,7 @@ info:
 ```
 
 ## x-ai-description
-Specifies the description for the plugin that will be provided to the model. This description should describe what the plugin is for, and in what circumstances its functions are relevant. Max size 2048 caracters.
+Specifies the description for the plugin that will be provided to the model. This description should describe what the plugin is for, and in what circumstances its functions are relevant. Max size 2048 characters.
 
 Applies to: Info
 
@@ -80,7 +80,7 @@ info:
 ```
 
 ## x-ai-reasoning-instructions
-Specifies instructions for when a specific function is invoked when the orchestrator is in the resoning state.
+Specifies instructions for when a specific function is invoked when the orchestrator is in the reasoning state.
 
 Reasoning state corresponds to an orchestrator state when the model can call functions and do computations.
 
